@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: instinto-dash-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: USE_MOCK_DATA
+        value: "true"
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_SYSTEM_USER_TOKEN
+        sync: false
+      - key: META_API_VERSION
+        value: v21.0
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_DEVELOPER_TOKEN
+        sync: false
+      - key: GOOGLE_LOGIN_CUSTOMER_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
