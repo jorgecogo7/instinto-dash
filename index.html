@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Instinto Dash · Instinto  Digital</title>
+<title>Instinto Dash · Instinto Digital</title>
 <link rel="icon" id="favicon" type="image/png" href="">
 <script>
   // O favicon usa a mesma imagem da logo, embutida como base64 mais abaixo no body;
@@ -290,6 +290,50 @@
   .balance-critical{ background: rgba(232,81,79,0.18); color: var(--red); animation: pulse-alert 1.6s infinite; }
   @keyframes pulse-alert{ 0%,100%{opacity:1;} 50%{opacity:0.55;} }
 
+  /* ---- Banner de backend offline ---- */
+  .offline-banner{
+    background: rgba(232,81,79,0.1); border:1px solid rgba(232,81,79,0.35); color: var(--red);
+    border-radius: var(--radius); padding:12px 16px; font-size:12.5px; margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .offline-banner code{ background: rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; color: var(--text); }
+
+  /* ---- Painel lateral: novo cliente ---- */
+  .drawer-overlay{
+    display:none; position:fixed; inset:0; background: rgba(0,0,0,0.45);
+    z-index:100; opacity:0; transition: opacity .25s ease;
+  }
+  .drawer-overlay.open{ display:block; opacity:1; }
+  .modal-box{
+    position:fixed; top:0; right:0; height:100vh; width: 400px; max-width: 90vw;
+    background: var(--bg-panel); border-left:1px solid var(--line);
+    box-shadow: -8px 0 30px rgba(0,0,0,0.35);
+    padding:24px; overflow-y:auto;
+    transform: translateX(100%); transition: transform .28s cubic-bezier(.16,.8,.3,1);
+  }
+  .drawer-overlay.open .modal-box{ transform: translateX(0); }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  .modal-head h3{ font-size:16px; font-weight:700; }
+  .modal-close{ background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text-dim); font-size:14px; cursor:pointer; width:28px; height:28px; border-radius:7px; }
+  .modal-close:hover{ color:var(--text); }
+  .modal-label{ font-size:11.5px; color:var(--text-dim); display:block; margin: 14px 0 5px; }
+  .modal-input{
+    width:100%; background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:13px; font-family:inherit;
+  }
+  .modal-input:focus{ outline:none; border-color: rgba(255,176,32,0.5); }
+  .modal-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:24px; padding-top:16px; border-top:1px solid var(--line); }
+  .btn-cancel{
+    font-size:12.5px; font-weight:600; padding:9px 16px; border-radius:8px;
+    background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text-dim); cursor:pointer;
+  }
+  .btn-cancel:hover{ color: var(--text); }
+  .modal-error{
+    background: rgba(232,81,79,0.12); border:1px solid rgba(232,81,79,0.35); color: var(--red);
+    border-radius:8px; padding:9px 12px; font-size:12px; margin-bottom:8px;
+  }
+
   /* ---- Sugestões de melhoria (insights de IA) ---- */
   .insight-card{ border:1px solid var(--line); border-radius: var(--radius); padding:16px; margin-bottom:12px; background: var(--bg-panel-2); }
   .insight-card:last-child{ margin-bottom:0; }
@@ -304,6 +348,33 @@
   .insight-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color: var(--text-dim); font-weight:600; margin-bottom:4px; }
   .insight-text{ font-size:12.5px; line-height:1.55; color: var(--text); }
   .insight-text b{ color: var(--amber); font-weight:600; }
+
+  /* ---- Destaques (highlights automáticos) ---- */
+  .vs-label{ font-size:10.5px; color:var(--text-dim); margin-left:6px; }
+  .highlights-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+  .highlight-card{
+    background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding:18px; border-left:3px solid var(--flame);
+  }
+  .highlight-icon{ font-size:18px; margin-bottom:8px; }
+  .highlight-title{ font-size:13px; font-weight:700; line-height:1.4; margin-bottom:6px; }
+  .highlight-sub{ font-size:12px; color: var(--text-dim); }
+
+  /* ---- Funil ---- */
+  .funnel-wrap{ display:flex; flex-direction:column; align-items:center; gap:0; padding: 8px 0; }
+  .funnel-step{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#1a0e05; font-weight:700; border-radius:8px; padding:14px 20px; margin-bottom:4px;
+    background: linear-gradient(90deg, var(--flame), var(--amber));
+  }
+  .funnel-step-value{ font-size:20px; }
+  .funnel-step-label{ font-size:11.5px; font-weight:600; opacity:0.85; }
+  .funnel-drop{ font-size:11.5px; color: var(--text-dim); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .funnel-drop::before, .funnel-drop::after{ content:''; width:1px; height:10px; background:var(--line); }
+
+  @media (max-width: 900px){
+    .highlights-grid{ grid-template-columns: 1fr; }
+  }
 
   .btn-pdf{
     display:flex; align-items:center; gap:7px;
@@ -389,7 +460,7 @@
         </div>
         <div class="topbar-right">
           <div class="date-select">Últimos 30 dias ▾</div>
-          <div class="client-select">📁 Todos os clientes (17) ▾</div>
+          <div class="client-select">📁 Todos os clientes ▾</div>
           <button class="btn-pdf" onclick="downloadPdf('overview')">⬇ Baixar PDF</button>
         </div>
       </div>
@@ -483,7 +554,7 @@
       <div class="panel">
         <div class="panel-head">
           <h3>Clientes e status de acesso</h3>
-          <span class="panel-head-sub">17 contas cadastradas</span>
+          <span class="panel-head-sub" id="connectionsCount"></span>
         </div>
         <table>
           <thead><tr><th>Cliente</th><th>Meta Ads</th><th>Google Ads</th><th>Instagram</th></tr></thead>
@@ -501,7 +572,7 @@
           <p>Campanhas, conjuntos de anúncios e anúncios · dados de demonstração</p>
         </div>
         <div class="topbar-right">
-          <div class="date-select">Últimos 30 dias ▾</div>
+          <div class="date-select">Últimos 30 dias ▾ <span class="vs-label">vs. período anterior</span></div>
           <div class="client-select">📁 Todos os clientes ▾</div>
           <button class="btn-pdf" onclick="downloadPdf('meta')">⬇ Baixar PDF</button>
         </div>
@@ -514,18 +585,71 @@
         <div class="kpi"><div class="kpi-label">ROAS</div><div class="kpi-value">4,1x</div><div class="kpi-delta up">▲ 0,3x</div></div>
       </div>
 
-      <div class="panel-head" style="margin: 4px 4px 10px;">
-        <h3 style="font-size:15px;">Campanhas</h3>
-        <span class="panel-head-sub">Clique numa campanha para ver os anúncios</span>
+      <div class="g-tabs">
+        <div class="g-tab active" data-pane="m-resumo">Resumo</div>
+        <div class="g-tab" data-pane="m-funil">Funil</div>
+        <div class="g-tab" data-pane="m-evolucao">Evolução</div>
+        <div class="g-tab" data-pane="m-campanhas">Campanhas</div>
+        <div class="g-tab" data-pane="m-publicos">Públicos</div>
+        <div class="g-tab" data-pane="m-criativos">Criativos</div>
       </div>
 
-      <div class="legend-row">
-        <span>Campanha</span><span>Status</span><span>Invest.</span><span>CTR</span><span>CPC</span><span>Conv.</span><span>Performance</span><span></span>
+      <!-- RESUMO -->
+      <div class="g-pane active" id="m-resumo">
+        <div class="panel-head" style="margin: 4px 4px 10px;"><h3 style="font-size:15px;">Destaques</h3><span class="panel-head-sub">Gerados automaticamente a partir dos dados do período</span></div>
+        <div id="metaHighlights" class="highlights-grid"></div>
       </div>
 
-      <div id="campaignList"></div>
+      <!-- FUNIL -->
+      <div class="g-pane" id="m-funil">
+        <div class="panel">
+          <div class="panel-head"><h3>Funil de conversão</h3><span class="panel-head-sub">Do alcance até a conversão</span></div>
+          <div id="metaFunnel" class="funnel-wrap"></div>
+        </div>
+      </div>
 
-      <div class="footnote" style="margin-top:4px;">Performance compara CTR + ROAS da campanha contra a meta definida para a conta. Verde = acima da meta, âmbar = na meta, vermelho = abaixo.</div>
+      <!-- EVOLUÇÃO -->
+      <div class="g-pane" id="m-evolucao">
+        <div class="panel">
+          <div class="panel-head"><h3>Evolução diária</h3><span class="panel-head-sub">Investimento e conversões por dia</span></div>
+          <div class="chart" id="metaEvoChart"></div>
+        </div>
+      </div>
+
+      <!-- CAMPANHAS -->
+      <div class="g-pane" id="m-campanhas">
+        <div class="panel-head" style="margin: 4px 4px 10px;">
+          <h3 style="font-size:15px;">Campanhas</h3>
+          <span class="panel-head-sub">Clique numa campanha para ver os anúncios</span>
+        </div>
+        <div class="legend-row">
+          <span>Campanha</span><span>Status</span><span>Invest.</span><span>CTR</span><span>CPC</span><span>Conv.</span><span>Performance</span><span></span>
+        </div>
+        <div id="campaignList"></div>
+        <div class="footnote" style="margin-top:4px;">Performance compara CTR + ROAS da campanha contra a meta definida para a conta. Verde = acima da meta, âmbar = na meta, vermelho = abaixo.</div>
+      </div>
+
+      <!-- PÚBLICOS -->
+      <div class="g-pane" id="m-publicos">
+        <div class="panel">
+          <div class="panel-head"><h3>Públicos (conjuntos de anúncios)</h3><span class="panel-head-sub">Agrupado por segmentação</span></div>
+          <table>
+            <thead><tr><th>Conjunto</th><th>Campanha</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+            <tbody id="publicosTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CRIATIVOS -->
+      <div class="g-pane" id="m-criativos">
+        <div class="panel">
+          <div class="panel-head"><h3>Criativos (anúncios)</h3><span class="panel-head-sub">Todos os anúncios, ordenados por investimento</span></div>
+          <table>
+            <thead><tr><th></th><th>Anúncio</th><th>Campanha</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Performance</th></tr></thead>
+            <tbody id="criativosTable"></tbody>
+          </table>
+        </div>
+      </div>
 
       <div class="panel" style="margin-top:16px;">
         <div class="panel-head">
@@ -545,7 +669,7 @@
           <p>Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração</p>
         </div>
         <div class="topbar-right">
-          <div class="date-select">Últimos 30 dias ▾</div>
+          <div class="date-select">Últimos 30 dias ▾ <span class="vs-label">vs. período anterior</span></div>
           <div class="client-select">📁 Todos os clientes ▾</div>
           <button class="btn-pdf" onclick="downloadPdf('google')">⬇ Baixar PDF</button>
         </div>
@@ -559,12 +683,35 @@
       </div>
 
       <div class="g-tabs">
-        <div class="g-tab active" data-pane="g-campaigns">Campanhas</div>
+        <div class="g-tab active" data-pane="g-resumo">Resumo</div>
+        <div class="g-tab" data-pane="g-funil">Funil</div>
+        <div class="g-tab" data-pane="g-evolucao">Evolução</div>
+        <div class="g-tab" data-pane="g-campaigns">Campanhas</div>
         <div class="g-tab" data-pane="g-keywords">Palavras-chave</div>
-        <div class="g-tab" data-pane="g-auction">Leilão (Auction Insights)</div>
+        <div class="g-tab" data-pane="g-auction">Leilão</div>
+        <div class="g-tab" data-pane="g-criativos">Criativos</div>
       </div>
 
-      <div class="g-pane active" id="g-campaigns">
+      <div class="g-pane active" id="g-resumo">
+        <div class="panel-head" style="margin: 4px 4px 10px;"><h3 style="font-size:15px;">Destaques</h3><span class="panel-head-sub">Gerados automaticamente a partir dos dados do período</span></div>
+        <div id="googleHighlights" class="highlights-grid"></div>
+      </div>
+
+      <div class="g-pane" id="g-funil">
+        <div class="panel">
+          <div class="panel-head"><h3>Funil de conversão</h3><span class="panel-head-sub">Do alcance até a conversão</span></div>
+          <div id="googleFunnel" class="funnel-wrap"></div>
+        </div>
+      </div>
+
+      <div class="g-pane" id="g-evolucao">
+        <div class="panel">
+          <div class="panel-head"><h3>Evolução diária</h3><span class="panel-head-sub">Investimento e conversões por dia</span></div>
+          <div class="chart" id="googleEvoChart"></div>
+        </div>
+      </div>
+
+      <div class="g-pane" id="g-campaigns">
         <div class="panel">
           <table>
             <thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>CTR</th><th>CPC méd.</th><th>Conv.</th></tr></thead>
@@ -594,6 +741,17 @@
         </div>
       </div>
 
+      <div class="g-pane" id="g-criativos">
+        <div class="panel">
+          <div class="panel-head"><h3>Criativos (anúncios responsivos)</h3><span class="panel-head-sub">Força do anúncio e desempenho por campanha</span></div>
+          <table>
+            <thead><tr><th>Campanha</th><th>Força do anúncio</th><th>Cliques</th><th>CTR</th><th>Conv.</th></tr></thead>
+            <tbody id="googleCriativosTable"></tbody>
+          </table>
+          <div class="footnote">"Força do anúncio" é a métrica do próprio Google Ads que avalia a variedade e relevância dos títulos e descrições enviados — quanto mais forte, melhor o anúncio tende a performar.</div>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head">
           <h3>💡 Sugestões de melhoria</h3>
@@ -611,7 +769,7 @@
         <div class="topbar-right"><div class="client-select">📁 Todos os clientes ▾</div></div>
       </div>
       <div class="panel">
-        <div class="footnote" style="border-top:none; padding-top:0; margin-top:0;">Só 7 dos 17 clientes têm Instagram Business vinculado. Assim que o Meta App estiver aprovado, esta tela mostra alcance, engajamento e desempenho de Reels por cliente.</div>
+        <div class="footnote" style="border-top:none; padding-top:0; margin-top:0;">Assim que um cliente tiver Instagram Business vinculado à Página dele no Meta, esta tela mostra alcance, engajamento e desempenho de Reels — funciona por cliente, então clientes sem Instagram vinculado simplesmente não aparecem aqui.</div>
       </div>
     </section>
 
@@ -637,6 +795,10 @@
         </div>
       </div>
 
+      <div id="backendOfflineBanner" class="offline-banner" style="display:none;">
+        ⚠ Não consegui falar com o backend em <code id="backendUrlLabel"></code>. Confira se ele está rodando (<code>npm start</code> na pasta do backend) e recarregue a página.
+      </div>
+
       <div class="grid" id="clientsSummaryGrid">
         <div class="kpi"><div class="kpi-label">Clientes ativos</div><div class="kpi-value" id="sumActive">–</div></div>
         <div class="kpi"><div class="kpi-label">Em onboarding</div><div class="kpi-value" id="sumOnboarding">–</div></div>
@@ -647,7 +809,7 @@
       <div class="clients-toolbar">
         <input type="text" id="clientSearch" class="client-search" placeholder="Buscar por nome ou nicho..." oninput="renderClientsMgmt()">
         <span class="clients-count" id="clientsCount"></span>
-        <button class="btn-add" onclick="addClientPrompt()">+ Novo cliente</button>
+        <button class="btn-add" onclick="openAddClientModal()">+ Novo cliente</button>
       </div>
 
       <div class="clients-table-wrap">
@@ -681,8 +843,63 @@
         </table>
       </div>
 
-      <div class="footnote">Esta tabela é só de organização interna da equipe — não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" aqui é só visual neste protótipo; no backend, isso vira um cadastro de verdade que já cria a linha em "Conexões" automaticamente.</div>
+      <div class="footnote">Esta tabela é só de organização interna da equipe — não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>) — sobrevive a reiniciar o servidor.</div>
     </section>
+
+    <!-- ================= MODAL: NOVO CLIENTE ================= -->
+    <div class="drawer-overlay" id="addClientModal" onclick="if(event.target===this) closeAddClientModal()">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3>Novo cliente</h3>
+          <button type="button" class="modal-close" onclick="closeAddClientModal()">✕</button>
+        </div>
+        <form id="addClientForm" onsubmit="submitAddClient(event)">
+          <div id="addClientError" class="modal-error" style="display:none;"></div>
+
+          <label class="modal-label">Nome do cliente *</label>
+          <input class="modal-input" id="acName" required placeholder="Ex: Ótica Visão Clara">
+
+          <label class="modal-label">Nicho</label>
+          <input class="modal-input" id="acNiche" placeholder="Ex: Saúde · Ótica">
+
+          <div class="modal-row">
+            <div>
+              <label class="modal-label">Valor do contrato (R$/mês)</label>
+              <input class="modal-input" id="acContract" type="number" min="0" step="1" placeholder="0">
+            </div>
+            <div>
+              <label class="modal-label">Invest. diário (R$/dia)</label>
+              <input class="modal-input" id="acDaily" type="number" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <label class="modal-label">Forma de pagamento do investimento</label>
+          <select class="modal-input" id="acPayment" onchange="togglePixField()">
+            <option value="cartao">Cartão</option>
+            <option value="pix">Saldo Pix (recarga manual)</option>
+          </select>
+
+          <div id="acPixBalanceWrap" style="display:none;">
+            <label class="modal-label">Saldo Pix atual (R$)</label>
+            <input class="modal-input" id="acPixBalance" type="number" min="0" step="1" placeholder="0">
+          </div>
+
+          <label class="modal-label">Site</label>
+          <input class="modal-input" id="acSite" placeholder="exemplo.com.br">
+
+          <label class="modal-label">Instagram</label>
+          <input class="modal-input" id="acInstagram" placeholder="@usuario">
+
+          <label class="modal-label">Link do Drive</label>
+          <input class="modal-input" id="acDrive" placeholder="https://drive.google.com/...">
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeAddClientModal()">Cancelar</button>
+            <button type="submit" class="btn-add">Salvar cliente</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
   </main>
 
@@ -691,6 +908,11 @@
 </div>
 
 <script>
+  // Endereço do backend. Enquanto roda local, deixe como está.
+  // Quando o backend for publicado (Hostinger/Render), troque só esta linha.
+  const API_BASE_URL = 'http://localhost:4000';
+  { const el = document.getElementById('backendUrlLabel'); if (el) el.textContent = API_BASE_URL; }
+
   /* ---------- navigation ---------- */
   document.querySelectorAll('.nav-item').forEach(item=>{
     item.addEventListener('click', ()=>{
@@ -703,54 +925,53 @@
 
   document.querySelectorAll('.g-tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
-      document.querySelectorAll('.g-tab').forEach(t=>t.classList.remove('active'));
+      const scope = tab.closest('.view'); // escopa por seção (Meta ou Google), não pela página inteira
+      scope.querySelectorAll('.g-tab').forEach(t=>t.classList.remove('active'));
       tab.classList.add('active');
-      document.querySelectorAll('.g-pane').forEach(p=>p.classList.remove('active'));
-      document.getElementById(tab.dataset.pane).classList.add('active');
+      scope.querySelectorAll('.g-pane').forEach(p=>p.classList.remove('active'));
+      scope.querySelector('#' + tab.dataset.pane).classList.add('active');
     });
   });
 
   /* ---------- clients (sidebar + tables) ---------- */
-  const clients = [
-    { name:'Ótica Visão Clara', meta:'on', google:'on', ig:'on' },
-    { name:'Grupo Farmatta', meta:'on', google:'on', ig:'off' },
-    { name:'Construtora Alicerce', meta:'on', google:'pending', ig:'off' },
-    { name:'Studio Bela Pele', meta:'on', google:'off', ig:'on' },
-    { name:'Nutrivita Suplementos', meta:'pending', google:'on', ig:'off' },
-    { name:'Auto Peças Rocha', meta:'on', google:'on', ig:'off' },
-    { name:'Clínica OdontoPrime', meta:'on', google:'off', ig:'on' },
-  ];
   const initials = n => n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const brl = v => v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0 });
   const dotColor = s => s==='on' ? 'var(--green)' : s==='pending' ? 'var(--amber)' : '#565C66';
   const statusLabel = s => s==='on' ? 'Conectado' : s==='pending' ? 'Aguardando aprovação' : 'Não conectado';
   const badge = s => `<span style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); color:${dotColor(s)}; border:1px solid ${dotColor(s)}33;">${statusLabel(s)}</span>`;
 
-  const listEl = document.getElementById('clientList');
-  clients.forEach((c,i)=>{
-    const row = document.createElement('div');
-    row.className = 'client-item' + (i===0 ? ' active' : '');
-    row.innerHTML = `
-      <div class="client-item-name">
-        <div class="client-avatar">${initials(c.name)}</div>
-        <span>${c.name}</span>
-      </div>
-      <div class="client-dots">
-        <span style="background:${dotColor(c.meta)}" title="Meta ${statusLabel(c.meta)}"></span>
-        <span style="background:${dotColor(c.google)}" title="Google ${statusLabel(c.google)}"></span>
-        <span style="background:${dotColor(c.ig)}" title="Instagram ${statusLabel(c.ig)}"></span>
-      </div>`;
-    listEl.appendChild(row);
-  });
-
-  ['clientTable','clientTable2'].forEach(id=>{
-    const tableEl = document.getElementById(id);
-    if(!tableEl) return;
-    clients.forEach(c=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td>${badge(c.meta)}</td><td>${badge(c.google)}</td><td>${badge(c.ig)}</td>`;
-      tableEl.appendChild(tr);
+  function renderSidebarAndConnections(clients){
+    const listEl = document.getElementById('clientList');
+    listEl.innerHTML = '';
+    clients.forEach((c,i)=>{
+      const row = document.createElement('div');
+      row.className = 'client-item' + (i===0 ? ' active' : '');
+      row.innerHTML = `
+        <div class="client-item-name">
+          <div class="client-avatar">${initials(c.name)}</div>
+          <span>${c.name}</span>
+        </div>
+        <div class="client-dots">
+          <span style="background:${dotColor(c.meta)}" title="Meta ${statusLabel(c.meta)}"></span>
+          <span style="background:${dotColor(c.google)}" title="Google ${statusLabel(c.google)}"></span>
+          <span style="background:${dotColor(c.ig)}" title="Instagram ${statusLabel(c.ig)}"></span>
+        </div>`;
+      listEl.appendChild(row);
     });
-  });
+
+    ['clientTable','clientTable2'].forEach(id=>{
+      const tableEl = document.getElementById(id);
+      if(!tableEl) return;
+      tableEl.innerHTML = '';
+      clients.forEach(c=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${c.name}</td><td>${badge(c.meta)}</td><td>${badge(c.google)}</td><td>${badge(c.ig)}</td>`;
+        tableEl.appendChild(tr);
+      });
+    });
+    const connCountEl = document.getElementById('connectionsCount');
+    if (connCountEl) connCountEl.textContent = `${clients.length} conta${clients.length === 1 ? '' : 's'} cadastrada${clients.length === 1 ? '' : 's'}`;
+  }
 
   /* ---------- overview chart ---------- */
   const chart = document.getElementById('chart');
@@ -837,6 +1058,90 @@
     campaignListEl.appendChild(block);
   });
 
+  /* ---------- Meta: Destaques, Funil, Evolução, Públicos, Criativos ---------- */
+  (function renderMetaExtras(){
+    // achata todos os anúncios de todas as campanhas, cada um sabendo de qual campanha veio
+    const allAds = [];
+    metaCampaigns.forEach(c => c.ads.forEach(a => allAds.push({ ...a, campaign: c.name })));
+
+    // --- Destaques (highlights automáticos, no espírito do que você viu no exemplo) ---
+    const topCampaign = [...metaCampaigns].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,'')))[0];
+    const topAd = [...allAds].sort((a,b) => a.cpc.localeCompare(b.cpc))[0];
+    const bestCtrAd = [...allAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0];
+    const highlights = [
+      { icon:'💰', title:`Investimento concentrado em "${topCampaign.name}"`, sub:`${topCampaign.spend} do total investido no período` },
+      { icon:'📈', title:`Anúncio com melhor CTR: "${bestCtrAd.name}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${bestCtrAd.campaign}` },
+      { icon:'⚡', title:`Menor custo por clique: "${topAd.name}"`, sub:`${topAd.cpc} por clique — vale testar escalar o orçamento aqui` },
+    ];
+    document.getElementById('metaHighlights').innerHTML = highlights.map(h => `
+      <div class="highlight-card">
+        <div class="highlight-icon">${h.icon}</div>
+        <div class="highlight-title">${h.title}</div>
+        <div class="highlight-sub">${h.sub}</div>
+      </div>`).join('');
+
+    // --- Funil (impressões → cliques → visitas à página → conversões) ---
+    const funnel = [
+      { label:'Impressões', value:412800 },
+      { label:'Cliques no anúncio', value:11724 },
+      { label:'Visitas à página', value:8940 },
+      { label:'Conversões', value:341 },
+    ];
+    let funnelHtml = '';
+    funnel.forEach((step, i) => {
+      funnelHtml += `<div class="funnel-step" style="width:${420 - i*70}px;"><span class="funnel-step-value">${step.value.toLocaleString('pt-BR')}</span><span class="funnel-step-label">${step.label}</span></div>`;
+      if (i < funnel.length - 1) {
+        const pct = ((funnel[i+1].value / step.value) * 100).toFixed(1);
+        funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
+      }
+    });
+    document.getElementById('metaFunnel').innerHTML = funnelHtml;
+
+    // --- Evolução diária (reaproveita o estilo do gráfico da Visão Geral) ---
+    const evoChart = document.getElementById('metaEvoChart');
+    for (let i = 0; i < 20; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = (25 + Math.round(Math.random() * 140)) + 'px';
+      evoChart.appendChild(bar);
+    }
+
+    // --- Públicos (conjuntos de anúncios, agrupados a partir do campo "set" de cada anúncio) ---
+    const publicosMap = {};
+    allAds.forEach(a => {
+      const key = a.set + '|' + a.campaign;
+      if (!publicosMap[key]) publicosMap[key] = { set: a.set, campaign: a.campaign, spend: 0, conv: 0, ctrs: [], cpcs: [] };
+      publicosMap[key].spend += parseFloat(a.spend.replace('R$', '').replace(/\./g,'').replace(',','.'));
+      publicosMap[key].conv += a.conv;
+      publicosMap[key].ctrs.push(parseFloat(a.ctr));
+      publicosMap[key].cpcs.push(parseFloat(a.cpc.replace('R$','').replace(',','.')));
+    });
+    const publicosEl = document.getElementById('publicosTable');
+    Object.values(publicosMap).sort((a,b) => b.spend - a.spend).forEach(p => {
+      const avgCtr = (p.ctrs.reduce((s,v)=>s+v,0) / p.ctrs.length).toFixed(1);
+      const avgCpc = (p.cpcs.reduce((s,v)=>s+v,0) / p.cpcs.length).toFixed(2);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.set}</td><td>${p.campaign}</td><td>${brl(p.spend)}</td><td>${avgCtr}%</td><td>${brl(parseFloat(avgCpc))}</td><td>${p.conv}</td>`;
+      publicosEl.appendChild(tr);
+    });
+
+    // --- Criativos (todos os anúncios, achatados, ordenados por investimento) ---
+    const criativosEl = document.getElementById('criativosTable');
+    [...allAds].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,''))).forEach(a => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="ad-thumb"></div></td>
+        <td>${a.name}</td>
+        <td>${a.campaign}</td>
+        <td>${a.spend}</td>
+        <td>${a.ctr}</td>
+        <td>${a.cpc}</td>
+        <td>${a.conv}</td>
+        <td><span style="color:${perfColor(a.perf)}; font-weight:700;">${a.perf}%</span></td>`;
+      criativosEl.appendChild(tr);
+    });
+  })();
+
   /* ---------- Google Ads: campaigns, keywords, auction ---------- */
   const gCampaigns = [
     { name:'Pesquisa · Marca', type:'Pesquisa', spend:'R$ 2.180', clicks:1240, ctr:'6,8%', cpc:'R$ 1,76', conv:98 },
@@ -889,7 +1194,75 @@
     if(r.name === 'Sua conta') tr.style.fontWeight = '700';
     auctionEl.appendChild(tr);
   });
-  /* ---------- Sugestões de melhoria (exemplo do formato final) ---------- */
+
+  /* ---------- Google: Destaques, Funil, Evolução, Criativos ---------- */
+  (function renderGoogleExtras(){
+    const parseBRL = s => parseFloat(s.replace('R$','').replace(/\./g,'').replace(',','.').trim());
+    const parsePct = s => parseFloat(s.replace('%','').replace(',','.'));
+
+    // --- Destaques ---
+    const gTotalSpend = gCampaigns.reduce((s,c) => s + parseBRL(c.spend), 0);
+    const topCampaign = [...gCampaigns].sort((a,b) => parseBRL(b.spend) - parseBRL(a.spend))[0];
+    const bestQsKw = [...keywords].sort((a,b) => b.qs - a.qs)[0];
+    const worstQsKw = [...keywords].sort((a,b) => a.qs - b.qs)[0];
+    const highlights = [
+      { icon:'💰', title:`Investimento concentrado em "${topCampaign.name}"`, sub:`${topCampaign.spend} de ${brl(gTotalSpend)} investidos (${Math.round(parseBRL(topCampaign.spend)/gTotalSpend*100)}%)` },
+      { icon:'✅', title:`Melhor Quality Score: "${bestQsKw.kw}"`, sub:`${bestQsKw.qs}/10 — CPC de ${bestQsKw.cpc}, bem abaixo da média da conta` },
+      { icon:'⚠', title:`Quality Score mais baixo: "${worstQsKw.kw}"`, sub:`${worstQsKw.qs}/10 — CPC de ${worstQsKw.cpc}, a mais cara da conta. Vale revisar correspondência e copy.` },
+    ];
+    document.getElementById('googleHighlights').innerHTML = highlights.map(h => `
+      <div class="highlight-card">
+        <div class="highlight-icon">${h.icon}</div>
+        <div class="highlight-title">${h.title}</div>
+        <div class="highlight-sub">${h.sub}</div>
+      </div>`).join('');
+
+    // --- Funil (impressões → cliques → conversões, estimando impressões a partir do CTR) ---
+    const totalClicks = gCampaigns.reduce((s,c) => s + c.clicks, 0);
+    const totalConv = gCampaigns.reduce((s,c) => s + c.conv, 0);
+    const avgCtr = gCampaigns.reduce((s,c) => s + parsePct(c.ctr), 0) / gCampaigns.length;
+    const estImpressions = Math.round(totalClicks / (avgCtr / 100));
+    const funnel = [
+      { label:'Impressões', value: estImpressions },
+      { label:'Cliques', value: totalClicks },
+      { label:'Conversões', value: totalConv },
+    ];
+    let funnelHtml = '';
+    funnel.forEach((step, i) => {
+      funnelHtml += `<div class="funnel-step" style="width:${380 - i*80}px;"><span class="funnel-step-value">${step.value.toLocaleString('pt-BR')}</span><span class="funnel-step-label">${step.label}</span></div>`;
+      if (i < funnel.length - 1) {
+        const pct = ((funnel[i+1].value / step.value) * 100).toFixed(1);
+        funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
+      }
+    });
+    document.getElementById('googleFunnel').innerHTML = funnelHtml;
+
+    // --- Evolução diária ---
+    const gEvoChart = document.getElementById('googleEvoChart');
+    for (let i = 0; i < 20; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar g';
+      bar.style.height = (25 + Math.round(Math.random() * 140)) + 'px';
+      gEvoChart.appendChild(bar);
+    }
+
+    // --- Criativos (anúncios responsivos, com "força do anúncio" mock por campanha) ---
+    const adStrengths = [
+      { level:'Excelente', color:'var(--green)' },
+      { level:'Boa', color:'var(--amber)' },
+      { level:'Média', color:'var(--amber)' },
+      { level:'Ruim', color:'var(--red)' },
+    ];
+    const criativosEl = document.getElementById('googleCriativosTable');
+    gCampaigns.forEach((c, i) => {
+      const strength = adStrengths[i % adStrengths.length];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${c.name}</td><td><span style="color:${strength.color}; font-weight:700;">${strength.level}</span></td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.conv}</td>`;
+      criativosEl.appendChild(tr);
+    });
+  })();
+
+
   const metaInsightsData = [
     {
       campaign: 'Alcance de marca · Q3', priority: 'alta',
@@ -1058,18 +1431,8 @@
     document.getElementById('printReport').innerHTML = builders[context]();
     window.print();
   }
-  /* ---------- Clientes (gestão interna, estilo ClickUp) ---------- */
-  let clientsMgmt = [
-    { name:'Ótica Visão Clara', contract:1200, start:'12/03/2025', niche:'Saúde · Ótica', platforms:['meta','google','ig'], daily:180, site:'oticavisaoclara.com.br', ig:'@oticavisaoclara', drive:true, status:'ativo', owner:'JC', payment:'pix', pixBalance:1420 },
-    { name:'Grupo Farmatta', contract:1800, start:'02/06/2025', niche:'Farmácia', platforms:['meta','google'], daily:260, site:'grupofarmatta.com.br', ig:null, drive:true, status:'ativo', owner:'JC', payment:'cartao', pixBalance:null },
-    { name:'Construtora Alicerce', contract:2200, start:'20/07/2025', niche:'Construção civil', platforms:['meta'], daily:340, site:'construtoraalicerce.com.br', ig:null, drive:false, status:'onboarding', owner:'JC', payment:'pix', pixBalance:680 },
-    { name:'Studio Bela Pele', contract:900, start:'05/11/2024', niche:'Estética', platforms:['meta','ig'], daily:90, site:null, ig:'@studiobelapele', drive:true, status:'ativo', owner:'JC', payment:'pix', pixBalance:180 },
-    { name:'Nutrivita Suplementos', contract:1100, start:'18/01/2026', niche:'Suplementos', platforms:['google'], daily:150, site:'nutrivitasuplementos.com.br', ig:null, drive:false, status:'onboarding', owner:'JC', payment:'cartao', pixBalance:null },
-    { name:'Auto Peças Rocha', contract:1000, start:'09/09/2024', niche:'Automotivo', platforms:['meta','google'], daily:120, site:'autopecasrocha.com.br', ig:null, drive:true, status:'pausado', owner:'JC', payment:'pix', pixBalance:60 },
-    { name:'Clínica OdontoPrime', contract:1500, start:'27/04/2025', niche:'Odontologia', platforms:['meta','ig'], daily:200, site:'odontoprime.com.br', ig:'@odontoprime', drive:true, status:'ativo', owner:'JC', payment:'pix', pixBalance:2100 },
-  ];
-
-  const brl = v => v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0 });
+  /* ---------- Clientes (gestão interna, estilo ClickUp) — dados vêm do backend ---------- */
+  let clientsMgmt = [];
 
   const platformChip = p => {
     const map = { meta:['Meta','chip-meta'], google:['Google','chip-google'], ig:['IG','chip-ig'] };
@@ -1078,7 +1441,7 @@
   };
   const statusChip = s => {
     const map = { ativo:'Ativo', onboarding:'Onboarding', pausado:'Pausado' };
-    return `<span class="status-chip status-${s}">${map[s]}</span>`;
+    return `<span class="status-chip status-${s}">${map[s] || s}</span>`;
   };
 
   // Estima quantos dias de verba restam (saldo Pix ÷ investimento diário)
@@ -1123,20 +1486,17 @@
     document.getElementById('clientsCount').textContent =
       query ? `${filtered.length} de ${clientsMgmt.length} clientes` : `${clientsMgmt.length} clientes cadastrados`;
 
-    // Totais da tabela (refletem a lista filtrada, se houver busca)
     const totalContract = filtered.reduce((sum, c) => sum + c.contract, 0);
     const totalDaily = filtered.reduce((sum, c) => sum + c.daily, 0);
     document.getElementById('totalContract').textContent = `${brl(totalContract)}/mês`;
     document.getElementById('totalDaily').textContent = `${brl(totalDaily)}/dia`;
 
-    // Cards de resumo no topo (sempre sobre a base completa de clientes)
     document.getElementById('sumActive').textContent = clientsMgmt.filter(c => c.status === 'ativo').length;
     document.getElementById('sumOnboarding').textContent = clientsMgmt.filter(c => c.status === 'onboarding').length;
     document.getElementById('sumContract').textContent = `${brl(clientsMgmt.reduce((s,c)=>s+c.contract,0))}/mês`;
     document.getElementById('sumDaily').textContent = `${brl(clientsMgmt.reduce((s,c)=>s+c.daily,0))}/dia`;
     renderPixAlerts();
   }
-  renderClientsMgmt();
 
   function renderPixAlerts(){
     const panel = document.getElementById('pixAlertPanel');
@@ -1158,17 +1518,102 @@
         <span class="balance-chip ${c.days < 3 ? 'balance-critical' : 'balance-warning'}">${c.days < 3 ? `⚠ Acaba em ${c.days}d` : `${c.days}d restantes`}</span>
       </div>`).join('');
   }
-  renderPixAlerts();
 
-  function addClientPrompt(){
-    const name = window.prompt('Nome do novo cliente:');
-    if (!name) return;
-    clientsMgmt.push({
-      name, contract: 0, start: todayStr, niche: '—', platforms: [], daily: 0,
-      site: null, ig: null, drive: false, status: 'onboarding', owner: 'JC',
-      payment: 'cartao', pixBalance: null,
-    });
+  /* ---------- Ponte com o backend: converte o formato da API pro formato das telas ---------- */
+  const apiStatusToUi = s => s === 'connected' ? 'on' : s === 'pending' ? 'pending' : 'off';
+  const formatDateBR = iso => { if(!iso) return '—'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
+
+  function toMgmtShape(a){
+    const platforms = [];
+    if (a.meta?.status === 'connected') platforms.push('meta');
+    if (a.google?.status === 'connected') platforms.push('google');
+    if (a.instagramApi?.status === 'connected') platforms.push('ig');
+    return {
+      name: a.name, contract: a.contractValue || 0, start: formatDateBR(a.startDate),
+      niche: a.niche || '—', platforms, daily: a.dailyBudget || 0,
+      site: a.site, ig: a.instagram, drive: !!a.drive,
+      status: a.status || 'onboarding', owner: a.owner || 'JC',
+      payment: a.payment || 'cartao', pixBalance: a.pixBalance ?? null,
+    };
+  }
+  function toConnShape(a){
+    return { name: a.name, meta: apiStatusToUi(a.meta?.status), google: apiStatusToUi(a.google?.status), ig: apiStatusToUi(a.instagramApi?.status) };
+  }
+
+  async function loadClientsFromBackend(){
+    const banner = document.getElementById('backendOfflineBanner');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      clientsMgmt = data.map(toMgmtShape);
+      renderSidebarAndConnections(data.map(toConnShape));
+      if (banner) banner.style.display = 'none';
+    } catch (err) {
+      console.error('Não consegui falar com o backend:', err);
+      clientsMgmt = [];
+      renderSidebarAndConnections([]);
+      if (banner) banner.style.display = 'flex';
+    }
     renderClientsMgmt();
+  }
+  loadClientsFromBackend();
+
+  /* ---------- Formulário "+ Novo cliente" ---------- */
+  function openAddClientModal(){
+    const overlay = document.getElementById('addClientModal');
+    overlay.style.display = 'block';
+    // pequeno atraso pra garantir que o navegador aplique a transição (senão ela "pula" direto)
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
+    document.getElementById('addClientError').style.display = 'none';
+    document.getElementById('addClientForm').reset();
+    togglePixField();
+  }
+  function closeAddClientModal(){
+    const overlay = document.getElementById('addClientModal');
+    overlay.classList.remove('open');
+    setTimeout(() => { overlay.style.display = 'none'; }, 280); // espera a animação de saída terminar
+  }
+  function togglePixField(){
+    const isPix = document.getElementById('acPayment').value === 'pix';
+    document.getElementById('acPixBalanceWrap').style.display = isPix ? 'block' : 'none';
+  }
+
+  async function submitAddClient(ev){
+    ev.preventDefault();
+    const errEl = document.getElementById('addClientError');
+    errEl.style.display = 'none';
+
+    const payload = {
+      name: document.getElementById('acName').value.trim(),
+      niche: document.getElementById('acNiche').value.trim(),
+      contractValue: document.getElementById('acContract').value,
+      dailyBudget: document.getElementById('acDaily').value,
+      site: document.getElementById('acSite').value.trim() || null,
+      instagram: document.getElementById('acInstagram').value.trim() || null,
+      drive: document.getElementById('acDrive').value.trim() || null,
+      payment: document.getElementById('acPayment').value,
+      pixBalance: document.getElementById('acPixBalance').value,
+    };
+    if (!payload.name) {
+      errEl.textContent = 'O nome do cliente é obrigatório.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar.');
+      closeAddClientModal();
+      await loadClientsFromBackend();
+    } catch (err) {
+      errEl.textContent = `Não consegui salvar: ${err.message}. Confira se o backend está rodando (npm start) em ${API_BASE_URL}.`;
+      errEl.style.display = 'block';
+    }
   }
 </script>
 </body>
