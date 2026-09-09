@@ -1,13 +1,10 @@
 const express = require('express');
+const crypto = require('crypto');
 const accountsStore = require('../data/accountsStore');
+const googleService = require('../services/googleService');
 
 const router = express.Router();
 
-// Campos que o cliente (frontend) tem permissão de definir/editar.
-// Qualquer coisa fora dessa lista no corpo da requisição é ignorada —
-// isso é o que impede "mass assignment" (alguém mandando um PATCH com
-// { "id": "outro-id", "meta": { "status": "connected" } } tentando
-// forjar uma conexão que não existe de verdade).
 const EDITABLE_FIELDS = [
   'name', 'niche', 'contractValue', 'dailyBudget', 'owner',
   'site', 'instagram', 'drive', 'payment', 'pixBalance', 'status',
@@ -26,15 +23,12 @@ function pickEditableFields(body) {
   return clean;
 }
 
-// GET /api/accounts — lista clientes, status de conexão e dados de gestão
-// (contrato, nicho, orçamento diário) usados na aba "Clientes" do frontend.
+// GET /api/accounts — lista clientes, status de conexão e dados de gestão.
 router.get('/', (req, res) => {
   res.json(accountsStore.getAll());
 });
 
-// POST /api/accounts — cadastra um novo cliente. É este endpoint que o
-// formulário "+ Novo cliente" do frontend chama. Fica salvo em
-// accounts.json e sobrevive a reiniciar o servidor.
+// POST /api/accounts — cadastra um novo cliente.
 router.post('/', (req, res) => {
   const name = sanitizeString(req.body.name, 120);
   if (!name) return res.status(400).json({ error: 'Campo "name" é obrigatório (até 120 caracteres).' });
@@ -61,7 +55,10 @@ router.post('/', (req, res) => {
     site: sanitizeString(req.body.site, 200),
     instagram: sanitizeString(req.body.instagram, 60),
     drive: sanitizeString(req.body.drive, 300),
-    meta: { status: 'not_connected', adAccountId: null },
+    // Token aleatório usado no link de compartilhamento (visualização do
+    // cliente, sem login nenhum). 24 bytes ~= impossível de adivinhar.
+    shareToken: crypto.randomBytes(24).toString('base64url'),
+    meta: { status: 'not_connected', adAccountId: null, pageId: null, igBusinessId: null },
     google: { status: 'not_connected', customerId: null },
     instagramApi: { status: 'not_connected', igUserId: null },
   };
@@ -70,9 +67,7 @@ router.post('/', (req, res) => {
   res.status(201).json(newAccount);
 });
 
-// PATCH /api/accounts/:id — edita campos de gestão de um cliente já
-// cadastrado. Só aceita os campos em EDITABLE_FIELDS — o resto do body
-// é descartado (proteção contra mass assignment).
+// PATCH /api/accounts/:id — edita campos de gestão (protegido contra mass assignment).
 router.patch('/:id', (req, res) => {
   const changes = pickEditableFields(req.body);
   if (Object.keys(changes).length === 0) {
@@ -88,6 +83,48 @@ router.delete('/:id', (req, res) => {
   const removed = accountsStore.remove(req.params.id);
   if (!removed) return res.status(404).json({ error: 'Cliente não encontrado.' });
   res.status(204).end();
+});
+
+// POST /api/accounts/:id/connect-google — o botão "Conectar Google Ads"
+// do dashboard. Recebe o Customer ID que o cliente já tem vinculado à
+// sua MCC, TESTA de verdade contra a API do Google (não salva às cegas)
+// e só marca como conectado se a conta realmente responder.
+router.post('/:id/connect-google', async (req, res) => {
+  const customerId = sanitizeString(req.body.customerId, 20);
+  if (!customerId) return res.status(400).json({ error: 'Informe o ID da conta Google Ads.' });
+
+  const accounts = accountsStore.getAll();
+  const account = accounts.find((a) => a.id === req.params.id);
+  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+  try {
+    const verified = await googleService.verifyCustomerAccess(customerId);
+    const updated = accountsStore.update(req.params.id, {
+      google: { status: 'connected', customerId, accountName: verified.name },
+    });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({
+      error: `Não consegui confirmar essa conta: ${err.message}. Confira se o ID está certo e se ela já foi vinculada à sua MCC.`,
+    });
+  }
+});
+
+// POST /api/accounts/:id/meta-connection — salva os IDs do Meta (Ad
+// Account, Página, Instagram Business) informados manualmente. Ainda
+// não faz verificação real contra a API — isso liga quando o App do
+// Meta for Developers estiver pronto (fica marcado como "pendente" até lá).
+router.post('/:id/meta-connection', (req, res) => {
+  const adAccountId = sanitizeString(req.body.adAccountId, 40);
+  const pageId = sanitizeString(req.body.pageId, 40);
+  const igBusinessId = sanitizeString(req.body.igBusinessId, 40);
+
+  const updated = accountsStore.update(req.params.id, {
+    meta: { status: adAccountId ? 'pending' : 'not_connected', adAccountId, pageId, igBusinessId },
+  });
+  if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  res.json(updated);
 });
 
 module.exports = router;
