@@ -1,63 +1,45 @@
+const db = require('./db');
+
 /**
- * Registro de clientes/contas geridas pela agência — agora persistido
- * num arquivo JSON de verdade (accounts.json, na mesma pasta), em vez de
- * um array que reseta toda vez que o servidor reinicia.
- *
- * Isso ainda não é um banco de dados de verdade (Postgres/SQLite) — é um
- * degrau intermediário: já sobrevive a reiniciar o servidor, mas não
- * aguenta múltiplas pessoas editando ao mesmo tempo nem consultas
- * complexas. Trocar por um banco de verdade no futuro é só reescrever
- * as 4 funções abaixo (load/save/etc.) — o resto do código nem percebe.
+ * Mesmo "formato" de antes (cada conta é um objeto), só que agora
+ * guardado como uma linha de banco (coluna JSON) em vez de um arquivo.
+ * Isso sobrevive a qualquer deploy, reinício ou republicação.
  */
 
-const fs = require('fs');
-const path = require('path');
-
-const FILE_PATH = path.join(__dirname, 'accounts.json');
-
-function load() {
-  if (!fs.existsSync(FILE_PATH)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(FILE_PATH, 'utf-8'));
-  } catch {
-    return [];
-  }
+async function getAll() {
+  await db.ensureTable();
+  const [rows] = await db.getPool().query('SELECT data FROM accounts');
+  return rows.map((r) => (typeof r.data === 'string' ? JSON.parse(r.data) : r.data));
 }
 
-function save(accounts) {
-  fs.writeFileSync(FILE_PATH, JSON.stringify(accounts, null, 2), 'utf-8');
-}
-
-function getAll() {
-  return load();
-}
-
-function add(account) {
-  const accounts = load();
-  accounts.push(account);
-  save(accounts);
+async function add(account) {
+  await db.ensureTable();
+  await db.getPool().query('INSERT INTO accounts (id, data) VALUES (?, ?)', [account.id, JSON.stringify(account)]);
   return account;
 }
 
-function update(id, changes) {
-  const accounts = load();
-  const account = accounts.find((a) => a.id === id);
-  if (!account) return null;
-  Object.assign(account, changes);
-  save(accounts);
-  return account;
+async function update(id, changes) {
+  await db.ensureTable();
+  const [rows] = await db.getPool().query('SELECT data FROM accounts WHERE id = ?', [id]);
+  if (!rows.length) return null;
+  const current = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+  const updated = Object.assign(current, changes);
+  await db.getPool().query('UPDATE accounts SET data = ? WHERE id = ?', [JSON.stringify(updated), id]);
+  return updated;
 }
 
-function remove(id) {
-  const accounts = load();
-  const filtered = accounts.filter((a) => a.id !== id);
-  save(filtered);
-  return filtered.length !== accounts.length;
+async function remove(id) {
+  await db.ensureTable();
+  const [result] = await db.getPool().query('DELETE FROM accounts WHERE id = ?', [id]);
+  return result.affectedRows > 0;
 }
 
 // Usado pelo link de compartilhamento (visualização do cliente, sem login).
-function getByShareToken(token) {
-  return load().find((a) => a.shareToken === token) || null;
+async function getByShareToken(token) {
+  await db.ensureTable();
+  const [rows] = await db.getPool().query("SELECT data FROM accounts WHERE data->>'$.shareToken' = ?", [token]);
+  if (!rows.length) return null;
+  return typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
 }
 
 module.exports = { getAll, add, update, remove, getByShareToken };
