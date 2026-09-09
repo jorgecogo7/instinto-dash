@@ -16,7 +16,7 @@ router.get('/:clientId/report', async (req, res) => {
     const report = await googleService.getAccountReport(account.google.customerId);
     res.json(report);
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    console.error(err); res.status(502).json({ error: err.message });
   }
 });
 
