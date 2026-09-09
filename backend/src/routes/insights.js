@@ -10,7 +10,7 @@ const router = express.Router();
 // Busca os dados reais da conta (via metaService/googleService, que já
 // lidam com cache) e manda pra IA gerar as sugestões de melhoria.
 router.get('/:clientId', async (req, res) => {
-  const account = accountsStore.getAll().find((a) => a.id === req.params.clientId);
+  const account = (await accountsStore.getAll()).find((a) => a.id === req.params.clientId);
   if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
   const platform = req.query.platform === 'google' ? 'google' : 'meta';
