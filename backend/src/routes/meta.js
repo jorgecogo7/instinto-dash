@@ -16,7 +16,7 @@ router.get('/:clientId/campaigns', async (req, res) => {
     const campaigns = await metaService.getCampaignsWithAds(account.meta.adAccountId);
     res.json(campaigns);
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    console.error(err); res.status(502).json({ error: err.message });
   }
 });
 
