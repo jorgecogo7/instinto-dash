@@ -18,7 +18,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function syncAllAccounts() {
   const results = [];
 
-  for (const account of accountsStore.getAll()) {
+  for (const account of await accountsStore.getAll()) {
     const entry = { accountId: account.id, meta: null, google: null, errors: [] };
 
     if (account.meta.status === 'connected') {
