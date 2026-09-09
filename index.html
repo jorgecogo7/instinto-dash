@@ -334,6 +334,44 @@
     border-radius:8px; padding:9px 12px; font-size:12px; margin-bottom:8px;
   }
 
+  /* ---- Telas de acesso: login e visão pública do cliente ---- */
+  .access-screen{
+    position:fixed; inset:0; background: var(--bg); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .access-box{
+    background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
+    width:380px; max-width:100%; padding:32px; text-align:center;
+  }
+  .access-logo{ width:44px; height:44px; object-fit:contain; margin-bottom:14px; }
+  .access-box h2{ font-size:19px; font-weight:700; margin-bottom:4px; }
+  .access-sub{ font-size:12.5px; color:var(--text-dim); margin-bottom:20px; }
+  .access-box form{ text-align:left; }
+  .access-box .modal-label{ margin-top:14px; }
+
+  .public-box{ width:100%; max-width:980px; max-height:92vh; overflow-y:auto; }
+  .public-head{ display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+  .public-title{ font-size:22px; font-weight:700; }
+
+  /* ---- Página de detalhe do cliente (Integrações) ---- */
+  .client-detail-tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .integration-card{
+    background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding:20px; margin-bottom:16px;
+  }
+  .integration-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+  .integration-title{ font-size:14.5px; font-weight:700; margin-bottom:3px; }
+  .integration-sub{ font-size:12px; color: var(--text-dim); }
+  .integration-status{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .field-row.single{ grid-template-columns:1fr; }
+  .share-link-row{
+    display:flex; align-items:center; gap:10px; background:var(--bg-panel-2);
+    border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12px;
+    color: var(--text-dim); margin-top:10px;
+  }
+  .share-link-row code{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color: var(--text); }
+
   /* ---- Sugestões de melhoria (insights de IA) ---- */
   .insight-card{ border:1px solid var(--line); border-radius: var(--radius); padding:16px; margin-bottom:12px; background: var(--bg-panel-2); }
   .insight-card:last-child{ margin-bottom:0; }
@@ -417,7 +455,39 @@
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- ================= LOGIN (dono da agência) ================= -->
+<div id="loginScreen" class="access-screen">
+  <div class="access-box">
+    <img class="access-logo" src="" id="loginLogo" alt="Instinto Digital">
+    <h2>Instinto Dash</h2>
+    <p class="access-sub">Acesso do administrador</p>
+    <div id="loginError" class="modal-error" style="display:none;"></div>
+    <form id="loginForm" onsubmit="submitLogin(event)">
+      <label class="modal-label">Usuário</label>
+      <input class="modal-input" id="loginUsername" autocomplete="username" required>
+      <label class="modal-label">Senha</label>
+      <input class="modal-input" id="loginPassword" type="password" autocomplete="current-password" required>
+      <button type="submit" class="btn-add" style="width:100%; margin-top:18px; justify-content:center;">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= VISÃO DO CLIENTE (link público, sem login) ================= -->
+<div id="publicView" class="access-screen" style="display:none;">
+  <div class="public-box">
+    <div class="public-head">
+      <img class="access-logo" src="" id="publicLogo" alt="Instinto Digital">
+      <div>
+        <div class="public-title" id="publicClientName">Carregando...</div>
+        <div class="access-sub" id="publicClientNiche"></div>
+      </div>
+    </div>
+    <div id="publicContent"></div>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
 
   <aside class="sidebar">
     <div class="brand">
@@ -846,6 +916,78 @@
       <div class="footnote">Esta tabela é só de organização interna da equipe — não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>) — sobrevive a reiniciar o servidor.</div>
     </section>
 
+    <!-- ================= DETALHE DO CLIENTE (INTEGRAÇÕES) ================= -->
+    <section class="view" id="view-client-detail">
+      <div class="topbar">
+        <div>
+          <p style="cursor:pointer; color:var(--flame); margin-bottom:6px;" onclick="backToClients()">← Voltar para Clientes</p>
+          <h1 id="clientDetailName">Cliente</h1>
+          <p>Integrações e link de compartilhamento</p>
+        </div>
+      </div>
+
+      <div class="integration-card">
+        <div class="integration-head">
+          <div>
+            <div class="integration-title">Integração Google Ads</div>
+            <div class="integration-sub">Conecta via OAuth da sua MCC — a conta do cliente precisa já estar vinculada a ela</div>
+          </div>
+          <span class="integration-status" id="googleStatusBadge"></span>
+        </div>
+        <div class="field-row single">
+          <div>
+            <label class="modal-label" style="margin-top:0;">ID da conta Google Ads</label>
+            <input class="modal-input" id="googleCustomerIdInput" placeholder="000-000-0000">
+          </div>
+        </div>
+        <div id="googleConnectError" class="modal-error" style="display:none;"></div>
+        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
+          <button class="btn-add" onclick="connectGoogle()" id="connectGoogleBtn">Conectar e verificar</button>
+        </div>
+        <div class="footnote" style="margin-top:4px;">Isso testa o ID de verdade contra a API do Google — só marca como conectado se a conta responder.</div>
+      </div>
+
+      <div class="integration-card">
+        <div class="integration-head">
+          <div>
+            <div class="integration-title">Integração Meta</div>
+            <div class="integration-sub">Ads · Facebook · Instagram</div>
+          </div>
+          <span class="integration-status" id="metaStatusBadge"></span>
+        </div>
+        <div class="field-row">
+          <div>
+            <label class="modal-label" style="margin-top:0;">Conta de anúncio (Ad Account)</label>
+            <input class="modal-input" id="metaAdAccountInput" placeholder="act_1234567890">
+          </div>
+          <div>
+            <label class="modal-label" style="margin-top:0;">Facebook Page ID</label>
+            <input class="modal-input" id="metaPageIdInput" placeholder="100732439492947">
+          </div>
+        </div>
+        <div class="field-row single">
+          <div>
+            <label class="modal-label" style="margin-top:0;">Instagram Business ID</label>
+            <input class="modal-input" id="metaIgIdInput" placeholder="17841447815614697">
+          </div>
+        </div>
+        <div id="metaConnectError" class="modal-error" style="display:none;"></div>
+        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
+          <button class="btn-add" onclick="saveMetaConnection()">Salvar</button>
+        </div>
+        <div class="footnote" style="margin-top:4px;">Ainda não verifica contra a API de verdade — isso liga assim que o App no Meta for Developers estiver pronto. Por enquanto, salva os IDs e marca como "pendente".</div>
+      </div>
+
+      <div class="integration-card">
+        <div class="integration-title">Link para o cliente</div>
+        <div class="integration-sub">O cliente abre isso sem precisar de usuário nem senha — só visualização, só dos dados dele.</div>
+        <div class="share-link-row">
+          <code id="shareLinkText">—</code>
+          <button class="btn-cancel" onclick="copyShareLink()">Copiar link</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= MODAL: NOVO CLIENTE ================= -->
     <div class="drawer-overlay" id="addClientModal" onclick="if(event.target===this) closeAddClientModal()">
       <div class="modal-box">
@@ -908,14 +1050,62 @@
 </div>
 
 <script>
-  // Endereço do backend. Enquanto roda local, deixe como está.
-  // Quando o backend for publicado (Hostinger/Render), troque só esta linha.
+  // Endereço do backend.
   const API_BASE_URL = 'https://api.instintodigital.com.br';
-  // Chave que o backend exige pra ler/escrever clientes (ver X-API-Key).
-  // Fica visível no código-fonte — não é segredo real, é só uma trava
-  // contra bots e acesso casual, não substitui login de verdade.
-  const API_KEY = 'pP5TLNfo4341PdSYvSbRT2htsPnbhJ8KoYNLqMBKXYo';
   { const el = document.getElementById('backendUrlLabel'); if (el) el.textContent = API_BASE_URL; }
+
+  /* ---------- Autenticação (login do dono) ---------- */
+  function getToken(){ return localStorage.getItem('instintoDashToken'); }
+  function setToken(t){ localStorage.setItem('instintoDashToken', t); }
+  function clearToken(){ localStorage.removeItem('instintoDashToken'); }
+  function authHeaders(){ return { 'Authorization': 'Bearer ' + getToken() }; }
+
+  function logout(){
+    clearToken();
+    location.reload();
+  }
+
+  async function submitLogin(ev){
+    ev.preventDefault();
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível entrar.');
+      setToken(data.token);
+      startAdminApp();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  function startAdminApp(){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    loadClientsFromBackend();
+  }
+
+  /* ---------- Ponto de entrada: decide entre login, visão pública, ou app ---------- */
+  (function boot(){
+    const params = new URLSearchParams(location.search);
+    const shareToken = params.get('share');
+    if (shareToken) {
+      loadPublicView(shareToken);
+      return;
+    }
+    if (getToken()) {
+      startAdminApp();
+    }
+    // sem token nenhum: fica na tela de login, que já é a visível por padrão
+  })();
 
   /* ---------- navigation ---------- */
   document.querySelectorAll('.nav-item').forEach(item=>{
@@ -1336,6 +1526,8 @@
   renderInsights('googleInsights', googleInsightsData, 'Leilão e palavra-chave');
 
   const logoSrc = document.querySelector('.brand-mark-img').src;
+  { const l1 = document.getElementById('loginLogo'); if (l1) l1.src = logoSrc; }
+  { const l2 = document.getElementById('publicLogo'); if (l2) l2.src = logoSrc; }
   document.getElementById('favicon').href = logoSrc;
   const todayStr = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 
@@ -1473,7 +1665,7 @@
       const igCell = c.ig ? `<a class="link-chip ig" href="#" onclick="return false;">${c.ig}</a>` : `<span class="link-empty">— sem Instagram</span>`;
       const driveCell = c.drive ? `<a class="link-chip drive" href="#" onclick="return false;">📁 Abrir pasta</a>` : `<span class="link-empty">— não criada</span>`;
       tr.innerHTML = `
-        <td><div class="client-cell-name"><div class="client-cell-avatar">${initials(c.name)}</div>${c.name}</div></td>
+        <td><div class="client-cell-name" style="cursor:pointer;" onclick="openClientDetail('${c.id}')"><div class="client-cell-avatar">${initials(c.name)}</div>${c.name}</div></td>
         <td>${brl(c.contract)}/mês</td>
         <td>${c.start}</td>
         <td><span class="niche-tag">${c.niche}</span></td>
@@ -1526,6 +1718,7 @@
   /* ---------- Ponte com o backend: converte o formato da API pro formato das telas ---------- */
   const apiStatusToUi = s => s === 'connected' ? 'on' : s === 'pending' ? 'pending' : 'off';
   const formatDateBR = iso => { if(!iso) return '—'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
+  let rawAccountsById = {};
 
   function toMgmtShape(a){
     const platforms = [];
@@ -1533,7 +1726,7 @@
     if (a.google?.status === 'connected') platforms.push('google');
     if (a.instagramApi?.status === 'connected') platforms.push('ig');
     return {
-      name: a.name, contract: a.contractValue || 0, start: formatDateBR(a.startDate),
+      id: a.id, name: a.name, contract: a.contractValue || 0, start: formatDateBR(a.startDate),
       niche: a.niche || '—', platforms, daily: a.dailyBudget || 0,
       site: a.site, ig: a.instagram, drive: !!a.drive,
       status: a.status || 'onboarding', owner: a.owner || 'JC',
@@ -1547,9 +1740,11 @@
   async function loadClientsFromBackend(){
     const banner = document.getElementById('backendOfflineBanner');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/accounts`, { headers: { 'X-API-Key': API_KEY } });
+      const res = await fetch(`${API_BASE_URL}/api/accounts`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; } // sessão expirou, volta pro login
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
+      rawAccountsById = Object.fromEntries(data.map(a => [a.id, a]));
       clientsMgmt = data.map(toMgmtShape);
       renderSidebarAndConnections(data.map(toConnShape));
       if (banner) banner.style.display = 'none';
@@ -1561,9 +1756,144 @@
     }
     renderClientsMgmt();
   }
-  loadClientsFromBackend();
 
-  /* ---------- Formulário "+ Novo cliente" ---------- */
+  /* ---------- Detalhe do cliente: Integrações ---------- */
+  let currentClientId = null;
+
+  function openClientDetail(id){
+    const account = rawAccountsById[id];
+    if (!account) return;
+    currentClientId = id;
+
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-client-detail').classList.add('active');
+
+    document.getElementById('clientDetailName').textContent = account.name;
+
+    const googleConnected = account.google?.status === 'connected';
+    document.getElementById('googleStatusBadge').textContent = googleConnected ? 'Conectado' : 'Não conectado';
+    document.getElementById('googleStatusBadge').className = 'integration-status ' + (googleConnected ? 'status-ativo' : 'status-pausado');
+    document.getElementById('googleCustomerIdInput').value = account.google?.customerId || '';
+    document.getElementById('googleConnectError').style.display = 'none';
+
+    const metaStatus = account.meta?.status || 'not_connected';
+    const metaLabel = metaStatus === 'connected' ? 'Conectado' : metaStatus === 'pending' ? 'Pendente' : 'Não conectado';
+    document.getElementById('metaStatusBadge').textContent = metaLabel;
+    document.getElementById('metaStatusBadge').className = 'integration-status ' + (metaStatus === 'connected' ? 'status-ativo' : metaStatus === 'pending' ? 'status-onboarding' : 'status-pausado');
+    document.getElementById('metaAdAccountInput').value = account.meta?.adAccountId || '';
+    document.getElementById('metaPageIdInput').value = account.meta?.pageId || '';
+    document.getElementById('metaIgIdInput').value = account.meta?.igBusinessId || '';
+    document.getElementById('metaConnectError').style.display = 'none';
+
+    const shareUrl = `${location.origin}${location.pathname}?share=${account.shareToken}`;
+    document.getElementById('shareLinkText').textContent = shareUrl;
+  }
+
+  function backToClients(){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-clients').classList.add('active');
+    document.querySelector('.nav-item[data-view="clients"]')?.classList.add('active');
+  }
+
+  async function connectGoogle(){
+    const btn = document.getElementById('connectGoogleBtn');
+    const errEl = document.getElementById('googleConnectError');
+    const customerId = document.getElementById('googleCustomerIdInput').value.trim();
+    errEl.style.display = 'none';
+    if (!customerId) { errEl.textContent = 'Informe o ID da conta.'; errEl.style.display = 'block'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/connect-google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ customerId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível conectar.');
+      await loadClientsFromBackend();
+      openClientDetail(currentClientId); // recarrega a tela com o status novo
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Conectar e verificar';
+  }
+
+  async function saveMetaConnection(){
+    const errEl = document.getElementById('metaConnectError');
+    errEl.style.display = 'none';
+    const payload = {
+      adAccountId: document.getElementById('metaAdAccountInput').value.trim(),
+      pageId: document.getElementById('metaPageIdInput').value.trim(),
+      igBusinessId: document.getElementById('metaIgIdInput').value.trim(),
+    };
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/meta-connection`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      await loadClientsFromBackend();
+      openClientDetail(currentClientId);
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  function copyShareLink(){
+    const text = document.getElementById('shareLinkText').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      const original = btn.textContent;
+      btn.textContent = 'Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  }
+
+  /* ---------- Visão pública do cliente (link compartilhado, sem login) ---------- */
+  async function loadPublicView(token){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('publicView').style.display = 'flex';
+    const contentEl = document.getElementById('publicContent');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/public/${token}`);
+      if (!res.ok) throw new Error((await res.json()).error || 'Link inválido.');
+      const data = await res.json();
+
+      document.getElementById('publicClientName').textContent = data.account.name;
+      document.getElementById('publicClientNiche').textContent = data.account.niche;
+
+      let html = '<div class="grid">';
+      html += `<div class="kpi"><div class="kpi-label">Meta Ads</div><div class="kpi-value" style="font-size:16px;">${data.account.metaConnected ? '✅ Conectado' : '— Não conectado'}</div></div>`;
+      html += `<div class="kpi"><div class="kpi-label">Google Ads</div><div class="kpi-value" style="font-size:16px;">${data.account.googleConnected ? '✅ Conectado' : '— Não conectado'}</div></div>`;
+      html += `<div class="kpi"><div class="kpi-label">Instagram</div><div class="kpi-value" style="font-size:16px;">${data.account.instagramConnected ? '✅ Conectado' : '— Não conectado'}</div></div>`;
+      html += '</div>';
+
+      if (data.google?.campaigns) {
+        html += '<div class="panel"><div class="panel-head"><h3>Campanhas Google Ads</h3></div><table><thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>Conv.</th></tr></thead><tbody>';
+        data.google.campaigns.forEach(c => {
+          html += `<tr><td>${c.name}</td><td>${c.type}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.conv}</td></tr>`;
+        });
+        html += '</tbody></table></div>';
+      }
+
+      if (!data.account.metaConnected && !data.account.googleConnected) {
+        html += '<div class="panel"><p class="footnote" style="border-top:none; padding-top:0;">Nenhuma plataforma conectada ainda — assim que sua agência conectar Meta ou Google Ads, os dados de campanha aparecem aqui automaticamente.</p></div>';
+      }
+
+      contentEl.innerHTML = html;
+    } catch (err) {
+      contentEl.innerHTML = `<div class="modal-error" style="display:block;">${err.message}</div>`;
+    }
+  }
+
   function openAddClientModal(){
     const overlay = document.getElementById('addClientModal');
     overlay.style.display = 'block';
@@ -1608,7 +1938,7 @@
     try {
       const res = await fetch(`${API_BASE_URL}/api/accounts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar.');
