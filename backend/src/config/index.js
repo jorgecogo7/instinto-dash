@@ -3,6 +3,8 @@ require('dotenv').config();
 module.exports = {
   port: process.env.PORT || 4000,
   useMockData: process.env.USE_MOCK_DATA !== 'false',
+  apiSecret: process.env.API_SECRET || '',
+  allowedOrigin: process.env.ALLOWED_ORIGIN || 'https://dash.instintodigital.com.br',
 
   meta: {
     appId: process.env.META_APP_ID || '',
