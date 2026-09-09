@@ -10,7 +10,7 @@ const router = express.Router();
 // CLIENTE abre). Só devolve dados daquele cliente específico, nunca a
 // lista completa, e nunca campos internos (contrato, saldo pix, etc.).
 router.get('/:token', async (req, res) => {
-  const account = accountsStore.getByShareToken(req.params.token);
+  const account = await accountsStore.getByShareToken(req.params.token);
   if (!account) return res.status(404).json({ error: 'Link inválido ou expirado.' });
 
   const safeAccount = {
