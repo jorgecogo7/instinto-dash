@@ -6,6 +6,12 @@ module.exports = {
   apiSecret: process.env.API_SECRET || '',
   allowedOrigin: process.env.ALLOWED_ORIGIN || 'https://dash.instintodigital.com.br',
 
+  auth: {
+    username: process.env.ADMIN_USERNAME || '',
+    passwordHash: process.env.ADMIN_PASSWORD_HASH || '',
+  },
+  tokenSecret: process.env.TOKEN_SECRET || '',
+
   meta: {
     appId: process.env.META_APP_ID || '',
     appSecret: process.env.META_APP_SECRET || '',
