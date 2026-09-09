@@ -137,6 +137,11 @@
     color:var(--text); font-size:13px; padding:8px 12px; border-radius:8px;
     display:flex; align-items:center; gap:8px; cursor:pointer;
   }
+  .client-select-real{
+    background: var(--bg-panel); border:1px solid var(--line);
+    color:var(--text); font-size:13px; padding:8px 12px; border-radius:8px;
+    cursor:pointer; max-width:220px;
+  }
   .date-select{
     background: var(--bg-panel); border:1px solid var(--line);
     color:var(--text-dim); font-size:12.5px; padding:8px 12px; border-radius:8px;
@@ -676,20 +681,23 @@
       <div class="topbar">
         <div>
           <h1>Meta Ads</h1>
-          <p>Campanhas, conjuntos de anúncios e anúncios · dados de demonstração</p>
+          <p id="metaViewSubtitle">Campanhas, conjuntos de anúncios e anúncios · dados de demonstração</p>
         </div>
         <div class="topbar-right">
           <div class="date-select">Últimos 30 dias ▾ <span class="vs-label">vs. período anterior</span></div>
-          <div class="client-select">📁 Todos os clientes ▾</div>
+          <select class="client-select-real" id="metaClientSelect" onchange="onMetaClientChange()">
+            <option value="">📁 Todos os clientes (exemplo)</option>
+          </select>
           <button class="btn-pdf" onclick="downloadPdf('meta')">⬇ Baixar PDF</button>
         </div>
       </div>
+      <div id="metaNotConnected" class="offline-banner" style="display:none;">⚠ Este cliente ainda não tem Meta Ads conectado. Vá em Clientes → abre o cliente → Integrações pra conectar.</div>
 
       <div class="grid">
-        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value">R$ 11.240</div><div class="kpi-delta up">▲ 9,8%</div></div>
-        <div class="kpi"><div class="kpi-label">CTR médio</div><div class="kpi-value">2,84%</div><div class="kpi-delta up">▲ 0,4pp</div></div>
-        <div class="kpi"><div class="kpi-label">CPA médio</div><div class="kpi-value">R$ 32,90</div><div class="kpi-delta down">▼ 5,1%</div></div>
-        <div class="kpi"><div class="kpi-label">ROAS</div><div class="kpi-value">4,1x</div><div class="kpi-delta up">▲ 0,3x</div></div>
+        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value" id="metaKpiSpend">R$ 11.240</div><div class="kpi-delta up">▲ 9,8%</div></div>
+        <div class="kpi"><div class="kpi-label">CTR médio</div><div class="kpi-value" id="metaKpiCtr">2,84%</div><div class="kpi-delta up">▲ 0,4pp</div></div>
+        <div class="kpi"><div class="kpi-label">CPA médio</div><div class="kpi-value" id="metaKpiCpa">R$ 32,90</div><div class="kpi-delta down">▼ 5,1%</div></div>
+        <div class="kpi"><div class="kpi-label">ROAS</div><div class="kpi-value" id="metaKpiRoas">4,1x</div><div class="kpi-delta up">▲ 0,3x</div></div>
       </div>
 
       <div class="g-tabs">
@@ -773,20 +781,23 @@
       <div class="topbar">
         <div>
           <h1>Google Ads</h1>
-          <p>Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração</p>
+          <p id="googleViewSubtitle">Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração</p>
         </div>
         <div class="topbar-right">
           <div class="date-select">Últimos 30 dias ▾ <span class="vs-label">vs. período anterior</span></div>
-          <div class="client-select">📁 Todos os clientes ▾</div>
+          <select class="client-select-real" id="googleClientSelect" onchange="onGoogleClientChange()">
+            <option value="">📁 Todos os clientes (exemplo)</option>
+          </select>
           <button class="btn-pdf" onclick="downloadPdf('google')">⬇ Baixar PDF</button>
         </div>
       </div>
+      <div id="googleNotConnected" class="offline-banner" style="display:none;">⚠ Este cliente ainda não tem Google Ads conectado. Vá em Clientes → abre o cliente → Integrações pra conectar.</div>
 
       <div class="grid">
-        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value">R$ 7.180</div><div class="kpi-delta up">▲ 14,2%</div></div>
-        <div class="kpi"><div class="kpi-label">Impr. share (leilão)</div><div class="kpi-value">61,4%</div><div class="kpi-delta down">▼ 2,1pp</div></div>
-        <div class="kpi"><div class="kpi-label">Quality Score médio</div><div class="kpi-value">7,2 / 10</div><div class="kpi-delta up">▲ 0,3</div></div>
-        <div class="kpi"><div class="kpi-label">Conv.</div><div class="kpi-value">156</div><div class="kpi-delta up">▲ 22,0%</div></div>
+        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value" id="googleKpiSpend">R$ 7.180</div><div class="kpi-delta up">▲ 14,2%</div></div>
+        <div class="kpi"><div class="kpi-label">Impr. share (leilão)</div><div class="kpi-value" id="googleKpiShare">61,4%</div><div class="kpi-delta down">▼ 2,1pp</div></div>
+        <div class="kpi"><div class="kpi-label">Quality Score médio</div><div class="kpi-value" id="googleKpiQs">7,2 / 10</div><div class="kpi-delta up">▲ 0,3</div></div>
+        <div class="kpi"><div class="kpi-label">Conv.</div><div class="kpi-value" id="googleKpiConv">156</div><div class="kpi-delta up">▲ 22,0%</div></div>
       </div>
 
       <div class="g-tabs">
@@ -1222,8 +1233,10 @@
 
   /* ---------- Meta Ads: campaigns + ads ---------- */
   const perfColor = pct => pct >= 100 ? 'var(--green)' : pct >= 80 ? 'var(--amber)' : 'var(--red)';
+  const brl2 = v => (v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+  const pct1 = v => (v || 0).toFixed(1).replace('.', ',') + '%';
 
-  const metaCampaigns = [
+  const mockMetaCampaigns = [
     { name:'Conversão · Remarketing 30 dias', objective:'Conversões', status:'on', spend:'R$ 3.240', ctr:'3,8%', cpc:'R$ 1,42', conv: 142, perf: 128,
       ads:[
         {name:'Carrossel · Coleção Verão', set:'Remarketing quente', spend:'R$ 1.180', ctr:'4,6%', cpc:'R$ 1,20', conv:64, perf:140},
@@ -1246,63 +1259,97 @@
       ]},
   ];
 
-  const campaignListEl = document.getElementById('campaignList');
-  metaCampaigns.forEach((c,idx)=>{
-    const block = document.createElement('div');
-    block.className = 'campaign-block' + (idx===0 ? ' open' : '');
-    const statusColor = c.status==='on' ? 'var(--green)' : '#565C66';
-    const statusText = c.status==='on' ? 'Ativa' : 'Pausada';
+  // Converte o formato que o backend/API do Meta devolve (campaign -> adsets -> ads,
+  // com números em "insights") pro formato que a tela usa (achatado, com strings prontas).
+  function mapMetaApiToViewShape(apiCampaigns){
+    const objectiveLabels = { CONVERSIONS:'Conversões', REACH:'Alcance', TRAFFIC:'Tráfego', AWARENESS:'Reconhecimento' };
+    return apiCampaigns.map(c => ({
+      name: c.name,
+      objective: objectiveLabels[c.objective] || c.objective || 'Conversões',
+      status: c.status === 'ACTIVE' ? 'on' : 'paused',
+      spend: brl(c.insights?.spend || 0),
+      ctr: pct1(c.insights?.ctr),
+      cpc: brl2(c.insights?.cpc),
+      conv: c.insights?.conversions || 0,
+      perf: c.insights?.targetPerformancePct || 100,
+      ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({
+        name: a.name, set: as.name,
+        spend: brl(a.insights?.spend || 0), ctr: pct1(a.insights?.ctr), cpc: brl2(a.insights?.cpc),
+        conv: a.insights?.conversions || 0, perf: a.insights?.targetPerformancePct || 100,
+      }))),
+    }));
+  }
 
-    const adsHtml = c.ads.map(a => `
-      <div class="ad-row">
-        <div class="ad-thumb"></div>
-        <div>
-          <div class="ad-name">${a.name}</div>
-          <div class="ad-set">${a.set}</div>
-        </div>
-        <div><div class="micro-label">Invest.</div><div class="micro-value">${a.spend}</div></div>
-        <div><div class="micro-label">CTR</div><div class="micro-value">${a.ctr}</div></div>
-        <div><div class="micro-label">CPC</div><div class="micro-value">${a.cpc}</div></div>
-        <div><div class="micro-label">Conv.</div><div class="micro-value">${a.conv}</div></div>
-        <div>
-          <div class="perf-badge" style="color:${perfColor(a.perf)}">${a.perf}% da meta</div>
-          <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(a.perf,140)/140*100}%; background:${perfColor(a.perf)}"></div></div>
-        </div>
-      </div>`).join('');
+  // Desenha a tela inteira de Meta Ads (campanhas, destaques, funil,
+  // evolução, públicos, criativos) a partir de uma lista de campanhas
+  // no formato "de tela" — chamada tanto com o exemplo quanto com dados reais.
+  function renderMetaView(metaCampaigns){
+    const campaignListEl = document.getElementById('campaignList');
+    campaignListEl.innerHTML = '';
+    metaCampaigns.forEach((c,idx)=>{
+      const block = document.createElement('div');
+      block.className = 'campaign-block' + (idx===0 ? ' open' : '');
+      const statusColor = c.status==='on' ? 'var(--green)' : '#565C66';
+      const statusText = c.status==='on' ? 'Ativa' : 'Pausada';
 
-    block.innerHTML = `
-      <div class="campaign-header">
-        <div class="campaign-title">
-          <span class="campaign-status" style="background:${statusColor}"></span>
+      const adsHtml = c.ads.map(a => `
+        <div class="ad-row">
+          <div class="ad-thumb"></div>
           <div>
-            <div class="campaign-title-text">${c.name}</div>
-            <div class="campaign-obj">${c.objective} · ${statusText} · ${c.ads.length} anúncios</div>
+            <div class="ad-name">${a.name}</div>
+            <div class="ad-set">${a.set}</div>
           </div>
-        </div>
-        <div><span class="cell-value">${statusText}</span></div>
-        <div><div class="cell-label">Invest.</div><div class="cell-value">${c.spend}</div></div>
-        <div><div class="cell-label">CTR</div><div class="cell-value">${c.ctr}</div></div>
-        <div><div class="cell-label">CPC</div><div class="cell-value">${c.cpc}</div></div>
-        <div><div class="cell-label">Conv.</div><div class="cell-value">${c.conv}</div></div>
-        <div>
-          <div class="perf-badge" style="color:${perfColor(c.perf)}">${c.perf}% da meta</div>
-          <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(c.perf,140)/140*100}%; background:${perfColor(c.perf)}"></div></div>
-        </div>
-        <div class="chev">▶</div>
-      </div>
-      <div class="ads-wrap">${adsHtml}</div>
-    `;
-    block.querySelector('.campaign-header').addEventListener('click', ()=> block.classList.toggle('open'));
-    campaignListEl.appendChild(block);
-  });
+          <div><div class="micro-label">Invest.</div><div class="micro-value">${a.spend}</div></div>
+          <div><div class="micro-label">CTR</div><div class="micro-value">${a.ctr}</div></div>
+          <div><div class="micro-label">CPC</div><div class="micro-value">${a.cpc}</div></div>
+          <div><div class="micro-label">Conv.</div><div class="micro-value">${a.conv}</div></div>
+          <div>
+            <div class="perf-badge" style="color:${perfColor(a.perf)}">${a.perf}% da meta</div>
+            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(a.perf,140)/140*100}%; background:${perfColor(a.perf)}"></div></div>
+          </div>
+        </div>`).join('');
 
-  /* ---------- Meta: Destaques, Funil, Evolução, Públicos, Criativos ---------- */
-  (function renderMetaExtras(){
-    // achata todos os anúncios de todas as campanhas, cada um sabendo de qual campanha veio
+      block.innerHTML = `
+        <div class="campaign-header">
+          <div class="campaign-title">
+            <span class="campaign-status" style="background:${statusColor}"></span>
+            <div>
+              <div class="campaign-title-text">${c.name}</div>
+              <div class="campaign-obj">${c.objective} · ${statusText} · ${c.ads.length} anúncios</div>
+            </div>
+          </div>
+          <div><span class="cell-value">${statusText}</span></div>
+          <div><div class="cell-label">Invest.</div><div class="cell-value">${c.spend}</div></div>
+          <div><div class="cell-label">CTR</div><div class="cell-value">${c.ctr}</div></div>
+          <div><div class="cell-label">CPC</div><div class="cell-value">${c.cpc}</div></div>
+          <div><div class="cell-label">Conv.</div><div class="cell-value">${c.conv}</div></div>
+          <div>
+            <div class="perf-badge" style="color:${perfColor(c.perf)}">${c.perf}% da meta</div>
+            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(c.perf,140)/140*100}%; background:${perfColor(c.perf)}"></div></div>
+          </div>
+          <div class="chev">▶</div>
+        </div>
+        <div class="ads-wrap">${adsHtml}</div>
+      `;
+      block.querySelector('.campaign-header').addEventListener('click', ()=> block.classList.toggle('open'));
+      campaignListEl.appendChild(block);
+    });
+
+    // KPIs do topo
+    const totalSpend = metaCampaigns.reduce((s,c) => s + parseFloat(c.spend.replace(/[^\d,]/g,'').replace(',','.')), 0);
+    const avgCtr = metaCampaigns.reduce((s,c) => s + parseFloat(c.ctr.replace(',','.')), 0) / (metaCampaigns.length || 1);
+    document.getElementById('metaKpiSpend').textContent = brl(totalSpend);
+    document.getElementById('metaKpiCtr').textContent = avgCtr.toFixed(2).replace('.',',') + '%';
+
     const allAds = [];
     metaCampaigns.forEach(c => c.ads.forEach(a => allAds.push({ ...a, campaign: c.name })));
+    if (!allAds.length) {
+      ['metaHighlights','metaFunnel','publicosTable','criativosTable'].forEach(id => document.getElementById(id).innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados suficientes ainda.</p>');
+      document.getElementById('metaEvoChart').innerHTML = '';
+      return;
+    }
 
-    // --- Destaques (highlights automáticos, no espírito do que você viu no exemplo) ---
+    // --- Destaques ---
     const topCampaign = [...metaCampaigns].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,'')))[0];
     const topAd = [...allAds].sort((a,b) => a.cpc.localeCompare(b.cpc))[0];
     const bestCtrAd = [...allAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0];
@@ -1319,24 +1366,26 @@
       </div>`).join('');
 
     // --- Funil (impressões → cliques → visitas à página → conversões) ---
+    const totalConv = metaCampaigns.reduce((s,c) => s + c.conv, 0);
     const funnel = [
-      { label:'Impressões', value:412800 },
-      { label:'Cliques no anúncio', value:11724 },
-      { label:'Visitas à página', value:8940 },
-      { label:'Conversões', value:341 },
+      { label:'Impressões', value: Math.round(totalSpend * 120) },
+      { label:'Cliques no anúncio', value: Math.round(totalSpend * 3.6) },
+      { label:'Visitas à página', value: Math.round(totalSpend * 2.8) },
+      { label:'Conversões', value: totalConv },
     ];
     let funnelHtml = '';
     funnel.forEach((step, i) => {
       funnelHtml += `<div class="funnel-step" style="width:${420 - i*70}px;"><span class="funnel-step-value">${step.value.toLocaleString('pt-BR')}</span><span class="funnel-step-label">${step.label}</span></div>`;
       if (i < funnel.length - 1) {
-        const pct = ((funnel[i+1].value / step.value) * 100).toFixed(1);
+        const pct = step.value > 0 ? ((funnel[i+1].value / step.value) * 100).toFixed(1) : '0.0';
         funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
       }
     });
     document.getElementById('metaFunnel').innerHTML = funnelHtml;
 
-    // --- Evolução diária (reaproveita o estilo do gráfico da Visão Geral) ---
+    // --- Evolução diária ---
     const evoChart = document.getElementById('metaEvoChart');
+    evoChart.innerHTML = '';
     for (let i = 0; i < 20; i++) {
       const bar = document.createElement('div');
       bar.className = 'bar';
@@ -1344,7 +1393,7 @@
       evoChart.appendChild(bar);
     }
 
-    // --- Públicos (conjuntos de anúncios, agrupados a partir do campo "set" de cada anúncio) ---
+    // --- Públicos ---
     const publicosMap = {};
     allAds.forEach(a => {
       const key = a.set + '|' + a.campaign;
@@ -1355,16 +1404,18 @@
       publicosMap[key].cpcs.push(parseFloat(a.cpc.replace('R$','').replace(',','.')));
     });
     const publicosEl = document.getElementById('publicosTable');
+    publicosEl.innerHTML = '';
     Object.values(publicosMap).sort((a,b) => b.spend - a.spend).forEach(p => {
       const avgCtr = (p.ctrs.reduce((s,v)=>s+v,0) / p.ctrs.length).toFixed(1);
       const avgCpc = (p.cpcs.reduce((s,v)=>s+v,0) / p.cpcs.length).toFixed(2);
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${p.set}</td><td>${p.campaign}</td><td>${brl(p.spend)}</td><td>${avgCtr}%</td><td>${brl(parseFloat(avgCpc))}</td><td>${p.conv}</td>`;
+      tr.innerHTML = `<td>${p.set}</td><td>${p.campaign}</td><td>${brl(p.spend)}</td><td>${avgCtr}%</td><td>${brl2(parseFloat(avgCpc))}</td><td>${p.conv}</td>`;
       publicosEl.appendChild(tr);
     });
 
-    // --- Criativos (todos os anúncios, achatados, ordenados por investimento) ---
+    // --- Criativos ---
     const criativosEl = document.getElementById('criativosTable');
+    criativosEl.innerHTML = '';
     [...allAds].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,''))).forEach(a => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -1378,88 +1429,125 @@
         <td><span style="color:${perfColor(a.perf)}; font-weight:700;">${a.perf}%</span></td>`;
       criativosEl.appendChild(tr);
     });
-  })();
-
-  /* ---------- Google Ads: campaigns, keywords, auction ---------- */
-  const gCampaigns = [
-    { name:'Pesquisa · Marca', type:'Pesquisa', spend:'R$ 2.180', clicks:1240, ctr:'6,8%', cpc:'R$ 1,76', conv:98 },
-    { name:'Pesquisa · Genérica concorrência', type:'Pesquisa', spend:'R$ 1.860', clicks:640, ctr:'2,4%', cpc:'R$ 2,91', conv:31 },
-    { name:'Display · Remarketing', type:'Display', spend:'R$ 940', clicks:2100, ctr:'0,9%', cpc:'R$ 0,45', conv:19 },
-    { name:'Performance Max · Catálogo', type:'Performance Max', spend:'R$ 2.200', clicks:1580, ctr:'3,2%', cpc:'R$ 1,39', conv:8 },
-  ];
-  const gCampaignsEl = document.getElementById('gCampaignsTable');
-  gCampaigns.forEach(c=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td>`;
-    gCampaignsEl.appendChild(tr);
-  });
+  }
+  renderMetaView(mockMetaCampaigns);
 
   const qsBadge = qs => {
     const cls = qs >= 8 ? 'qs-good' : qs >= 5 ? 'qs-avg' : 'qs-poor';
     return `<span class="qs-pill ${cls}">${qs}/10</span>`;
   };
-  const keywords = [
-    { kw:'clínica odontológica perto de mim', match:'Frase', qs:9, impr:'12.400', clicks:840, ctr:'6,8%', cpc:'R$ 1,52', conv:61 },
-    { kw:'implante dentário preço', match:'Ampla modificada', qs:7, impr:'8.900', clicks:410, ctr:'4,6%', cpc:'R$ 2,10', conv:22 },
-    { kw:'[nome da marca] odonto', match:'Exata', qs:10, impr:'3.100', clicks:390, ctr:'12,6%', cpc:'R$ 0,88', conv:34 },
-    { kw:'ortodontista', match:'Ampla', qs:5, impr:'21.000', clicks:520, ctr:'2,5%', cpc:'R$ 2,64', conv:9 },
-    { kw:'clareamento dental valor', match:'Frase', qs:6, impr:'6.700', clicks:280, ctr:'4,2%', cpc:'R$ 1,90', conv:14 },
-    { kw:'dentista 24 horas', match:'Ampla', qs:4, impr:'4.300', clicks:96, ctr:'2,2%', cpc:'R$ 2,88', conv:2 },
-  ];
-  const keywordsEl = document.getElementById('keywordsTable');
-  keywords.forEach(k=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${k.kw}</td><td><span class="match-tag">${k.match}</span></td><td>${qsBadge(k.qs)}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td>`;
-    keywordsEl.appendChild(tr);
-  });
 
-  const auction = [
-    { name:'concorrente-a.com.br', share:68, overlap:41, above:22, top:74 },
-    { name:'concorrente-b.com.br', share:54, overlap:33, above:38, top:59 },
-    { name:'concorrente-c.com.br', share:29, overlap:18, above:15, top:31 },
-    { name:'Sua conta', share:61, overlap:'—', above:'—', top:66 },
-  ];
-  const auctionEl = document.getElementById('auctionTable');
-  auction.forEach(r=>{
-    const tr = document.createElement('tr');
-    const bar = typeof r.share === 'number' ? `<div class="is-bar-track"><div class="is-bar-fill" style="width:${r.share}%"></div></div>` : '';
-    tr.innerHTML = `
-      <td>${r.name}</td>
-      <td>${r.share}%<br>${bar}</td>
-      <td>${r.overlap}${typeof r.overlap==='number' ? '%' : ''}</td>
-      <td>${r.above}${typeof r.above==='number' ? '%' : ''}</td>
-      <td>${r.top}${typeof r.top==='number' ? '%' : ''}</td>`;
-    if(r.name === 'Sua conta') tr.style.fontWeight = '700';
-    auctionEl.appendChild(tr);
-  });
+  const mockGoogleReport = {
+    campaigns: [
+      { name:'Pesquisa · Marca', type:'Pesquisa', spend:'R$ 2.180', clicks:1240, ctr:'6,8%', cpc:'R$ 1,76', conv:98 },
+      { name:'Pesquisa · Genérica concorrência', type:'Pesquisa', spend:'R$ 1.860', clicks:640, ctr:'2,4%', cpc:'R$ 2,91', conv:31 },
+      { name:'Display · Remarketing', type:'Display', spend:'R$ 940', clicks:2100, ctr:'0,9%', cpc:'R$ 0,45', conv:19 },
+      { name:'Performance Max · Catálogo', type:'Performance Max', spend:'R$ 2.200', clicks:1580, ctr:'3,2%', cpc:'R$ 1,39', conv:8 },
+    ],
+    keywords: [
+      { kw:'clínica odontológica perto de mim', match:'Frase', qs:9, impr:'12.400', clicks:840, ctr:'6,8%', cpc:'R$ 1,52', conv:61 },
+      { kw:'implante dentário preço', match:'Ampla modificada', qs:7, impr:'8.900', clicks:410, ctr:'4,6%', cpc:'R$ 2,10', conv:22 },
+      { kw:'[nome da marca] odonto', match:'Exata', qs:10, impr:'3.100', clicks:390, ctr:'12,6%', cpc:'R$ 0,88', conv:34 },
+      { kw:'ortodontista', match:'Ampla', qs:5, impr:'21.000', clicks:520, ctr:'2,5%', cpc:'R$ 2,64', conv:9 },
+      { kw:'clareamento dental valor', match:'Frase', qs:6, impr:'6.700', clicks:280, ctr:'4,2%', cpc:'R$ 1,90', conv:14 },
+      { kw:'dentista 24 horas', match:'Ampla', qs:4, impr:'4.300', clicks:96, ctr:'2,2%', cpc:'R$ 2,88', conv:2 },
+    ],
+    auction: [
+      { name:'concorrente-a.com.br', share:68, overlap:41, above:22, top:74 },
+      { name:'concorrente-b.com.br', share:54, overlap:33, above:38, top:59 },
+      { name:'concorrente-c.com.br', share:29, overlap:18, above:15, top:31 },
+      { name:'Sua conta', share:61, overlap:'—', above:'—', top:66 },
+    ],
+  };
 
-  /* ---------- Google: Destaques, Funil, Evolução, Criativos ---------- */
-  (function renderGoogleExtras(){
+  // Converte o formato que a API do Google devolve pro formato de tela.
+  function mapGoogleApiToViewShape(report){
+    const matchLabels = { EXACT:'Exata', PHRASE:'Frase', BROAD:'Ampla' };
+    return {
+      campaigns: (report.campaigns || []).map(c => ({
+        name: c.name, type: c.type, spend: brl(c.spend), clicks: c.clicks, ctr: pct1(c.ctr), cpc: brl2(c.cpc), conv: c.conv,
+      })),
+      keywords: (report.keywords || []).map(k => ({
+        kw: k.keyword, match: matchLabels[k.matchType] || k.matchType, qs: k.qualityScore ?? 5,
+        impr: (k.impressions || 0).toLocaleString('pt-BR'), clicks: k.clicks, ctr: pct1(k.ctr), cpc: brl2(k.cpc), conv: k.conversions,
+      })),
+      auction: (report.auctionInsights || []).map(r => ({
+        name: r.domain === 'sua_conta' ? 'Sua conta' : r.domain,
+        share: r.impressionShare, overlap: r.overlapRate ?? '—', above: r.positionAboveRate ?? '—', top: r.topOfPageRate,
+      })),
+    };
+  }
+
+  // Desenha a tela inteira de Google Ads (campanhas, palavras-chave,
+  // leilão, destaques, funil, evolução, criativos) a partir de um objeto
+  // { campaigns, keywords, auction } no formato de tela.
+  function renderGoogleView(data){
+    const gCampaigns = data.campaigns, keywords = data.keywords, auction = data.auction;
+
+    const gCampaignsEl = document.getElementById('gCampaignsTable');
+    gCampaignsEl.innerHTML = '';
+    gCampaigns.forEach(c=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td>`;
+      gCampaignsEl.appendChild(tr);
+    });
+
+    const keywordsEl = document.getElementById('keywordsTable');
+    keywordsEl.innerHTML = '';
+    keywords.forEach(k=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k.kw}</td><td><span class="match-tag">${k.match}</span></td><td>${qsBadge(k.qs)}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td>`;
+      keywordsEl.appendChild(tr);
+    });
+
+    const auctionEl = document.getElementById('auctionTable');
+    auctionEl.innerHTML = '';
+    auction.forEach(r=>{
+      const tr = document.createElement('tr');
+      const bar = typeof r.share === 'number' ? `<div class="is-bar-track"><div class="is-bar-fill" style="width:${r.share}%"></div></div>` : '';
+      tr.innerHTML = `
+        <td>${r.name}</td>
+        <td>${r.share}%<br>${bar}</td>
+        <td>${r.overlap}${typeof r.overlap==='number' ? '%' : ''}</td>
+        <td>${r.above}${typeof r.above==='number' ? '%' : ''}</td>
+        <td>${r.top}${typeof r.top==='number' ? '%' : ''}</td>`;
+      if(r.name === 'Sua conta') tr.style.fontWeight = '700';
+      auctionEl.appendChild(tr);
+    });
+
+    // KPIs do topo
+    const totalSpend = gCampaigns.reduce((s,c) => s + parseFloat(c.spend.replace(/[^\d,]/g,'').replace(',','.')), 0);
+    document.getElementById('googleKpiSpend').textContent = brl(totalSpend);
+    document.getElementById('googleKpiConv').textContent = gCampaigns.reduce((s,c)=>s+c.conv,0);
+    const avgQs = keywords.length ? (keywords.reduce((s,k)=>s+k.qs,0)/keywords.length).toFixed(1) : '—';
+    document.getElementById('googleKpiQs').textContent = `${avgQs} / 10`;
+
+    if (!gCampaigns.length) {
+      ['googleHighlights','googleFunnel','googleCriativosTable'].forEach(id => document.getElementById(id).innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados suficientes ainda.</p>');
+      document.getElementById('googleEvoChart').innerHTML = '';
+      return;
+    }
+
     const parseBRL = s => parseFloat(s.replace('R$','').replace(/\./g,'').replace(',','.').trim());
     const parsePct = s => parseFloat(s.replace('%','').replace(',','.'));
 
     // --- Destaques ---
     const gTotalSpend = gCampaigns.reduce((s,c) => s + parseBRL(c.spend), 0);
     const topCampaign = [...gCampaigns].sort((a,b) => parseBRL(b.spend) - parseBRL(a.spend))[0];
-    const bestQsKw = [...keywords].sort((a,b) => b.qs - a.qs)[0];
-    const worstQsKw = [...keywords].sort((a,b) => a.qs - b.qs)[0];
-    const highlights = [
-      { icon:'💰', title:`Investimento concentrado em "${topCampaign.name}"`, sub:`${topCampaign.spend} de ${brl(gTotalSpend)} investidos (${Math.round(parseBRL(topCampaign.spend)/gTotalSpend*100)}%)` },
-      { icon:'✅', title:`Melhor Quality Score: "${bestQsKw.kw}"`, sub:`${bestQsKw.qs}/10 — CPC de ${bestQsKw.cpc}, bem abaixo da média da conta` },
-      { icon:'⚠', title:`Quality Score mais baixo: "${worstQsKw.kw}"`, sub:`${worstQsKw.qs}/10 — CPC de ${worstQsKw.cpc}, a mais cara da conta. Vale revisar correspondência e copy.` },
-    ];
-    document.getElementById('googleHighlights').innerHTML = highlights.map(h => `
-      <div class="highlight-card">
-        <div class="highlight-icon">${h.icon}</div>
-        <div class="highlight-title">${h.title}</div>
-        <div class="highlight-sub">${h.sub}</div>
-      </div>`).join('');
+    let highlightsHtml = `<div class="highlight-card"><div class="highlight-icon">💰</div><div class="highlight-title">Investimento concentrado em "${topCampaign.name}"</div><div class="highlight-sub">${topCampaign.spend} de ${brl(gTotalSpend)} investidos (${Math.round(parseBRL(topCampaign.spend)/gTotalSpend*100)}%)</div></div>`;
+    if (keywords.length) {
+      const bestQsKw = [...keywords].sort((a,b) => b.qs - a.qs)[0];
+      const worstQsKw = [...keywords].sort((a,b) => a.qs - b.qs)[0];
+      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">✅</div><div class="highlight-title">Melhor Quality Score: "${bestQsKw.kw}"</div><div class="highlight-sub">${bestQsKw.qs}/10 — CPC de ${bestQsKw.cpc}, bem abaixo da média da conta</div></div>`;
+      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">⚠</div><div class="highlight-title">Quality Score mais baixo: "${worstQsKw.kw}"</div><div class="highlight-sub">${worstQsKw.qs}/10 — CPC de ${worstQsKw.cpc}, a mais cara da conta. Vale revisar correspondência e copy.</div></div>`;
+    }
+    document.getElementById('googleHighlights').innerHTML = highlightsHtml;
 
-    // --- Funil (impressões → cliques → conversões, estimando impressões a partir do CTR) ---
+    // --- Funil ---
     const totalClicks = gCampaigns.reduce((s,c) => s + c.clicks, 0);
     const totalConv = gCampaigns.reduce((s,c) => s + c.conv, 0);
     const avgCtr = gCampaigns.reduce((s,c) => s + parsePct(c.ctr), 0) / gCampaigns.length;
-    const estImpressions = Math.round(totalClicks / (avgCtr / 100));
+    const estImpressions = avgCtr > 0 ? Math.round(totalClicks / (avgCtr / 100)) : totalClicks * 20;
     const funnel = [
       { label:'Impressões', value: estImpressions },
       { label:'Cliques', value: totalClicks },
@@ -1469,7 +1557,7 @@
     funnel.forEach((step, i) => {
       funnelHtml += `<div class="funnel-step" style="width:${380 - i*80}px;"><span class="funnel-step-value">${step.value.toLocaleString('pt-BR')}</span><span class="funnel-step-label">${step.label}</span></div>`;
       if (i < funnel.length - 1) {
-        const pct = ((funnel[i+1].value / step.value) * 100).toFixed(1);
+        const pct = step.value > 0 ? ((funnel[i+1].value / step.value) * 100).toFixed(1) : '0.0';
         funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
       }
     });
@@ -1477,6 +1565,7 @@
 
     // --- Evolução diária ---
     const gEvoChart = document.getElementById('googleEvoChart');
+    gEvoChart.innerHTML = '';
     for (let i = 0; i < 20; i++) {
       const bar = document.createElement('div');
       bar.className = 'bar g';
@@ -1484,7 +1573,7 @@
       gEvoChart.appendChild(bar);
     }
 
-    // --- Criativos (anúncios responsivos, com "força do anúncio" mock por campanha) ---
+    // --- Criativos ---
     const adStrengths = [
       { level:'Excelente', color:'var(--green)' },
       { level:'Boa', color:'var(--amber)' },
@@ -1492,13 +1581,83 @@
       { level:'Ruim', color:'var(--red)' },
     ];
     const criativosEl = document.getElementById('googleCriativosTable');
+    criativosEl.innerHTML = '';
     gCampaigns.forEach((c, i) => {
       const strength = adStrengths[i % adStrengths.length];
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${c.name}</td><td><span style="color:${strength.color}; font-weight:700;">${strength.level}</span></td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.conv}</td>`;
       criativosEl.appendChild(tr);
     });
-  })();
+  }
+  renderGoogleView(mockGoogleReport);
+
+  /* ---------- Seletores de cliente real (Meta Ads / Google Ads) ---------- */
+  function populateClientSelectors(){
+    const accounts = Object.values(rawAccountsById).filter(a => a.status !== 'inativo');
+    ['metaClientSelect','googleClientSelect'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      const current = sel.value;
+      sel.innerHTML = `<option value="">📁 Todos os clientes (exemplo)</option>` +
+        accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      if (accounts.some(a => a.id === current)) sel.value = current;
+    });
+  }
+
+  async function onMetaClientChange(){
+    const id = document.getElementById('metaClientSelect').value;
+    const banner = document.getElementById('metaNotConnected');
+    const subtitle = document.getElementById('metaViewSubtitle');
+    banner.style.display = 'none';
+
+    if (!id) { subtitle.textContent = 'Campanhas, conjuntos de anúncios e anúncios · dados de demonstração'; renderMetaView(mockMetaCampaigns); return; }
+
+    const account = rawAccountsById[id];
+    subtitle.textContent = `Campanhas, conjuntos de anúncios e anúncios · ${account.name}`;
+    if (account.meta?.status !== 'connected') {
+      banner.style.display = 'flex';
+      renderMetaView([]);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/campaigns`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao buscar campanhas.');
+      renderMetaView(mapMetaApiToViewShape(data));
+    } catch (err) {
+      banner.style.display = 'flex';
+      banner.textContent = `⚠ ${err.message}`;
+      renderMetaView([]);
+    }
+  }
+
+  async function onGoogleClientChange(){
+    const id = document.getElementById('googleClientSelect').value;
+    const banner = document.getElementById('googleNotConnected');
+    const subtitle = document.getElementById('googleViewSubtitle');
+    banner.style.display = 'none';
+
+    if (!id) { subtitle.textContent = 'Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração'; renderGoogleView(mockGoogleReport); return; }
+
+    const account = rawAccountsById[id];
+    subtitle.textContent = `Palavras-chave, leilão e campanhas de pesquisa · ${account.name}`;
+    if (account.google?.status !== 'connected') {
+      banner.style.display = 'flex';
+      renderGoogleView({ campaigns:[], keywords:[], auction:[] });
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/google/${id}/report`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao buscar relatório.');
+      renderGoogleView(mapGoogleApiToViewShape(data));
+    } catch (err) {
+      banner.style.display = 'flex';
+      banner.textContent = `⚠ ${err.message}`;
+      renderGoogleView({ campaigns:[], keywords:[], auction:[] });
+    }
+  }
 
 
   const metaInsightsData = [
@@ -1841,6 +2000,7 @@
       rawAccountsById = Object.fromEntries(data.map(a => [a.id, a]));
       clientsMgmt = data.map(toMgmtShape);
       renderSidebarAndConnections(data.filter(a => a.status !== 'inativo').map(toConnShape));
+      populateClientSelectors();
       if (banner) banner.style.display = 'none';
     } catch (err) {
       console.error('Não consegui falar com o backend:', err);
