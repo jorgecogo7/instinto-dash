@@ -10,10 +10,15 @@ const { syncAllAccounts } = require('./lib/syncQueue');
 const app = express();
 app.use(express.json());
 
-// CORS bem simples pro frontend local — ajuste o domínio quando publicar.
+// CORS — libera o dashboard a chamar essa API de outro domínio (o
+// navegador manda um "preflight" OPTIONS antes do POST/PATCH/DELETE de
+// verdade, perguntando permissão; sem responder isso certinho, o
+// navegador bloqueia a chamada real com "Failed to fetch").
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 
