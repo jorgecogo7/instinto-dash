@@ -911,6 +911,10 @@
   // Endereço do backend. Enquanto roda local, deixe como está.
   // Quando o backend for publicado (Hostinger/Render), troque só esta linha.
   const API_BASE_URL = 'https://api.instintodigital.com.br';
+  // Chave que o backend exige pra ler/escrever clientes (ver X-API-Key).
+  // Fica visível no código-fonte — não é segredo real, é só uma trava
+  // contra bots e acesso casual, não substitui login de verdade.
+  const API_KEY = 'pP5TLNfo4341PdSYvSbRT2htsPnbhJ8KoYNLqMBKXYo';
   { const el = document.getElementById('backendUrlLabel'); if (el) el.textContent = API_BASE_URL; }
 
   /* ---------- navigation ---------- */
@@ -1543,7 +1547,7 @@
   async function loadClientsFromBackend(){
     const banner = document.getElementById('backendOfflineBanner');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/accounts`);
+      const res = await fetch(`${API_BASE_URL}/api/accounts`, { headers: { 'X-API-Key': API_KEY } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       clientsMgmt = data.map(toMgmtShape);
@@ -1604,7 +1608,7 @@
     try {
       const res = await fetch(`${API_BASE_URL}/api/accounts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar.');
