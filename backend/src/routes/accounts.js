@@ -24,12 +24,17 @@ function pickEditableFields(body) {
 }
 
 // GET /api/accounts — lista clientes, status de conexão e dados de gestão.
-router.get('/', (req, res) => {
-  res.json(accountsStore.getAll());
+router.get('/', async (req, res) => {
+  try {
+    res.json(await accountsStore.getAll());
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/accounts — cadastra um novo cliente.
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const name = sanitizeString(req.body.name, 120);
   if (!name) return res.status(400).json({ error: 'Campo "name" é obrigatório (até 120 caracteres).' });
 
@@ -37,52 +42,69 @@ router.post('/', (req, res) => {
   const dailyBudget = Number(req.body.dailyBudget);
   const pixBalance = Number(req.body.pixBalance);
 
-  const accounts = accountsStore.getAll();
-  let id = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cliente';
-  if (accounts.some((a) => a.id === id)) id = `${id}-${Date.now()}`;
+  try {
+    const accounts = await accountsStore.getAll();
+    let id = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cliente';
+    if (accounts.some((a) => a.id === id)) id = `${id}-${Date.now()}`;
 
-  const newAccount = {
-    id,
-    name,
-    niche: sanitizeString(req.body.niche, 60) || '—',
-    startDate: new Date().toISOString().slice(0, 10),
-    contractValue: Number.isFinite(contractValue) && contractValue >= 0 ? contractValue : 0,
-    dailyBudget: Number.isFinite(dailyBudget) && dailyBudget >= 0 ? dailyBudget : 0,
-    payment: req.body.payment === 'pix' ? 'pix' : 'cartao',
-    pixBalance: req.body.payment === 'pix' && Number.isFinite(pixBalance) ? pixBalance : null,
-    status: 'onboarding',
-    owner: sanitizeString(req.body.owner, 40) || 'JC',
-    site: sanitizeString(req.body.site, 200),
-    instagram: sanitizeString(req.body.instagram, 60),
-    drive: sanitizeString(req.body.drive, 300),
-    // Token aleatório usado no link de compartilhamento (visualização do
-    // cliente, sem login nenhum). 24 bytes ~= impossível de adivinhar.
-    shareToken: crypto.randomBytes(24).toString('base64url'),
-    meta: { status: 'not_connected', adAccountId: null, pageId: null, igBusinessId: null },
-    google: { status: 'not_connected', customerId: null },
-    instagramApi: { status: 'not_connected', igUserId: null },
-  };
+    const newAccount = {
+      id,
+      name,
+      niche: sanitizeString(req.body.niche, 60) || '—',
+      startDate: new Date().toISOString().slice(0, 10),
+      contractValue: Number.isFinite(contractValue) && contractValue >= 0 ? contractValue : 0,
+      dailyBudget: Number.isFinite(dailyBudget) && dailyBudget >= 0 ? dailyBudget : 0,
+      payment: req.body.payment === 'pix' ? 'pix' : 'cartao',
+      pixBalance: req.body.payment === 'pix' && Number.isFinite(pixBalance) ? pixBalance : null,
+      status: 'onboarding',
+      owner: sanitizeString(req.body.owner, 40) || 'JC',
+      site: sanitizeString(req.body.site, 200),
+      instagram: sanitizeString(req.body.instagram, 60),
+      drive: sanitizeString(req.body.drive, 300),
+      // Token aleatório usado no link de compartilhamento (visualização do
+      // cliente, sem login nenhum). 24 bytes ~= impossível de adivinhar.
+      shareToken: crypto.randomBytes(24).toString('base64url'),
+      meta: { status: 'not_connected', adAccountId: null, pageId: null, igBusinessId: null },
+      google: { status: 'not_connected', customerId: null },
+      instagramApi: { status: 'not_connected', igUserId: null },
+    };
 
-  accountsStore.add(newAccount);
-  res.status(201).json(newAccount);
+    await accountsStore.add(newAccount);
+    res.status(201).json(newAccount);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // PATCH /api/accounts/:id — edita campos de gestão (protegido contra mass assignment).
-router.patch('/:id', (req, res) => {
+router.patch('/:id', async (req, res) => {
   const changes = pickEditableFields(req.body);
   if (Object.keys(changes).length === 0) {
     return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
   }
-  const updated = accountsStore.update(req.params.id, changes);
-  if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
-  res.json(updated);
+  try {
+    const updated = await accountsStore.update(req.params.id, changes);
+    if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// DELETE /api/accounts/:id — remove um cliente cadastrado.
-router.delete('/:id', (req, res) => {
-  const removed = accountsStore.remove(req.params.id);
-  if (!removed) return res.status(404).json({ error: 'Cliente não encontrado.' });
-  res.status(204).end();
+// DELETE /api/accounts/:id — remove um cliente cadastrado (hard delete —
+// o dashboard usa PATCH status=inativo pro dia a dia, isso aqui fica
+// disponível pra uma limpeza manual de verdade, se um dia precisar).
+router.delete('/:id', async (req, res) => {
+  try {
+    const removed = await accountsStore.remove(req.params.id);
+    if (!removed) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/accounts/:id/connect-google — o botão "Conectar Google Ads"
@@ -93,13 +115,13 @@ router.post('/:id/connect-google', async (req, res) => {
   const customerId = sanitizeString(req.body.customerId, 20);
   if (!customerId) return res.status(400).json({ error: 'Informe o ID da conta Google Ads.' });
 
-  const accounts = accountsStore.getAll();
-  const account = accounts.find((a) => a.id === req.params.id);
-  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
-
   try {
+    const accounts = await accountsStore.getAll();
+    const account = accounts.find((a) => a.id === req.params.id);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
     const verified = await googleService.verifyCustomerAccess(customerId);
-    const updated = accountsStore.update(req.params.id, {
+    const updated = await accountsStore.update(req.params.id, {
       google: { status: 'connected', customerId, accountName: verified.name },
     });
     res.json(updated);
@@ -115,16 +137,21 @@ router.post('/:id/connect-google', async (req, res) => {
 // Account, Página, Instagram Business) informados manualmente. Ainda
 // não faz verificação real contra a API — isso liga quando o App do
 // Meta for Developers estiver pronto (fica marcado como "pendente" até lá).
-router.post('/:id/meta-connection', (req, res) => {
+router.post('/:id/meta-connection', async (req, res) => {
   const adAccountId = sanitizeString(req.body.adAccountId, 40);
   const pageId = sanitizeString(req.body.pageId, 40);
   const igBusinessId = sanitizeString(req.body.igBusinessId, 40);
 
-  const updated = accountsStore.update(req.params.id, {
-    meta: { status: adAccountId ? 'pending' : 'not_connected', adAccountId, pageId, igBusinessId },
-  });
-  if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
-  res.json(updated);
+  try {
+    const updated = await accountsStore.update(req.params.id, {
+      meta: { status: adAccountId ? 'pending' : 'not_connected', adAccountId, pageId, igBusinessId },
+    });
+    if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
