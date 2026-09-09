@@ -24,7 +24,7 @@ router.get('/:clientId', async (req, res) => {
     const insights = await insightsService.generateInsights(platform, data);
     res.json(insights);
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    console.error(err); res.status(502).json({ error: err.message });
   }
 });
 
