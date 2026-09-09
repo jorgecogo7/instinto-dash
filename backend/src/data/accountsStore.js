@@ -55,4 +55,9 @@ function remove(id) {
   return filtered.length !== accounts.length;
 }
 
-module.exports = { getAll, add, update, remove };
+// Usado pelo link de compartilhamento (visualização do cliente, sem login).
+function getByShareToken(token) {
+  return load().find((a) => a.shareToken === token) || null;
+}
+
+module.exports = { getAll, add, update, remove, getByShareToken };
