@@ -411,6 +411,19 @@
   }
   .share-link-row code{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color: var(--text); }
 
+  /* ---- Feedback semanal ---- */
+  .fb-platform-toggle{ display:flex; gap:4px; background: var(--bg-panel-2); border-radius:8px; padding:3px; }
+  .fb-toggle-btn{
+    font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px; border:none;
+    background:transparent; color: var(--text-dim); cursor:pointer;
+  }
+  .fb-toggle-btn.active{ background: linear-gradient(90deg, var(--flame), var(--amber)); color:#1a0e05; }
+  .fb-message-box{
+    background: var(--bg-panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:16px; font-size:13px; line-height:1.7; color: var(--text); white-space:pre-wrap;
+    min-height:80px; max-height:340px; overflow-y:auto;
+  }
+
   /* ---- Sugestões de melhoria (insights de IA) ---- */
   .insight-card{ border:1px solid var(--line); border-radius: var(--radius); padding:16px; margin-bottom:12px; background: var(--bg-panel-2); }
   .insight-card:last-child{ margin-bottom:0; }
@@ -1039,6 +1052,26 @@
           <code id="shareLinkText">—</code>
           <button class="btn-cancel" onclick="copyShareLink()">Copiar link</button>
         </div>
+      </div>
+
+      <div class="integration-card">
+        <div class="integration-head">
+          <div>
+            <div class="integration-title">Feedback semanal</div>
+            <div class="integration-sub">Mensagem pronta pra copiar e enviar no WhatsApp — últimos 30 dias</div>
+          </div>
+          <div class="fb-platform-toggle">
+            <button class="fb-toggle-btn active" id="fbToggleMeta" onclick="setFeedbackPlatform('meta')">Meta Ads</button>
+            <button class="fb-toggle-btn" id="fbToggleGoogle" onclick="setFeedbackPlatform('google')">Google Ads</button>
+          </div>
+        </div>
+        <div id="feedbackError" class="modal-error" style="display:none;"></div>
+        <div class="fb-message-box" id="feedbackMessageBox">Clica em "Gerar mensagem" pra criar o feedback com os dados reais desse cliente.</div>
+        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
+          <button class="btn-add" onclick="generateFeedback()" id="generateFeedbackBtn">Gerar mensagem</button>
+          <button class="btn-cancel" onclick="copyFeedbackMessage()">📋 Copiar mensagem</button>
+        </div>
+        <div class="footnote" style="margin-top:4px;">Gerado por IA a partir dos dados reais da conta, no mesmo tom que você já usa nas suas mensagens de feedback — sem nome de cliente, pronto pra você completar.</div>
       </div>
     </section>
 
@@ -2042,6 +2075,8 @@
 
     const shareUrl = `${location.origin}${location.pathname}?share=${account.shareToken}`;
     document.getElementById('shareLinkText').textContent = shareUrl;
+
+    setFeedbackPlatform('meta');
   }
 
   function backToClients(){
@@ -2107,6 +2142,59 @@
       const btn = event.target;
       const original = btn.textContent;
       btn.textContent = 'Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  }
+
+  /* ---------- Feedback semanal (mensagem pronta pra WhatsApp) ---------- */
+  let feedbackPlatform = 'meta';
+
+  function setFeedbackPlatform(platform){
+    feedbackPlatform = platform;
+    document.getElementById('fbToggleMeta').classList.toggle('active', platform === 'meta');
+    document.getElementById('fbToggleGoogle').classList.toggle('active', platform === 'google');
+    document.getElementById('feedbackMessageBox').textContent = 'Clica em "Gerar mensagem" pra criar o feedback com os dados reais desse cliente.';
+    document.getElementById('feedbackError').style.display = 'none';
+  }
+
+  async function generateFeedback(){
+    const btn = document.getElementById('generateFeedbackBtn');
+    const box = document.getElementById('feedbackMessageBox');
+    const errEl = document.getElementById('feedbackError');
+    errEl.style.display = 'none';
+
+    const account = rawAccountsById[currentClientId];
+    const connectionField = feedbackPlatform === 'meta' ? account?.meta : account?.google;
+    if (connectionField?.status !== 'connected') {
+      errEl.textContent = `Este cliente ainda não tem ${feedbackPlatform === 'meta' ? 'Meta Ads' : 'Google Ads'} conectado — conecte na seção acima primeiro.`;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Gerando...';
+    box.textContent = 'Analisando os dados da conta...';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/feedback/${currentClientId}?platform=${feedbackPlatform}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível gerar a mensagem.');
+      box.textContent = data.message;
+    } catch (err) {
+      box.textContent = 'Clica em "Gerar mensagem" pra criar o feedback com os dados reais desse cliente.';
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Gerar mensagem';
+  }
+
+  function copyFeedbackMessage(){
+    const text = document.getElementById('feedbackMessageBox').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      const original = btn.textContent;
+      btn.textContent = '✅ Copiado!';
       setTimeout(() => { btn.textContent = original; }, 1500);
     });
   }
