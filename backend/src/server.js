@@ -8,6 +8,7 @@ const accountsRoutes = require('./routes/accounts');
 const metaRoutes = require('./routes/meta');
 const googleRoutes = require('./routes/google');
 const insightsRoutes = require('./routes/insights');
+const feedbackRoutes = require('./routes/feedback');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
 
@@ -37,6 +38,7 @@ app.use('/api/accounts', requireAdminAuth, accountsRoutes);
 app.use('/api/meta', requireAdminAuth, metaRoutes);
 app.use('/api/google', requireAdminAuth, googleRoutes);
 app.use('/api/insights', requireAdminAuth, insightsRoutes);
+app.use('/api/feedback', requireAdminAuth, feedbackRoutes);
 
 app.post('/api/sync', requireAdminAuth, async (req, res) => {
   try {
