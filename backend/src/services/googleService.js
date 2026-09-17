@@ -127,12 +127,53 @@ const DEVICE_LABELS = {
   UNKNOWN: 'Desconhecido',
 };
 
+const GENDER_LABELS = {
+  MALE: 'Masculino',
+  FEMALE: 'Feminino',
+  UNDETERMINED: 'Não determinado',
+  UNSPECIFIED: 'Não especificado',
+  UNKNOWN: 'Desconhecido',
+};
+
+const AGE_RANGE_LABELS = {
+  AGE_RANGE_18_24: '18–24',
+  AGE_RANGE_25_34: '25–34',
+  AGE_RANGE_35_44: '35–44',
+  AGE_RANGE_45_54: '45–54',
+  AGE_RANGE_55_64: '55–64',
+  AGE_RANGE_65_UP: '65+',
+  AGE_RANGE_UNDETERMINED: 'Não determinado',
+  UNSPECIFIED: 'Não especificado',
+  UNKNOWN: 'Desconhecido',
+};
+
+// Calcula, a partir dos totais brutos de um período (dia, campanha, etc.),
+// o mesmo conjunto de métricas derivadas usado no resumo geral — assim
+// cada dia do gráfico tem os mesmos campos que os cards de KPI, e qualquer
+// métrica (inclusive uma personalizada) pode ser plotada.
+function deriveMetrics(raw) {
+  const spend = raw.spend || 0;
+  const clicks = raw.clicks || 0;
+  const impressions = raw.impressions || 0;
+  const conversions = raw.conversions || 0;
+  const allConversions = raw.allConversions || 0;
+  const topImpressionShare = impressions > 0 ? (raw.topImprWeighted || 0) / impressions : 0;
+  return {
+    spend, clicks, impressions, conversions, allConversions, topImpressionShare,
+    ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+    cpc: clicks > 0 ? spend / clicks : 0,
+    cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
+    convRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+    costPerConv: conversions > 0 ? spend / conversions : 0,
+  };
+}
+
 async function fetchRealReport(customerId, range) {
   const accessToken = await getAccessToken();
   const prev = previousRange(range);
   const dateFilter = (r) => `segments.date BETWEEN '${r.from}' AND '${r.to}'`;
 
-  const [campaignRows, prevCampaignRows, keywordRows, deviceRows, dailyRows] = await Promise.all([
+  const [campaignRows, prevCampaignRows, keywordRows, deviceRows, dailyRows, genderRows, ageRangeRows] = await Promise.all([
     runGAQL(customerId, `
       SELECT campaign.name, campaign.advertising_channel_type,
              metrics.cost_micros, metrics.clicks, metrics.ctr, metrics.impressions,
@@ -167,10 +208,25 @@ async function fetchRealReport(customerId, range) {
     `, accessToken, 'dispositivo'),
 
     runGAQL(customerId, `
-      SELECT segments.date, metrics.cost_micros, metrics.clicks
+      SELECT segments.date, metrics.cost_micros, metrics.clicks, metrics.impressions,
+             metrics.conversions, metrics.all_conversions, metrics.absolute_top_impression_percentage
       FROM campaign
       WHERE ${dateFilter(range)}
     `, accessToken, 'investimento diário'),
+
+    runGAQL(customerId, `
+      SELECT ad_group_criterion.gender.type,
+             metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
+      FROM gender_view
+      WHERE ${dateFilter(range)}
+    `, accessToken, 'gênero'),
+
+    runGAQL(customerId, `
+      SELECT ad_group_criterion.age_range.type,
+             metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
+      FROM age_range_view
+      WHERE ${dateFilter(range)}
+    `, accessToken, 'faixa etária'),
   ]);
 
   const campaigns = campaignRows.map((r) => {
@@ -224,18 +280,48 @@ async function fetchRealReport(customerId, range) {
     .map((d) => ({ ...d, label: DEVICE_LABELS[d.device] || d.device }))
     .sort((a, b) => b.spend - a.spend);
 
-  // Agrega investimento e cliques por dia (a API devolve uma linha por campanha x dia).
+  // Agrega por dia (a API devolve uma linha por campanha x dia). Guardamos os
+  // mesmos campos brutos dos totais gerais pra poder derivar QUALQUER métrica
+  // (inclusive uma personalizada) dia a dia — é o que alimenta o gráfico
+  // quando o usuário clica pra plotar uma métrica além de investimento/cliques.
   const dailyMap = new Map();
   for (const r of dailyRows) {
     const day = r.segments.date;
-    const entry = dailyMap.get(day) || { spend: 0, clicks: 0 };
+    const impressions = num(r.metrics.impressions);
+    const entry = dailyMap.get(day) || { spend: 0, clicks: 0, impressions: 0, conversions: 0, allConversions: 0, topImprWeighted: 0 };
     entry.spend += num(r.metrics.costMicros) / 1_000_000;
     entry.clicks += num(r.metrics.clicks);
+    entry.impressions += impressions;
+    entry.conversions += num(r.metrics.conversions);
+    entry.allConversions += num(r.metrics.allConversions);
+    entry.topImprWeighted += num(r.metrics.absoluteTopImpressionPercentage) * 100 * impressions;
     dailyMap.set(day, entry);
   }
   const dailySpend = [...dailyMap.entries()]
-    .map(([date, v]) => ({ date, spend: v.spend, clicks: v.clicks }))
+    .map(([date, v]) => ({ date, ...deriveMetrics(v) }))
     .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Agrega por gênero e faixa etária (Google Ads só libera esse detalhamento
+  // no nível de ad group / conta via gender_view e age_range_view).
+  const aggregateBy = (rows, keyFn) => {
+    const map = new Map();
+    for (const r of rows) {
+      const key = keyFn(r);
+      const entry = map.get(key) || { key, impressions: 0, clicks: 0, spend: 0, conversions: 0 };
+      entry.impressions += num(r.metrics.impressions);
+      entry.clicks += num(r.metrics.clicks);
+      entry.spend += num(r.metrics.costMicros) / 1_000_000;
+      entry.conversions += num(r.metrics.conversions);
+      map.set(key, entry);
+    }
+    return [...map.values()];
+  };
+  const genderBreakdown = aggregateBy(genderRows, (r) => r.adGroupCriterion.gender.type)
+    .map((d) => ({ ...d, label: GENDER_LABELS[d.key] || d.key }))
+    .sort((a, b) => b.spend - a.spend);
+  const ageBreakdown = aggregateBy(ageRangeRows, (r) => r.adGroupCriterion.ageRange.type)
+    .map((d) => ({ ...d, label: AGE_RANGE_LABELS[d.key] || d.key }))
+    .sort((a, b) => b.spend - a.spend);
 
   const totals = campaigns.reduce(
     (acc, c) => ({
@@ -298,7 +384,7 @@ async function fetchRealReport(customerId, range) {
 
   return {
     range, previousRange: prev,
-    campaigns, keywords, deviceBreakdown, dailySpend,
+    campaigns, keywords, deviceBreakdown, dailySpend, genderBreakdown, ageBreakdown,
     totals, previousTotals, deltas,
   };
 }
