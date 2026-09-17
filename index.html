@@ -1408,7 +1408,7 @@
 
   /* ---------- clients (sidebar + tables) ---------- */
   const initials = n => n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  const brl = v => v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0 });
+  const brl = v => (v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0 });
   const dotColor = s => s==='on' ? 'var(--green)' : s==='pending' ? 'var(--amber)' : '#565C66';
   const statusLabel = s => s==='on' ? 'Conectado' : s==='pending' ? 'Aguardando aprovação' : 'Não conectado';
   const badge = s => `<span style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); color:${dotColor(s)}; border:1px solid ${dotColor(s)}33;">${statusLabel(s)}</span>`;
@@ -2468,7 +2468,7 @@
     campEl.innerHTML = '';
     (data.campaigns || []).forEach(c => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${c.clicks.toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${c.conv}</td>`;
+      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${(c.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${c.conv}</td>`;
       campEl.appendChild(tr);
     });
     if (!data.campaigns?.length) campEl.innerHTML = '<tr><td colspan="7" class="footnote" style="border:none;">Sem campanhas ativas nesse período.</td></tr>';
