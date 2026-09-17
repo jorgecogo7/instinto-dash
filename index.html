@@ -2646,6 +2646,8 @@
     { id: 'conversions', label: 'Conversões', get: t => t.conversions, fmt: v => convFmt(v), deltaKey: 'conversions' },
     { id: 'convRate', label: 'Taxa de conversão', get: t => t.convRate, fmt: v => pct1(v), deltaKey: 'convRate' },
     { id: 'costPerConv', label: 'Custo por conversão', get: t => t.costPerConv, fmt: v => brl(v), deltaKey: 'costPerConv' },
+    { id: 'allConversions', label: 'Todas as conversões', get: t => t.allConversions, fmt: v => convFmt(v), deltaKey: 'allConversions' },
+    { id: 'topImpressionShare', label: '% Anúncios na 1ª posição', get: t => t.topImpressionShare, fmt: v => pct1(v), deltaKey: 'topImpressionShare' },
   ];
   const CD_METRICS_STORAGE_KEY = 'instintoDash.cdVisibleMetrics';
   const CD_DEFAULT_METRICS = CD_METRICS.map(m => m.id);
