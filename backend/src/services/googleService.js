@@ -168,7 +168,7 @@ async function fetchRealReport(customerId, range) {
     `, accessToken, 'dispositivo'),
 
     runGAQL(customerId, `
-      SELECT segments.date, metrics.cost_micros
+      SELECT segments.date, metrics.cost_micros, metrics.clicks
       FROM campaign
       WHERE ${dateFilter(range)}
     `, accessToken, 'investimento diário'),
@@ -223,14 +223,17 @@ async function fetchRealReport(customerId, range) {
     .map((d) => ({ ...d, label: DEVICE_LABELS[d.device] || d.device }))
     .sort((a, b) => b.spend - a.spend);
 
-  // Agrega investimento por dia (a API devolve uma linha por campanha x dia).
+  // Agrega investimento e cliques por dia (a API devolve uma linha por campanha x dia).
   const dailyMap = new Map();
   for (const r of dailyRows) {
     const day = r.segments.date;
-    dailyMap.set(day, (dailyMap.get(day) || 0) + num(r.metrics.costMicros) / 1_000_000);
+    const entry = dailyMap.get(day) || { spend: 0, clicks: 0 };
+    entry.spend += num(r.metrics.costMicros) / 1_000_000;
+    entry.clicks += num(r.metrics.clicks);
+    dailyMap.set(day, entry);
   }
   const dailySpend = [...dailyMap.entries()]
-    .map(([date, spend]) => ({ date, spend }))
+    .map(([date, v]) => ({ date, spend: v.spend, clicks: v.clicks }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const totals = campaigns.reduce(
