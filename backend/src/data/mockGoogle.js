@@ -1,8 +1,8 @@
 // Formato pensado para espelhar o retorno da Google Ads API (GAQL):
-// campaigns, ad_group_criterion (palavras-chave), search_term_view
-// (termos de pesquisa) e segments.device (dispositivo), agregados aqui
-// num único objeto por conta — usado só quando USE_MOCK_DATA=true ou
-// antes das credenciais reais estarem configuradas.
+// campaigns, ad_group_criterion (palavras-chave), segments.device
+// (dispositivo), gender_view e age_range_view (demografia), agregados
+// aqui num único objeto por conta — usado só quando USE_MOCK_DATA=true
+// ou antes das credenciais reais estarem configuradas.
 
 const campaigns = [
   { id: '111', name: 'Pesquisa · Marca', type: 'SEARCH', spend: 2180, impressions: 32000, clicks: 1240, ctr: 6.8, cpc: 1.76, conversions: 98, costPerConv: 2180 / 98, allConversions: 121, topImpressionShare: 78.4 },
@@ -18,28 +18,48 @@ const keywords = [
   { keyword: 'ortodontista', matchType: 'BROAD', qualityScore: 5, impressions: 21000, clicks: 520, ctr: 2.5, cpc: 2.64, conversions: 9, spend: 1373, costPerConv: 1373 / 9 },
 ];
 
-// "Auction Insights" foi trocado por termos de pesquisa e dispositivo —
-// são dados que a API do Google Ads realmente libera pra qualquer conta
-// (leilão é bloqueado pelo Google numa lista de espera fechada).
-const searchTerms = [
-  { term: 'clinica odontologica perto de mim', impressions: 3200, clicks: 410, conversions: 38, spend: 690 },
-  { term: 'valor implante dentario', impressions: 2100, clicks: 260, conversions: 15, spend: 480 },
-  { term: 'clareamento a laser preço', impressions: 1400, clicks: 150, conversions: 9, spend: 260 },
-  { term: 'ortodontista particular', impressions: 4800, clicks: 190, conversions: 4, spend: 410 },
-  { term: 'melhor dentista da cidade', impressions: 900, clicks: 120, conversions: 11, spend: 190 },
-];
-
 const deviceBreakdown = [
   { device: 'MOBILE', label: 'Celular', impressions: 28400, clicks: 2960, spend: 4380, conversions: 112 },
   { device: 'DESKTOP', label: 'Computador', impressions: 9100, clicks: 480, spend: 1560, conversions: 34 },
   { device: 'TABLET', label: 'Tablet', impressions: 1200, clicks: 40, spend: 240, conversions: 2 },
 ];
 
-const dailySpend = Array.from({ length: 30 }, (_, i) => ({
-  date: new Date(Date.now() - (29 - i) * 86400000).toISOString().slice(0, 10),
-  spend: Math.round(150 + Math.random() * 140),
-  clicks: Math.round(30 + Math.random() * 40),
-}));
+const genderBreakdown = [
+  { key: 'FEMALE', label: 'Feminino', impressions: 24200, clicks: 2380, spend: 3620, conversions: 96 },
+  { key: 'MALE', label: 'Masculino', impressions: 12800, clicks: 980, spend: 2140, conversions: 44 },
+  { key: 'UNDETERMINED', label: 'Não determinado', impressions: 1700, clicks: 120, spend: 420, conversions: 8 },
+];
+
+const ageBreakdown = [
+  { key: 'AGE_RANGE_25_34', label: '25–34', impressions: 11200, clicks: 1120, spend: 1780, conversions: 52 },
+  { key: 'AGE_RANGE_35_44', label: '35–44', impressions: 9800, clicks: 940, spend: 1540, conversions: 41 },
+  { key: 'AGE_RANGE_45_54', label: '45–54', impressions: 7100, clicks: 610, spend: 1080, conversions: 26 },
+  { key: 'AGE_RANGE_18_24', label: '18–24', impressions: 4900, clicks: 480, spend: 620, conversions: 14 },
+  { key: 'AGE_RANGE_55_64', label: '55–64', impressions: 3600, clicks: 260, spend: 400, conversions: 11 },
+  { key: 'AGE_RANGE_65_UP', label: '65+', impressions: 2100, clicks: 130, spend: 160, conversions: 4 },
+];
+
+// Enriquecemos cada dia com os mesmos campos derivados usados no resumo
+// geral (ctr, cpc, cpm, convRate, costPerConv, allConversions,
+// topImpressionShare), pra bater com o formato real e permitir plotar
+// qualquer métrica no gráfico em modo mock.
+const dailySpend = Array.from({ length: 30 }, (_, i) => {
+  const spend = Math.round(150 + Math.random() * 140);
+  const clicks = Math.round(30 + Math.random() * 40);
+  const impressions = Math.round(clicks * (12 + Math.random() * 6));
+  const conversions = Math.round(clicks * (0.03 + Math.random() * 0.03));
+  return {
+    date: new Date(Date.now() - (29 - i) * 86400000).toISOString().slice(0, 10),
+    spend, clicks, impressions, conversions,
+    allConversions: Math.round(conversions * 1.3),
+    ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+    cpc: clicks > 0 ? spend / clicks : 0,
+    cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
+    convRate: clicks > 0 ? (conversions / clicks) * 100 : 0,
+    costPerConv: conversions > 0 ? spend / conversions : 0,
+    topImpressionShare: 40 + Math.random() * 30,
+  };
+});
 
 const totals = campaigns.reduce(
   (acc, c) => ({
@@ -81,9 +101,10 @@ module.exports = {
   previousRange: null,
   campaigns,
   keywords,
-  searchTerms,
   deviceBreakdown,
   dailySpend,
+  genderBreakdown,
+  ageBreakdown,
   totals,
   previousTotals,
   deltas: {
