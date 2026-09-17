@@ -120,7 +120,7 @@
   .inactive-row:last-child{ border-bottom:none; }
 
   /* Main */
-  .main{ flex:1; padding: 28px 36px; max-width: 1320px; }
+  .main{ flex:1; padding: 28px 36px; min-width:0; }
   .view{ display:none; }
   .view.active{ display:block; }
 
@@ -392,8 +392,56 @@
   .public-head{ display:flex; align-items:center; gap:14px; margin-bottom:24px; }
   .public-title{ font-size:22px; font-weight:700; }
 
-  /* ---- Página de detalhe do cliente (Integrações) ---- */
+  /* ---- Página de detalhe do cliente (Visão geral / Integrações) ---- */
   .client-detail-tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .cd-pane{ display:none; }
+  .cd-pane.active{ display:block; }
+  .btn-edit-client{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+    background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text);
+    padding:7px 13px; border-radius:8px; cursor:pointer; margin-top:8px;
+  }
+  .btn-edit-client:hover{ border-color: rgba(255,176,32,0.5); }
+
+  /* ---- Seletor de período (calendário) ---- */
+  .range-picker{ position:relative; display:inline-block; }
+  .range-picker-btn{
+    background: var(--bg-panel); border:1px solid var(--line); color:var(--text);
+    font-size:12.5px; padding:8px 12px; border-radius:8px; cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+  }
+  .range-picker-btn:hover{ border-color: rgba(255,176,32,0.5); }
+  .range-picker-menu{
+    display:none; position:absolute; top:calc(100% + 6px); right:0; z-index:20;
+    background: var(--bg-panel-2); border:1px solid var(--line); border-radius: var(--radius);
+    padding:14px; width:260px; box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+  .range-picker-menu.open{ display:block; }
+  .range-preset{
+    display:block; width:100%; text-align:left; background:transparent; border:none;
+    color:var(--text-dim); font-size:12.5px; padding:7px 8px; border-radius:6px; cursor:pointer;
+  }
+  .range-preset:hover, .range-preset.active{ background: var(--bg-panel-3); color:var(--text); }
+  .range-custom{ display:flex; flex-direction:column; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  .range-custom label{ font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.4px; }
+  .range-custom input[type="date"]{
+    background: var(--bg-panel-3); border:1px solid var(--line); color:var(--text);
+    padding:7px 9px; border-radius:6px; font-size:12.5px; width:100%; font-family:inherit;
+  }
+  .range-apply{
+    margin-top:4px; font-size:12px; font-weight:700; padding:7px 0; border-radius:7px; border:none;
+    background: linear-gradient(90deg, var(--flame), var(--amber)); color:#1a0e05; cursor:pointer;
+  }
+
+  /* ---- Dispositivo (cards) ---- */
+  .device-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:12px; }
+  .device-card{ background: var(--bg-panel-2); border:1px solid var(--line); border-radius:8px; padding:14px; }
+  .device-card-label{ font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .device-card-value{ font-size:18px; font-weight:700; }
+  .device-card-sub{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+
+  .cd-empty{ text-align:center; padding:40px 20px; color:var(--text-dim); font-size:13px; }
+  .cd-empty a{ color: var(--amber); cursor:pointer; }
   .integration-card{
     background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
     padding:20px; margin-bottom:16px;
@@ -989,10 +1037,89 @@
         <div>
           <p style="cursor:pointer; color:var(--flame); margin-bottom:6px;" onclick="backToClients()">← Voltar para Clientes</p>
           <h1 id="clientDetailName">Cliente</h1>
-          <p>Integrações e link de compartilhamento</p>
+          <p id="clientDetailSub">Dashboard, integrações e link de compartilhamento</p>
+          <button type="button" class="btn-edit-client" onclick="openEditClientModal()">✎ Editar cliente</button>
         </div>
       </div>
 
+      <div class="client-detail-tabs">
+        <button type="button" class="g-tab active" id="cdTabBtnOverview" onclick="setClientDetailTab('overview')">Visão geral</button>
+        <button type="button" class="g-tab" id="cdTabBtnIntegrations" onclick="setClientDetailTab('integrations')">Integrações</button>
+      </div>
+
+      <!-- ===== Aba: Visão geral (dashboard real do cliente) ===== -->
+      <div class="cd-pane active" id="cdPaneOverview">
+        <div class="topbar" style="margin-bottom:14px;">
+          <div></div>
+          <div class="topbar-right">
+            <div class="range-picker" id="cdRangePicker">
+              <button type="button" class="range-picker-btn" onclick="toggleRangeMenu()">📅 <span id="cdRangeLabel">Últimos 30 dias</span> ▾</button>
+              <div class="range-picker-menu" id="cdRangeMenu">
+                <button type="button" class="range-preset active" data-days="7" onclick="applyRangePreset(7)">Últimos 7 dias</button>
+                <button type="button" class="range-preset" data-days="14" onclick="applyRangePreset(14)">Últimos 14 dias</button>
+                <button type="button" class="range-preset" data-days="30" onclick="applyRangePreset(30)">Últimos 30 dias</button>
+                <button type="button" class="range-preset" data-days="90" onclick="applyRangePreset(90)">Últimos 90 dias</button>
+                <div class="range-custom">
+                  <label>De</label>
+                  <input type="date" id="cdRangeFrom">
+                  <label>Até</label>
+                  <input type="date" id="cdRangeTo">
+                  <button type="button" class="range-apply" onclick="applyRangeCustom()">Aplicar período</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cdGoogleNotConnected" class="offline-banner" style="display:none;">⚠ Google Ads ainda não conectado pra este cliente. <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab('integrations')">Conectar agora</a></div>
+        <div id="cdLoading" class="footnote" style="display:none; border:none; padding:0;">Carregando dados do período…</div>
+
+        <div id="cdDashboardContent" style="display:none;">
+          <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="kpi"><div class="kpi-label">Investimento</div><div class="kpi-value" id="cdKpiSpend">—</div><div class="kpi-delta" id="cdKpiSpendDelta"></div></div>
+            <div class="kpi"><div class="kpi-label">Cliques</div><div class="kpi-value" id="cdKpiClicks">—</div><div class="kpi-delta" id="cdKpiClicksDelta"></div></div>
+            <div class="kpi"><div class="kpi-label">CPC médio</div><div class="kpi-value" id="cdKpiCpc">—</div><div class="kpi-delta" id="cdKpiCpcDelta"></div></div>
+            <div class="kpi"><div class="kpi-label">Conversões</div><div class="kpi-value" id="cdKpiConv">—</div><div class="kpi-delta" id="cdKpiConvDelta"></div></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Investimento por dia</h3><span class="panel-head-sub" id="cdChartSub"></span></div>
+            <div class="chart" id="cdDailyChart"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Campanhas</h3></div>
+            <table>
+              <thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+              <tbody id="cdCampaignsTable"></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Palavras-chave</h3></div>
+            <table>
+              <thead><tr><th>Palavra-chave</th><th>Correspondência</th><th>Q. Score</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+              <tbody id="cdKeywordsTable"></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Termos de pesquisa</h3><span class="panel-head-sub">O que as pessoas realmente digitaram no Google antes de clicar</span></div>
+            <table>
+              <thead><tr><th>Termo</th><th>Impr.</th><th>Cliques</th><th>Conv.</th><th>Invest.</th></tr></thead>
+              <tbody id="cdSearchTermsTable"></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Desempenho por dispositivo</h3></div>
+            <div class="device-grid" id="cdDeviceGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Aba: Integrações ===== -->
+      <div class="cd-pane" id="cdPaneIntegrations">
       <div class="integration-card">
         <div class="integration-head">
           <div>
@@ -1073,6 +1200,8 @@
         </div>
         <div class="footnote" style="margin-top:4px;">Gerado por IA a partir dos dados reais da conta, no mesmo tom que você já usa nas suas mensagens de feedback — sem nome de cliente, pronto pra você completar.</div>
       </div>
+      </div>
+      <!-- fim da aba Integrações -->
     </section>
 
     <!-- ================= MODAL: NOVO CLIENTE ================= -->
@@ -1125,6 +1254,68 @@
           <div class="modal-actions">
             <button type="button" class="btn-cancel" onclick="closeAddClientModal()">Cancelar</button>
             <button type="submit" class="btn-add">Salvar cliente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: EDITAR CLIENTE ================= -->
+    <div class="drawer-overlay" id="editClientModal" onclick="if(event.target===this) closeEditClientModal()">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3>Editar cliente</h3>
+          <button type="button" class="modal-close" onclick="closeEditClientModal()">✕</button>
+        </div>
+        <form id="editClientForm" onsubmit="submitEditClient(event)">
+          <div id="editClientError" class="modal-error" style="display:none;"></div>
+
+          <label class="modal-label">Nome do cliente *</label>
+          <input class="modal-input" id="ecName" required placeholder="Ex: Ótica Visão Clara">
+
+          <label class="modal-label">Nicho</label>
+          <input class="modal-input" id="ecNiche" placeholder="Ex: Saúde · Ótica">
+
+          <div class="modal-row">
+            <div>
+              <label class="modal-label">Valor do contrato (R$/mês)</label>
+              <input class="modal-input" id="ecContract" type="number" min="0" step="1" placeholder="0">
+            </div>
+            <div>
+              <label class="modal-label">Invest. diário (R$/dia)</label>
+              <input class="modal-input" id="ecDaily" type="number" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <label class="modal-label">Forma de pagamento do investimento</label>
+          <select class="modal-input" id="ecPayment" onchange="toggleEditPixField()">
+            <option value="cartao">Cartão</option>
+            <option value="pix">Saldo Pix (recarga manual)</option>
+          </select>
+
+          <div id="ecPixBalanceWrap" style="display:none;">
+            <label class="modal-label">Saldo Pix atual (R$)</label>
+            <input class="modal-input" id="ecPixBalance" type="number" min="0" step="1" placeholder="0">
+          </div>
+
+          <label class="modal-label">Status</label>
+          <select class="modal-input" id="ecStatus">
+            <option value="onboarding">Onboarding</option>
+            <option value="ativo">Ativo</option>
+            <option value="pausado">Pausado</option>
+          </select>
+
+          <label class="modal-label">Site</label>
+          <input class="modal-input" id="ecSite" placeholder="exemplo.com.br">
+
+          <label class="modal-label">Instagram</label>
+          <input class="modal-input" id="ecInstagram" placeholder="@usuario">
+
+          <label class="modal-label">Link do Drive</label>
+          <input class="modal-input" id="ecDrive" placeholder="https://drive.google.com/...">
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeEditClientModal()">Cancelar</button>
+            <button type="submit" class="btn-add">Salvar alterações</button>
           </div>
         </form>
       </div>
@@ -2077,12 +2268,244 @@
     document.getElementById('shareLinkText').textContent = shareUrl;
 
     setFeedbackPlatform('meta');
+
+    setClientDetailTab('overview');
+    applyRangePreset(30);
   }
 
   function backToClients(){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-clients').classList.add('active');
     document.querySelector('.nav-item[data-view="clients"]')?.classList.add('active');
+  }
+
+  /* ---------- Editar cliente ---------- */
+  function openEditClientModal(){
+    const account = rawAccountsById[currentClientId];
+    if (!account) return;
+    document.getElementById('ecName').value = account.name || '';
+    document.getElementById('ecNiche').value = (account.niche && account.niche !== '—') ? account.niche : '';
+    document.getElementById('ecContract').value = account.contractValue || '';
+    document.getElementById('ecDaily').value = account.dailyBudget || '';
+    document.getElementById('ecPayment').value = account.payment === 'pix' ? 'pix' : 'cartao';
+    document.getElementById('ecPixBalance').value = account.pixBalance ?? '';
+    document.getElementById('ecStatus').value = account.status || 'onboarding';
+    document.getElementById('ecSite').value = account.site || '';
+    document.getElementById('ecInstagram').value = account.instagram || '';
+    document.getElementById('ecDrive').value = account.drive || '';
+    toggleEditPixField();
+    document.getElementById('editClientError').style.display = 'none';
+
+    const overlay = document.getElementById('editClientModal');
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
+  }
+  function closeEditClientModal(){
+    const overlay = document.getElementById('editClientModal');
+    overlay.classList.remove('open');
+    setTimeout(() => { overlay.style.display = 'none'; }, 280);
+  }
+  function toggleEditPixField(){
+    const isPix = document.getElementById('ecPayment').value === 'pix';
+    document.getElementById('ecPixBalanceWrap').style.display = isPix ? 'block' : 'none';
+  }
+  async function submitEditClient(ev){
+    ev.preventDefault();
+    const errEl = document.getElementById('editClientError');
+    errEl.style.display = 'none';
+
+    const name = document.getElementById('ecName').value.trim();
+    if (!name) { errEl.textContent = 'O nome do cliente é obrigatório.'; errEl.style.display = 'block'; return; }
+
+    const isPix = document.getElementById('ecPayment').value === 'pix';
+    const payload = {
+      name,
+      niche: document.getElementById('ecNiche').value.trim() || '—',
+      contractValue: Number(document.getElementById('ecContract').value) || 0,
+      dailyBudget: Number(document.getElementById('ecDaily').value) || 0,
+      payment: document.getElementById('ecPayment').value,
+      pixBalance: isPix ? (Number(document.getElementById('ecPixBalance').value) || 0) : null,
+      status: document.getElementById('ecStatus').value,
+      site: document.getElementById('ecSite').value.trim() || null,
+      instagram: document.getElementById('ecInstagram').value.trim() || null,
+      drive: document.getElementById('ecDrive').value.trim() || null,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar as alterações.');
+      closeEditClientModal();
+      await loadClientsFromBackend();
+      openClientDetail(currentClientId);
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  /* ---------- Dashboard por cliente (aba "Visão geral") ---------- */
+  let cdCurrentRange = null; // { from, to }
+
+  function setClientDetailTab(tab){
+    document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
+    document.getElementById('cdTabBtnIntegrations').classList.toggle('active', tab === 'integrations');
+    document.getElementById('cdPaneOverview').classList.toggle('active', tab === 'overview');
+    document.getElementById('cdPaneIntegrations').classList.toggle('active', tab === 'integrations');
+  }
+
+  function toggleRangeMenu(){
+    document.getElementById('cdRangeMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', (ev) => {
+    const picker = document.getElementById('cdRangePicker');
+    if (picker && !picker.contains(ev.target)) document.getElementById('cdRangeMenu')?.classList.remove('open');
+  });
+
+  function isoDaysAgo(n){
+    const d = new Date(); d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0,10);
+  }
+
+  function applyRangePreset(days){
+    document.querySelectorAll('.range-preset[data-days]').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
+    const to = isoDaysAgo(0);
+    const from = isoDaysAgo(days - 1);
+    document.getElementById('cdRangeFrom').value = from;
+    document.getElementById('cdRangeTo').value = to;
+    document.getElementById('cdRangeLabel').textContent = `Últimos ${days} dias`;
+    cdCurrentRange = { from, to };
+    document.getElementById('cdRangeMenu').classList.remove('open');
+    loadClientDashboard();
+  }
+
+  function applyRangeCustom(){
+    const from = document.getElementById('cdRangeFrom').value;
+    const to = document.getElementById('cdRangeTo').value;
+    if (!from || !to || from > to) { alert('Escolha um período válido (De ≤ Até).'); return; }
+    document.querySelectorAll('.range-preset[data-days]').forEach(b => b.classList.remove('active'));
+    const fmt = d => d.split('-').reverse().join('/');
+    document.getElementById('cdRangeLabel').textContent = `${fmt(from)} – ${fmt(to)}`;
+    cdCurrentRange = { from, to };
+    document.getElementById('cdRangeMenu').classList.remove('open');
+    loadClientDashboard();
+  }
+
+  function deltaHtml(pct){
+    if (pct === null || pct === undefined || !isFinite(pct)) return '<span class="vs-label">sem dado do período anterior</span>';
+    const up = pct >= 0;
+    return `<span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span><span class="vs-label">vs período anterior</span>`;
+  }
+
+  async function loadClientDashboard(){
+    const account = rawAccountsById[currentClientId];
+    if (!account) return;
+    const banner = document.getElementById('cdGoogleNotConnected');
+    const content = document.getElementById('cdDashboardContent');
+    const loading = document.getElementById('cdLoading');
+
+    if (account.google?.status !== 'connected') {
+      banner.style.display = 'flex';
+      content.style.display = 'none';
+      loading.style.display = 'none';
+      return;
+    }
+    banner.style.display = 'none';
+    content.style.display = 'none';
+    loading.style.display = 'block';
+
+    try {
+      const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+      const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
+      const res = await fetch(`${API_BASE_URL}/api/google/${currentClientId}/report?${qs}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados.');
+      renderClientDashboard(data);
+      loading.style.display = 'none';
+      content.style.display = 'block';
+    } catch (err) {
+      loading.style.display = 'none';
+      banner.style.display = 'flex';
+      banner.textContent = `⚠ ${err.message}`;
+    }
+  }
+
+  function renderClientDashboard(data){
+    const totals = data.totals || {};
+    const deltas = data.deltas || {};
+
+    document.getElementById('cdKpiSpend').textContent = brl(totals.spend || 0);
+    document.getElementById('cdKpiSpendDelta').innerHTML = deltaHtml(deltas.spend);
+    document.getElementById('cdKpiClicks').textContent = (totals.clicks || 0).toLocaleString('pt-BR');
+    document.getElementById('cdKpiClicksDelta').innerHTML = deltaHtml(deltas.clicks);
+    document.getElementById('cdKpiCpc').textContent = brl(totals.cpc || 0);
+    document.getElementById('cdKpiCpcDelta').innerHTML = deltaHtml(deltas.cpc);
+    document.getElementById('cdKpiConv').textContent = (totals.conversions || 0).toLocaleString('pt-BR');
+    document.getElementById('cdKpiConvDelta').innerHTML = deltaHtml(deltas.conversions);
+
+    const chartEl = document.getElementById('cdDailyChart');
+    chartEl.innerHTML = '';
+    const daily = data.dailySpend || [];
+    const maxSpend = Math.max(1, ...daily.map(d => d.spend));
+    daily.forEach(d => {
+      const bar = document.createElement('div');
+      bar.className = 'bar g';
+      bar.style.height = Math.max(4, Math.round((d.spend / maxSpend) * 160)) + 'px';
+      bar.title = `${d.date}: ${brl(d.spend)}`;
+      chartEl.appendChild(bar);
+    });
+    document.getElementById('cdChartSub').textContent = daily.length
+      ? `${daily[0].date.split('-').reverse().join('/')} – ${daily[daily.length-1].date.split('-').reverse().join('/')}`
+      : '';
+
+    const campEl = document.getElementById('cdCampaignsTable');
+    campEl.innerHTML = '';
+    (data.campaigns || []).forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${c.clicks.toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${c.conv}</td>`;
+      campEl.appendChild(tr);
+    });
+    if (!data.campaigns?.length) campEl.innerHTML = '<tr><td colspan="7" class="footnote" style="border:none;">Sem campanhas ativas nesse período.</td></tr>';
+
+    const qsBadgeLocal = qs => {
+      if (qs === null || qs === undefined) return '—';
+      const cls = qs >= 8 ? 'qs-good' : qs >= 5 ? 'qs-avg' : 'qs-poor';
+      return `<span class="qs-pill ${cls}">${qs}/10</span>`;
+    };
+    const matchLabels = { EXACT:'Exata', PHRASE:'Frase', BROAD:'Ampla' };
+    const kwEl = document.getElementById('cdKeywordsTable');
+    kwEl.innerHTML = '';
+    (data.keywords || []).forEach(k => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k.keyword}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${k.clicks}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${k.conversions}</td>`;
+      kwEl.appendChild(tr);
+    });
+    if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="8" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
+
+    const stEl = document.getElementById('cdSearchTermsTable');
+    stEl.innerHTML = '';
+    (data.searchTerms || []).forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${s.term}</td><td>${(s.impressions||0).toLocaleString('pt-BR')}</td><td>${s.clicks}</td><td>${s.conversions}</td><td>${brl(s.spend)}</td>`;
+      stEl.appendChild(tr);
+    });
+    if (!data.searchTerms?.length) stEl.innerHTML = '<tr><td colspan="5" class="footnote" style="border:none;">Sem termos de pesquisa nesse período.</td></tr>';
+
+    const devEl = document.getElementById('cdDeviceGrid');
+    devEl.innerHTML = '';
+    (data.deviceBreakdown || []).forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'device-card';
+      card.innerHTML = `<div class="device-card-label">${d.label}</div><div class="device-card-value">${brl(d.spend)}</div><div class="device-card-sub">${(d.clicks||0).toLocaleString('pt-BR')} cliques · ${d.conversions||0} conv.</div>`;
+      devEl.appendChild(card);
+    });
+    if (!data.deviceBreakdown?.length) devEl.innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados por dispositivo nesse período.</p>';
   }
 
   async function connectGoogle(){
