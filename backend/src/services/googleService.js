@@ -138,7 +138,7 @@ async function fetchRealReport(customerId, range) {
       SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
              ad_group_criterion.quality_info.quality_score,
              metrics.impressions, metrics.clicks, metrics.ctr,
-             metrics.average_cpc, metrics.conversions
+             metrics.average_cpc, metrics.conversions, metrics.cost_micros
       FROM keyword_view
       WHERE ${dateFilter(range)}
       ORDER BY metrics.cost_micros DESC
@@ -187,6 +187,7 @@ async function fetchRealReport(customerId, range) {
     ctr: Number(r.metrics.ctr) * 100,
     cpc: Number(r.metrics.averageCpc) / 1_000_000,
     conversions: Number(r.metrics.conversions),
+    spend: Number(r.metrics.costMicros) / 1_000_000,
   }));
 
   // "Termos de pesquisa" — o que as pessoas de fato digitaram no Google
@@ -286,7 +287,7 @@ async function getAccountReport(customerId, options = {}) {
  *
  * Lança erro com a mensagem que veio da API do Google (ex: conta ainda
  * não vinculada à MCC, developer token sem acesso a essa conta, etc.),
- * pra rota devolver algo útil em vej de "não deu certo".
+ * pra rota devolver algo útil em vez de "não deu certo".
  */
 async function verifyCustomerAccess(customerId) {
   if (!hasRealCredentials()) {
