@@ -5,10 +5,10 @@
 // antes das credenciais reais estarem configuradas.
 
 const campaigns = [
-  { id: '111', name: 'Pesquisa · Marca', type: 'SEARCH', spend: 2180, impressions: 32000, clicks: 1240, ctr: 6.8, cpc: 1.76, conversions: 98, costPerConv: 2180 / 98 },
-  { id: '112', name: 'Pesquisa · Genérica concorrência', type: 'SEARCH', spend: 1860, impressions: 26700, clicks: 640, ctr: 2.4, cpc: 2.91, conversions: 31, costPerConv: 1860 / 31 },
-  { id: '113', name: 'Display · Remarketing', type: 'DISPLAY', spend: 940, impressions: 233000, clicks: 2100, ctr: 0.9, cpc: 0.45, conversions: 19, costPerConv: 940 / 19 },
-  { id: '114', name: 'Performance Max · Catálogo', type: 'PERFORMANCE_MAX', spend: 2200, impressions: 49400, clicks: 1580, ctr: 3.2, cpc: 1.39, conversions: 8, costPerConv: 2200 / 8 },
+  { id: '111', name: 'Pesquisa · Marca', type: 'SEARCH', spend: 2180, impressions: 32000, clicks: 1240, ctr: 6.8, cpc: 1.76, conversions: 98, costPerConv: 2180 / 98, allConversions: 121, topImpressionShare: 78.4 },
+  { id: '112', name: 'Pesquisa · Genérica concorrência', type: 'SEARCH', spend: 1860, impressions: 26700, clicks: 640, ctr: 2.4, cpc: 2.91, conversions: 31, costPerConv: 1860 / 31, allConversions: 40, topImpressionShare: 52.1 },
+  { id: '113', name: 'Display · Remarketing', type: 'DISPLAY', spend: 940, impressions: 233000, clicks: 2100, ctr: 0.9, cpc: 0.45, conversions: 19, costPerConv: 940 / 19, allConversions: 24, topImpressionShare: 12.6 },
+  { id: '114', name: 'Performance Max · Catálogo', type: 'PERFORMANCE_MAX', spend: 2200, impressions: 49400, clicks: 1580, ctr: 3.2, cpc: 1.39, conversions: 8, costPerConv: 2200 / 8, allConversions: 15, topImpressionShare: 44.9 },
 ];
 
 const keywords = [
@@ -47,20 +47,26 @@ const totals = campaigns.reduce(
     clicks: acc.clicks + c.clicks,
     conversions: acc.conversions + c.conversions,
     impressions: acc.impressions + c.impressions,
+    allConversions: acc.allConversions + c.allConversions,
+    topImprWeighted: acc.topImprWeighted + c.topImpressionShare * c.impressions,
   }),
-  { spend: 0, clicks: 0, conversions: 0, impressions: 0 }
+  { spend: 0, clicks: 0, conversions: 0, impressions: 0, allConversions: 0, topImprWeighted: 0 }
 );
 totals.ctr = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
 totals.cpc = totals.clicks > 0 ? totals.spend / totals.clicks : 0;
 totals.cpm = totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0;
 totals.convRate = totals.clicks > 0 ? (totals.conversions / totals.clicks) * 100 : 0;
 totals.costPerConv = totals.conversions > 0 ? totals.spend / totals.conversions : 0;
+totals.topImpressionShare = totals.impressions > 0 ? totals.topImprWeighted / totals.impressions : 0;
+delete totals.topImprWeighted;
 
 const previousTotals = {
   spend: totals.spend * 0.91,
   clicks: Math.round(totals.clicks * 0.94),
   conversions: Math.round(totals.conversions * 0.87),
   impressions: Math.round(totals.impressions * 0.95),
+  allConversions: Math.round(totals.allConversions * 0.89),
+  topImpressionShare: totals.topImpressionShare * 0.93,
 };
 previousTotals.ctr = previousTotals.impressions > 0 ? (previousTotals.clicks / previousTotals.impressions) * 100 : 0;
 previousTotals.cpc = previousTotals.clicks > 0 ? previousTotals.spend / previousTotals.clicks : 0;
@@ -90,5 +96,7 @@ module.exports = {
     cpm: pct(totals.cpm, previousTotals.cpm),
     convRate: pct(totals.convRate, previousTotals.convRate),
     costPerConv: pct(totals.costPerConv, previousTotals.costPerConv),
+    allConversions: pct(totals.allConversions, previousTotals.allConversions),
+    topImpressionShare: pct(totals.topImpressionShare, previousTotals.topImpressionShare),
   },
 };
