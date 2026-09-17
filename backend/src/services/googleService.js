@@ -129,14 +129,14 @@ async function fetchRealReport(customerId, range) {
   const [campaignRows, prevCampaignRows, keywordRows, searchTermRows, deviceRows, dailyRows] = await Promise.all([
     runGAQL(customerId, `
       SELECT campaign.name, campaign.advertising_channel_type,
-             metrics.cost_micros, metrics.clicks, metrics.ctr,
+             metrics.cost_micros, metrics.clicks, metrics.ctr, metrics.impressions,
              metrics.average_cpc, metrics.conversions
       FROM campaign
       WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED'
     `, accessToken, 'campanhas'),
 
     runGAQL(customerId, `
-      SELECT metrics.cost_micros, metrics.clicks, metrics.conversions
+      SELECT metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.impressions
       FROM campaign
       WHERE ${dateFilter(prev)} AND campaign.status = 'ENABLED'
     `, accessToken, 'campanhas (período anterior)'),
@@ -148,8 +148,8 @@ async function fetchRealReport(customerId, range) {
              metrics.average_cpc, metrics.conversions, metrics.cost_micros
       FROM keyword_view
       WHERE ${dateFilter(range)}
-      ORDER BY metrics.cost_micros DESC
-      LIMIT 20
+      ORDER BY metrics.clicks DESC
+      LIMIT 8
     `, accessToken, 'palavras-chave'),
 
     runGAQL(customerId, `
@@ -174,28 +174,39 @@ async function fetchRealReport(customerId, range) {
     `, accessToken, 'investimento diário'),
   ]);
 
-  const campaigns = campaignRows.map((r) => ({
-    id: r.campaign.id,
-    name: r.campaign.name,
-    type: r.campaign.advertisingChannelType,
-    spend: num(r.metrics.costMicros) / 1_000_000,
-    clicks: num(r.metrics.clicks),
-    ctr: num(r.metrics.ctr) * 100,
-    cpc: num(r.metrics.averageCpc) / 1_000_000,
-    conv: num(r.metrics.conversions),
-  }));
+  const campaigns = campaignRows.map((r) => {
+    const spend = num(r.metrics.costMicros) / 1_000_000;
+    const conv = num(r.metrics.conversions);
+    return {
+      id: r.campaign.id,
+      name: r.campaign.name,
+      type: r.campaign.advertisingChannelType,
+      spend,
+      impressions: num(r.metrics.impressions),
+      clicks: num(r.metrics.clicks),
+      ctr: num(r.metrics.ctr) * 100,
+      cpc: num(r.metrics.averageCpc) / 1_000_000,
+      conv,
+      costPerConv: conv > 0 ? spend / conv : 0,
+    };
+  });
 
-  const keywords = keywordRows.map((r) => ({
-    keyword: r.adGroupCriterion.keyword.text,
-    matchType: r.adGroupCriterion.keyword.matchType,
-    qualityScore: r.adGroupCriterion.qualityInfo?.qualityScore ?? null,
-    impressions: num(r.metrics.impressions),
-    clicks: num(r.metrics.clicks),
-    ctr: num(r.metrics.ctr) * 100,
-    cpc: num(r.metrics.averageCpc) / 1_000_000,
-    conversions: num(r.metrics.conversions),
-    spend: num(r.metrics.costMicros) / 1_000_000,
-  }));
+  const keywords = keywordRows.map((r) => {
+    const spend = num(r.metrics.costMicros) / 1_000_000;
+    const conversions = num(r.metrics.conversions);
+    return {
+      keyword: r.adGroupCriterion.keyword.text,
+      matchType: r.adGroupCriterion.keyword.matchType,
+      qualityScore: r.adGroupCriterion.qualityInfo?.qualityScore ?? null,
+      impressions: num(r.metrics.impressions),
+      clicks: num(r.metrics.clicks),
+      ctr: num(r.metrics.ctr) * 100,
+      cpc: num(r.metrics.averageCpc) / 1_000_000,
+      conversions,
+      spend,
+      costPerConv: conversions > 0 ? spend / conversions : 0,
+    };
+  });
 
   // "Termos de pesquisa" — o que as pessoas de fato digitaram no Google
   // antes de clicar no anúncio. Dado 100% real (a Auction Insights não é
@@ -241,28 +252,43 @@ async function fetchRealReport(customerId, range) {
       spend: acc.spend + c.spend,
       clicks: acc.clicks + c.clicks,
       conversions: acc.conversions + c.conv,
+      impressions: acc.impressions + c.impressions,
     }),
-    { spend: 0, clicks: 0, conversions: 0 }
+    { spend: 0, clicks: 0, conversions: 0, impressions: 0 }
   );
-  totals.ctr = totals.clicks > 0 && campaigns.length
-    ? (campaigns.reduce((s, c) => s + c.ctr, 0) / campaigns.length)
-    : 0;
+  // Métricas derivadas — sempre calculadas a partir dos totais (nunca média
+  // de médias por campanha, que distorce quando as campanhas têm volumes bem diferentes).
+  totals.ctr = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
   totals.cpc = totals.clicks > 0 ? totals.spend / totals.clicks : 0;
+  totals.cpm = totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0;
+  totals.convRate = totals.clicks > 0 ? (totals.conversions / totals.clicks) * 100 : 0;
+  totals.costPerConv = totals.conversions > 0 ? totals.spend / totals.conversions : 0;
 
   const previousTotals = prevCampaignRows.reduce(
     (acc, r) => ({
       spend: acc.spend + num(r.metrics.costMicros) / 1_000_000,
       clicks: acc.clicks + num(r.metrics.clicks),
       conversions: acc.conversions + num(r.metrics.conversions),
+      impressions: acc.impressions + num(r.metrics.impressions),
     }),
-    { spend: 0, clicks: 0, conversions: 0 }
+    { spend: 0, clicks: 0, conversions: 0, impressions: 0 }
   );
+  previousTotals.ctr = previousTotals.impressions > 0 ? (previousTotals.clicks / previousTotals.impressions) * 100 : 0;
+  previousTotals.cpc = previousTotals.clicks > 0 ? previousTotals.spend / previousTotals.clicks : 0;
+  previousTotals.cpm = previousTotals.impressions > 0 ? (previousTotals.spend / previousTotals.impressions) * 1000 : 0;
+  previousTotals.convRate = previousTotals.clicks > 0 ? (previousTotals.conversions / previousTotals.clicks) * 100 : 0;
+  previousTotals.costPerConv = previousTotals.conversions > 0 ? previousTotals.spend / previousTotals.conversions : 0;
 
   const deltas = {
     spend: pctDelta(totals.spend, previousTotals.spend),
     clicks: pctDelta(totals.clicks, previousTotals.clicks),
     conversions: pctDelta(totals.conversions, previousTotals.conversions),
-    cpc: pctDelta(totals.cpc, previousTotals.clicks > 0 ? previousTotals.spend / previousTotals.clicks : 0),
+    impressions: pctDelta(totals.impressions, previousTotals.impressions),
+    ctr: pctDelta(totals.ctr, previousTotals.ctr),
+    cpc: pctDelta(totals.cpc, previousTotals.cpc),
+    cpm: pctDelta(totals.cpm, previousTotals.cpm),
+    convRate: pctDelta(totals.convRate, previousTotals.convRate),
+    costPerConv: pctDelta(totals.costPerConv, previousTotals.costPerConv),
   };
 
   return {
