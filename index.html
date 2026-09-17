@@ -1227,7 +1227,7 @@
     listEl.innerHTML = '';
     clients.forEach((c,i)=>{
       const row = document.createElement('div');
-      row.className = 'client-item' + (i===0 ? ' active' : '');
+      row.className = 'client-item' + (i===0 ? ' active' : ''); row.onclick = () => openClientDetail(c.id);
       row.innerHTML = `
         <div class="client-item-name">
           <div class="client-avatar">${initials(c.name)}</div>
@@ -2020,7 +2020,7 @@
     };
   }
   function toConnShape(a){
-    return { name: a.name, meta: apiStatusToUi(a.meta?.status), google: apiStatusToUi(a.google?.status), ig: apiStatusToUi(a.instagramApi?.status) };
+    return { id: a.id, name: a.name, meta: apiStatusToUi(a.meta?.status), google: apiStatusToUi(a.google?.status), ig: apiStatusToUi(a.instagramApi?.status) };
   }
 
   async function loadClientsFromBackend(){
