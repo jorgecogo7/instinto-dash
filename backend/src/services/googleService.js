@@ -32,7 +32,8 @@ async function getAccessToken() {
 }
 
 // Roda uma consulta GAQL (a linguagem de busca da Google Ads API) numa conta de cliente.
-async function runGAQL(customerId, query, accessToken) {
+// `label` só serve pra identificar, nas mensagens de erro, qual das várias consultas falhou.
+async function runGAQL(customerId, query, accessToken, label) {
   const cleanId = customerId.replace(/-/g, '');
   const cleanLoginId = config.google.loginCustomerId.replace(/-/g, '');
 
@@ -47,7 +48,20 @@ async function runGAQL(customerId, query, accessToken) {
     body: JSON.stringify({ query }),
   });
   const json = await res.json();
-  if (json.error) throw new Error(`Google Ads API: ${json.error.message}`);
+  if (json.error) {
+    // O corpo padrão só traz uma mensagem genérica ("Request contains an
+    // invalid argument"); o motivo específico vem em error.details, num
+    // formato aninhado (GoogleAdsFailure). Extraímos aqui pra facilitar o diagnóstico.
+    let detail = '';
+    try {
+      const failures = (json.error.details || [])
+        .flatMap((d) => d.errors || [])
+        .map((e) => `${e.errorCode ? JSON.stringify(e.errorCode) : ''} ${e.message || ''}`.trim());
+      if (failures.length) detail = ' — ' + failures.join(' | ');
+    } catch (_) { /* ignore */ }
+    const prefix = label ? `[${label}] ` : '';
+    throw new Error(`Google Ads API: ${prefix}${json.error.message}${detail}`);
+  }
   return json.results || [];
 }
 
@@ -112,13 +126,13 @@ async function fetchRealReport(customerId, range) {
              metrics.average_cpc, metrics.conversions
       FROM campaign
       WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED'
-    `, accessToken),
+    `, accessToken, 'campanhas'),
 
     runGAQL(customerId, `
       SELECT metrics.cost_micros, metrics.clicks, metrics.conversions
       FROM campaign
       WHERE ${dateFilter(prev)} AND campaign.status = 'ENABLED'
-    `, accessToken),
+    `, accessToken, 'campanhas (período anterior)'),
 
     runGAQL(customerId, `
       SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
@@ -129,7 +143,7 @@ async function fetchRealReport(customerId, range) {
       WHERE ${dateFilter(range)}
       ORDER BY metrics.cost_micros DESC
       LIMIT 20
-    `, accessToken),
+    `, accessToken, 'palavras-chave'),
 
     runGAQL(customerId, `
       SELECT search_term_view.search_term,
@@ -138,19 +152,19 @@ async function fetchRealReport(customerId, range) {
       WHERE ${dateFilter(range)}
       ORDER BY metrics.clicks DESC
       LIMIT 15
-    `, accessToken),
+    `, accessToken, 'termos de pesquisa'),
 
     runGAQL(customerId, `
       SELECT segments.device, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM campaign
       WHERE ${dateFilter(range)}
-    `, accessToken),
+    `, accessToken, 'dispositivo'),
 
     runGAQL(customerId, `
       SELECT segments.date, metrics.cost_micros
       FROM campaign
       WHERE ${dateFilter(range)}
-    `, accessToken),
+    `, accessToken, 'investimento diário'),
   ]);
 
   const campaigns = campaignRows.map((r) => ({
@@ -272,7 +286,7 @@ async function getAccountReport(customerId, options = {}) {
  *
  * Lança erro com a mensagem que veio da API do Google (ex: conta ainda
  * não vinculada à MCC, developer token sem acesso a essa conta, etc.),
- * pra rota devolver algo útil em vez de "não deu certo".
+ * pra rota devolver algo útil em vej de "não deu certo".
  */
 async function verifyCustomerAccess(customerId) {
   if (!hasRealCredentials()) {
@@ -283,7 +297,7 @@ async function verifyCustomerAccess(customerId) {
   }
 
   const accessToken = await getAccessToken();
-  const rows = await runGAQL(customerId, `SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`, accessToken);
+  const rows = await runGAQL(customerId, `SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`, accessToken, 'verificação da conta');
 
   if (!rows.length) throw new Error('A conta respondeu, mas sem dados de cliente — verifique o ID informado.');
 
