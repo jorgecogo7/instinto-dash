@@ -116,4 +116,32 @@ async function getAccountReport(customerId) {
   return result;
 }
 
-module.exports = { getAccountReport };
+/**
+ * Confirma que o customerId informado (ID do cliente já vinculado à sua
+  * MCC) realmente responde pela API do Google Ads, antes de marcar a
+   * conta como conectada. Usado pelo botão "Conectar Google Ads".
+    *
+     * Lança erro com a mensagem que veio da API do Google (ex: conta ainda
+      * não vinculada à MCC, developer token sem acesso a essa conta, etc.),
+       * pra rota devolver algo útil em vez de "não deu certo".
+        */
+async function verifyCustomerAccess(customerId) {
+    if (!hasRealCredentials()) {
+          throw new Error(
+                  'Credenciais reais do Google Ads ainda não configuradas (GOOGLE_CLIENT_ID/SECRET, ' +
+                  'GOOGLE_REFRESH_TOKEN e GOOGLE_DEVELOPER_TOKEN precisam estar preenchidos nas variáveis de ambiente).'
+                );
+    }
+
+    const accessToken = await getAccessToken();
+    const rows = await runGAQL(customerId, `SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`, accessToken);
+
+    if (!rows.length) throw new Error('A conta respondeu, mas sem dados de cliente — verifique o ID informado.');
+
+    return {
+          id: rows[0].customer.id,
+          name: rows[0].customer.descriptiveName || null,
+    };
+}
+
+module.exports = { getAccountReport, verifyCustomerAccess };
