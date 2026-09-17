@@ -2401,6 +2401,9 @@
     const up = pct >= 0;
     return `<span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span><span class="vs-label">vs período anterior</span>`;
   }
+  // Conversões do Google Ads vêm com casas decimais (modelo de atribuição).
+  // Arredondamos pra exibir de forma limpa, sem virar um número quebrado.
+  const convFmt = v => (Math.round((v || 0) * 10) / 10).toLocaleString('pt-BR');
 
   async function loadClientDashboard(){
     const account = rawAccountsById[currentClientId];
@@ -2446,7 +2449,7 @@
     document.getElementById('cdKpiClicksDelta').innerHTML = deltaHtml(deltas.clicks);
     document.getElementById('cdKpiCpc').textContent = brl(totals.cpc || 0);
     document.getElementById('cdKpiCpcDelta').innerHTML = deltaHtml(deltas.cpc);
-    document.getElementById('cdKpiConv').textContent = (totals.conversions || 0).toLocaleString('pt-BR');
+    document.getElementById('cdKpiConv').textContent = convFmt(totals.conversions);
     document.getElementById('cdKpiConvDelta').innerHTML = deltaHtml(deltas.conversions);
 
     const chartEl = document.getElementById('cdDailyChart');
@@ -2468,7 +2471,7 @@
     campEl.innerHTML = '';
     (data.campaigns || []).forEach(c => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${(c.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${c.conv}</td>`;
+      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${(c.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${convFmt(c.conv)}</td>`;
       campEl.appendChild(tr);
     });
     if (!data.campaigns?.length) campEl.innerHTML = '<tr><td colspan="7" class="footnote" style="border:none;">Sem campanhas ativas nesse período.</td></tr>';
@@ -2483,7 +2486,7 @@
     kwEl.innerHTML = '';
     (data.keywords || []).forEach(k => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k.keyword}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${k.clicks}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${k.conversions}</td>`;
+      tr.innerHTML = `<td>${k.keyword}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${(k.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${convFmt(k.conversions)}</td>`;
       kwEl.appendChild(tr);
     });
     if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="8" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
@@ -2492,7 +2495,7 @@
     stEl.innerHTML = '';
     (data.searchTerms || []).forEach(s => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${s.term}</td><td>${(s.impressions||0).toLocaleString('pt-BR')}</td><td>${s.clicks}</td><td>${s.conversions}</td><td>${brl(s.spend)}</td>`;
+      tr.innerHTML = `<td>${s.term}</td><td>${(s.impressions||0).toLocaleString('pt-BR')}</td><td>${(s.clicks||0).toLocaleString('pt-BR')}</td><td>${convFmt(s.conversions)}</td><td>${brl(s.spend)}</td>`;
       stEl.appendChild(tr);
     });
     if (!data.searchTerms?.length) stEl.innerHTML = '<tr><td colspan="5" class="footnote" style="border:none;">Sem termos de pesquisa nesse período.</td></tr>';
@@ -2502,7 +2505,7 @@
     (data.deviceBreakdown || []).forEach(d => {
       const card = document.createElement('div');
       card.className = 'device-card';
-      card.innerHTML = `<div class="device-card-label">${d.label}</div><div class="device-card-value">${brl(d.spend)}</div><div class="device-card-sub">${(d.clicks||0).toLocaleString('pt-BR')} cliques · ${d.conversions||0} conv.</div>`;
+      card.innerHTML = `<div class="device-card-label">${d.label}</div><div class="device-card-value">${brl(d.spend)}</div><div class="device-card-sub">${(d.clicks||0).toLocaleString('pt-BR')} cliques · ${convFmt(d.conversions)} conv.</div>`;
       devEl.appendChild(card);
     });
     if (!data.deviceBreakdown?.length) devEl.innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados por dispositivo nesse período.</p>';
