@@ -2543,31 +2543,45 @@
     return d;
   }
 
-  function renderDailyChart(daily){
+  // Com 1 métrica ativa: escala real dela, com área preenchida (visual mais
+  // rico). Com 2+: cada série é normalizada pro seu próprio máximo (0–100%
+  // da altura), assim métricas de unidades diferentes (R$, %, cliques) ficam
+  // comparáveis na mesma área — igual ao seletor de métricas do Google Ads.
+  function renderDailyChart(daily, activeMetrics){
     const chartEl = document.getElementById('cdDailyChart');
+    const legendEl = document.getElementById('cdChartLegend');
     if (!daily.length) {
-      chartEl.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados de investimento nesse período.</div>';
+      chartEl.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>';
+      if (legendEl) legendEl.innerHTML = '';
       return;
     }
+    const series = (activeMetrics && activeMetrics.length)
+      ? activeMetrics
+      : [{ id: 'spend', label: 'Investimento', color: 'var(--amber)', fmt: brl, get: t => t.spend }];
+    const single = series.length === 1;
+
     const W = 1000, H = 230;
-    const padL = 58, padR = 58, padT = 16, padB = 26;
+    const padL = 54, padR = 16, padT = 18, padB = 26;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const n = daily.length;
     const xStep = n > 1 ? plotW / (n - 1) : 0;
     const xAt = i => padL + (n > 1 ? i * xStep : plotW / 2);
 
-    const maxSpend = Math.max(1, ...daily.map(d => d.spend || 0)) * 1.15;
-    const maxClicks = Math.max(1, ...daily.map(d => d.clicks || 0)) * 1.15;
-    const ySpendAt = v => padT + plotH - (v / maxSpend) * plotH;
-    const yClickAt = v => padT + plotH - (v / maxClicks) * plotH;
+    const seriesMeta = series.map((m, si) => {
+      const values = daily.map(d => Number(m.get(d)) || 0);
+      const max = Math.max(1, ...values) * 1.15;
+      return { ...m, values, max, si };
+    });
+    const yAt = (meta, v) => padT + plotH - (v / meta.max) * plotH;
 
     const gridCount = 4;
-    let gridLines = '', leftLabels = '', rightLabels = '';
+    let gridLines = '', leftLabels = '';
     for (let g = 0; g <= gridCount; g++) {
       const y = padT + (plotH / gridCount) * g;
-      gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" />`;
-      leftLabels += `<text x="${padL - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--text-dim)">${brlCompact(maxSpend * (1 - g / gridCount))}</text>`;
-      rightLabels += `<text x="${W - padR + 10}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${Math.round(maxClicks * (1 - g / gridCount)).toLocaleString('pt-BR')}</text>`;
+      gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '2,3'}" />`;
+      if (single) {
+        leftLabels += `<text x="4" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${seriesMeta[0].fmt(seriesMeta[0].max * (1 - g / gridCount))}</text>`;
+      }
     }
 
     const maxXLabels = 8;
@@ -2579,42 +2593,37 @@
       }
     });
 
-    const spendPts = daily.map((d, i) => ({ x: xAt(i), y: ySpendAt(d.spend || 0) }));
-    const clickPts = daily.map((d, i) => ({ x: xAt(i), y: yClickAt(d.clicks || 0) }));
-    const spendPath = smoothPathD(spendPts);
-    const clicksPath = smoothPathD(clickPts);
-    const spendArea = spendPath + ` L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
-
-    const showStaticLabels = n <= 10;
-    let spendDots = '', clickDots = '', spendValueLabels = '';
-    daily.forEach((d, i) => {
-      const x = xAt(i).toFixed(1);
-      const ys = ySpendAt(d.spend || 0);
-      const yc = yClickAt(d.clicks || 0);
-      spendDots += `<circle class="chart-pt" cx="${x}" cy="${ys.toFixed(1)}" r="3.5" fill="var(--amber)" stroke="var(--bg-panel)" stroke-width="1.5" />`;
-      clickDots += `<circle class="chart-pt" cx="${x}" cy="${yc.toFixed(1)}" r="3" fill="var(--blue)" stroke="var(--bg-panel)" stroke-width="1.5" />`;
-      if (showStaticLabels) {
-        spendValueLabels += `<text x="${x}" y="${(ys - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--amber)">${brlCompact(d.spend || 0)}</text>`;
+    let gradDefs = '', paths = '', dots = '';
+    seriesMeta.forEach((meta) => {
+      const pts = daily.map((d, i) => ({ x: xAt(i), y: yAt(meta, meta.values[i]) }));
+      const path = smoothPathD(pts).trim();
+      if (single) {
+        const area = path + ` L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
+        gradDefs += `<linearGradient id="cdGrad${meta.si}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${meta.color}" stop-opacity="0.35"/><stop offset="100%" stop-color="${meta.color}" stop-opacity="0"/></linearGradient>`;
+        paths += `<path d="${area}" fill="url(#cdGrad${meta.si})" stroke="none"/>`;
+      }
+      paths += `<path d="${path}" fill="none" stroke="${meta.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#cdLineShadow)" />`;
+      if (n <= 45) {
+        daily.forEach((d, i) => {
+          dots += `<circle class="chart-pt" cx="${xAt(i).toFixed(1)}" cy="${yAt(meta, meta.values[i]).toFixed(1)}" r="${single ? 3.5 : 2.8}" fill="${meta.color}" stroke="var(--bg-panel)" stroke-width="1.5" />`;
+        });
       }
     });
+
+    legendEl.innerHTML = seriesMeta.map(m => `<span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${m.color};"></span>${m.label}</span>`).join('');
 
     chartEl.innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="overflow:visible;">
         <defs>
-          <linearGradient id="cdSpendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--amber)" stop-opacity="0.32"/>
-            <stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/>
-          </linearGradient>
+          <filter id="cdLineShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-opacity="0.25"/>
+          </filter>
+          ${gradDefs}
         </defs>
         ${gridLines}
-        <path d="${spendArea}" fill="url(#cdSpendGrad)" stroke="none"/>
-        <path d="${clicksPath.trim()}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-dasharray="5,4" />
-        <path d="${spendPath.trim()}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linejoin="round" />
-        ${spendDots}
-        ${clickDots}
-        ${spendValueLabels}
+        ${paths}
+        ${dots}
         ${leftLabels}
-        ${rightLabels}
         ${xLabels}
         <line class="cd-hover-line" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3,3" opacity="0" />
         <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent" class="cd-hover-rect" />
@@ -2627,7 +2636,7 @@
     const hoverRect = chartEl.querySelector('.cd-hover-rect');
     const tooltip = chartEl.querySelector('.chart-tooltip');
 
-    const onMove = (clientX, clientY) => {
+    const onMove = (clientX) => {
       const rect = svgEl.getBoundingClientRect();
       const scaleX = W / rect.width;
       const mx = (clientX - rect.left) * scaleX;
@@ -2639,16 +2648,17 @@
       hoverLine.setAttribute('x2', x.toFixed(1));
       hoverLine.setAttribute('opacity', '1');
       tooltip.style.display = 'block';
-      tooltip.innerHTML = `<div class="ctt-date">${dateBr(d.date)}</div><div style="color:var(--amber)">● Investimento: ${brl(d.spend || 0)}</div><div style="color:var(--blue)">● Cliques: ${(d.clicks || 0).toLocaleString('pt-BR')}</div>`;
+      tooltip.innerHTML = `<div class="ctt-date">${dateBr(d.date)}</div>` +
+        seriesMeta.map(m => `<div style="color:${m.color}">● ${m.label}: ${m.fmt(m.get(d) || 0)}</div>`).join('');
       const chartRect = chartEl.getBoundingClientRect();
       const relX = clientX - chartRect.left;
       let left = relX + 14;
-      if (left + 170 > chartRect.width) left = relX - 170;
+      if (left + 190 > chartRect.width) left = relX - 190;
       if (left < 0) left = 4;
       tooltip.style.left = left + 'px';
       tooltip.style.top = '4px';
     };
-    hoverRect.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+    hoverRect.addEventListener('mousemove', (e) => onMove(e.clientX));
     hoverRect.addEventListener('mouseleave', () => {
       hoverLine.setAttribute('opacity', '0');
       tooltip.style.display = 'none';
@@ -2658,67 +2668,255 @@
 
 
   // Registro de métricas disponíveis pro resumo do cliente — cada uma sabe
-  // ler seu valor dos totais, formatar e achar seu delta. É isso que
-  // alimenta tanto os cards quanto o painel de "Personalizar métricas"
-  // (igual ao Reportei: escolhe o que aparece, sem mexer em código).
+  // ler seu valor dos totais (ou de um dia, no gráfico), formatar, achar seu
+  // delta e explicar o que significa (tooltip ao passar o mouse). Alimenta
+  // os cards, o painel de "Personalizar métricas" e o gráfico "Investimento
+  // por dia" — igual ao Reportei (escolhe o que aparece, sem mexer em código)
+  // e clica numa métrica pra plotar no gráfico, igual ao Google Ads.
   const CD_METRICS = [
-    { id: 'spend', label: 'Investimento', get: t => t.spend, fmt: v => brl(v), deltaKey: 'spend' },
-    { id: 'impressions', label: 'Impressões', get: t => t.impressions, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'impressions' },
-    { id: 'clicks', label: 'Cliques', get: t => t.clicks, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'clicks' },
-    { id: 'ctr', label: 'CTR (Taxa de Cliques)', get: t => t.ctr, fmt: v => pct1(v), deltaKey: 'ctr' },
-    { id: 'cpm', label: 'CPM médio', get: t => t.cpm, fmt: v => brl(v), deltaKey: 'cpm' },
-    { id: 'cpc', label: 'CPC médio', get: t => t.cpc, fmt: v => brl(v), deltaKey: 'cpc' },
-    { id: 'conversions', label: 'Conversões', get: t => t.conversions, fmt: v => convFmt(v), deltaKey: 'conversions' },
-    { id: 'convRate', label: 'Taxa de conversão', get: t => t.convRate, fmt: v => pct1(v), deltaKey: 'convRate' },
-    { id: 'costPerConv', label: 'Custo por conversão', get: t => t.costPerConv, fmt: v => brl(v), deltaKey: 'costPerConv' },
-    { id: 'allConversions', label: 'Todas as conversões', get: t => t.allConversions, fmt: v => convFmt(v), deltaKey: 'allConversions' },
-    { id: 'topImpressionShare', label: '% Anúncios na 1ª posição', get: t => t.topImpressionShare, fmt: v => pct1(v), deltaKey: 'topImpressionShare' },
+    { id: 'spend', label: 'Investimento', kind: 'currency', get: t => t.spend, fmt: v => brl(v), deltaKey: 'spend', desc: 'Quanto você gastou em anúncios no período.' },
+    { id: 'impressions', label: 'Impressões', kind: 'count', get: t => t.impressions, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'impressions', desc: 'Quantas vezes seu anúncio foi exibido.' },
+    { id: 'clicks', label: 'Cliques', kind: 'count', get: t => t.clicks, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'clicks', desc: 'Quantas vezes as pessoas clicaram no seu anúncio.' },
+    { id: 'ctr', label: 'CTR (Taxa de Cliques)', kind: 'percent', get: t => t.ctr, fmt: v => pct1(v), deltaKey: 'ctr', desc: '% de cliques a cada 100 impressões — mede o quanto seu anúncio atrai atenção.' },
+    { id: 'cpm', label: 'CPM médio', kind: 'currency', get: t => t.cpm, fmt: v => brl(v), deltaKey: 'cpm', desc: 'Quanto você paga, em média, a cada 1.000 impressões.' },
+    { id: 'cpc', label: 'CPC médio', kind: 'currency', get: t => t.cpc, fmt: v => brl(v), deltaKey: 'cpc', desc: 'Quanto você paga, em média, por cada clique.' },
+    { id: 'conversions', label: 'Conversões', kind: 'decimalCount', get: t => t.conversions, fmt: v => convFmt(v), deltaKey: 'conversions', desc: 'Ações valiosas (compra, contato, cadastro) atribuídas aos seus anúncios.' },
+    { id: 'convRate', label: 'Taxa de conversão', kind: 'percent', get: t => t.convRate, fmt: v => pct1(v), deltaKey: 'convRate', desc: '% dos cliques que terminaram em conversão.' },
+    { id: 'costPerConv', label: 'Custo por conversão', kind: 'currency', get: t => t.costPerConv, fmt: v => brl(v), deltaKey: 'costPerConv', desc: 'Quanto você pagou, em média, por cada conversão.' },
+    { id: 'allConversions', label: 'Todas as conversões', kind: 'decimalCount', get: t => t.allConversions, fmt: v => convFmt(v), deltaKey: 'allConversions', desc: 'Inclui também conversões secundárias, além das principais.' },
+    { id: 'topImpressionShare', label: '% Anúncios na 1ª posição', kind: 'percent', get: t => t.topImpressionShare, fmt: v => pct1(v), deltaKey: 'topImpressionShare', desc: '% das vezes que seu anúncio apareceu na primeira posição absoluta da página.' },
+    { id: 'conversionsValue', label: 'Valor de conversão', kind: 'currency', get: t => t.conversionsValue, fmt: v => brl(v), deltaKey: 'conversionsValue', desc: 'Valor em R$ que você atribuiu às conversões (ex: valor das compras).' },
+    { id: 'roas', label: 'ROAS', kind: 'multiplier', get: t => t.roas, fmt: v => `${(v || 0).toLocaleString('pt-BR', {maximumFractionDigits:2})}x`, deltaKey: 'roas', desc: 'Retorno sobre o investimento: quanto voltou em valor de conversão pra cada R$1 gasto.' },
   ];
+
+  function cdFmtByKind(kind, v){
+    switch (kind) {
+      case 'currency': return brl(v);
+      case 'percent': return pct1(v);
+      case 'decimalCount': return convFmt(v);
+      case 'multiplier': return `${(v || 0).toLocaleString('pt-BR', {maximumFractionDigits:2})}x`;
+      case 'count': return (v || 0).toLocaleString('pt-BR');
+      default: return (v || 0).toLocaleString('pt-BR', {maximumFractionDigits:2});
+    }
+  }
+  function escapeAttr(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+  function cdPctDelta(curr, prev){
+    curr = curr || 0; prev = prev || 0;
+    if (!prev) return curr > 0 ? 100 : null;
+    return ((curr - prev) / prev) * 100;
+  }
+
+  // ---------- Métricas personalizadas: fórmula com +, -, × ou ÷ entre duas
+  // métricas existentes (ex: "Custo por Lead" = Investimento ÷ Conversões). ----------
+  const CD_CUSTOM_METRICS_KEY = 'instintoDash.cdCustomMetrics';
+  function cdGetCustomMetrics(){
+    try {
+      const raw = localStorage.getItem(CD_CUSTOM_METRICS_KEY);
+      const arr = raw ? JSON.parse(raw) : null;
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+  function cdSetCustomMetrics(arr){
+    try { localStorage.setItem(CD_CUSTOM_METRICS_KEY, JSON.stringify(arr)); } catch (_) { /* ignore */ }
+  }
+  const CD_OP_FNS = { '+': (a,b) => a+b, '-': (a,b) => a-b, '*': (a,b) => a*b, '/': (a,b) => b ? a/b : 0 };
+  const CD_OP_LABELS = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+  function cdBuildCustomMetric(cm){
+    const a = CD_METRICS.find(m => m.id === cm.aId);
+    const b = CD_METRICS.find(m => m.id === cm.bId);
+    const opFn = CD_OP_FNS[cm.op] || CD_OP_FNS['/'];
+    const kind = cm.op === '*' ? 'decimal' : (a ? a.kind : 'decimal');
+    return {
+      id: cm.id,
+      label: cm.label,
+      custom: true,
+      kind,
+      get: t => opFn((a ? a.get(t) : 0) || 0, (b ? b.get(t) : 0) || 0),
+      fmt: v => cdFmtByKind(kind, v),
+      deltaKey: null,
+      desc: `Métrica personalizada: ${a ? a.label : '?'} ${CD_OP_LABELS[cm.op] || cm.op} ${b ? b.label : '?'}.`,
+    };
+  }
+  function cdAllMetricDefs(){
+    return CD_METRICS.concat(cdGetCustomMetrics().map(cdBuildCustomMetric));
+  }
+
+  // Cor fixa por métrica — é o que pinta a linha dela no gráfico ao clicar.
+  const CD_METRIC_COLORS = {
+    spend: 'var(--amber)', clicks: 'var(--blue)', impressions: 'var(--green)',
+    ctr: 'var(--pink)', cpm: 'var(--flame)', cpc: 'var(--red)',
+    conversions: 'var(--purple)', convRate: 'var(--teal)', costPerConv: 'var(--yellow)',
+    allConversions: 'var(--lime)', topImpressionShare: 'var(--skyblue)',
+    conversionsValue: 'var(--green)', roas: 'var(--purple)',
+  };
+  const CD_CUSTOM_COLOR_CYCLE = ['var(--purple)','var(--teal)','var(--yellow)','var(--lime)','var(--skyblue)','var(--pink)','var(--red)','var(--flame)'];
+  function cdColorFor(id){
+    if (CD_METRIC_COLORS[id]) return CD_METRIC_COLORS[id];
+    const idx = cdGetCustomMetrics().findIndex(c => c.id === id);
+    return CD_CUSTOM_COLOR_CYCLE[idx >= 0 ? idx % CD_CUSTOM_COLOR_CYCLE.length : 0];
+  }
+
+  // ---------- Quais métricas aparecem como card ("Personalizar métricas") ----------
   const CD_METRICS_STORAGE_KEY = 'instintoDash.cdVisibleMetrics';
   const CD_DEFAULT_METRICS = CD_METRICS.map(m => m.id);
-  let cdLastTotals = null, cdLastDeltas = null;
-
-  function cdGetVisibleMetrics(){
+  function cdGetVisibleMetrics(allDefs){
+    const validIds = new Set((allDefs || CD_METRICS).map(m => m.id));
     try {
       const raw = localStorage.getItem(CD_METRICS_STORAGE_KEY);
-      if (!raw) return CD_DEFAULT_METRICS.slice();
-      const arr = JSON.parse(raw);
-      if (!Array.isArray(arr) || !arr.length) return CD_DEFAULT_METRICS.slice();
-      return arr.filter(id => CD_METRICS.some(m => m.id === id));
+      const arr = raw ? JSON.parse(raw) : null;
+      const base = (Array.isArray(arr) && arr.length) ? arr : CD_DEFAULT_METRICS.slice();
+      return base.filter(id => validIds.has(id));
     } catch (_) { return CD_DEFAULT_METRICS.slice(); }
   }
   function cdSetVisibleMetrics(ids){
     try { localStorage.setItem(CD_METRICS_STORAGE_KEY, JSON.stringify(ids)); } catch (_) { /* ignore */ }
   }
 
-  function renderKpiGrid(totals, deltas){
-    cdLastTotals = totals; cdLastDeltas = deltas;
-    const visible = cdGetVisibleMetrics();
+  // ---------- Quais métricas estão plotadas no gráfico (clique no card) ----------
+  const CD_ACTIVE_STORAGE_KEY = 'instintoDash.cdActiveChartMetrics';
+  const CD_ACTIVE_MAX = 4;
+  function cdGetActiveChartMetrics(visibleIds){
+    let arr;
+    try {
+      const raw = localStorage.getItem(CD_ACTIVE_STORAGE_KEY);
+      arr = raw ? JSON.parse(raw) : null;
+      if (!Array.isArray(arr) || !arr.length) arr = ['spend'];
+    } catch (_) { arr = ['spend']; }
+    if (visibleIds) {
+      arr = arr.filter(id => visibleIds.includes(id));
+      if (!arr.length) arr = visibleIds.includes('spend') ? ['spend'] : (visibleIds[0] ? [visibleIds[0]] : []);
+    }
+    return arr;
+  }
+  function cdSetActiveChartMetrics(ids){
+    try { localStorage.setItem(CD_ACTIVE_STORAGE_KEY, JSON.stringify(ids)); } catch (_) { /* ignore */ }
+  }
+
+  let cdLastTotals = null, cdLastDeltas = null, cdLastPrevTotals = null, cdLastDaily = [];
+
+  function renderKpiGrid(totals, deltas, previousTotals){
+    cdLastTotals = totals; cdLastDeltas = deltas || {}; cdLastPrevTotals = previousTotals || {};
+    const allDefs = cdAllMetricDefs();
+    const visible = cdGetVisibleMetrics(allDefs);
+    const visibleDefs = allDefs.filter(m => visible.includes(m.id));
+    const active = cdGetActiveChartMetrics(visible);
+    cdSetActiveChartMetrics(active);
+
     const grid = document.getElementById('cdKpiGrid');
-    const cards = CD_METRICS.filter(m => visible.includes(m.id)).map(m => {
+    const cards = visibleDefs.map(m => {
       const val = m.fmt(m.get(totals) || 0);
-      return `<div class="kpi"><div class="kpi-label">${m.label}</div><div class="kpi-value">${val}</div><div class="kpi-delta">${deltaHtml(deltas[m.deltaKey])}</div></div>`;
+      const deltaPct = m.deltaKey ? cdLastDeltas[m.deltaKey] : cdPctDelta(m.get(totals), m.get(cdLastPrevTotals));
+      const isActive = active.includes(m.id);
+      const color = cdColorFor(m.id);
+      const styleAttr = isActive ? ` style="--kpi-accent:${color};"` : '';
+      return `<div class="kpi kpi-clickable${isActive ? ' kpi-active' : ''}"${styleAttr} onclick="toggleChartMetric('${m.id}')" title="${escapeAttr(m.desc || '')}">
+        <div class="kpi-label">${m.label}${isActive ? `<span class="kpi-chart-dot" style="background:${color};"></span>` : ''}</div>
+        <div class="kpi-value">${val}</div>
+        <div class="kpi-delta">${deltaHtml(deltaPct)}</div>
+        <div class="kpi-hint">${isActive ? 'No gráfico — clique pra remover' : 'Clique pra ver no gráfico'}</div>
+      </div>`;
     });
     grid.innerHTML = cards.length ? cards.join('') : '<div class="footnote" style="border:none; padding:0;">Nenhuma métrica selecionada — clique em "Personalizar métricas" pra escolher o que aparece aqui.</div>';
+
+    const activeDefs = allDefs.filter(m => active.includes(m.id))
+      .map(m => ({ id: m.id, label: m.label, color: cdColorFor(m.id), fmt: m.fmt, get: m.get }));
+    renderDailyChart(cdLastDaily, activeDefs);
+  }
+
+  function toggleChartMetric(id){
+    const allDefs = cdAllMetricDefs();
+    const visible = cdGetVisibleMetrics(allDefs);
+    let active = cdGetActiveChartMetrics(visible);
+    if (active.includes(id)) {
+      active = active.filter(a => a !== id);
+      if (!active.length) active = ['spend'];
+    } else {
+      active = active.concat([id]);
+      if (active.length > CD_ACTIVE_MAX) active = active.slice(active.length - CD_ACTIVE_MAX);
+    }
+    cdSetActiveChartMetrics(active);
+    if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas, cdLastPrevTotals);
   }
 
   function renderMetricsPicker(){
-    const visible = cdGetVisibleMetrics();
+    const allDefs = cdAllMetricDefs();
+    const visible = cdGetVisibleMetrics(allDefs);
+    const customs = cdGetCustomMetrics();
     const picker = document.getElementById('cdMetricsPicker');
-    picker.innerHTML = CD_METRICS.map(m => `
-      <label class="metric-check">
+    const baseHtml = CD_METRICS.map(m => `
+      <label class="metric-check" title="${escapeAttr(m.desc || '')}">
         <input type="checkbox" ${visible.includes(m.id) ? 'checked' : ''} onchange="toggleMetric('${m.id}', this.checked)">
         ${m.label}
       </label>
     `).join('');
+    const customHtml = customs.map(cm => `
+      <span class="metric-check-custom">
+        <label class="metric-check" style="flex:1;" title="${escapeAttr(cdBuildCustomMetric(cm).desc)}">
+          <input type="checkbox" ${visible.includes(cm.id) ? 'checked' : ''} onchange="toggleMetric('${cm.id}', this.checked)">
+          ${cm.label}
+        </label>
+        <button type="button" class="metric-del-btn" onclick="deleteCustomMetric('${cm.id}')" title="Remover métrica personalizada">✕</button>
+      </span>
+    `).join('');
+    const optionsHtml = CD_METRICS.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
+    picker.innerHTML = `
+      <div class="metrics-picker-title">Métricas padrão</div>
+      ${baseHtml}
+      <div class="metrics-picker-title">Suas métricas personalizadas</div>
+      ${customHtml || '<span class="footnote" style="border:none; padding:0; grid-column:1/-1;">Nenhuma ainda — crie a sua abaixo.</span>'}
+      <button type="button" class="btn-add-metric" onclick="toggleCustomMetricForm(event)">+ Criar métrica personalizada</button>
+      <div class="custom-metric-form" id="cdCustomMetricForm" style="display:none;" onclick="event.stopPropagation()">
+        <input type="text" id="cmName" placeholder="Nome (ex: Custo por Lead)">
+        <select id="cmA">${optionsHtml}</select>
+        <select id="cmOp"><option value="/">÷</option><option value="*">×</option><option value="+">+</option><option value="-">−</option></select>
+        <select id="cmB">${optionsHtml}</select>
+        <button type="button" class="btn-add" onclick="saveCustomMetric()">Salvar</button>
+      </div>
+    `;
+  }
+
+  function toggleCustomMetricForm(e){
+    if (e) e.stopPropagation();
+    const form = document.getElementById('cdCustomMetricForm');
+    form.style.display = (form.style.display === 'none' || !form.style.display) ? 'flex' : 'none';
+  }
+
+  function saveCustomMetric(){
+    const name = document.getElementById('cmName').value.trim();
+    const aId = document.getElementById('cmA').value;
+    const op = document.getElementById('cmOp').value;
+    const bId = document.getElementById('cmB').value;
+    if (!name) { document.getElementById('cmName').focus(); return; }
+    const id = 'custom_' + Date.now();
+    const customs = cdGetCustomMetrics();
+    customs.push({ id, label: name, aId, op, bId });
+    cdSetCustomMetrics(customs);
+    const visible = cdGetVisibleMetrics(cdAllMetricDefs());
+    if (!visible.includes(id)) visible.push(id);
+    cdSetVisibleMetrics(visible);
+    renderMetricsPicker();
+    if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas, cdLastPrevTotals);
+  }
+
+  function deleteCustomMetric(id){
+    cdSetCustomMetrics(cdGetCustomMetrics().filter(c => c.id !== id));
+    cdSetVisibleMetrics(cdGetVisibleMetrics(cdAllMetricDefs()).filter(v => v !== id));
+    let active = cdGetActiveChartMetrics().filter(a => a !== id);
+    if (!active.length) active = ['spend'];
+    cdSetActiveChartMetrics(active);
+    renderMetricsPicker();
+    if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas, cdLastPrevTotals);
   }
 
   function toggleMetric(id, checked){
-    let visible = cdGetVisibleMetrics();
+    const allDefs = cdAllMetricDefs();
+    let visible = cdGetVisibleMetrics(allDefs);
     if (checked && !visible.includes(id)) visible.push(id);
     if (!checked) visible = visible.filter(v => v !== id);
     cdSetVisibleMetrics(visible);
-    if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas);
+    if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas, cdLastPrevTotals);
   }
 
   function toggleMetricsPanel(e){
@@ -2738,13 +2936,12 @@
   function renderClientDashboard(data){
     const totals = data.totals || {};
     const deltas = data.deltas || {};
+    cdLastDaily = data.dailySpend || [];
 
-    renderKpiGrid(totals, deltas);
+    renderKpiGrid(totals, deltas, data.previousTotals || {});
 
-    const daily = data.dailySpend || [];
-    renderDailyChart(daily);
-    document.getElementById('cdChartSub').textContent = daily.length
-      ? `${dateBr(daily[0].date)} – ${dateBr(daily[daily.length-1].date)}`
+    document.getElementById('cdChartSub').textContent = cdLastDaily.length
+      ? `${dateBr(cdLastDaily[0].date)} – ${dateBr(cdLastDaily[cdLastDaily.length-1].date)}`
       : '';
 
     const campEl = document.getElementById('cdCampaignsTable');
@@ -2771,15 +2968,20 @@
     });
     if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
 
-    const devEl = document.getElementById('cdDeviceGrid');
-    devEl.innerHTML = '';
-    (data.deviceBreakdown || []).forEach(d => {
-      const card = document.createElement('div');
-      card.className = 'device-card';
-      card.innerHTML = `<div class="device-card-label">${d.label}</div><div class="device-card-value">${brl(d.spend)}</div><div class="device-card-sub">${(d.clicks||0).toLocaleString('pt-BR')} cliques · ${convFmt(d.conversions)} conv.</div>`;
-      devEl.appendChild(card);
-    });
-    if (!data.deviceBreakdown?.length) devEl.innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados por dispositivo nesse período.</p>';
+    const renderBreakdownGrid = (elId, items, emptyMsg) => {
+      const el = document.getElementById(elId);
+      el.innerHTML = '';
+      (items || []).forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'device-card';
+        card.innerHTML = `<div class="device-card-label">${d.label}</div><div class="device-card-value">${brl(d.spend)}</div><div class="device-card-sub">${(d.clicks||0).toLocaleString('pt-BR')} cliques · ${convFmt(d.conversions)} conv.</div>`;
+        el.appendChild(card);
+      });
+      if (!items?.length) el.innerHTML = `<p class="footnote" style="border:none; padding:0;">${emptyMsg}</p>`;
+    };
+    renderBreakdownGrid('cdDeviceGrid', data.deviceBreakdown, 'Sem dados por dispositivo nesse período.');
+    renderBreakdownGrid('cdGenderGrid', data.genderBreakdown, 'Sem dados de sexo nesse período.');
+    renderBreakdownGrid('cdAgeGrid', data.ageBreakdown, 'Sem dados de faixa etária nesse período.');
   }
 
   async function connectGoogle(){
