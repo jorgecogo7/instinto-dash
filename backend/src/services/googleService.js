@@ -13,9 +13,14 @@ function hasRealCredentials() {
   );
 }
 
-// Troca o Refresh Token por um Access Token novo (eles expiram em ~1h, então
-// pedimos um novo a cada chamada em vez de guardar um que pode ter vencido).
+// Troca o Refresh Token por um Access Token novo. Eles valem por ~1h, então
+// guardamos por 50 min (cache.js) em vez de pedir um novo em toda consulta —
+// isso é o mesmo token pra qualquer cliente (é da MCC), então economiza uma
+// chamada de rede inteira em cada carregamento de dashboard.
 async function getAccessToken() {
+  const cached = cache.get('google:accessToken');
+  if (cached) return cached;
+
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -28,6 +33,7 @@ async function getAccessToken() {
   });
   const json = await res.json();
   if (!json.access_token) throw new Error('Não foi possível renovar o token do Google: ' + JSON.stringify(json));
+  cache.set('google:accessToken', json.access_token, 50 * 60);
   return json.access_token;
 }
 
@@ -126,7 +132,7 @@ async function fetchRealReport(customerId, range) {
   const prev = previousRange(range);
   const dateFilter = (r) => `segments.date BETWEEN '${r.from}' AND '${r.to}'`;
 
-  const [campaignRows, prevCampaignRows, keywordRows, searchTermRows, deviceRows, dailyRows] = await Promise.all([
+  const [campaignRows, prevCampaignRows, keywordRows, deviceRows, dailyRows] = await Promise.all([
     runGAQL(customerId, `
       SELECT campaign.name, campaign.advertising_channel_type,
              metrics.cost_micros, metrics.clicks, metrics.ctr, metrics.impressions,
@@ -151,17 +157,8 @@ async function fetchRealReport(customerId, range) {
       FROM keyword_view
       WHERE ${dateFilter(range)}
       ORDER BY metrics.clicks DESC
-      LIMIT 8
+      LIMIT 10
     `, accessToken, 'palavras-chave'),
-
-    runGAQL(customerId, `
-      SELECT search_term_view.search_term,
-             metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros
-      FROM search_term_view
-      WHERE ${dateFilter(range)}
-      ORDER BY metrics.clicks DESC
-      LIMIT 15
-    `, accessToken, 'termos de pesquisa'),
 
     runGAQL(customerId, `
       SELECT segments.device, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
@@ -211,17 +208,6 @@ async function fetchRealReport(customerId, range) {
       costPerConv: conversions > 0 ? spend / conversions : 0,
     };
   });
-
-  // "Termos de pesquisa" — o que as pessoas de fato digitaram no Google
-  // antes de clicar no anúncio. Dado 100% real (a Auction Insights não é
-  // liberada pela API pra contas normais — ver nota no serviço).
-  const searchTerms = searchTermRows.map((r) => ({
-    term: r.searchTermView.searchTerm,
-    impressions: num(r.metrics.impressions),
-    clicks: num(r.metrics.clicks),
-    conversions: num(r.metrics.conversions),
-    spend: num(r.metrics.costMicros) / 1_000_000,
-  })).sort((a, b) => b.clicks - a.clicks);
 
   // Agrega por dispositivo (a API devolve uma linha por campanha x dispositivo).
   const deviceMap = new Map();
@@ -312,7 +298,7 @@ async function fetchRealReport(customerId, range) {
 
   return {
     range, previousRange: prev,
-    campaigns, keywords, searchTerms, deviceBreakdown, dailySpend,
+    campaigns, keywords, deviceBreakdown, dailySpend,
     totals, previousTotals, deltas,
   };
 }
@@ -323,6 +309,12 @@ async function fetchRealReport(customerId, range) {
  * vinculada à sua MCC, num período (from/to, formato YYYY-MM-DD). Sem
  * período informado, usa os últimos 30 dias — mesmo comportamento de antes.
  */
+// 20 min: dado de performance de anúncio não precisa ser em tempo real pra
+// esse painel, e cada carregamento "frio" custa vários segundos (token +
+// 5 consultas à API do Google Ads). Combinado com a sincronização automática
+// em background (ver server.js), a maioria dos acessos já encontra o cache quente.
+const REPORT_CACHE_TTL_SECONDS = 60 * 20;
+
 async function getAccountReport(customerId, options = {}) {
   const range = normalizeRange(options.from, options.to);
   const cacheKey = `google:report:${customerId}:${range.from}:${range.to}`;
@@ -331,7 +323,7 @@ async function getAccountReport(customerId, options = {}) {
 
   const result = hasRealCredentials() ? await fetchRealReport(customerId, range) : mockGoogle;
 
-  cache.set(cacheKey, result, 60 * 5);
+  cache.set(cacheKey, result, REPORT_CACHE_TTL_SECONDS);
   return result;
 }
 
