@@ -63,8 +63,20 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erro interno. Tente novamente em instantes.' });
 });
 
+// Sincronização automática em segundo plano — sem isso, o cache só "esquenta"
+// se alguém chamar POST /api/sync manualmente. Assim, na maioria das vezes o
+// dashboard já abre com dado pronto, em vez de esperar a Google Ads API
+// responder na hora (token + 6 consultas, alguns segundos). Roda pouco depois
+// de o servidor subir e depois a cada 20 min (mesmo tempo do cache do relatório).
+const SYNC_INTERVAL_MS = 20 * 60 * 1000;
+function runBackgroundSync() {
+  syncAllAccounts().catch((err) => console.error('Sincronização automática falhou:', err));
+}
+
 app.listen(config.port, () => {
   console.log(`Instinto Dash backend rodando em http://localhost:${config.port}`);
   console.log(`Modo mock: ${config.useMockData ? 'ativado (dados de exemplo)' : 'desativado'}`);
   console.log(`Login configurado: ${config.auth.username ? 'sim' : 'não (defina ADMIN_USERNAME/ADMIN_PASSWORD_HASH)'}`);
+  setTimeout(runBackgroundSync, 10 * 1000);
+  setInterval(runBackgroundSync, SYNC_INTERVAL_MS);
 });
