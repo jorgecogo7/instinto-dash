@@ -25,6 +25,10 @@
     --pink: #E85D9C;
     --red: #E8514F;
     --radius: 10px;
+    --radius-lg: 16px;
+    --card-border: rgba(255,255,255,0.045);
+    --card-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 10px 26px -16px rgba(0,0,0,0.6);
+    --card-shadow-hover: 0 4px 10px rgba(0,0,0,0.28), 0 16px 34px -14px rgba(0,0,0,0.65);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -160,17 +164,41 @@
   .dot.pending{ background: var(--amber); box-shadow:0 0 6px rgba(255,176,32,.6); }
 
   .grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; margin-bottom: 20px; }
-  .kpi{ background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .kpi{
+    background: var(--bg-panel); border:1px solid var(--card-border); border-radius: var(--radius-lg);
+    padding: 20px; box-shadow: var(--card-shadow); transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .kpi:hover{ transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
   .kpi-label{ font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.6px;}
   .kpi-value{ font-size: 26px; font-weight:700; margin-top:8px; font-variant-numeric: tabular-nums;}
   .kpi-delta{ font-size:12px; margin-top:6px; display:flex; align-items:center; gap:4px;}
   .up{ color: var(--green); } .down{ color: var(--pink); }
 
+  .kpi-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap:14px; margin-bottom: 20px; }
+
   .panels{ display:grid; grid-template-columns: 1.4fr 1fr; gap:16px; margin-bottom:20px; }
-  .panel{ background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius); padding:20px; margin-bottom:16px; }
+  .panel{
+    background: var(--bg-panel); border:1px solid var(--card-border); border-radius: var(--radius-lg);
+    padding:22px; margin-bottom:16px; box-shadow: var(--card-shadow);
+  }
   .panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;}
   .panel-head h3{ font-size:14px; font-weight:600; }
   .panel-head-sub{ font-size:11.5px; color:var(--text-dim); }
+
+  .btn-customize{
+    background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text-dim);
+    font-size:12px; font-weight:500; padding:7px 12px; border-radius:999px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; transition: color .15s, border-color .15s;
+  }
+  .btn-customize:hover{ color:var(--text); border-color: rgba(255,255,255,0.16); }
+  .metrics-picker{
+    display:none; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap:8px 16px;
+    background: var(--bg-panel-2); border:1px solid var(--line); border-radius: var(--radius);
+    padding:14px 16px; margin-bottom:16px;
+  }
+  .metric-check{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-dim); cursor:pointer; }
+  .metric-check input{ accent-color: var(--flame); width:14px; height:14px; cursor:pointer; }
+  .metric-check:hover{ color:var(--text); }
 
   .source-tag{ font-size:10.5px; padding:3px 8px; border-radius:6px; font-weight:600; letter-spacing:0.3px; }
   .tag-meta{ background: rgba(76,126,255,0.15); color:#7d9fff; }
@@ -195,9 +223,11 @@
   .chart-legend-swatch{ width:14px; height:3px; border-radius:2px; display:inline-block; }
 
   table{ width:100%; border-collapse:collapse; font-size:13px; }
-  th{ text-align:left; color:var(--text-dim); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; padding-bottom:10px; border-bottom:1px solid var(--line);}
-  td{ padding: 10px 8px 10px 0; border-bottom:1px solid var(--line); vertical-align:middle; }
+  th{ text-align:left; color:var(--text-dim); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; padding-bottom:12px; border-bottom:1px solid var(--card-border);}
+  td{ padding: 12px 8px 12px 0; border-bottom:1px solid var(--card-border); vertical-align:middle; }
   tr:last-child td{ border-bottom:none; }
+  tbody tr{ transition: background .12s; }
+  tbody tr:hover{ background: rgba(255,255,255,0.018); }
   .campaign-name{ display:flex; align-items:center; gap:8px; }
   .swatch{ width:8px; height:8px; border-radius:2px; flex-shrink:0; }
 
@@ -1088,12 +1118,12 @@
         <div id="cdLoading" class="footnote" style="display:none; border:none; padding:0;">Carregando dados do período…</div>
 
         <div id="cdDashboardContent" style="display:none;">
-          <div class="grid" style="grid-template-columns:repeat(4,1fr);">
-            <div class="kpi"><div class="kpi-label">Investimento</div><div class="kpi-value" id="cdKpiSpend">—</div><div class="kpi-delta" id="cdKpiSpendDelta"></div></div>
-            <div class="kpi"><div class="kpi-label">Cliques</div><div class="kpi-value" id="cdKpiClicks">—</div><div class="kpi-delta" id="cdKpiClicksDelta"></div></div>
-            <div class="kpi"><div class="kpi-label">CPC médio</div><div class="kpi-value" id="cdKpiCpc">—</div><div class="kpi-delta" id="cdKpiCpcDelta"></div></div>
-            <div class="kpi"><div class="kpi-label">Conversões</div><div class="kpi-value" id="cdKpiConv">—</div><div class="kpi-delta" id="cdKpiConvDelta"></div></div>
+          <div class="panel-head" style="margin-bottom:12px;">
+            <h3 style="font-size:15px;">Resumo do período</h3>
+            <button type="button" class="btn-customize" id="cdMetricsBtn" onclick="toggleMetricsPanel(event)">⚙ Personalizar métricas</button>
           </div>
+          <div class="metrics-picker" id="cdMetricsPicker"></div>
+          <div class="kpi-grid" id="cdKpiGrid"></div>
 
           <div class="panel">
             <div class="panel-head">
@@ -1112,15 +1142,15 @@
           <div class="panel">
             <div class="panel-head"><h3>Campanhas</h3></div>
             <table>
-              <thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+              <thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Custo/Conv.</th></tr></thead>
               <tbody id="cdCampaignsTable"></tbody>
             </table>
           </div>
 
           <div class="panel">
-            <div class="panel-head"><h3>Palavras-chave</h3></div>
+            <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub">As mais relevantes do período, por cliques</span></div>
             <table>
-              <thead><tr><th>Palavra-chave</th><th>Correspondência</th><th>Q. Score</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th></tr></thead>
+              <thead><tr><th>Palavra-chave</th><th>Correspondência</th><th>Q. Score</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Custo/Conv.</th></tr></thead>
               <tbody id="cdKeywordsTable"></tbody>
             </table>
           </div>
@@ -2467,6 +2497,27 @@
   // e cliques (linha tracejada, eixo direito), grade, eixos com data/valor e
   // tooltip interativo ao passar o mouse — usa coordenadas lógicas fixas (viewBox)
   // pra escalar certinho mesmo sendo renderizado enquanto o painel ainda está oculto.
+  // Converte uma lista de pontos {x,y} num path SVG suavizado (Catmull-Rom
+  // convertido pra Bézier cúbica) — dá aquela curva "orgânica" em vez de
+  // segmentos retos entre os pontos, no estilo dos gráficos do Reportei.
+  function smoothPathD(pts){
+    if (!pts.length) return '';
+    if (pts.length === 1) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+    let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} `;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? i : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += `C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)} `;
+    }
+    return d;
+  }
+
   function renderDailyChart(daily){
     const chartEl = document.getElementById('cdDailyChart');
     if (!daily.length) {
@@ -2503,13 +2554,11 @@
       }
     });
 
-    let spendPath = '', clicksPath = '';
-    daily.forEach((d, i) => {
-      const x = xAt(i).toFixed(1);
-      spendPath += (i === 0 ? 'M' : 'L') + x + ',' + ySpendAt(d.spend || 0).toFixed(1) + ' ';
-      clicksPath += (i === 0 ? 'M' : 'L') + x + ',' + yClickAt(d.clicks || 0).toFixed(1) + ' ';
-    });
-    const spendArea = spendPath + `L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
+    const spendPts = daily.map((d, i) => ({ x: xAt(i), y: ySpendAt(d.spend || 0) }));
+    const clickPts = daily.map((d, i) => ({ x: xAt(i), y: yClickAt(d.clicks || 0) }));
+    const spendPath = smoothPathD(spendPts);
+    const clicksPath = smoothPathD(clickPts);
+    const spendArea = spendPath + ` L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
 
     const showStaticLabels = n <= 10;
     let spendDots = '', clickDots = '', spendValueLabels = '';
@@ -2583,18 +2632,87 @@
 
 
 
+  // Registro de métricas disponíveis pro resumo do cliente — cada uma sabe
+  // ler seu valor dos totais, formatar e achar seu delta. É isso que
+  // alimenta tanto os cards quanto o painel de "Personalizar métricas"
+  // (igual ao Reportei: escolhe o que aparece, sem mexer em código).
+  const CD_METRICS = [
+    { id: 'spend', label: 'Investimento', get: t => t.spend, fmt: v => brl(v), deltaKey: 'spend' },
+    { id: 'impressions', label: 'Impressões', get: t => t.impressions, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'impressions' },
+    { id: 'clicks', label: 'Cliques', get: t => t.clicks, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'clicks' },
+    { id: 'ctr', label: 'CTR (Taxa de Cliques)', get: t => t.ctr, fmt: v => pct1(v), deltaKey: 'ctr' },
+    { id: 'cpm', label: 'CPM médio', get: t => t.cpm, fmt: v => brl(v), deltaKey: 'cpm' },
+    { id: 'cpc', label: 'CPC médio', get: t => t.cpc, fmt: v => brl(v), deltaKey: 'cpc' },
+    { id: 'conversions', label: 'Conversões', get: t => t.conversions, fmt: v => convFmt(v), deltaKey: 'conversions' },
+    { id: 'convRate', label: 'Taxa de conversão', get: t => t.convRate, fmt: v => pct1(v), deltaKey: 'convRate' },
+    { id: 'costPerConv', label: 'Custo por conversão', get: t => t.costPerConv, fmt: v => brl(v), deltaKey: 'costPerConv' },
+  ];
+  const CD_METRICS_STORAGE_KEY = 'instintoDash.cdVisibleMetrics';
+  const CD_DEFAULT_METRICS = CD_METRICS.map(m => m.id);
+  let cdLastTotals = null, cdLastDeltas = null;
+
+  function cdGetVisibleMetrics(){
+    try {
+      const raw = localStorage.getItem(CD_METRICS_STORAGE_KEY);
+      if (!raw) return CD_DEFAULT_METRICS.slice();
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || !arr.length) return CD_DEFAULT_METRICS.slice();
+      return arr.filter(id => CD_METRICS.some(m => m.id === id));
+    } catch (_) { return CD_DEFAULT_METRICS.slice(); }
+  }
+  function cdSetVisibleMetrics(ids){
+    try { localStorage.setItem(CD_METRICS_STORAGE_KEY, JSON.stringify(ids)); } catch (_) { /* ignore */ }
+  }
+
+  function renderKpiGrid(totals, deltas){
+    cdLastTotals = totals; cdLastDeltas = deltas;
+    const visible = cdGetVisibleMetrics();
+    const grid = document.getElementById('cdKpiGrid');
+    const cards = CD_METRICS.filter(m => visible.includes(m.id)).map(m => {
+      const val = m.fmt(m.get(totals) || 0);
+      return `<div class="kpi"><div class="kpi-label">${m.label}</div><div class="kpi-value">${val}</div><div class="kpi-delta">${deltaHtml(deltas[m.deltaKey])}</div></div>`;
+    });
+    grid.innerHTML = cards.length ? cards.join('') : '<div class="footnote" style="border:none; padding:0;">Nenhuma métrica selecionada — clique em "Personalizar métricas" pra escolher o que aparece aqui.</div>';
+  }
+
+  function renderMetricsPicker(){
+    const visible = cdGetVisibleMetrics();
+    const picker = document.getElementById('cdMetricsPicker');
+    picker.innerHTML = CD_METRICS.map(m => `
+      <label class="metric-check">
+        <input type="checkbox" ${visible.includes(m.id) ? 'checked' : ''} onchange="toggleMetric('${m.id}', this.checked)">
+        ${m.label}
+      </label>
+    `).join('');
+  }
+
+  function toggleMetric(id, checked){
+    let visible = cdGetVisibleMetrics();
+    if (checked && !visible.includes(id)) visible.push(id);
+    if (!checked) visible = visible.filter(v => v !== id);
+    cdSetVisibleMetrics(visible);
+    if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas);
+  }
+
+  function toggleMetricsPanel(e){
+    if (e) e.stopPropagation();
+    const picker = document.getElementById('cdMetricsPicker');
+    const opening = picker.style.display === 'none' || !picker.style.display;
+    if (opening) renderMetricsPicker();
+    picker.style.display = opening ? 'grid' : 'none';
+  }
+  document.addEventListener('click', (e) => {
+    const picker = document.getElementById('cdMetricsPicker');
+    if (!picker || picker.style.display !== 'grid') return;
+    if (picker.contains(e.target) || e.target.closest('#cdMetricsBtn')) return;
+    picker.style.display = 'none';
+  });
+
   function renderClientDashboard(data){
     const totals = data.totals || {};
     const deltas = data.deltas || {};
 
-    document.getElementById('cdKpiSpend').textContent = brl(totals.spend || 0);
-    document.getElementById('cdKpiSpendDelta').innerHTML = deltaHtml(deltas.spend);
-    document.getElementById('cdKpiClicks').textContent = (totals.clicks || 0).toLocaleString('pt-BR');
-    document.getElementById('cdKpiClicksDelta').innerHTML = deltaHtml(deltas.clicks);
-    document.getElementById('cdKpiCpc').textContent = brl(totals.cpc || 0);
-    document.getElementById('cdKpiCpcDelta').innerHTML = deltaHtml(deltas.cpc);
-    document.getElementById('cdKpiConv').textContent = convFmt(totals.conversions);
-    document.getElementById('cdKpiConvDelta').innerHTML = deltaHtml(deltas.conversions);
+    renderKpiGrid(totals, deltas);
 
     const daily = data.dailySpend || [];
     renderDailyChart(daily);
@@ -2606,10 +2724,10 @@
     campEl.innerHTML = '';
     (data.campaigns || []).forEach(c => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${(c.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${convFmt(c.conv)}</td>`;
+      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${(c.impressions||0).toLocaleString('pt-BR')}</td><td>${(c.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${convFmt(c.conv)}</td><td>${brl(c.costPerConv)}</td>`;
       campEl.appendChild(tr);
     });
-    if (!data.campaigns?.length) campEl.innerHTML = '<tr><td colspan="7" class="footnote" style="border:none;">Sem campanhas ativas nesse período.</td></tr>';
+    if (!data.campaigns?.length) campEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem campanhas ativas nesse período.</td></tr>';
 
     const qsBadgeLocal = qs => {
       if (qs === null || qs === undefined) return '—';
@@ -2621,10 +2739,10 @@
     kwEl.innerHTML = '';
     (data.keywords || []).forEach(k => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k.keyword}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${(k.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${convFmt(k.conversions)}</td>`;
+      tr.innerHTML = `<td>${k.keyword}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${(k.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${convFmt(k.conversions)}</td><td>${brl(k.costPerConv)}</td>`;
       kwEl.appendChild(tr);
     });
-    if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="8" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
+    if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
 
     const stEl = document.getElementById('cdSearchTermsTable');
     stEl.innerHTML = '';
