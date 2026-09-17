@@ -130,13 +130,15 @@ async function fetchRealReport(customerId, range) {
     runGAQL(customerId, `
       SELECT campaign.name, campaign.advertising_channel_type,
              metrics.cost_micros, metrics.clicks, metrics.ctr, metrics.impressions,
-             metrics.average_cpc, metrics.conversions
+             metrics.average_cpc, metrics.conversions, metrics.all_conversions,
+             metrics.absolute_top_impression_percentage
       FROM campaign
       WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED'
     `, accessToken, 'campanhas'),
 
     runGAQL(customerId, `
-      SELECT metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.impressions
+      SELECT metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.impressions,
+             metrics.all_conversions, metrics.absolute_top_impression_percentage
       FROM campaign
       WHERE ${dateFilter(prev)} AND campaign.status = 'ENABLED'
     `, accessToken, 'campanhas (período anterior)'),
@@ -188,6 +190,8 @@ async function fetchRealReport(customerId, range) {
       cpc: num(r.metrics.averageCpc) / 1_000_000,
       conv,
       costPerConv: conv > 0 ? spend / conv : 0,
+      allConversions: num(r.metrics.allConversions),
+      topImpressionShare: num(r.metrics.absoluteTopImpressionPercentage) * 100,
     };
   });
 
@@ -253,8 +257,10 @@ async function fetchRealReport(customerId, range) {
       clicks: acc.clicks + c.clicks,
       conversions: acc.conversions + c.conv,
       impressions: acc.impressions + c.impressions,
+      allConversions: acc.allConversions + c.allConversions,
+      topImprWeighted: acc.topImprWeighted + c.topImpressionShare * c.impressions,
     }),
-    { spend: 0, clicks: 0, conversions: 0, impressions: 0 }
+    { spend: 0, clicks: 0, conversions: 0, impressions: 0, allConversions: 0, topImprWeighted: 0 }
   );
   // Métricas derivadas — sempre calculadas a partir dos totais (nunca média
   // de médias por campanha, que distorce quando as campanhas têm volumes bem diferentes).
@@ -263,21 +269,32 @@ async function fetchRealReport(customerId, range) {
   totals.cpm = totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0;
   totals.convRate = totals.clicks > 0 ? (totals.conversions / totals.clicks) * 100 : 0;
   totals.costPerConv = totals.conversions > 0 ? totals.spend / totals.conversions : 0;
+  // Média ponderada por impressões (não é uma média simples das campanhas,
+  // senão uma campanha pequena pesaria igual a uma grande).
+  totals.topImpressionShare = totals.impressions > 0 ? totals.topImprWeighted / totals.impressions : 0;
+  delete totals.topImprWeighted;
 
   const previousTotals = prevCampaignRows.reduce(
-    (acc, r) => ({
-      spend: acc.spend + num(r.metrics.costMicros) / 1_000_000,
-      clicks: acc.clicks + num(r.metrics.clicks),
-      conversions: acc.conversions + num(r.metrics.conversions),
-      impressions: acc.impressions + num(r.metrics.impressions),
-    }),
-    { spend: 0, clicks: 0, conversions: 0, impressions: 0 }
+    (acc, r) => {
+      const impressions = num(r.metrics.impressions);
+      return {
+        spend: acc.spend + num(r.metrics.costMicros) / 1_000_000,
+        clicks: acc.clicks + num(r.metrics.clicks),
+        conversions: acc.conversions + num(r.metrics.conversions),
+        impressions: acc.impressions + impressions,
+        allConversions: acc.allConversions + num(r.metrics.allConversions),
+        topImprWeighted: acc.topImprWeighted + num(r.metrics.absoluteTopImpressionPercentage) * 100 * impressions,
+      };
+    },
+    { spend: 0, clicks: 0, conversions: 0, impressions: 0, allConversions: 0, topImprWeighted: 0 }
   );
   previousTotals.ctr = previousTotals.impressions > 0 ? (previousTotals.clicks / previousTotals.impressions) * 100 : 0;
   previousTotals.cpc = previousTotals.clicks > 0 ? previousTotals.spend / previousTotals.clicks : 0;
   previousTotals.cpm = previousTotals.impressions > 0 ? (previousTotals.spend / previousTotals.impressions) * 1000 : 0;
   previousTotals.convRate = previousTotals.clicks > 0 ? (previousTotals.conversions / previousTotals.clicks) * 100 : 0;
   previousTotals.costPerConv = previousTotals.conversions > 0 ? previousTotals.spend / previousTotals.conversions : 0;
+  previousTotals.topImpressionShare = previousTotals.impressions > 0 ? previousTotals.topImprWeighted / previousTotals.impressions : 0;
+  delete previousTotals.topImprWeighted;
 
   const deltas = {
     spend: pctDelta(totals.spend, previousTotals.spend),
@@ -289,6 +306,8 @@ async function fetchRealReport(customerId, range) {
     cpm: pctDelta(totals.cpm, previousTotals.cpm),
     convRate: pctDelta(totals.convRate, previousTotals.convRate),
     costPerConv: pctDelta(totals.costPerConv, previousTotals.costPerConv),
+    allConversions: pctDelta(totals.allConversions, previousTotals.allConversions),
+    topImpressionShare: pctDelta(totals.topImpressionShare, previousTotals.topImpressionShare),
   };
 
   return {
