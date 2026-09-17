@@ -180,6 +180,19 @@
   .chart{ height:170px; display:flex; align-items:flex-end; gap:6px; }
   .bar{ flex:1; border-radius:4px 4px 0 0; background: linear-gradient(180deg, var(--blue), rgba(76,126,255,0.15)); }
   .bar.g{ background: linear-gradient(180deg, var(--amber), rgba(255,176,32,0.15)); }
+  #cdDailyChart{ height:230px; display:block; position:relative; }
+  #cdDailyChart svg{ display:block; overflow:visible; }
+  #cdDailyChart .chart-pt{ cursor:crosshair; }
+  .chart-tooltip{
+    position:absolute; background: var(--bg-panel-3); border:1px solid var(--line);
+    border-radius:8px; padding:8px 11px; font-size:11.5px; color:var(--text);
+    pointer-events:none; box-shadow:0 6px 18px rgba(0,0,0,.45); white-space:nowrap; z-index:5;
+    line-height:1.65;
+  }
+  .chart-tooltip .ctt-date{ font-weight:600; margin-bottom:2px; color:var(--text); }
+  .chart-legend{ display:flex; gap:14px; font-size:11.5px; color:var(--text-dim); align-items:center; }
+  .chart-legend-item{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .chart-legend-swatch{ width:14px; height:3px; border-radius:2px; display:inline-block; }
 
   table{ width:100%; border-collapse:collapse; font-size:13px; }
   th{ text-align:left; color:var(--text-dim); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; padding-bottom:10px; border-bottom:1px solid var(--line);}
@@ -1083,8 +1096,17 @@
           </div>
 
           <div class="panel">
-            <div class="panel-head"><h3>Investimento por dia</h3><span class="panel-head-sub" id="cdChartSub"></span></div>
-            <div class="chart" id="cdDailyChart"></div>
+            <div class="panel-head">
+              <h3>Investimento por dia</h3>
+              <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <span class="panel-head-sub" id="cdChartSub"></span>
+                <div class="chart-legend">
+                  <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:var(--amber);"></span>Investimento</span>
+                  <span class="chart-legend-item"><span class="chart-legend-swatch" style="background-image:repeating-linear-gradient(90deg,var(--blue) 0 4px, transparent 4px 7px);"></span>Cliques</span>
+                </div>
+              </div>
+            </div>
+            <div id="cdDailyChart"></div>
           </div>
 
           <div class="panel">
@@ -1409,6 +1431,8 @@
   /* ---------- clients (sidebar + tables) ---------- */
   const initials = n => n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const brl = v => (v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0 });
+  const brlCompact = v => { v = v || 0; return v >= 1000 ? 'R$' + (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k' : 'R$' + Math.round(v).toLocaleString('pt-BR'); };
+  const dateBr = s => (s || '').split('-').reverse().join('/');
   const dotColor = s => s==='on' ? 'var(--green)' : s==='pending' ? 'var(--amber)' : '#565C66';
   const statusLabel = s => s==='on' ? 'Conectado' : s==='pending' ? 'Aguardando aprovação' : 'Não conectado';
   const badge = s => `<span style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); color:${dotColor(s)}; border:1px solid ${dotColor(s)}33;">${statusLabel(s)}</span>`;
@@ -2439,6 +2463,126 @@
     }
   }
 
+  // Gráfico "Investimento por dia": SVG com investimento (área/linha, eixo esquerdo)
+  // e cliques (linha tracejada, eixo direito), grade, eixos com data/valor e
+  // tooltip interativo ao passar o mouse — usa coordenadas lógicas fixas (viewBox)
+  // pra escalar certinho mesmo sendo renderizado enquanto o painel ainda está oculto.
+  function renderDailyChart(daily){
+    const chartEl = document.getElementById('cdDailyChart');
+    if (!daily.length) {
+      chartEl.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados de investimento nesse período.</div>';
+      return;
+    }
+    const W = 1000, H = 230;
+    const padL = 58, padR = 58, padT = 16, padB = 26;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = daily.length;
+    const xStep = n > 1 ? plotW / (n - 1) : 0;
+    const xAt = i => padL + (n > 1 ? i * xStep : plotW / 2);
+
+    const maxSpend = Math.max(1, ...daily.map(d => d.spend || 0)) * 1.15;
+    const maxClicks = Math.max(1, ...daily.map(d => d.clicks || 0)) * 1.15;
+    const ySpendAt = v => padT + plotH - (v / maxSpend) * plotH;
+    const yClickAt = v => padT + plotH - (v / maxClicks) * plotH;
+
+    const gridCount = 4;
+    let gridLines = '', leftLabels = '', rightLabels = '';
+    for (let g = 0; g <= gridCount; g++) {
+      const y = padT + (plotH / gridCount) * g;
+      gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" />`;
+      leftLabels += `<text x="${padL - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--text-dim)">${brlCompact(maxSpend * (1 - g / gridCount))}</text>`;
+      rightLabels += `<text x="${W - padR + 10}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${Math.round(maxClicks * (1 - g / gridCount)).toLocaleString('pt-BR')}</text>`;
+    }
+
+    const maxXLabels = 8;
+    const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
+    let xLabels = '';
+    daily.forEach((d, i) => {
+      if (i % labelEvery === 0 || i === n - 1) {
+        xLabels += `<text x="${xAt(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
+      }
+    });
+
+    let spendPath = '', clicksPath = '';
+    daily.forEach((d, i) => {
+      const x = xAt(i).toFixed(1);
+      spendPath += (i === 0 ? 'M' : 'L') + x + ',' + ySpendAt(d.spend || 0).toFixed(1) + ' ';
+      clicksPath += (i === 0 ? 'M' : 'L') + x + ',' + yClickAt(d.clicks || 0).toFixed(1) + ' ';
+    });
+    const spendArea = spendPath + `L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
+
+    const showStaticLabels = n <= 10;
+    let spendDots = '', clickDots = '', spendValueLabels = '';
+    daily.forEach((d, i) => {
+      const x = xAt(i).toFixed(1);
+      const ys = ySpendAt(d.spend || 0);
+      const yc = yClickAt(d.clicks || 0);
+      spendDots += `<circle class="chart-pt" cx="${x}" cy="${ys.toFixed(1)}" r="3.5" fill="var(--amber)" stroke="var(--bg-panel)" stroke-width="1.5" />`;
+      clickDots += `<circle class="chart-pt" cx="${x}" cy="${yc.toFixed(1)}" r="3" fill="var(--blue)" stroke="var(--bg-panel)" stroke-width="1.5" />`;
+      if (showStaticLabels) {
+        spendValueLabels += `<text x="${x}" y="${(ys - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--amber)">${brlCompact(d.spend || 0)}</text>`;
+      }
+    });
+
+    chartEl.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="overflow:visible;">
+        <defs>
+          <linearGradient id="cdSpendGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--amber)" stop-opacity="0.32"/>
+            <stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${gridLines}
+        <path d="${spendArea}" fill="url(#cdSpendGrad)" stroke="none"/>
+        <path d="${clicksPath.trim()}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-dasharray="5,4" />
+        <path d="${spendPath.trim()}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linejoin="round" />
+        ${spendDots}
+        ${clickDots}
+        ${spendValueLabels}
+        ${leftLabels}
+        ${rightLabels}
+        ${xLabels}
+        <line class="cd-hover-line" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3,3" opacity="0" />
+        <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent" class="cd-hover-rect" />
+      </svg>
+      <div class="chart-tooltip" style="display:none;"></div>
+    `;
+
+    const svgEl = chartEl.querySelector('svg');
+    const hoverLine = chartEl.querySelector('.cd-hover-line');
+    const hoverRect = chartEl.querySelector('.cd-hover-rect');
+    const tooltip = chartEl.querySelector('.chart-tooltip');
+
+    const onMove = (clientX, clientY) => {
+      const rect = svgEl.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const mx = (clientX - rect.left) * scaleX;
+      let idx = n > 1 ? Math.round((mx - padL) / xStep) : 0;
+      idx = Math.max(0, Math.min(n - 1, idx));
+      const d = daily[idx];
+      const x = xAt(idx);
+      hoverLine.setAttribute('x1', x.toFixed(1));
+      hoverLine.setAttribute('x2', x.toFixed(1));
+      hoverLine.setAttribute('opacity', '1');
+      tooltip.style.display = 'block';
+      tooltip.innerHTML = `<div class="ctt-date">${dateBr(d.date)}</div><div style="color:var(--amber)">● Investimento: ${brl(d.spend || 0)}</div><div style="color:var(--blue)">● Cliques: ${(d.clicks || 0).toLocaleString('pt-BR')}</div>`;
+      const chartRect = chartEl.getBoundingClientRect();
+      const relX = clientX - chartRect.left;
+      let left = relX + 14;
+      if (left + 170 > chartRect.width) left = relX - 170;
+      if (left < 0) left = 4;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = '4px';
+    };
+    hoverRect.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+    hoverRect.addEventListener('mouseleave', () => {
+      hoverLine.setAttribute('opacity', '0');
+      tooltip.style.display = 'none';
+    });
+  }
+
+
+
   function renderClientDashboard(data){
     const totals = data.totals || {};
     const deltas = data.deltas || {};
@@ -2452,19 +2596,10 @@
     document.getElementById('cdKpiConv').textContent = convFmt(totals.conversions);
     document.getElementById('cdKpiConvDelta').innerHTML = deltaHtml(deltas.conversions);
 
-    const chartEl = document.getElementById('cdDailyChart');
-    chartEl.innerHTML = '';
     const daily = data.dailySpend || [];
-    const maxSpend = Math.max(1, ...daily.map(d => d.spend));
-    daily.forEach(d => {
-      const bar = document.createElement('div');
-      bar.className = 'bar g';
-      bar.style.height = Math.max(4, Math.round((d.spend / maxSpend) * 160)) + 'px';
-      bar.title = `${d.date}: ${brl(d.spend)}`;
-      chartEl.appendChild(bar);
-    });
+    renderDailyChart(daily);
     document.getElementById('cdChartSub').textContent = daily.length
-      ? `${daily[0].date.split('-').reverse().join('/')} – ${daily[daily.length-1].date.split('-').reverse().join('/')}`
+      ? `${dateBr(daily[0].date)} – ${dateBr(daily[daily.length-1].date)}`
       : '';
 
     const campEl = document.getElementById('cdCampaignsTable');
