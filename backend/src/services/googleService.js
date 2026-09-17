@@ -104,6 +104,13 @@ function pctDelta(curr, prev) {
   return ((curr - prev) / prev) * 100;
 }
 
+// Normaliza um valor de metrics.* pra número seguro (a API às vezes omite
+// o campo quando o valor é zero, o que virava NaN e quebrava o front).
+function num(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 const DEVICE_LABELS = {
   MOBILE: 'Celular',
   DESKTOP: 'Computador',
@@ -171,23 +178,23 @@ async function fetchRealReport(customerId, range) {
     id: r.campaign.id,
     name: r.campaign.name,
     type: r.campaign.advertisingChannelType,
-    spend: Number(r.metrics.costMicros) / 1_000_000,
-    clicks: Number(r.metrics.clicks),
-    ctr: Number(r.metrics.ctr) * 100,
-    cpc: Number(r.metrics.averageCpc) / 1_000_000,
-    conv: Number(r.metrics.conversions),
+    spend: num(r.metrics.costMicros) / 1_000_000,
+    clicks: num(r.metrics.clicks),
+    ctr: num(r.metrics.ctr) * 100,
+    cpc: num(r.metrics.averageCpc) / 1_000_000,
+    conv: num(r.metrics.conversions),
   }));
 
   const keywords = keywordRows.map((r) => ({
     keyword: r.adGroupCriterion.keyword.text,
     matchType: r.adGroupCriterion.keyword.matchType,
     qualityScore: r.adGroupCriterion.qualityInfo?.qualityScore ?? null,
-    impressions: Number(r.metrics.impressions),
-    clicks: Number(r.metrics.clicks),
-    ctr: Number(r.metrics.ctr) * 100,
-    cpc: Number(r.metrics.averageCpc) / 1_000_000,
-    conversions: Number(r.metrics.conversions),
-    spend: Number(r.metrics.costMicros) / 1_000_000,
+    impressions: num(r.metrics.impressions),
+    clicks: num(r.metrics.clicks),
+    ctr: num(r.metrics.ctr) * 100,
+    cpc: num(r.metrics.averageCpc) / 1_000_000,
+    conversions: num(r.metrics.conversions),
+    spend: num(r.metrics.costMicros) / 1_000_000,
   }));
 
   // "Termos de pesquisa" — o que as pessoas de fato digitaram no Google
@@ -195,10 +202,10 @@ async function fetchRealReport(customerId, range) {
   // liberada pela API pra contas normais — ver nota no serviço).
   const searchTerms = searchTermRows.map((r) => ({
     term: r.searchTermView.searchTerm,
-    impressions: Number(r.metrics.impressions),
-    clicks: Number(r.metrics.clicks),
-    conversions: Number(r.metrics.conversions),
-    spend: Number(r.metrics.costMicros) / 1_000_000,
+    impressions: num(r.metrics.impressions),
+    clicks: num(r.metrics.clicks),
+    conversions: num(r.metrics.conversions),
+    spend: num(r.metrics.costMicros) / 1_000_000,
   })).sort((a, b) => b.clicks - a.clicks);
 
   // Agrega por dispositivo (a API devolve uma linha por campanha x dispositivo).
@@ -206,10 +213,10 @@ async function fetchRealReport(customerId, range) {
   for (const r of deviceRows) {
     const key = r.segments.device;
     const entry = deviceMap.get(key) || { device: key, impressions: 0, clicks: 0, spend: 0, conversions: 0 };
-    entry.impressions += Number(r.metrics.impressions);
-    entry.clicks += Number(r.metrics.clicks);
-    entry.spend += Number(r.metrics.costMicros) / 1_000_000;
-    entry.conversions += Number(r.metrics.conversions);
+    entry.impressions += num(r.metrics.impressions);
+    entry.clicks += num(r.metrics.clicks);
+    entry.spend += num(r.metrics.costMicros) / 1_000_000;
+    entry.conversions += num(r.metrics.conversions);
     deviceMap.set(key, entry);
   }
   const deviceBreakdown = [...deviceMap.values()]
@@ -220,7 +227,7 @@ async function fetchRealReport(customerId, range) {
   const dailyMap = new Map();
   for (const r of dailyRows) {
     const day = r.segments.date;
-    dailyMap.set(day, (dailyMap.get(day) || 0) + Number(r.metrics.costMicros) / 1_000_000);
+    dailyMap.set(day, (dailyMap.get(day) || 0) + num(r.metrics.costMicros) / 1_000_000);
   }
   const dailySpend = [...dailyMap.entries()]
     .map(([date, spend]) => ({ date, spend }))
@@ -241,9 +248,9 @@ async function fetchRealReport(customerId, range) {
 
   const previousTotals = prevCampaignRows.reduce(
     (acc, r) => ({
-      spend: acc.spend + Number(r.metrics.costMicros) / 1_000_000,
-      clicks: acc.clicks + Number(r.metrics.clicks),
-      conversions: acc.conversions + Number(r.metrics.conversions),
+      spend: acc.spend + num(r.metrics.costMicros) / 1_000_000,
+      clicks: acc.clicks + num(r.metrics.clicks),
+      conversions: acc.conversions + num(r.metrics.conversions),
     }),
     { spend: 0, clicks: 0, conversions: 0 }
   );
