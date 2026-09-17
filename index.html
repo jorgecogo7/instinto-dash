@@ -1148,18 +1148,10 @@
           </div>
 
           <div class="panel">
-            <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub">As mais relevantes do período, por cliques</span></div>
+            <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub">As 10 palavras-chave configuradas na campanha, por relevância</span></div>
             <table>
               <thead><tr><th>Palavra-chave</th><th>Correspondência</th><th>Q. Score</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Custo/Conv.</th></tr></thead>
               <tbody id="cdKeywordsTable"></tbody>
-            </table>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><h3>Termos de pesquisa</h3><span class="panel-head-sub">O que as pessoas realmente digitaram no Google antes de clicar</span></div>
-            <table>
-              <thead><tr><th>Termo</th><th>Impr.</th><th>Cliques</th><th>Conv.</th><th>Invest.</th></tr></thead>
-              <tbody id="cdSearchTermsTable"></tbody>
             </table>
           </div>
 
@@ -2745,15 +2737,6 @@
       kwEl.appendChild(tr);
     });
     if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
-
-    const stEl = document.getElementById('cdSearchTermsTable');
-    stEl.innerHTML = '';
-    (data.searchTerms || []).forEach(s => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${s.term}</td><td>${(s.impressions||0).toLocaleString('pt-BR')}</td><td>${(s.clicks||0).toLocaleString('pt-BR')}</td><td>${convFmt(s.conversions)}</td><td>${brl(s.spend)}</td>`;
-      stEl.appendChild(tr);
-    });
-    if (!data.searchTerms?.length) stEl.innerHTML = '<tr><td colspan="5" class="footnote" style="border:none;">Sem termos de pesquisa nesse período.</td></tr>';
 
     const devEl = document.getElementById('cdDeviceGrid');
     devEl.innerHTML = '';
