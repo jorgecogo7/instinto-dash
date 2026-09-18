@@ -35,6 +35,53 @@
     --card-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 10px 26px -16px rgba(0,0,0,0.6);
     --card-shadow-hover: 0 4px 10px rgba(0,0,0,0.28), 0 16px 34px -14px rgba(0,0,0,0.65);
   }
+
+  /* ---------- Painel do cliente: tema claro, estilo Reportei ----------
+     Só dentro do detalhe do cliente (onde fica o dashboard de verdade) —
+     o resto do painel administrativo (menu, Clientes etc.) continua no
+     tema escuro. Como quase todo componente já usa var(--bg-panel),
+     var(--text) etc. em vez de cor fixa, só sobrescrever essas variáveis
+     aqui já "vira" os cards, tabelas e o gráfico pro visual claro, sem
+     duplicar CSS de cada componente. */
+  #view-client-detail{
+    --bg: #F3F5FA;
+    --bg-panel: #FFFFFF;
+    --bg-panel-2: #F6F8FC;
+    --bg-panel-3: #EEF1F8;
+    --line: #E6E9F2;
+    --text: #1B2340;
+    --text-dim: #7C879C;
+    --card-border: #E9ECF4;
+    --card-shadow: 0 1px 2px rgba(24,39,75,0.04), 0 10px 26px -18px rgba(24,39,75,0.14);
+    --card-shadow-hover: 0 4px 12px rgba(24,39,75,0.07), 0 16px 34px -16px rgba(24,39,75,0.18);
+    /* "color" normal (não-variável) só é herdado como valor já resolvido —
+       sobrescrever --text acima não muda, por si só, o texto herdado do
+       <body> (tema escuro). Declarar color aqui de novo cria uma nova
+       "raiz" de herança pro tema claro, pra título, valor de KPI, célula
+       de tabela etc. que não define color própria. */
+    color: var(--text);
+    background: var(--bg);
+    border-radius: 20px;
+    padding: 24px 28px 40px;
+  }
+  #view-client-detail .g-tab.active{
+    background: linear-gradient(90deg, rgba(76,126,255,0.14), rgba(53,196,138,0.08));
+    color: var(--blue); border-color: rgba(76,126,255,0.35);
+  }
+  #view-client-detail .kpi-clickable.kpi-active{ --kpi-accent: var(--blue); }
+  #view-client-detail .metric-check input{ accent-color: var(--blue); }
+  #view-client-detail .btn-customize:hover{ border-color: rgba(20,30,60,0.16); }
+  #view-client-detail .btn-add-metric:hover{ border-color: rgba(20,30,60,0.2); }
+  #view-client-detail .modal-input:focus{ outline:none; border-color: rgba(76,126,255,0.5); }
+  #view-client-detail .range-picker-btn:hover{ border-color: rgba(76,126,255,0.5); }
+  #view-client-detail .btn-edit-client:hover{ border-color: rgba(76,126,255,0.5); }
+  #view-client-detail .fb-toggle-btn.active{ background: linear-gradient(90deg, var(--blue), var(--green)); color:#fff; }
+  #view-client-detail tbody tr:hover{ background: rgba(20,30,60,0.03); }
+  #view-client-detail .offline-banner code{ background: rgba(20,30,60,0.06); }
+  #view-client-detail .chart-tooltip{ box-shadow: 0 10px 26px rgba(24,39,75,0.16); }
+  #view-client-detail .qs-avg, #view-client-detail .status-onboarding{ color:#B37200; }
+  #view-client-detail .btn-add{ background: linear-gradient(90deg, var(--blue), var(--green)); color:#fff; }
+
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     background: var(--bg);
@@ -510,6 +557,56 @@
 
   .cd-empty{ text-align:center; padding:40px 20px; color:var(--text-dim); font-size:13px; }
   .cd-empty a{ color: var(--amber); cursor:pointer; }
+
+  /* ---- Aba "Redes Sociais" (Instagram orgânico) ---- */
+  .ig-profile-card{
+    border-radius: var(--radius-lg); overflow:hidden; background: var(--bg-panel);
+    border:1px solid var(--card-border); box-shadow: var(--card-shadow); margin-bottom:16px;
+  }
+  .ig-profile-banner{
+    background: linear-gradient(120deg, #7C4DFF, #C04CFF 45%, #FF5DA2 100%);
+    padding:20px 22px; display:flex; align-items:center; gap:16px; color:#fff;
+  }
+  .ig-avatar{
+    width:58px; height:58px; border-radius:50%; background: rgba(255,255,255,0.22);
+    border:2px solid rgba(255,255,255,0.55); display:flex; align-items:center; justify-content:center;
+    font-size:19px; font-weight:700; flex-shrink:0;
+  }
+  .ig-profile-info{ flex:1; min-width:0; }
+  .ig-profile-name{ font-size:15px; font-weight:700; }
+  .ig-profile-handle{ font-size:12.5px; opacity:0.9; margin-top:1px; }
+  .ig-profile-bio{ font-size:11.5px; opacity:0.92; margin-top:6px; line-height:1.5; white-space:pre-line; }
+  .ig-profile-link{ font-size:11.5px; margin-top:6px; opacity:0.95; text-decoration:underline; word-break:break-all; }
+  .ig-profile-stats{ display:flex; gap:26px; flex-shrink:0; text-align:center; }
+  .ig-profile-stat-value{ font-size:17px; font-weight:700; }
+  .ig-profile-stat-label{ font-size:10px; opacity:0.85; text-transform:uppercase; letter-spacing:0.4px; margin-top:2px; }
+  @media (max-width: 720px){
+    .ig-profile-banner{ flex-wrap:wrap; }
+    .ig-profile-stats{ width:100%; justify-content:space-between; gap:10px; }
+  }
+  .ig-kpi-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap:14px; margin-bottom:20px; }
+  .ig-kpi-grid .kpi{ border-top:3px solid transparent; }
+  .ig-kpi-grid .kpi.ig-accent-purple{ border-top-color:#B36BFF; }
+  .ig-kpi-grid .kpi.ig-accent-pink{ border-top-color:#FF5DA2; }
+  #cdFollowersChart, #cdReachChart{ height:190px; display:block; position:relative; }
+  #cdFollowersChart svg, #cdReachChart svg{ display:block; overflow:visible; }
+  .cd-social-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 900px){ .cd-social-grid{ grid-template-columns: 1fr; } }
+
+  /* ---- Aba "Observações" (sugestões de melhoria por IA) ---- */
+  .insight-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .insight-card{
+    background: var(--bg-panel); border:1px solid var(--card-border); border-radius: var(--radius-lg);
+    padding:18px 20px; margin-bottom:12px; box-shadow: var(--card-shadow);
+  }
+  .insight-card-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .insight-card-title{ font-size:14px; font-weight:700; }
+  .insight-priority{ font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap; }
+  .insight-priority.alta{ background: rgba(232,81,79,0.12); color: var(--red); }
+  .insight-priority.media{ background: rgba(255,176,32,0.14); color: #B37200; }
+  .insight-priority.baixa{ background: rgba(53,196,138,0.12); color: var(--green); }
+  .insight-row{ font-size:12.5px; line-height:1.6; margin-top:8px; }
+  .insight-row b{ color:var(--text-dim); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:0.3px; display:block; margin-bottom:2px; }
   .integration-card{
     background: var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
     padding:20px; margin-bottom:16px;
@@ -1111,7 +1208,9 @@
       </div>
 
       <div class="client-detail-tabs">
-        <button type="button" class="g-tab active" id="cdTabBtnOverview" onclick="setClientDetailTab('overview')">Visão geral</button>
+        <button type="button" class="g-tab active" id="cdTabBtnOverview" onclick="setClientDetailTab('overview')">Anúncios</button>
+        <button type="button" class="g-tab" id="cdTabBtnSocial" onclick="setClientDetailTab('social')">Redes Sociais</button>
+        <button type="button" class="g-tab" id="cdTabBtnInsights" onclick="setClientDetailTab('insights')">Observações</button>
         <button type="button" class="g-tab" id="cdTabBtnIntegrations" onclick="setClientDetailTab('integrations')">Integrações</button>
       </div>
 
@@ -1193,6 +1292,60 @@
             <div class="device-grid" id="cdAgeGrid"></div>
           </div>
         </div>
+      </div>
+
+      <!-- ===== Aba: Redes Sociais (Instagram orgânico) ===== -->
+      <div class="cd-pane" id="cdPaneSocial">
+        <div class="footnote" id="cdSocialLoading" style="border:none; padding:0 0 14px;">Carregando dados do Instagram…</div>
+        <div id="cdSocialContent" style="display:none;">
+          <div class="ig-profile-card">
+            <div class="ig-profile-banner">
+              <div class="ig-avatar" id="igAvatar">--</div>
+              <div class="ig-profile-info">
+                <div class="ig-profile-name" id="igName">—</div>
+                <div class="ig-profile-handle" id="igHandle">—</div>
+                <div class="ig-profile-bio" id="igBio"></div>
+                <div class="ig-profile-link" id="igLink"></div>
+              </div>
+              <div class="ig-profile-stats">
+                <div><div class="ig-profile-stat-value" id="igPosts">—</div><div class="ig-profile-stat-label">Publicações</div></div>
+                <div><div class="ig-profile-stat-value" id="igFollowers">—</div><div class="ig-profile-stat-label">Seguidores</div></div>
+                <div><div class="ig-profile-stat-value" id="igFollowing">—</div><div class="ig-profile-stat-label">Seguindo</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ig-kpi-grid" id="igKpiGrid"></div>
+
+          <div class="cd-social-grid">
+            <div class="panel" style="margin-bottom:0;">
+              <div class="panel-head"><h3>Novos seguidores (diário)</h3><span class="panel-head-sub" id="igFollowersChartSub"></span></div>
+              <div id="cdFollowersChart"></div>
+            </div>
+            <div class="panel" style="margin-bottom:0;">
+              <div class="panel-head"><h3>Alcance orgânico diário</h3><span class="panel-head-sub" id="igReachChartSub"></span></div>
+              <div id="cdReachChart"></div>
+            </div>
+          </div>
+
+          <div class="footnote">Exemplo — assim que o Instagram Business do cliente for vinculado (aba Integrações), estes dados passam a vir da API de verdade.</div>
+        </div>
+      </div>
+
+      <!-- ===== Aba: Observações (sugestões de melhoria por IA) ===== -->
+      <div class="cd-pane" id="cdPaneInsights">
+        <div class="insight-toolbar">
+          <div class="fb-platform-toggle">
+            <button class="fb-toggle-btn active" id="insightsToggleMeta" onclick="setInsightsPlatform('meta')">Meta Ads</button>
+            <button class="fb-toggle-btn" id="insightsToggleGoogle" onclick="setInsightsPlatform('google')">Google Ads</button>
+          </div>
+          <button type="button" class="btn-add" onclick="generateClientInsights()" id="generateInsightsBtn">💡 Gerar sugestões</button>
+        </div>
+        <div id="insightsError" class="modal-error" style="display:none;"></div>
+        <div id="insightsContent">
+          <div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>
+        </div>
+        <div class="footnote">Gerado por IA a partir dos dados reais da conta — só aparece aqui, no seu painel; o cliente não vê essa aba.</div>
       </div>
 
       <!-- ===== Aba: Integrações ===== -->
@@ -2347,6 +2500,12 @@
     document.getElementById('shareLinkText').textContent = shareUrl;
 
     setFeedbackPlatform('meta');
+    cdSocialLoaded = false;
+    document.getElementById('cdSocialContent').style.display = 'none';
+    document.getElementById('cdSocialLoading').style.display = 'block';
+    setInsightsPlatform('meta');
+    document.getElementById('insightsContent').innerHTML = '<div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>';
+    document.getElementById('insightsError').style.display = 'none';
 
     setClientDetailTab('overview');
     applyRangePreset(30);
@@ -2430,12 +2589,19 @@
 
   /* ---------- Dashboard por cliente (aba "Visão geral") ---------- */
   let cdCurrentRange = null; // { from, to }
+  let cdSocialLoaded = false;
+  let insightsPlatform = 'meta';
 
   function setClientDetailTab(tab){
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
+    document.getElementById('cdTabBtnSocial').classList.toggle('active', tab === 'social');
+    document.getElementById('cdTabBtnInsights').classList.toggle('active', tab === 'insights');
     document.getElementById('cdTabBtnIntegrations').classList.toggle('active', tab === 'integrations');
     document.getElementById('cdPaneOverview').classList.toggle('active', tab === 'overview');
+    document.getElementById('cdPaneSocial').classList.toggle('active', tab === 'social');
+    document.getElementById('cdPaneInsights').classList.toggle('active', tab === 'insights');
     document.getElementById('cdPaneIntegrations').classList.toggle('active', tab === 'integrations');
+    if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
   }
 
   function toggleRangeMenu(){
@@ -2557,7 +2723,7 @@
     }
     const series = (activeMetrics && activeMetrics.length)
       ? activeMetrics
-      : [{ id: 'spend', label: 'Investimento', color: 'var(--amber)', fmt: brl, get: t => t.spend }];
+      : [{ id: 'spend', label: 'Investimento', color: 'var(--blue)', fmt: brl, get: t => t.spend }];
     const single = series.length === 1;
 
     const W = 1000, H = 230;
@@ -2745,7 +2911,7 @@
 
   // Cor fixa por métrica — é o que pinta a linha dela no gráfico ao clicar.
   const CD_METRIC_COLORS = {
-    spend: 'var(--amber)', clicks: 'var(--blue)', impressions: 'var(--green)',
+    spend: 'var(--blue)', clicks: 'var(--amber)', impressions: 'var(--green)',
     ctr: 'var(--pink)', cpm: 'var(--flame)', cpc: 'var(--red)',
     conversions: 'var(--purple)', convRate: 'var(--teal)', costPerConv: 'var(--yellow)',
     allConversions: 'var(--lime)', topImpressionShare: 'var(--skyblue)',
@@ -3096,6 +3262,202 @@
       btn.textContent = '✅ Copiado!';
       setTimeout(() => { btn.textContent = original; }, 1500);
     });
+  }
+
+  /* ---------- Aba "Redes Sociais" (Instagram orgânico, dados de exemplo até a integração real) ---------- */
+  const igCompact = v => (v || 0) >= 1000 ? `${((v||0)/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})}k` : (v || 0).toLocaleString('pt-BR');
+  const igDeltaHtml = pct => {
+    if (pct === null || pct === undefined || !isFinite(pct)) return '';
+    const up = pct >= 0;
+    return `<div class="kpi-delta"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span><span class="vs-label">vs período anterior</span></div>`;
+  };
+
+  async function loadSocialPanel(){
+    const loading = document.getElementById('cdSocialLoading');
+    const content = document.getElementById('cdSocialContent');
+    loading.style.display = 'block';
+    loading.textContent = 'Carregando dados do Instagram…';
+    content.style.display = 'none';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/instagram/${currentClientId}/report`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados do Instagram.');
+      renderSocialPanel(data);
+      cdSocialLoaded = true;
+      loading.style.display = 'none';
+      content.style.display = 'block';
+    } catch (err) {
+      loading.textContent = `⚠ ${err.message}`;
+    }
+  }
+
+  function renderSocialPanel(data){
+    const p = data.profile || {};
+    document.getElementById('igAvatar').textContent = p.avatarInitials || '—';
+    document.getElementById('igName').textContent = p.displayName || '—';
+    document.getElementById('igHandle').textContent = p.username ? `@${p.username}` : '—';
+    document.getElementById('igBio').textContent = p.bio || '';
+    const linkEl = document.getElementById('igLink');
+    linkEl.textContent = p.link || '';
+    document.getElementById('igPosts').textContent = igCompact(p.postsCount);
+    document.getElementById('igFollowers').textContent = igCompact(p.followersCount);
+    document.getElementById('igFollowing').textContent = igCompact(p.followingCount);
+
+    const m = data.metrics || {};
+    const cards = [
+      { label: 'Seguidores', value: igCompact(m.followers), accent: '' },
+      { label: 'Publicações', value: igCompact(m.posts), accent: '' },
+      { label: 'Novos seguidores', value: `+${igCompact(m.newFollowers)}`, delta: m.newFollowersDeltaPct, accent: 'ig-accent-purple' },
+      { label: 'Contas com engajamento (soma diária)', value: igCompact(m.engagedAccounts), delta: m.engagedAccountsDeltaPct, accent: 'ig-accent-pink' },
+      { label: 'Alcance (soma diária)', value: igCompact(m.reach), delta: m.reachDeltaPct, accent: 'ig-accent-purple' },
+      { label: 'Visitas ao perfil', value: igCompact(m.profileVisits), delta: m.profileVisitsDeltaPct, accent: 'ig-accent-pink' },
+      { label: 'Cliques no link', value: igCompact(m.linkClicks), delta: m.linkClicksDeltaPct, accent: 'ig-accent-purple' },
+    ];
+    document.getElementById('igKpiGrid').innerHTML = cards.map(c => `
+      <div class="kpi ${c.accent}">
+        <div class="kpi-label">${c.label}</div>
+        <div class="kpi-value">${c.value}</div>
+        ${c.delta !== undefined ? igDeltaHtml(c.delta) : ''}
+      </div>
+    `).join('');
+
+    const daily = data.daily || [];
+    const sub = daily.length ? `${dateBr(daily[0].date)} – ${dateBr(daily[daily.length-1].date)}` : '';
+    document.getElementById('igFollowersChartSub').textContent = sub;
+    document.getElementById('igReachChartSub').textContent = sub;
+    renderFollowersChart(daily);
+    renderReachChart(daily);
+  }
+
+  // Gráfico de barras simples — novos seguidores por dia (igual ao painel
+  // de Instagram orgânico do Reportei).
+  function renderFollowersChart(daily){
+    const el = document.getElementById('cdFollowersChart');
+    if (!daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
+    const W = 1000, H = 190, padL = 30, padR = 10, padT = 10, padB = 24;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = daily.length;
+    const barGap = 3;
+    const barW = Math.max(2, plotW / n - barGap);
+    const max = Math.max(1, ...daily.map(d => d.newFollowers || 0)) * 1.15;
+    const yAt = v => padT + plotH - (v / max) * plotH;
+    const maxXLabels = 8;
+    const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
+    let bars = '', xLabels = '';
+    daily.forEach((d, i) => {
+      const x = padL + i * (plotW / n);
+      const y = yAt(d.newFollowers || 0);
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(padT + plotH - y).toFixed(1)}" rx="2" fill="#B36BFF" opacity="0.85" />`;
+      if (i % labelEvery === 0 || i === n - 1) {
+        xLabels += `<text x="${(x + barW/2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
+      }
+    });
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      <line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--line)" stroke-width="1" />
+      ${bars}
+      ${xLabels}
+    </svg>`;
+  }
+
+  // Gráfico de área — alcance orgânico diário (mesma curva suave do
+  // gráfico de investimento, só que numa cor própria pra Instagram).
+  function renderReachChart(daily){
+    const el = document.getElementById('cdReachChart');
+    if (!daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
+    const W = 1000, H = 190, padL = 40, padR = 10, padT = 10, padB = 24;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = daily.length;
+    const xStep = n > 1 ? plotW / (n - 1) : 0;
+    const xAt = i => padL + (n > 1 ? i * xStep : plotW / 2);
+    const max = Math.max(1, ...daily.map(d => d.reach || 0)) * 1.15;
+    const yAt = v => padT + plotH - (v / max) * plotH;
+    const gridCount = 3;
+    let gridLines = '', leftLabels = '';
+    for (let g = 0; g <= gridCount; g++) {
+      const y = padT + (plotH / gridCount) * g;
+      gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '2,3'}" />`;
+      leftLabels += `<text x="4" y="${(y+4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${igCompact(max * (1 - g/gridCount))}</text>`;
+    }
+    const maxXLabels = 8;
+    const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
+    let xLabels = '';
+    daily.forEach((d, i) => {
+      if (i % labelEvery === 0 || i === n - 1) {
+        xLabels += `<text x="${xAt(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
+      }
+    });
+    const pts = daily.map((d, i) => ({ x: xAt(i), y: yAt(d.reach || 0) }));
+    const path = smoothPathD(pts).trim();
+    const area = path + ` L${xAt(n-1).toFixed(1)},${(padT+plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT+plotH).toFixed(1)} Z`;
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="overflow:visible;">
+      <defs><linearGradient id="igReachGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FF5DA2" stop-opacity="0.32"/><stop offset="100%" stop-color="#FF5DA2" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${gridLines}
+      <path d="${area}" fill="url(#igReachGrad)" stroke="none"/>
+      <path d="${path}" fill="none" stroke="#FF5DA2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+      ${leftLabels}
+      ${xLabels}
+    </svg>`;
+  }
+
+  /* ---------- Aba "Observações" (sugestões de melhoria por IA, só no seu painel) ---------- */
+  function setInsightsPlatform(platform){
+    insightsPlatform = platform;
+    document.getElementById('insightsToggleMeta').classList.toggle('active', platform === 'meta');
+    document.getElementById('insightsToggleGoogle').classList.toggle('active', platform === 'google');
+  }
+
+  async function generateClientInsights(){
+    const btn = document.getElementById('generateInsightsBtn');
+    const contentEl = document.getElementById('insightsContent');
+    const errEl = document.getElementById('insightsError');
+    errEl.style.display = 'none';
+
+    const account = rawAccountsById[currentClientId];
+    const connectionField = insightsPlatform === 'meta' ? account?.meta : account?.google;
+    if (connectionField?.status !== 'connected') {
+      errEl.textContent = `Este cliente ainda não tem ${insightsPlatform === 'meta' ? 'Meta Ads' : 'Google Ads'} conectado — conecte na aba Integrações primeiro.`;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Analisando...';
+    contentEl.innerHTML = '<div class="cd-empty">Analisando os dados da conta...</div>';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/insights/${currentClientId}?platform=${insightsPlatform}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível gerar as sugestões.');
+      renderInsights(data);
+    } catch (err) {
+      contentEl.innerHTML = '<div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>';
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = '💡 Gerar sugestões';
+  }
+
+  function renderInsights(list){
+    const contentEl = document.getElementById('insightsContent');
+    if (!Array.isArray(list) || !list.length) {
+      contentEl.innerHTML = '<div class="cd-empty">A IA não encontrou nada pra destacar nesse período.</div>';
+      return;
+    }
+    contentEl.innerHTML = list.map(item => `
+      <div class="insight-card">
+        <div class="insight-card-head">
+          <div class="insight-card-title">${item.campaign || 'Conta geral'}</div>
+          <span class="insight-priority ${item.priority || 'media'}">${item.priority || 'média'}</span>
+        </div>
+        ${item.targeting ? `<div class="insight-row"><b>Segmentação</b>${item.targeting}</div>` : ''}
+        ${item.adLevel ? `<div class="insight-row"><b>Desempenho do anúncio</b>${item.adLevel}</div>` : ''}
+        ${item.copy && item.copy !== '—' ? `<div class="insight-row"><b>Sugestão de copy</b>${item.copy}</div>` : ''}
+      </div>
+    `).join('');
   }
 
   /* ---------- Visão pública do cliente (link compartilhado, sem login) ---------- */
