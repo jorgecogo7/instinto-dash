@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const accountsRoutes = require('./routes/accounts');
 const metaRoutes = require('./routes/meta');
 const googleRoutes = require('./routes/google');
+const instagramRoutes = require('./routes/instagram');
 const insightsRoutes = require('./routes/insights');
 const feedbackRoutes = require('./routes/feedback');
 const publicRoutes = require('./routes/public');
@@ -37,6 +38,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/accounts', requireAdminAuth, accountsRoutes);
 app.use('/api/meta', requireAdminAuth, metaRoutes);
 app.use('/api/google', requireAdminAuth, googleRoutes);
+app.use('/api/instagram', requireAdminAuth, instagramRoutes);
 app.use('/api/insights', requireAdminAuth, insightsRoutes);
 app.use('/api/feedback', requireAdminAuth, feedbackRoutes);
 
