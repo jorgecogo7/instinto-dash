@@ -123,7 +123,7 @@ router.post('/:id/score', async (req, res) => {
 router.post('/:id/convert', async (req, res) => {
   try {
     const lead = await leadsStore.getById(req.params.id);
-  if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+    if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
     if (lead.convertedAccountId) return res.status(400).json({ error: 'Esse lead já foi convertido em cliente.' });
 
     const accounts = await accountsStore.getAll();
