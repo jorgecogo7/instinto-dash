@@ -47,4 +47,19 @@ function ensureTable() {
   return tableReady;
 }
 
-module.exports = { getPool, ensureTable };
+// Tabela dos leads do módulo de Captação & CRM (funil comercial, separado
+// da tabela "accounts" — que é só quem já é cliente pagante).
+let leadsTableReady = null;
+function ensureLeadsTable() {
+  if (!leadsTableReady) {
+    leadsTableReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS leads (
+        id VARCHAR(191) PRIMARY KEY,
+        data JSON NOT NULL
+      )
+    `);
+  }
+  return leadsTableReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable };
