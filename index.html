@@ -717,6 +717,51 @@
   .pr-panel{ border:1px solid #e2e5ea; border-radius:8px; padding:16px; margin-bottom:16px; }
   .pr-panel h3{ font-size:13px; margin-bottom:10px; }
   .pr-footer{ margin-top:24px; padding-top:12px; border-top:1px solid #e2e5ea; font-size:10.5px; color:#9aa1ab; display:flex; justify-content:space-between; }
+
+  /* ---- Captação & CRM (funil visual, estilo Kanban) ---- */
+  .crm-board{ display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; align-items:flex-start; }
+  .crm-col{
+    background: var(--bg-panel); border:1px solid var(--card-border); border-radius: var(--radius-lg);
+    min-width:250px; max-width:250px; flex:0 0 auto; display:flex; flex-direction:column; max-height: calc(100vh - 260px);
+  }
+  .crm-col.drag-over{ outline:2px dashed var(--flame); outline-offset:-2px; }
+  .crm-col-head{
+    display:flex; align-items:center; justify-content:space-between; padding:12px 14px;
+    border-bottom:1px solid var(--line); font-size:12.5px; font-weight:700; color:var(--text);
+  }
+  .crm-col-count{ font-size:11px; font-weight:600; color:var(--text-dim); background:var(--bg-panel-2); border-radius:20px; padding:1px 8px; }
+  .crm-col-cards{ padding:10px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; min-height:60px; }
+  .crm-card{
+    background: var(--bg-panel-2); border:1px solid var(--card-border); border-radius:10px;
+    padding:10px 12px; cursor:grab; transition: box-shadow .15s ease, transform .15s ease;
+  }
+  .crm-card:hover{ box-shadow: var(--card-shadow-hover); transform: translateY(-1px); }
+  .crm-card.dragging{ opacity:0.4; }
+  .crm-card-name{ font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
+  .crm-card-sub{ font-size:11.5px; color:var(--text-dim); margin-bottom:8px; }
+  .crm-card-foot{ display:flex; align-items:center; justify-content:space-between; }
+  .crm-card-source{ font-size:10px; color:var(--text-dim); }
+  .crm-empty-col{ font-size:11.5px; color:var(--text-dim); text-align:center; padding:14px 6px; }
+
+  .lead-score{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .lead-score.quente{ background: rgba(255,90,30,0.14); color: var(--flame); }
+  .lead-score.morno{ background: rgba(255,176,32,0.14); color: var(--amber); }
+  .lead-score.frio{ background: rgba(138,145,156,0.14); color: var(--text-dim); }
+  .lead-score.sem-score{ background: var(--bg-panel-3); color: var(--text-dim); }
+
+  .crm-kpi-row{ display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:18px; }
+  .lead-detail-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .lead-detail-row:last-child{ border-bottom:none; }
+  .lead-detail-label{ color:var(--text-dim); }
+  .lead-detail-value{ color:var(--text); text-align:right; max-width:65%; }
+  .lead-score-box{ background:var(--bg-panel-2); border:1px solid var(--card-border); border-radius:10px; padding:14px; margin:14px 0; }
+  .lead-score-box .lead-score{ font-size:13px; padding:4px 10px; }
+
+  /* ---- Formulário público de captação (link que o lead abre) ---- */
+  .leadform-box{ width:440px; max-width:100%; }
+  .leadform-success{ text-align:center; padding:20px 4px; }
+  .leadform-success h2{ font-size:19px; margin-bottom:8px; }
+  .leadform-success p{ font-size:13.5px; color:var(--text-dim); }
 </style>
 </head>
 <body>
@@ -752,6 +797,40 @@
   </div>
 </div>
 
+<!-- ================= FORMULÁRIO PÚBLICO DE CAPTAÇÃO (link ?captar=1) ================= -->
+<div id="leadFormView" class="access-screen" style="display:none;">
+  <div class="access-box leadform-box">
+    <img class="access-logo" src="" id="leadFormLogo" alt="Instinto Digital">
+    <div id="leadFormStep">
+      <h2>Vamos conversar sobre seus anúncios</h2>
+      <p class="access-sub">Preencha os dados abaixo — nossa equipe entra em contato em breve.</p>
+      <div id="leadFormError" class="modal-error" style="display:none;"></div>
+      <form id="publicLeadForm" onsubmit="submitPublicLead(event)">
+        <label class="modal-label">Nome *</label>
+        <input class="modal-input" id="lfName" required placeholder="Seu nome">
+        <label class="modal-label">E-mail</label>
+        <input class="modal-input" id="lfEmail" type="email" placeholder="voce@exemplo.com">
+        <label class="modal-label">Telefone / WhatsApp</label>
+        <input class="modal-input" id="lfPhone" placeholder="(11) 90000-0000">
+        <label class="modal-label">Empresa</label>
+        <input class="modal-input" id="lfCompany" placeholder="Nome da empresa">
+        <label class="modal-label">Nicho / segmento</label>
+        <input class="modal-input" id="lfNiche" placeholder="Ex: Saúde, Varejo, Serviços...">
+        <label class="modal-label">Orçamento mensal para anúncios</label>
+        <input class="modal-input" id="lfBudget" placeholder="Ex: R$ 3.000/mês">
+        <label class="modal-label">Conte um pouco do que você precisa</label>
+        <textarea class="modal-input" id="lfMessage" rows="3" placeholder="Objetivo, prazo, o que já tentou..."></textarea>
+        <input type="text" id="lfWebsite" name="website" autocomplete="off" tabindex="-1" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" aria-hidden="true">
+        <button type="submit" class="btn-add" style="width:100%; margin-top:18px; justify-content:center;" id="submitLeadFormBtn">Enviar</button>
+      </form>
+    </div>
+    <div id="leadFormSuccess" class="leadform-success" style="display:none;">
+      <h2>Recebemos seus dados! ✅</h2>
+      <p>Nossa equipe vai analisar e entrar em contato em breve. Obrigado pelo interesse!</p>
+    </div>
+  </div>
+</div>
+
 <div class="app" id="mainApp" style="display:none;">
 
   <aside class="sidebar">
@@ -774,6 +853,7 @@
     <div class="nav-divider">Gestão</div>
     <nav class="nav">
       <div class="nav-item" data-view="clients">👥 Clientes</div>
+      <div class="nav-item" data-view="crm">🧲 Captação & CRM</div>
     </nav>
 
     <div class="nav-divider">Clientes</div>
@@ -1196,6 +1276,134 @@
       <div class="footnote">Esta tabela é só de organização interna da equipe — não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>) — sobrevive a reiniciar o servidor.</div>
     </section>
 
+    <!-- ================= CAPTAÇÃO & CRM ================= -->
+    <section class="view" id="view-crm">
+      <div class="topbar">
+        <div>
+          <h1>Captação & CRM</h1>
+          <p>Funil comercial — do formulário público até virar cliente</p>
+        </div>
+        <div class="topbar-right" style="gap:8px;">
+          <button class="btn-cancel" onclick="copyLeadFormLink()" id="copyLeadLinkBtn">🔗 Copiar link do formulário</button>
+          <button class="btn-add" onclick="openAddLeadModal()">+ Novo lead</button>
+        </div>
+      </div>
+
+      <div id="crmOfflineBanner" class="offline-banner" style="display:none;">
+        ⚠ Não consegui falar com o backend em <code id="crmBackendUrlLabel"></code>. Confira se ele está rodando e recarregue a página.
+      </div>
+
+      <div class="crm-kpi-row">
+        <div class="kpi"><div class="kpi-label">Total de leads</div><div class="kpi-value" id="crmSumTotal">–</div></div>
+        <div class="kpi"><div class="kpi-label">Novos (7 dias)</div><div class="kpi-value" id="crmSumNew">–</div></div>
+        <div class="kpi"><div class="kpi-label">Taxa de conversão</div><div class="kpi-value" id="crmSumConversion">–</div></div>
+        <div class="kpi"><div class="kpi-label">Score médio</div><div class="kpi-value" id="crmSumScore">–</div></div>
+      </div>
+
+      <div class="crm-board" id="crmBoard"></div>
+
+      <div class="footnote">Arraste os cards entre as colunas pra mover o lead de estágio. Clique num card pra ver os detalhes, gerar o score com IA ou converter em cliente.</div>
+    </section>
+
+    <!-- ================= DETALHE DO LEAD ================= -->
+    <div class="drawer-overlay" id="leadDetailModal" onclick="if(event.target===this) closeLeadDetailModal()">
+      <div class="modal-box" style="max-width:460px;">
+        <div class="modal-head">
+          <h3 id="leadDetailName">Lead</h3>
+          <button type="button" class="modal-close" onclick="closeLeadDetailModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="leadDetailError" class="modal-error" style="display:none;"></div>
+
+          <div class="lead-detail-row"><span class="lead-detail-label">E-mail</span><span class="lead-detail-value" id="leadDetailEmail">—</span></div>
+          <div class="lead-detail-row"><span class="lead-detail-label">Telefone</span><span class="lead-detail-value" id="leadDetailPhone">—</span></div>
+          <div class="lead-detail-row"><span class="lead-detail-label">Empresa</span><span class="lead-detail-value" id="leadDetailCompany">—</span></div>
+          <div class="lead-detail-row"><span class="lead-detail-label">Nicho</span><span class="lead-detail-value" id="leadDetailNiche">—</span></div>
+          <div class="lead-detail-row"><span class="lead-detail-label">Orçamento informado</span><span class="lead-detail-value" id="leadDetailBudget">—</span></div>
+          <div class="lead-detail-row"><span class="lead-detail-label">Origem</span><span class="lead-detail-value" id="leadDetailSource">—</span></div>
+          <div class="lead-detail-row"><span class="lead-detail-label">Recebido em</span><span class="lead-detail-value" id="leadDetailCreated">—</span></div>
+
+          <label class="modal-label" style="margin-top:14px;">Mensagem</label>
+          <div class="lead-score-box" id="leadDetailMessage" style="margin-top:6px; font-size:13px; color:var(--text-dim); white-space:pre-wrap;">—</div>
+
+          <div class="lead-score-box">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <strong style="font-size:12.5px;">Score de IA</strong>
+              <span id="leadDetailScoreBadge" class="lead-score sem-score">Sem score</span>
+            </div>
+            <div id="leadDetailScoreBody" style="font-size:12.5px; color:var(--text-dim);">Ainda não avaliado.</div>
+            <button type="button" class="btn-add" style="margin-top:10px;" onclick="scoreCurrentLead()" id="scoreLeadBtn">✨ Gerar score com IA</button>
+          </div>
+
+          <label class="modal-label">Estágio no funil</label>
+          <select class="modal-input" id="leadDetailStage" onchange="updateCurrentLeadStage()">
+            <option value="novo">Novo</option>
+            <option value="contatado">Contatado</option>
+            <option value="qualificado">Qualificado</option>
+            <option value="proposta">Proposta</option>
+            <option value="fechado">Fechado</option>
+            <option value="perdido">Perdido</option>
+          </select>
+
+          <label class="modal-label">Responsável</label>
+          <input class="modal-input" id="leadDetailOwner" placeholder="Ex: JC" onchange="updateCurrentLeadField('owner', this.value)">
+
+          <label class="modal-label">Notas internas</label>
+          <textarea class="modal-input" id="leadDetailNotes" rows="3" onchange="updateCurrentLeadField('notes', this.value)" placeholder="Anotações da equipe sobre esse lead..."></textarea>
+
+          <div class="modal-actions" style="justify-content:space-between; border-top:none; padding-top:8px; margin-top:12px;">
+            <button type="button" class="btn-cancel" style="color:#e05a5a; border-color:rgba(224,90,90,0.3);" onclick="deleteCurrentLead()">Excluir lead</button>
+            <button type="button" class="btn-add" onclick="convertCurrentLeadToClient()" id="convertLeadBtn">Converter em cliente →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= NOVO LEAD (cadastro manual) ================= -->
+    <div class="drawer-overlay" id="addLeadModal" onclick="if(event.target===this) closeAddLeadModal()">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3>Novo lead</h3>
+          <button type="button" class="modal-close" onclick="closeAddLeadModal()">✕</button>
+        </div>
+        <form id="addLeadForm" onsubmit="submitAddLead(event)">
+          <div class="modal-body">
+            <div id="addLeadError" class="modal-error" style="display:none;"></div>
+            <label class="modal-label">Nome *</label>
+            <input class="modal-input" id="alName" required placeholder="Nome do lead">
+            <div class="modal-row">
+              <div>
+                <label class="modal-label">E-mail</label>
+                <input class="modal-input" id="alEmail" type="email" placeholder="nome@exemplo.com">
+              </div>
+              <div>
+                <label class="modal-label">Telefone</label>
+                <input class="modal-input" id="alPhone" placeholder="(11) 90000-0000">
+              </div>
+            </div>
+            <label class="modal-label">Empresa</label>
+            <input class="modal-input" id="alCompany" placeholder="Nome da empresa">
+            <div class="modal-row">
+              <div>
+                <label class="modal-label">Nicho</label>
+                <input class="modal-input" id="alNiche" placeholder="Ex: Saúde · Ótica">
+              </div>
+              <div>
+                <label class="modal-label">Orçamento</label>
+                <input class="modal-input" id="alBudget" placeholder="Ex: R$ 3.000/mês">
+              </div>
+            </div>
+            <label class="modal-label">Mensagem / observação</label>
+            <textarea class="modal-input" id="alMessage" rows="3" placeholder="O que esse lead disse ou de onde veio"></textarea>
+            <div class="modal-actions">
+              <button type="button" class="btn-cancel" onclick="closeAddLeadModal()">Cancelar</button>
+              <button type="submit" class="btn-add">Salvar lead</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- ================= DETALHE DO CLIENTE (INTEGRAÇÕES) ================= -->
     <section class="view" id="view-client-detail">
       <div class="topbar">
@@ -1600,6 +1808,7 @@
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'flex';
     loadClientsFromBackend();
+    loadLeadsFromBackend();
   }
 
   /* ---------- Ponto de entrada: decide entre login, visão pública, ou app ---------- */
@@ -1608,6 +1817,11 @@
     const shareToken = params.get('share');
     if (shareToken) {
       loadPublicView(shareToken);
+      return;
+    }
+    if (params.get('captar')) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('leadFormView').style.display = 'flex';
       return;
     }
     if (getToken()) {
@@ -2187,6 +2401,7 @@
   const logoSrc = document.querySelector('.brand-mark-img').src;
   { const l1 = document.getElementById('loginLogo'); if (l1) l1.src = logoSrc; }
   { const l2 = document.getElementById('publicLogo'); if (l2) l2.src = logoSrc; }
+  { const l3 = document.getElementById('leadFormLogo'); if (l3) l3.src = logoSrc; }
   document.getElementById('favicon').href = logoSrc;
   const todayStr = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 
@@ -3550,6 +3765,351 @@
     } catch (err) {
       errEl.textContent = `Não consegui salvar: ${err.message}. Confira se o backend está rodando (npm start) em ${API_BASE_URL}.`;
       errEl.style.display = 'block';
+    }
+  }
+
+  /* ---------- Captação & CRM ---------- */
+  const CRM_STAGES = [
+    { key: 'novo', label: 'Novo' },
+    { key: 'contatado', label: 'Contatado' },
+    { key: 'qualificado', label: 'Qualificado' },
+    { key: 'proposta', label: 'Proposta' },
+    { key: 'fechado', label: 'Fechado' },
+    { key: 'perdido', label: 'Perdido' },
+  ];
+  let allLeads = [];
+  let currentLeadId = null;
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+  function timeAgo(iso){
+    if (!iso) return '';
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const days = Math.floor(diffMs / 86400000);
+    if (days <= 0) return 'hoje';
+    if (days === 1) return 'há 1 dia';
+    return `há ${days} dias`;
+  }
+  function scoreBadgeHtml(lead){
+    if (lead.score == null) return `<span class="lead-score sem-score">Sem score</span>`;
+    const temp = lead.temperature || 'frio';
+    return `<span class="lead-score ${escapeHtml(temp)}">${lead.score} · ${escapeHtml(temp)}</span>`;
+  }
+
+  async function loadLeadsFromBackend(){
+    document.getElementById('crmBackendUrlLabel') && (document.getElementById('crmBackendUrlLabel').textContent = API_BASE_URL);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leads`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('backend indisponível');
+      allLeads = await res.json();
+      document.getElementById('crmOfflineBanner').style.display = 'none';
+      renderCrmBoard();
+      renderCrmKpis();
+    } catch (err) {
+      document.getElementById('crmOfflineBanner').style.display = 'block';
+    }
+  }
+
+  function renderCrmKpis(){
+    const total = allLeads.length;
+    const weekAgo = Date.now() - 7 * 86400000;
+    const novos7d = allLeads.filter(l => new Date(l.createdAt).getTime() >= weekAgo).length;
+    const fechados = allLeads.filter(l => l.stage === 'fechado').length;
+    const conversion = total ? Math.round((fechados / total) * 100) : 0;
+    const scored = allLeads.filter(l => l.score != null);
+    const avgScore = scored.length ? Math.round(scored.reduce((s, l) => s + l.score, 0) / scored.length) : null;
+
+    document.getElementById('crmSumTotal').textContent = total;
+    document.getElementById('crmSumNew').textContent = novos7d;
+    document.getElementById('crmSumConversion').textContent = `${conversion}%`;
+    document.getElementById('crmSumScore').textContent = avgScore == null ? '–' : avgScore;
+  }
+
+  function renderCrmBoard(){
+    const board = document.getElementById('crmBoard');
+    board.innerHTML = '';
+    CRM_STAGES.forEach(stage => {
+      const leadsInStage = allLeads.filter(l => l.stage === stage.key);
+      const col = document.createElement('div');
+      col.className = 'crm-col';
+      col.dataset.stage = stage.key;
+      col.ondragover = (ev) => { ev.preventDefault(); col.classList.add('drag-over'); };
+      col.ondragleave = () => col.classList.remove('drag-over');
+      col.ondrop = (ev) => dropOnColumn(ev, stage.key);
+
+      const cardsHtml = leadsInStage.length
+        ? leadsInStage.map(l => `
+            <div class="crm-card" draggable="true" data-id="${escapeHtml(l.id)}" ondragstart="dragStartLead(event,'${escapeHtml(l.id)}')" ondragend="dragEndLead(event)" onclick="openLeadDetail('${escapeHtml(l.id)}')">
+              <div class="crm-card-name">${escapeHtml(l.name)}</div>
+              <div class="crm-card-sub">${escapeHtml(l.company || l.niche || l.email || l.phone || '—')}</div>
+              <div class="crm-card-foot">
+                ${scoreBadgeHtml(l)}
+                <span class="crm-card-source">${l.source === 'formulario-publico' ? '🌐 Formulário' : '✍️ Manual'} · ${timeAgo(l.createdAt)}</span>
+              </div>
+            </div>`).join('')
+        : `<div class="crm-empty-col">Nenhum lead aqui</div>`;
+
+      col.innerHTML = `
+        <div class="crm-col-head"><span>${stage.label}</span><span class="crm-col-count">${leadsInStage.length}</span></div>
+        <div class="crm-col-cards">${cardsHtml}</div>`;
+      board.appendChild(col);
+    });
+  }
+
+  function dragStartLead(ev, id){
+    ev.dataTransfer.setData('text/plain', id);
+    ev.target.classList.add('dragging');
+  }
+  function dragEndLead(ev){
+    ev.target.classList.remove('dragging');
+  }
+  async function dropOnColumn(ev, stage){
+    ev.preventDefault();
+    ev.currentTarget.classList.remove('drag-over');
+    const id = ev.dataTransfer.getData('text/plain');
+    const lead = allLeads.find(l => l.id === id);
+    if (!lead || lead.stage === stage) return;
+    lead.stage = stage; // otimista — atualiza a tela na hora, sem esperar a resposta
+    renderCrmBoard();
+    renderCrmKpis();
+    try {
+      await fetch(`${API_BASE_URL}/api/leads/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ stage }),
+      });
+    } catch {
+      await loadLeadsFromBackend(); // deu errado — recarrega do backend pra não ficar dessincronizado
+    }
+  }
+
+  function openLeadDetail(id){
+    const lead = allLeads.find(l => l.id === id);
+    if (!lead) return;
+    currentLeadId = id;
+    document.getElementById('leadDetailError').style.display = 'none';
+    document.getElementById('leadDetailName').textContent = lead.name;
+    document.getElementById('leadDetailEmail').textContent = lead.email || '—';
+    document.getElementById('leadDetailPhone').textContent = lead.phone || '—';
+    document.getElementById('leadDetailCompany').textContent = lead.company || '—';
+    document.getElementById('leadDetailNiche').textContent = lead.niche || '—';
+    document.getElementById('leadDetailBudget').textContent = lead.budget || '—';
+    document.getElementById('leadDetailSource').textContent = lead.source === 'formulario-publico' ? 'Formulário público' : 'Cadastro manual';
+    document.getElementById('leadDetailCreated').textContent = lead.createdAt ? new Date(lead.createdAt).toLocaleString('pt-BR') : '—';
+    document.getElementById('leadDetailMessage').textContent = lead.message || '—';
+    document.getElementById('leadDetailStage').value = lead.stage;
+    document.getElementById('leadDetailOwner').value = lead.owner || '';
+    document.getElementById('leadDetailNotes').value = lead.notes || '';
+
+    const badgeEl = document.getElementById('leadDetailScoreBadge');
+    const bodyEl = document.getElementById('leadDetailScoreBody');
+    if (lead.score != null) {
+      badgeEl.className = `lead-score ${lead.temperature || 'frio'}`;
+      badgeEl.textContent = `${lead.score} · ${lead.temperature || ''}`;
+      bodyEl.innerHTML = `<div style="margin-bottom:6px;">${escapeHtml(lead.reasoning || '')}</div><div><strong>Próxima ação:</strong> ${escapeHtml(lead.nextAction || '—')}</div>`;
+    } else {
+      badgeEl.className = 'lead-score sem-score';
+      badgeEl.textContent = 'Sem score';
+      bodyEl.textContent = 'Ainda não avaliado.';
+    }
+
+    const convertBtn = document.getElementById('convertLeadBtn');
+    if (lead.convertedAccountId) {
+      convertBtn.textContent = 'Já convertido em cliente ✓';
+      convertBtn.disabled = true;
+    } else {
+      convertBtn.textContent = 'Converter em cliente →';
+      convertBtn.disabled = false;
+    }
+
+    const overlay = document.getElementById('leadDetailModal');
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
+  }
+  function closeLeadDetailModal(){
+    const overlay = document.getElementById('leadDetailModal');
+    overlay.classList.remove('open');
+    setTimeout(() => { overlay.style.display = 'none'; }, 280);
+    currentLeadId = null;
+  }
+
+  async function updateCurrentLeadStage(){
+    if (!currentLeadId) return;
+    const stage = document.getElementById('leadDetailStage').value;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leads/${currentLeadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ stage }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao atualizar.');
+      await loadLeadsFromBackend();
+    } catch (err) {
+      const errEl = document.getElementById('leadDetailError');
+      errEl.textContent = err.message; errEl.style.display = 'block';
+    }
+  }
+  async function updateCurrentLeadField(field, value){
+    if (!currentLeadId) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/leads/${currentLeadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ [field]: value }),
+      });
+      const lead = allLeads.find(l => l.id === currentLeadId);
+      if (lead) lead[field] = value;
+    } catch { /* falha silenciosa — não trava o preenchimento do campo */ }
+  }
+
+  async function scoreCurrentLead(){
+    if (!currentLeadId) return;
+    const btn = document.getElementById('scoreLeadBtn');
+    const errEl = document.getElementById('leadDetailError');
+    errEl.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Avaliando...';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leads/${currentLeadId}/score`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao gerar score.');
+      const idx = allLeads.findIndex(l => l.id === currentLeadId);
+      if (idx >= 0) allLeads[idx] = data;
+      openLeadDetail(currentLeadId);
+      renderCrmBoard();
+      renderCrmKpis();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = '✨ Gerar score com IA';
+    }
+  }
+
+  async function convertCurrentLeadToClient(){
+    if (!currentLeadId) return;
+    if (!confirm('Converter esse lead em cliente? Isso cria um cadastro novo na aba Clientes.')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leads/${currentLeadId}/convert`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao converter.');
+      closeLeadDetailModal();
+      await loadLeadsFromBackend();
+      await loadClientsFromBackend();
+    } catch (err) {
+      const errEl = document.getElementById('leadDetailError');
+      errEl.textContent = err.message; errEl.style.display = 'block';
+    }
+  }
+
+  async function deleteCurrentLead(){
+    if (!currentLeadId) return;
+    if (!confirm('Excluir esse lead? Não dá pra desfazer.')) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/leads/${currentLeadId}`, { method: 'DELETE', headers: authHeaders() });
+      closeLeadDetailModal();
+      await loadLeadsFromBackend();
+    } catch (err) {
+      const errEl = document.getElementById('leadDetailError');
+      errEl.textContent = 'Não consegui excluir agora.'; errEl.style.display = 'block';
+    }
+  }
+
+  function openAddLeadModal(){
+    const overlay = document.getElementById('addLeadModal');
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
+    document.getElementById('addLeadError').style.display = 'none';
+    document.getElementById('addLeadForm').reset();
+  }
+  function closeAddLeadModal(){
+    const overlay = document.getElementById('addLeadModal');
+    overlay.classList.remove('open');
+    setTimeout(() => { overlay.style.display = 'none'; }, 280);
+  }
+  async function submitAddLead(ev){
+    ev.preventDefault();
+    const errEl = document.getElementById('addLeadError');
+    errEl.style.display = 'none';
+    const payload = {
+      name: document.getElementById('alName').value.trim(),
+      email: document.getElementById('alEmail').value.trim() || null,
+      phone: document.getElementById('alPhone').value.trim() || null,
+      company: document.getElementById('alCompany').value.trim() || null,
+      niche: document.getElementById('alNiche').value.trim() || null,
+      budget: document.getElementById('alBudget').value.trim() || null,
+      message: document.getElementById('alMessage').value.trim() || null,
+    };
+    if (!payload.name) {
+      errEl.textContent = 'O nome é obrigatório.'; errEl.style.display = 'block'; return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao salvar.');
+      closeAddLeadModal();
+      await loadLeadsFromBackend();
+    } catch (err) {
+      errEl.textContent = `Não consegui salvar: ${err.message}`;
+      errEl.style.display = 'block';
+    }
+  }
+
+  function copyLeadFormLink(){
+    const url = `${location.origin}${location.pathname}?captar=1`;
+    const btn = document.getElementById('copyLeadLinkBtn');
+    navigator.clipboard.writeText(url).then(() => {
+      const original = btn.textContent;
+      btn.textContent = '✓ Link copiado!';
+      setTimeout(() => { btn.textContent = original; }, 2000);
+    }).catch(() => { prompt('Copie o link do formulário:', url); });
+  }
+
+  /* ---------- Formulário público de captação (?captar=1, sem login) ---------- */
+  async function submitPublicLead(ev){
+    ev.preventDefault();
+    const errEl = document.getElementById('leadFormError');
+    errEl.style.display = 'none';
+    const btn = document.getElementById('submitLeadFormBtn');
+
+    const payload = {
+      name: document.getElementById('lfName').value.trim(),
+      email: document.getElementById('lfEmail').value.trim() || null,
+      phone: document.getElementById('lfPhone').value.trim() || null,
+      company: document.getElementById('lfCompany').value.trim() || null,
+      niche: document.getElementById('lfNiche').value.trim() || null,
+      budget: document.getElementById('lfBudget').value.trim() || null,
+      message: document.getElementById('lfMessage').value.trim() || null,
+      website: document.getElementById('lfWebsite').value, // honeypot — humano nunca preenche
+    };
+    if (!payload.name) { errEl.textContent = 'Informe seu nome.'; errEl.style.display = 'block'; return; }
+    if (!payload.email && !payload.phone) { errEl.textContent = 'Informe pelo menos um contato (e-mail ou telefone).'; errEl.style.display = 'block'; return; }
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/public/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível enviar agora.');
+      document.getElementById('leadFormStep').style.display = 'none';
+      document.getElementById('leadFormSuccess').style.display = 'block';
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Enviar';
     }
   }
 </script>
