@@ -62,4 +62,20 @@ function ensureLeadsTable() {
   return leadsTableReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable };
+// Tabela dos contratos (módulo Contratos — vigência, renovação automática,
+// alerta de vencimento). Separada de "accounts" porque um cliente pode, em
+// tese, ter mais de um contrato ao longo do tempo (renegociação, upgrade).
+let contractsTableReady = null;
+function ensureContractsTable() {
+  if (!contractsTableReady) {
+    contractsTableReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS contracts (
+        id VARCHAR(191) PRIMARY KEY,
+        data JSON NOT NULL
+      )
+    `);
+  }
+  return contractsTableReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable };
