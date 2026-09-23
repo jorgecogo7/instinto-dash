@@ -3380,13 +3380,13 @@
       const path = smoothPathD(pts).trim();
       if (single) {
         const area = path + ` L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
-        gradDefs += `<linearGradient id="cdGrad${meta.si}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${meta.color}" stop-opacity="0.35"/><stop offset="100%" stop-color="${meta.color}" stop-opacity="0"/></linearGradient>`;
+        gradDefs += `<linearGradient id="cdGrad${meta.si}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${meta.color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${meta.color}" stop-opacity="0"/></linearGradient>`;
         paths += `<path d="${area}" fill="url(#cdGrad${meta.si})" stroke="none"/>`;
       }
-      paths += `<path d="${path}" fill="none" stroke="${meta.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#cdLineShadow)" />`;
+      paths += `<path d="${path}" fill="none" stroke="${meta.color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#cdLineShadow)" />`;
       if (n <= 45) {
         daily.forEach((d, i) => {
-          dots += `<circle class="chart-pt" cx="${xAt(i).toFixed(1)}" cy="${yAt(meta, meta.values[i]).toFixed(1)}" r="${single ? 3.5 : 2.8}" fill="${meta.color}" stroke="var(--bg-panel)" stroke-width="1.5" />`;
+          dots += `<circle class="chart-pt" cx="${xAt(i).toFixed(1)}" cy="${yAt(meta, meta.values[i]).toFixed(1)}" r="${single ? 2.6 : 2.2}" fill="${meta.color}" stroke="var(--bg-panel)" stroke-width="1.2" />`;
         });
       }
     });
@@ -3397,7 +3397,7 @@
       <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="overflow:visible;">
         <defs>
           <filter id="cdLineShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-opacity="0.25"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.15"/>
           </filter>
           ${gradDefs}
         </defs>
