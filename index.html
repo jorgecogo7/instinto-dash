@@ -3190,25 +3190,83 @@
   // e cliques (linha tracejada, eixo direito), grade, eixos com data/valor e
   // tooltip interativo ao passar o mouse — usa coordenadas lógicas fixas (viewBox)
   // pra escalar certinho mesmo sendo renderizado enquanto o painel ainda está oculto.
-  // Converte uma lista de pontos {x,y} num path SVG suavizado (Catmull-Rom
-  // convertido pra Bézier cúbica) — dá aquela curva "orgânica" em vez de
-  // segmentos retos entre os pontos, no estilo dos gráficos do Reportei.
+  // Converte uma lista de pontos {x,y} num path SVG suavizado usando
+  // interpolação cúbica monotônica (Fritsch-Carlson — a mesma técnica do
+  // curveMonotoneX do d3). Ao contrário do Catmull-Rom, essa curva nunca
+  // "ultrapassa" (overshoot) os pontos em transições bruscas de valor — o
+  // que evita as espículas/loops estranhos que apareciam antes.
   function smoothPathD(pts){
-    if (!pts.length) return '';
-    if (pts.length === 1) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
-    let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} `;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i === 0 ? i : i - 1];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-      d += `C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)} `;
+    const n = pts.length;
+    if (n === 0) return '';
+    if (n === 1) return `M${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)}`;
+    if (n === 2) return `M${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)} L${pts[1].x.toFixed(2)},${pts[1].y.toFixed(2)}`;
+
+    const dx = new Array(n - 1), dy = new Array(n - 1), slope = new Array(n - 1);
+    for (let i = 0; i < n - 1; i++) {
+      dx[i] = pts[i + 1].x - pts[i].x;
+      dy[i] = pts[i + 1].y - pts[i].y;
+      slope[i] = dx[i] !== 0 ? dy[i] / dx[i] : 0;
+    }
+
+    // Tangente em cada ponto: média ponderada das inclinações vizinhas,
+    // zerada em pontos de mínimo/máximo local (onde a curva deve "virar"
+    // suavemente em vez de continuar subindo/descendo).
+    const tan = new Array(n);
+    tan[0] = slope[0];
+    tan[n - 1] = slope[n - 2];
+    for (let i = 1; i < n - 1; i++) {
+      if (slope[i - 1] === 0 || slope[i] === 0 || (slope[i - 1] > 0) !== (slope[i] > 0)) {
+        tan[i] = 0;
+      } else {
+        const w1 = 2 * dx[i] + dx[i - 1];
+        const w2 = dx[i] + 2 * dx[i - 1];
+        tan[i] = (w1 + w2) / (w1 / slope[i - 1] + w2 / slope[i]);
+      }
+    }
+    // Limita as tangentes pra garantir monotonicidade (o que impede o
+    // overshoot) — critério padrão de Fritsch-Carlson.
+    for (let i = 0; i < n - 1; i++) {
+      if (slope[i] === 0) {
+        tan[i] = 0; tan[i + 1] = 0;
+      } else {
+        const a = tan[i] / slope[i];
+        const b = tan[i + 1] / slope[i];
+        const s = a * a + b * b;
+        if (s > 9) {
+          const t = 3 / Math.sqrt(s);
+          tan[i] = t * a * slope[i];
+          tan[i + 1] = t * b * slope[i];
+        }
+      }
+    }
+
+    let d = `M${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)} `;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = pts[i], p1 = pts[i + 1];
+      const cp1x = p0.x + dx[i] / 3;
+      const cp1y = p0.y + tan[i] * dx[i] / 3;
+      const cp2x = p1.x - dx[i] / 3;
+      const cp2y = p1.y - tan[i + 1] * dx[i] / 3;
+      d += `C${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p1.x.toFixed(2)},${p1.y.toFixed(2)} `;
     }
     return d;
+  }
+
+  // "Nice numbers" pro eixo Y: em vez de dividir o valor máximo bruto em
+  // passos arbitrários (o que gerava rótulos tipo "R$ 1.087,9"), arredonda
+  // o passo e o teto do eixo pro múltiplo "redondo" mais próximo (1, 2 ou
+  // 5 × 10ⁿ) — o mesmo algoritmo usado por ferramentas de gráfico como
+  // Excel e Google Charts (Heckbert, "Nice Numbers for Graph Labels").
+  function niceAxisStep(rawMax, targetTicks){
+    if (!(rawMax > 0)) return { step: 1, count: targetTicks, max: targetTicks };
+    const rawStep = rawMax / targetTicks;
+    const exponent = Math.floor(Math.log10(rawStep));
+    const fraction = rawStep / Math.pow(10, exponent);
+    const niceFraction = fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10;
+    const step = niceFraction * Math.pow(10, exponent);
+    const niceMax = Math.ceil(rawMax / step) * step;
+    const count = Math.max(1, Math.round(niceMax / step));
+    return { step, count, max: niceMax };
   }
 
   // Com 1 métrica ativa: escala real dela, com área preenchida (visual mais
@@ -3235,20 +3293,26 @@
     const xStep = n > 1 ? plotW / (n - 1) : 0;
     const xAt = i => padL + (n > 1 ? i * xStep : plotW / 2);
 
+    const axisTargetTicks = 4;
     const seriesMeta = series.map((m, si) => {
       const values = daily.map(d => Number(m.get(d)) || 0);
-      const max = Math.max(1, ...values) * 1.15;
-      return { ...m, values, max, si };
+      const rawMax = Math.max(0, ...values);
+      const nice = niceAxisStep(rawMax, axisTargetTicks);
+      return { ...m, values, max: nice.max, axisStep: nice.step, axisCount: nice.count, si };
     });
     const yAt = (meta, v) => padT + plotH - (v / meta.max) * plotH;
 
-    const gridCount = 4;
+    // Com 1 métrica, o eixo usa o teto/passo "redondo" calculado acima (o
+    // número de linhas varia conforme o que fica mais harmônico pros dados).
+    // Com 2+ métricas normalizadas (0–100% cada), mantém a grade fixa de
+    // sempre, já que ali não há rótulo de valor real pra arredondar.
+    const gridCount = single ? seriesMeta[0].axisCount : axisTargetTicks;
     let gridLines = '', leftLabels = '';
     for (let g = 0; g <= gridCount; g++) {
       const y = padT + (plotH / gridCount) * g;
       gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '2,3'}" />`;
       if (single) {
-        leftLabels += `<text x="4" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${seriesMeta[0].fmt(seriesMeta[0].max * (1 - g / gridCount))}</text>`;
+        leftLabels += `<text x="4" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${seriesMeta[0].fmt(seriesMeta[0].axisStep * (gridCount - g))}</text>`;
       }
     }
 
