@@ -1,9 +1,16 @@
-// Script de uso único: gera o Refresh Token do Google Ads.
+// Script de uso único: gera o Refresh Token do Google (Ads + Calendar).
 // Rode com: node get-google-refresh-token.js
 //
 // Diferente da versão anterior, este script sobe um servidorzinho local
 // na porta 4000 e captura a resposta do Google sozinho — você só precisa
 // abrir o link, fazer login e clicar em "Permitir". Nada de copiar/colar.
+//
+// O escopo abaixo agora inclui Google Calendar além do Google Ads: um
+// token gerado por este script novo dá acesso aos dois. Se você já tem um
+// GOOGLE_REFRESH_TOKEN configurado (só com Ads), ele continua funcionando
+// pro Ads normalmente — mas pra usar o módulo de Agendamentos (Calendar),
+// é preciso rodar este script de novo pra gerar um token novo com os dois
+// escopos, e substituir o GOOGLE_REFRESH_TOKEN no .env do servidor por ele.
 
 require('dotenv').config();
 const http = require('http');
@@ -25,7 +32,7 @@ const authUrl =
     client_id: CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/adwords',
+    scope: 'https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/calendar',
     access_type: 'offline',
     prompt: 'consent',
   }).toString();
