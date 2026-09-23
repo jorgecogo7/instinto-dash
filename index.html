@@ -6,6 +6,13 @@
 <title>Instinto Dash · Instinto Digital</title>
 <link rel="icon" id="favicon" type="image/png" href="">
 <script>
+  // Aplica o tema (claro/escuro) o quanto antes, ainda no <head>, pra não
+  // "piscar" um tema errado antes do CSS/JS principal carregar.
+  (function(){
+    var theme = 'dark';
+    try { theme = localStorage.getItem('instintoDashTheme') || 'dark'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
   // O favicon usa a mesma imagem da logo, embutida como base64 mais abaixo no body;
   // como o <head> carrega antes, setamos o href assim que o DOM tiver a imagem.
 </script>
@@ -36,14 +43,16 @@
     --card-shadow-hover: 0 4px 10px rgba(0,0,0,0.28), 0 16px 34px -14px rgba(0,0,0,0.65);
   }
 
-  /* ---------- Painel do cliente: tema claro, estilo Reportei ----------
-     Só dentro do detalhe do cliente (onde fica o dashboard de verdade) —
-     o resto do painel administrativo (menu, Clientes etc.) continua no
-     tema escuro. Como quase todo componente já usa var(--bg-panel),
-     var(--text) etc. em vez de cor fixa, só sobrescrever essas variáveis
-     aqui já "vira" os cards, tabelas e o gráfico pro visual claro, sem
-     duplicar CSS de cada componente. */
-  #view-client-detail{
+  /* ---------- Modo claro ----------
+     Alternável pelo usuário (botão na sidebar), aplicado no app inteiro via
+     [data-theme="light"] na <html> — antes isso só existia fixo dentro do
+     detalhe do cliente; agora vale pra tudo (menu, Clientes, CRM etc.), já
+     que quase todo componente consome var(--bg-panel), var(--text) etc. em
+     vez de cor fixa, então só sobrescrever essas variáveis já "vira" os
+     cards, tabelas e o gráfico pro visual claro, sem duplicar CSS de cada
+     componente. As cores de acento (--blue, --green etc.) ficam as mesmas
+     nos dois temas. */
+  :root[data-theme="light"]{
     --bg: #F3F5FA;
     --bg-panel: #FFFFFF;
     --bg-panel-2: #F6F8FC;
@@ -54,33 +63,35 @@
     --card-border: #E9ECF4;
     --card-shadow: 0 1px 2px rgba(24,39,75,0.04), 0 10px 26px -18px rgba(24,39,75,0.14);
     --card-shadow-hover: 0 4px 12px rgba(24,39,75,0.07), 0 16px 34px -16px rgba(24,39,75,0.18);
-    /* "color" normal (não-variável) só é herdado como valor já resolvido —
-       sobrescrever --text acima não muda, por si só, o texto herdado do
-       <body> (tema escuro). Declarar color aqui de novo cria uma nova
-       "raiz" de herança pro tema claro, pra título, valor de KPI, célula
-       de tabela etc. que não define color própria. */
+  }
+  /* Painel do cliente: continua um "cartão" próprio (cantos arredondados,
+     padding), estilo Reportei — só que agora a cor dele segue o tema atual
+     em vez de ficar sempre claro. */
+  #view-client-detail{
     color: var(--text);
     background: var(--bg);
     border-radius: 20px;
     padding: 24px 28px 40px;
   }
-  #view-client-detail .g-tab.active{
+  /* Ajustes de cor pensados pro fundo claro (tons escuros translúcidos que,
+     no escuro, já vêm certos das cores fixas de acento/sombra acima). */
+  [data-theme="light"] .g-tab.active{
     background: linear-gradient(90deg, rgba(76,126,255,0.14), rgba(53,196,138,0.08));
     color: var(--blue); border-color: rgba(76,126,255,0.35);
   }
-  #view-client-detail .kpi-clickable.kpi-active{ --kpi-accent: var(--blue); }
-  #view-client-detail .metric-check input{ accent-color: var(--blue); }
-  #view-client-detail .btn-customize:hover{ border-color: rgba(20,30,60,0.16); }
-  #view-client-detail .btn-add-metric:hover{ border-color: rgba(20,30,60,0.2); }
-  #view-client-detail .modal-input:focus{ outline:none; border-color: rgba(76,126,255,0.5); }
-  #view-client-detail .range-picker-btn:hover{ border-color: rgba(76,126,255,0.5); }
-  #view-client-detail .btn-edit-client:hover{ border-color: rgba(76,126,255,0.5); }
-  #view-client-detail .fb-toggle-btn.active{ background: linear-gradient(90deg, var(--blue), var(--green)); color:#fff; }
-  #view-client-detail tbody tr:hover{ background: rgba(20,30,60,0.03); }
-  #view-client-detail .offline-banner code{ background: rgba(20,30,60,0.06); }
-  #view-client-detail .chart-tooltip{ box-shadow: 0 10px 26px rgba(24,39,75,0.16); }
-  #view-client-detail .qs-avg, #view-client-detail .status-onboarding{ color:#B37200; }
-  #view-client-detail .btn-add{ background: linear-gradient(90deg, var(--blue), var(--green)); color:#fff; }
+  [data-theme="light"] .kpi-clickable.kpi-active{ --kpi-accent: var(--blue); }
+  [data-theme="light"] .metric-check input{ accent-color: var(--blue); }
+  [data-theme="light"] .btn-customize:hover{ border-color: rgba(20,30,60,0.16); }
+  [data-theme="light"] .btn-add-metric:hover{ border-color: rgba(20,30,60,0.2); }
+  [data-theme="light"] .modal-input:focus{ outline:none; border-color: rgba(76,126,255,0.5); }
+  [data-theme="light"] .range-picker-btn:hover{ border-color: rgba(76,126,255,0.5); }
+  [data-theme="light"] .btn-edit-client:hover{ border-color: rgba(76,126,255,0.5); }
+  [data-theme="light"] .fb-toggle-btn.active{ background: linear-gradient(90deg, var(--blue), var(--green)); color:#fff; }
+  [data-theme="light"] tbody tr:hover{ background: rgba(20,30,60,0.03); }
+  [data-theme="light"] .offline-banner code{ background: rgba(20,30,60,0.06); }
+  [data-theme="light"] .chart-tooltip{ box-shadow: 0 10px 26px rgba(24,39,75,0.16); }
+  [data-theme="light"] .qs-avg, [data-theme="light"] .status-onboarding{ color:#B37200; }
+  [data-theme="light"] .btn-add{ background: linear-gradient(90deg, var(--blue), var(--green)); color:#fff; }
 
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -148,6 +159,15 @@
   }
   .btn-logout:hover{ background: rgba(232,81,79,0.1); color: var(--red); }
   .btn-logout svg{ width:15px; height:15px; flex-shrink:0; opacity:0.8; }
+
+  .btn-theme-toggle{
+    display:flex; align-items:center; gap:8px; width:100%;
+    background:transparent; border:1px solid transparent; color:var(--text-dim);
+    font-size:12.5px; font-weight:500; padding:9px 10px; border-radius:8px; cursor:pointer; text-align:left;
+    transition: background .15s, color .15s; margin-bottom:4px;
+  }
+  .btn-theme-toggle:hover{ background: var(--bg-panel-2); color: var(--text); }
+  .btn-theme-toggle svg{ width:15px; height:15px; flex-shrink:0; opacity:0.8; }
 
   /* ---- Ações da tabela e clientes inativos ---- */
   .btn-deactivate{
@@ -889,6 +909,10 @@
     <div class="client-list" id="clientList"></div>
 
     <div class="sidebar-foot">
+      <button class="btn-theme-toggle" onclick="toggleTheme()" id="themeToggleBtn">
+        <svg id="themeToggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+        <span id="themeToggleLabel">Modo claro</span>
+      </button>
       <button class="btn-logout" onclick="logout()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Sair
@@ -1829,6 +1853,31 @@
     clearToken();
     location.reload();
   }
+
+  /* ---------- Modo claro/escuro ---------- */
+  const THEME_ICON_SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>';
+  const THEME_ICON_MOON = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  function applyTheme(theme){
+    document.documentElement.setAttribute('data-theme', theme);
+    const label = document.getElementById('themeToggleLabel');
+    const icon = document.getElementById('themeToggleIcon');
+    if (!label || !icon) return;
+    // O botão mostra o que vai acontecer ao clicar (o tema pro qual vai mudar).
+    if (theme === 'light') {
+      label.textContent = 'Modo escuro';
+      icon.innerHTML = THEME_ICON_MOON;
+    } else {
+      label.textContent = 'Modo claro';
+      icon.innerHTML = THEME_ICON_SUN;
+    }
+  }
+  function toggleTheme(){
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('instintoDashTheme', next); } catch (e) {}
+    applyTheme(next);
+  }
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
 
   async function submitLogin(ev){
     ev.preventDefault();
