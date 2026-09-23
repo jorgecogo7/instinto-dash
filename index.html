@@ -518,6 +518,35 @@
   }
   .btn-edit-client:hover{ border-color: rgba(255,176,32,0.5); }
 
+  /* ---- Contratos (vigência, renovação automática, alertas de vencimento) ---- */
+  .status-chip.status-vencendo{ background: rgba(255,176,32,0.15); color: var(--amber); }
+  .status-chip.status-vencido{ background: rgba(232,81,79,0.15); color: var(--red); }
+  .status-chip.status-cancelado{ background: var(--bg-panel-3); color: var(--text-dim); }
+  .contract-alert-banner{
+    border-radius: var(--radius); padding:12px 16px; font-size:12.5px; margin-bottom:16px;
+    display:flex; flex-direction:column; gap:6px;
+    background: rgba(255,176,32,0.1); border:1px solid rgba(255,176,32,0.35); color: var(--amber);
+  }
+  .contract-alert-banner.has-vencido{ background: rgba(232,81,79,0.1); border-color: rgba(232,81,79,0.35); color: var(--red); }
+  .contract-alert-banner-title{ font-weight:700; }
+  .contract-alert-item{ cursor:pointer; text-decoration:underline; color:inherit; }
+  .contract-card{
+    background: var(--bg-panel-2); border:1px solid var(--card-border); border-radius: var(--radius);
+    padding:18px; margin-bottom:14px;
+  }
+  .contract-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap; }
+  .contract-card-title{ font-size:14.5px; font-weight:700; }
+  .contract-card-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:12px; margin-bottom:6px; }
+  .contract-field-label{ font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+  .contract-field-value{ font-size:13.5px; font-weight:600; }
+  .contract-card-actions{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .history-add-row{ display:flex; gap:10px; align-items:flex-start; margin-bottom:18px; }
+  .history-add-row textarea{ flex:1; resize:vertical; min-height:44px; }
+  .history-timeline{ display:flex; flex-direction:column; gap:12px; }
+  .history-entry{ background: var(--bg-panel-2); border:1px solid var(--card-border); border-radius:10px; padding:12px 14px; }
+  .history-entry-meta{ font-size:11px; color:var(--text-dim); margin-bottom:5px; }
+  .history-entry-text{ font-size:13px; white-space:pre-wrap; }
+
   /* ---- Seletor de período (calendário) ---- */
   .range-picker{ position:relative; display:inline-block; }
   .range-picker-btn{
@@ -1230,6 +1259,8 @@
         <div class="kpi"><div class="kpi-label">Invest. diário total</div><div class="kpi-value" id="sumDaily">–</div></div>
       </div>
 
+      <div id="contractsAlertBanner" class="contract-alert-banner" style="display:none;"></div>
+
       <div class="clients-toolbar">
         <input type="text" id="clientSearch" class="client-search" placeholder="Buscar por nome ou nicho..." oninput="renderClientsMgmt()">
         <span class="clients-count" id="clientsCount"></span>
@@ -1419,6 +1450,8 @@
         <button type="button" class="g-tab active" id="cdTabBtnOverview" onclick="setClientDetailTab('overview')">Anúncios</button>
         <button type="button" class="g-tab" id="cdTabBtnSocial" onclick="setClientDetailTab('social')">Redes Sociais</button>
         <button type="button" class="g-tab" id="cdTabBtnInsights" onclick="setClientDetailTab('insights')">Observações</button>
+        <button type="button" class="g-tab" id="cdTabBtnContract" onclick="setClientDetailTab('contract')">Contrato</button>
+        <button type="button" class="g-tab" id="cdTabBtnHistory" onclick="setClientDetailTab('history')">Histórico</button>
         <button type="button" class="g-tab" id="cdTabBtnIntegrations" onclick="setClientDetailTab('integrations')">Integrações</button>
       </div>
 
@@ -1554,6 +1587,21 @@
           <div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>
         </div>
         <div class="footnote">Gerado por IA a partir dos dados reais da conta — só aparece aqui, no seu painel; o cliente não vê essa aba.</div>
+      </div>
+
+      <!-- ===== Aba: Contrato (vigência, renovação automática, alertas) ===== -->
+      <div class="cd-pane" id="cdPaneContract">
+        <div id="cdContractContent"></div>
+      </div>
+
+      <!-- ===== Aba: Histórico (ficha 360°) ===== -->
+      <div class="cd-pane" id="cdPaneHistory">
+        <div class="history-add-row">
+          <textarea class="modal-input" id="historyNewText" rows="2" placeholder="Registrar algo no histórico deste cliente (ligação, reunião, decisão)..."></textarea>
+          <button type="button" class="btn-add" onclick="addHistoryEntry()">+ Adicionar</button>
+        </div>
+        <div id="historyError" class="modal-error" style="display:none;"></div>
+        <div id="historyTimeline" class="history-timeline"></div>
       </div>
 
       <!-- ===== Aba: Integrações ===== -->
@@ -1809,6 +1857,7 @@
     document.getElementById('mainApp').style.display = 'flex';
     loadClientsFromBackend();
     loadLeadsFromBackend();
+    loadContractsFromBackend();
   }
 
   /* ---------- Ponto de entrada: decide entre login, visão pública, ou app ---------- */
@@ -2682,10 +2731,242 @@
     renderClientsMgmt();
   }
 
+  /* ---------- Contratos (vigência, renovação automática, alertas) ---------- */
+  let allContracts = [];
+  const CONTRACT_STATUS_LABEL = { ativo:'Ativo', vencendo:'Vencendo', vencido:'Vencido', cancelado:'Cancelado' };
+
+  function fmtDateBR(iso){
+    if (!iso) return '—';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function contractStatusChipHtml(c){
+    return `<span class="status-chip status-${c.status}">${CONTRACT_STATUS_LABEL[c.status] || c.status}</span>`;
+  }
+
+  async function loadContractsFromBackend(){
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/contracts`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      allContracts = await res.json();
+    } catch (err) {
+      console.error('Não consegui carregar contratos:', err);
+      allContracts = [];
+    }
+    renderContractsAlertBanner();
+    if (currentClientId && document.getElementById('cdPaneContract')?.classList.contains('active')) renderClientContractPane();
+  }
+
+  // Banner no topo de "Clientes" avisando de contrato vencendo (≤30 dias) ou já vencido.
+  function renderContractsAlertBanner(){
+    const banner = document.getElementById('contractsAlertBanner');
+    if (!banner) return;
+    const alerts = allContracts.filter(c => c.status === 'vencendo' || c.status === 'vencido');
+    if (!alerts.length) { banner.style.display = 'none'; return; }
+    const hasVencido = alerts.some(c => c.status === 'vencido');
+    banner.classList.toggle('has-vencido', hasVencido);
+    const items = alerts
+      .sort((a, b) => (a.daysLeft ?? -999) - (b.daysLeft ?? -999))
+      .map(c => {
+        const name = rawAccountsById[c.accountId]?.name || 'Cliente';
+        const label = c.status === 'vencido' ? `venceu há ${Math.abs(c.daysLeft)} dia(s)` : `vence em ${c.daysLeft} dia(s)`;
+        return `<span class="contract-alert-item" onclick="openClientDetail('${escapeHtml(c.accountId)}','contract')">${escapeHtml(name)} — ${label}</span>`;
+      }).join(' · ');
+    banner.innerHTML = `<span class="contract-alert-banner-title">⚠ ${alerts.length} contrato(s) precisando de atenção</span><span>${items}</span>`;
+    banner.style.display = 'flex';
+  }
+
+  function contractFormHtml(existing){
+    const c = existing || {};
+    return `
+      <form onsubmit="submitContractForm(event, ${existing ? `'${escapeHtml(c.id)}'` : 'null'})">
+        <div class="field-row">
+          <div>
+            <label class="modal-label" style="margin-top:0;">Início da vigência</label>
+            <input class="modal-input" id="cfStartDate" type="date" value="${c.startDate || ''}" required>
+          </div>
+          <div>
+            <label class="modal-label" style="margin-top:0;">Fim da vigência</label>
+            <input class="modal-input" id="cfEndDate" type="date" value="${c.endDate || ''}" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div>
+            <label class="modal-label" style="margin-top:0;">Valor mensal (R$)</label>
+            <input class="modal-input" id="cfMonthlyValue" type="number" min="0" step="1" value="${c.monthlyValue ?? ''}" placeholder="0">
+          </div>
+          <div>
+            <label class="modal-label" style="margin-top:0;">Renovar a cada (meses)</label>
+            <input class="modal-input" id="cfRenewalPeriod" type="number" min="1" step="1" value="${c.renewalPeriodMonths || 12}">
+          </div>
+        </div>
+        <label class="modal-label"><input type="checkbox" id="cfAutoRenew" ${c.autoRenew ? 'checked' : ''}> Renovação automática</label>
+        <label class="modal-label">Link do contrato (opcional)</label>
+        <input class="modal-input" id="cfDocumentUrl" value="${escapeHtml(c.documentUrl || '')}" placeholder="https://...">
+        <label class="modal-label">Observações</label>
+        <input class="modal-input" id="cfNotes" value="${escapeHtml(c.notes || '')}" placeholder="Opcional">
+        <div id="contractFormError" class="modal-error" style="display:none;"></div>
+        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:12px;">
+          <button type="submit" class="btn-add">${existing ? 'Salvar alterações' : 'Criar contrato'}</button>
+          <button type="button" class="btn-cancel" onclick="renderClientContractPane()">Cancelar</button>
+        </div>
+      </form>`;
+  }
+
+  function openNewContractForm(){
+    document.getElementById('cdContractContent').innerHTML = `
+      <div class="contract-card">
+        <div class="contract-card-head"><span class="contract-card-title">Novo contrato</span></div>
+        ${contractFormHtml(null)}
+      </div>`;
+  }
+
+  function openEditContractForm(id){
+    const contract = allContracts.find(c => c.id === id);
+    if (!contract) return;
+    document.getElementById('cdContractContent').innerHTML = `
+      <div class="contract-card">
+        <div class="contract-card-head"><span class="contract-card-title">Editar contrato</span></div>
+        ${contractFormHtml(contract)}
+      </div>`;
+  }
+
+  async function submitContractForm(ev, contractId){
+    ev.preventDefault();
+    const errEl = document.getElementById('contractFormError');
+    errEl.style.display = 'none';
+    const payload = {
+      accountId: currentClientId,
+      startDate: document.getElementById('cfStartDate').value,
+      endDate: document.getElementById('cfEndDate').value,
+      monthlyValue: Number(document.getElementById('cfMonthlyValue').value) || 0,
+      renewalPeriodMonths: Number(document.getElementById('cfRenewalPeriod').value) || 12,
+      autoRenew: document.getElementById('cfAutoRenew').checked,
+      documentUrl: document.getElementById('cfDocumentUrl').value,
+      notes: document.getElementById('cfNotes').value,
+    };
+    try {
+      const url = contractId ? `${API_BASE_URL}/api/contracts/${contractId}` : `${API_BASE_URL}/api/contracts`;
+      const res = await fetch(url, {
+        method: contractId ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar o contrato.');
+      await loadContractsFromBackend();
+      renderClientContractPane();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function renewContractNow(id){
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/contracts/${id}/renew`, { method: 'POST', headers: authHeaders() });
+      if (!res.ok) throw new Error('Não foi possível renovar o contrato.');
+      await loadContractsFromBackend();
+      renderClientContractPane();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function cancelContractNow(id){
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/contracts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ cancelled: true }),
+      });
+      if (!res.ok) throw new Error('Não foi possível cancelar o contrato.');
+      await loadContractsFromBackend();
+      renderClientContractPane();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Renderiza a aba "Contrato" da ficha do cliente aberto — mostra o(s)
+  // contrato(s) já cadastrados ou o botão pra criar o primeiro.
+  function renderClientContractPane(){
+    const wrap = document.getElementById('cdContractContent');
+    if (!wrap || !currentClientId) return;
+    const contracts = allContracts.filter(c => c.accountId === currentClientId);
+    if (!contracts.length) {
+      wrap.innerHTML = `<div class="cd-empty">Nenhum contrato cadastrado ainda pra esse cliente.</div>
+        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:0;">
+          <button type="button" class="btn-add" onclick="openNewContractForm()">+ Novo contrato</button>
+        </div>`;
+      return;
+    }
+    wrap.innerHTML = contracts.map(c => `
+      <div class="contract-card">
+        <div class="contract-card-head">
+          <span class="contract-card-title">Contrato · ${fmtDateBR(c.startDate)} — ${fmtDateBR(c.endDate)}</span>
+          ${contractStatusChipHtml(c)}
+        </div>
+        <div class="contract-card-grid">
+          <div><div class="contract-field-label">Valor mensal</div><div class="contract-field-value">${brl(c.monthlyValue)}</div></div>
+          <div><div class="contract-field-label">Renovação automática</div><div class="contract-field-value">${c.autoRenew ? 'Sim, a cada ' + (c.renewalPeriodMonths || 12) + ' meses' : 'Não'}</div></div>
+          <div><div class="contract-field-label">Dias restantes</div><div class="contract-field-value">${c.cancelled ? '—' : (c.daysLeft < 0 ? `${Math.abs(c.daysLeft)} dias em atraso` : `${c.daysLeft} dias`)}</div></div>
+          ${c.documentUrl ? `<div><div class="contract-field-label">Documento</div><div class="contract-field-value"><a href="${escapeHtml(c.documentUrl)}" target="_blank" rel="noopener">Abrir link ↗</a></div></div>` : ''}
+        </div>
+        ${c.notes ? `<div class="footnote" style="border-top:none; margin-top:2px; padding-top:2px;">${escapeHtml(c.notes)}</div>` : ''}
+        <div class="contract-card-actions">
+          <button type="button" class="btn-cancel" onclick="openEditContractForm('${escapeHtml(c.id)}')">✎ Editar</button>
+          ${!c.cancelled ? `<button type="button" class="btn-cancel" onclick="renewContractNow('${escapeHtml(c.id)}')">↻ Renovar agora</button>` : ''}
+          ${!c.cancelled ? `<button type="button" class="btn-deactivate" onclick="cancelContractNow('${escapeHtml(c.id)}')">Cancelar contrato</button>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  /* ---------- Histórico do cliente (ficha 360°) ---------- */
+  async function addHistoryEntry(){
+    const textEl = document.getElementById('historyNewText');
+    const errEl = document.getElementById('historyError');
+    const text = (textEl.value || '').trim();
+    errEl.style.display = 'none';
+    if (!text) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível registrar.');
+      rawAccountsById[currentClientId] = data;
+      textEl.value = '';
+      renderClientHistoryPane();
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  function renderClientHistoryPane(){
+    const wrap = document.getElementById('historyTimeline');
+    if (!wrap || !currentClientId) return;
+    const account = rawAccountsById[currentClientId];
+    const log = (account?.activityLog || []).slice().reverse();
+    if (!log.length) {
+      wrap.innerHTML = `<div class="cd-empty">Nenhum registro ainda — use o campo acima pra começar o histórico desse cliente.</div>`;
+      return;
+    }
+    wrap.innerHTML = log.map(entry => `
+      <div class="history-entry">
+        <div class="history-entry-meta">${escapeHtml(entry.author || 'JC')} · ${timeAgo(entry.at)}</div>
+        <div class="history-entry-text">${escapeHtml(entry.text)}</div>
+      </div>`).join('');
+  }
+
   /* ---------- Detalhe do cliente: Integrações ---------- */
   let currentClientId = null;
 
-  function openClientDetail(id){
+  function openClientDetail(id, initialTab){
     const account = rawAccountsById[id];
     if (!account) return;
     currentClientId = id;
@@ -2722,7 +3003,7 @@
     document.getElementById('insightsContent').innerHTML = '<div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>';
     document.getElementById('insightsError').style.display = 'none';
 
-    setClientDetailTab('overview');
+    setClientDetailTab(initialTab || 'overview');
     applyRangePreset(30);
   }
 
@@ -2811,12 +3092,18 @@
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
     document.getElementById('cdTabBtnSocial').classList.toggle('active', tab === 'social');
     document.getElementById('cdTabBtnInsights').classList.toggle('active', tab === 'insights');
+    document.getElementById('cdTabBtnContract').classList.toggle('active', tab === 'contract');
+    document.getElementById('cdTabBtnHistory').classList.toggle('active', tab === 'history');
     document.getElementById('cdTabBtnIntegrations').classList.toggle('active', tab === 'integrations');
     document.getElementById('cdPaneOverview').classList.toggle('active', tab === 'overview');
     document.getElementById('cdPaneSocial').classList.toggle('active', tab === 'social');
     document.getElementById('cdPaneInsights').classList.toggle('active', tab === 'insights');
+    document.getElementById('cdPaneContract').classList.toggle('active', tab === 'contract');
+    document.getElementById('cdPaneHistory').classList.toggle('active', tab === 'history');
     document.getElementById('cdPaneIntegrations').classList.toggle('active', tab === 'integrations');
     if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
+    if (tab === 'contract') renderClientContractPane();
+    if (tab === 'history') renderClientHistoryPane();
   }
 
   function toggleRangeMenu(){
