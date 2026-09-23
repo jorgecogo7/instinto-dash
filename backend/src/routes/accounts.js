@@ -154,4 +154,31 @@ router.post('/:id/meta-connection', async (req, res) => {
   }
 });
 
+// POST /api/accounts/:id/log — adiciona uma entrada no histórico do
+// cliente (ficha 360°). Só permite acrescentar (nunca editar ou apagar uma
+// entrada antiga), pra manter o histórico confiável.
+router.post('/:id/log', async (req, res) => {
+  const text = sanitizeString(req.body.text, 500);
+  if (!text) return res.status(400).json({ error: 'Escreva algo pra registrar no histórico.' });
+
+  try {
+    const accounts = await accountsStore.getAll();
+    const account = accounts.find((a) => a.id === req.params.id);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    const entry = {
+      id: crypto.randomBytes(6).toString('hex'),
+      text,
+      author: sanitizeString(req.body.author, 40) || 'JC',
+      at: new Date().toISOString(),
+    };
+    const activityLog = [...(account.activityLog || []), entry];
+    const updated = await accountsStore.update(req.params.id, { activityLog });
+    res.status(201).json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
