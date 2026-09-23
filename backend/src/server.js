@@ -11,6 +11,7 @@ const instagramRoutes = require('./routes/instagram');
 const insightsRoutes = require('./routes/insights');
 const feedbackRoutes = require('./routes/feedback');
 const leadsRoutes = require('./routes/leads');
+const contractsRoutes = require('./routes/contracts');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
 
@@ -43,6 +44,7 @@ app.use('/api/instagram', requireAdminAuth, instagramRoutes);
 app.use('/api/insights', requireAdminAuth, insightsRoutes);
 app.use('/api/feedback', requireAdminAuth, feedbackRoutes);
 app.use('/api/leads', requireAdminAuth, leadsRoutes);
+app.use('/api/contracts', requireAdminAuth, contractsRoutes);
 
 app.post('/api/sync', requireAdminAuth, async (req, res) => {
   try {
@@ -77,10 +79,20 @@ function runBackgroundSync() {
   syncAllAccounts().catch((err) => console.error('Sincronização automática falhou:', err));
 }
 
+// Renovação automática de contratos — roda no mesmo ritmo da sincronização
+// de contas. Só mexe em contratos com autoRenew=true que já venceram.
+function runContractAutoRenew() {
+  contractsRoutes.autoRenewExpiredContracts()
+    .then((renewed) => { if (renewed) console.log(`Renovação automática de contratos: ${renewed} contrato(s) renovado(s).`); })
+    .catch((err) => console.error('Renovação automática de contratos falhou:', err));
+}
+
 app.listen(config.port, () => {
   console.log(`Instinto Dash backend rodando em http://localhost:${config.port}`);
   console.log(`Modo mock: ${config.useMockData ? 'ativado (dados de exemplo)' : 'desativado'}`);
   console.log(`Login configurado: ${config.auth.username ? 'sim' : 'não (defina ADMIN_USERNAME/ADMIN_PASSWORD_HASH)'}`);
   setTimeout(runBackgroundSync, 10 * 1000);
   setInterval(runBackgroundSync, SYNC_INTERVAL_MS);
+  setTimeout(runContractAutoRenew, 15 * 1000);
+  setInterval(runContractAutoRenew, SYNC_INTERVAL_MS);
 });
