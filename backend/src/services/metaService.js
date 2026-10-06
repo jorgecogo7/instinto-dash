@@ -144,6 +144,45 @@ function mapMetaResponse(campaigns) {
   }));
 }
 
+// Miniaturas dos criativos (imagem/vídeo do anúncio). Vem de uma consulta à
+// parte e é "melhor esforço": se a Meta recusar ou falhar, o relatório continua
+// funcionando, só que sem as imagens.
+async function fetchCreativeThumbs(accountId) {
+  const cacheKey = `meta:thumbs:${accountId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const statuses = JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'ARCHIVED']);
+  const attempts = [
+    'creative.thumbnail_width(320).thumbnail_height(320){thumbnail_url,image_url}',
+    'creative{thumbnail_url,image_url}',
+  ];
+  let ads = null;
+  for (const creativeField of attempts) {
+    try {
+      ads = await graphGetAll(`${accountId}/ads`, { fields: creativeField, limit: '100', effective_status: statuses }, 10);
+      break;
+    } catch (e) {
+      console.warn('Meta: não consegui buscar miniaturas dos criativos:', e.message);
+    }
+  }
+  const map = {};
+  (ads || []).forEach((a) => {
+    const c = a.creative || {};
+    const url = c.thumbnail_url || c.image_url;
+    if (a.id && url) map[a.id] = url;
+  });
+  cache.set(cacheKey, map, ads ? 60 * 30 : 120);
+  return map;
+}
+
+function attachThumbs(campaigns, thumbs) {
+  campaigns.forEach((c) => c.adsets.forEach((s) => s.ads.forEach((a) => {
+    if (thumbs[a.id]) a.thumbnailUrl = thumbs[a.id];
+  })));
+  return campaigns;
+}
+
 /**
  * Retorna campanhas > conjuntos de anúncios > anúncios com insights,
  * para uma conta de anúncios (act_...) específica de um cliente.
@@ -187,6 +226,7 @@ async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d', range =
       effective_status: JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'IN_PROCESS', 'WITH_ISSUES']),
     });
     result = mapMetaResponse(campaigns);
+    attachThumbs(result, await fetchCreativeThumbs(accountId));
   }
 
   cache.set(cacheKey, result, 60 * 5); // 5 min — evita bater na API a cada refresh de tela
