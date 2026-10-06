@@ -1572,8 +1572,16 @@
           </div>
         </div>
 
-        <div id="cdGoogleNotConnected" class="offline-banner" style="display:none;">⚠ Google Ads ainda não conectado pra este cliente. <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab('integrations')">Conectar agora</a></div>
+        <div id="cdGoogleNotConnected" class="offline-banner" style="display:none;"></div>
         <div id="cdLoading" class="footnote" style="display:none; border:none; padding:0;">Carregando dados do período…</div>
+
+        <div id="cdMetaSection" style="display:none; margin-bottom:22px;">
+          <div class="panel-head" style="margin-bottom:12px;">
+            <h3 style="font-size:15px;">Meta Ads</h3>
+            <span class="panel-head-sub" id="cdMetaSub"></span>
+          </div>
+          <div id="cdMetaBody"></div>
+        </div>
 
         <div id="cdDashboardContent" style="display:none;">
           <div class="panel-head" style="margin-bottom:12px;">
@@ -3401,11 +3409,22 @@
     const banner = document.getElementById('cdGoogleNotConnected');
     const content = document.getElementById('cdDashboardContent');
     const loading = document.getElementById('cdLoading');
+    const googleOn = account.google?.status === 'connected';
+    const metaOn = account.meta?.status === 'connected';
 
-    if (account.google?.status !== 'connected') {
-      banner.style.display = 'flex';
+    // O Meta aparece sempre que estiver conectado, com ou sem Google.
+    loadClientMeta(account, metaOn);
+
+    if (!googleOn) {
       content.style.display = 'none';
       loading.style.display = 'none';
+      if (metaOn) {
+        banner.style.display = 'none';
+      } else {
+        // Nenhuma plataforma de anúncios conectada ainda.
+        banner.style.display = 'flex';
+        banner.innerHTML = '⚠ Nenhuma plataforma de anúncios conectada pra este cliente. <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Conectar agora</a>';
+      }
       return;
     }
     banner.style.display = 'none';
@@ -3425,8 +3444,102 @@
     } catch (err) {
       loading.style.display = 'none';
       banner.style.display = 'flex';
-      banner.textContent = `⚠ ${err.message}`;
+      banner.textContent = `⚠ Google Ads: ${err.message}`;
     }
+  }
+
+  // ---- Meta Ads dentro da visão geral do cliente (dados reais da Graph API) ----
+  async function loadClientMeta(account, metaOn){
+    const sec = document.getElementById('cdMetaSection');
+    const body = document.getElementById('cdMetaBody');
+    const sub = document.getElementById('cdMetaSub');
+    if (!metaOn) { sec.style.display = 'none'; body.innerHTML = ''; return; }
+    const id = currentClientId;
+    const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+    const dBr = d => d.split('-').reverse().join('/');
+    sec.style.display = 'block';
+    sub.textContent = `${dBr(range.from)} – ${dBr(range.to)}`;
+    body.innerHTML = '<div class="footnote" style="border:none; padding:0;">Carregando dados da Meta…</div>';
+    try {
+      const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
+      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/campaigns?${qs}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados da Meta.');
+      if (id !== currentClientId) return; // trocou de cliente enquanto carregava
+      renderClientMeta(data);
+    } catch (err) {
+      if (id !== currentClientId) return;
+      body.innerHTML = `<div class="offline-banner" style="display:flex;"></div>`;
+      body.firstChild.textContent = `⚠ Meta Ads: ${err.message}`;
+    }
+  }
+
+  function renderClientMeta(apiCampaigns){
+    const body = document.getElementById('cdMetaBody');
+    const esc = escapeHtml;
+    const objectiveLabels = { OUTCOME_SALES:'Vendas', OUTCOME_LEADS:'Cadastros', OUTCOME_ENGAGEMENT:'Engajamento / Mensagens',
+      OUTCOME_TRAFFIC:'Tráfego', OUTCOME_AWARENESS:'Reconhecimento', OUTCOME_APP_PROMOTION:'App',
+      CONVERSIONS:'Conversões', REACH:'Alcance', TRAFFIC:'Tráfego', AWARENESS:'Reconhecimento' };
+    const camps = (apiCampaigns || []).map(c => ({
+      name: c.name,
+      objective: objectiveLabels[c.objective] || c.objective || '—',
+      active: c.status === 'ACTIVE',
+      ins: c.insights || { spend:0, ctr:0, cpc:0, conversions:0 },
+      ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({ name:a.name, set:as.name, campaign:c.name, ins:a.insights || { spend:0, ctr:0, cpc:0, conversions:0 } }))),
+    }));
+    const spending = camps.filter(c => c.ins.spend > 0);
+    if (!spending.length) {
+      body.innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhuma campanha com investimento nesse período.</div>';
+      return;
+    }
+
+    const costPer = (spend, n) => n > 0 ? brl2(spend / n) : '—';
+    const totalSpend = camps.reduce((s,c) => s + c.ins.spend, 0);
+    const totalResults = camps.reduce((s,c) => s + c.ins.conversions, 0);
+    // Cliques e impressões vêm só como taxas (CPC, CTR); reconstruímos os totais
+    // por campanha pra calcular CPC e CTR médios ponderados (não média simples).
+    const clicks = camps.reduce((s,c) => s + (c.ins.cpc > 0 ? c.ins.spend / c.ins.cpc : 0), 0);
+    const impressions = camps.reduce((s,c) => s + ((c.ins.cpc > 0 && c.ins.ctr > 0) ? (c.ins.spend / c.ins.cpc) / (c.ins.ctr / 100) : 0), 0);
+    const avgCpc = clicks > 0 ? totalSpend / clicks : 0;
+    const avgCtr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+
+    const kpi = (label, value) => `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div></div>`;
+    const kpis = `<div class="kpi-grid" style="margin-bottom:18px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
+      ${kpi('Investido', brl2(totalSpend))}
+      ${kpi('Resultados', totalResults.toLocaleString('pt-BR'))}
+      ${kpi('Custo por resultado', costPer(totalSpend, totalResults))}
+      ${kpi('CTR médio', pct1(avgCtr))}
+      ${kpi('CPC médio', brl2(avgCpc))}
+    </div>`;
+
+    const statusPill = on => `<span style="color:${on ? 'var(--green)' : 'var(--muted, #8b919b)'}">● ${on ? 'Ativa' : 'Pausada'}</span>`;
+    const campRows = [...camps].sort((a,b) => b.ins.spend - a.ins.spend).map(c => `<tr>
+      <td>${esc(c.name)}</td><td>${esc(c.objective)}</td><td>${statusPill(c.active)}</td>
+      <td>${brl2(c.ins.spend)}</td><td>${pct1(c.ins.ctr)}</td><td>${brl2(c.ins.cpc)}</td>
+      <td>${c.ins.conversions.toLocaleString('pt-BR')}</td><td>${costPer(c.ins.spend, c.ins.conversions)}</td></tr>`).join('');
+
+    const allAds = camps.flatMap(c => c.ads).filter(a => a.ins.spend > 0).sort((a,b) => b.ins.spend - a.ins.spend).slice(0, 15);
+    const adRows = allAds.map(a => `<tr>
+      <td>${esc(a.name)}</td><td>${esc(a.campaign)}<div class="footnote" style="border:none; padding:0;">${esc(a.set)}</div></td>
+      <td>${brl2(a.ins.spend)}</td><td>${pct1(a.ins.ctr)}</td><td>${brl2(a.ins.cpc)}</td>
+      <td>${a.ins.conversions.toLocaleString('pt-BR')}</td><td>${costPer(a.ins.spend, a.ins.conversions)}</td></tr>`).join('');
+
+    body.innerHTML = `${kpis}
+      <div class="panel">
+        <div class="panel-head"><h3>Campanhas</h3></div>
+        <table>
+          <thead><tr><th>Campanha</th><th>Objetivo</th><th>Status</th><th>Invest.</th><th title="% de cliques a cada 100 impressões.">CTR</th><th title="Custo médio pago por clique.">CPC</th><th title="Compras, cadastros ou conversas iniciadas, conforme o objetivo da campanha.">Resultados</th><th title="Quanto você pagou, em média, por cada resultado.">Custo/Result.</th></tr></thead>
+          <tbody>${campRows}</tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Anúncios</h3><span class="panel-head-sub">Os 15 que mais investiram no período</span></div>
+        <table>
+          <thead><tr><th>Anúncio</th><th>Campanha · Conjunto</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Resultados</th><th>Custo/Result.</th></tr></thead>
+          <tbody>${adRows || '<tr><td colspan="7" class="footnote" style="border:none;">Sem anúncios com investimento nesse período.</td></tr>'}</tbody>
+        </table>
+      </div>`;
   }
 
   // Gráfico "Investimento por dia": SVG com investimento (área/linha, eixo esquerdo)

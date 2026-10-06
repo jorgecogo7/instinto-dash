@@ -24,6 +24,15 @@ const RESULT_ACTIONS = [
   'omni_complete_registration',
 ];
 
+// Aceita {from, to} no formato AAAA-MM-DD (from <= to). Qualquer outra coisa
+// vira null e a consulta cai no período pronto.
+function validRange(range) {
+  if (!range || !range.from || !range.to) return null;
+  const ok = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d));
+  if (!ok(range.from) || !ok(range.to) || range.from > range.to) return null;
+  return { since: range.from, until: range.to };
+}
+
 function hasRealCredentials() {
   return !config.useMockData && Boolean(config.meta.systemUserToken);
 }
@@ -142,11 +151,14 @@ function mapMetaResponse(campaigns) {
  * Sem token (ou com USE_MOCK_DATA=true): devolve os dados de exemplo.
  * Com token: consulta a Graph API de verdade. `datePreset` aceita
  * today, yesterday, last_7d, last_14d, last_30d (padrão), this_month, last_month.
+ * Se `range` ({from, to} em AAAA-MM-DD) vier, ele tem prioridade sobre o período pronto.
  */
-async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d') {
+async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d', range = null) {
   const preset = DATE_PRESETS.has(datePreset) ? datePreset : 'last_30d';
+  const customRange = validRange(range);
+  const periodKey = customRange ? `${customRange.since}_${customRange.until}` : preset;
   const accountId = normalizeAdAccountId(adAccountId);
-  const cacheKey = `meta:campaigns:${accountId || 'mock'}:${preset}`;
+  const cacheKey = `meta:campaigns:${accountId || 'mock'}:${periodKey}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
@@ -157,7 +169,11 @@ async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d') {
   } else {
     if (!accountId) throw new Error('Este cliente ainda não tem um ID de conta de anúncios da Meta.');
 
-    const insightFields = `insights.date_preset(${preset}){spend,ctr,cpc,actions}`;
+    // Período: datas exatas (from/to) quando informadas; senão um período pronto.
+    const period = customRange
+      ? `time_range(${JSON.stringify(customRange)})`
+      : `date_preset(${preset})`;
+    const insightFields = `insights.${period}{spend,ctr,cpc,actions}`;
     const fields = [
       'name', 'objective', 'status', 'effective_status',
       insightFields,
