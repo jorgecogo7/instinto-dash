@@ -357,6 +357,8 @@
   .ad-row{ display:grid; grid-template-columns: 40px 1.6fr 0.7fr 0.8fr 0.8fr 0.8fr 0.9fr 1fr; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
   .ad-row:last-child{ border-bottom:none; }
   .ad-thumb{ width:34px; height:34px; border-radius:7px; background: linear-gradient(135deg, var(--flame), var(--amber)); opacity:0.85; }
+  .ad-thumb.has-img{ background:var(--bg-panel-3); opacity:1; overflow:hidden; width:44px; height:44px; }
+  .ad-thumb.has-img img{ width:100%; height:100%; object-fit:cover; display:block; }
   .ad-name{ font-size:12.5px; font-weight:600; }
   .ad-set{ font-size:10.5px; color:var(--text-dim); margin-top:1px; }
   .micro-label{ font-size:9.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.3px; }
@@ -1102,7 +1104,22 @@
           <p id="metaViewSubtitle">Campanhas, conjuntos de anúncios e anúncios · dados de demonstração</p>
         </div>
         <div class="topbar-right">
-          <div class="date-select">Últimos 30 dias ▾ <span class="vs-label">vs. período anterior</span></div>
+          <div class="range-picker" id="metaRangePicker">
+            <button type="button" class="range-picker-btn" onclick="toggleMetaRangeMenu()">📅 <span id="metaRangeLabel">Últimos 30 dias</span> ▾</button>
+            <div class="range-picker-menu" id="metaRangeMenu">
+              <button type="button" class="range-preset" data-mdays="7" onclick="applyMetaRangePreset(7)">Últimos 7 dias</button>
+              <button type="button" class="range-preset" data-mdays="14" onclick="applyMetaRangePreset(14)">Últimos 14 dias</button>
+              <button type="button" class="range-preset active" data-mdays="30" onclick="applyMetaRangePreset(30)">Últimos 30 dias</button>
+              <button type="button" class="range-preset" data-mdays="90" onclick="applyMetaRangePreset(90)">Últimos 90 dias</button>
+              <div class="range-custom">
+                <label>De</label>
+                <input type="date" id="metaRangeFrom">
+                <label>Até</label>
+                <input type="date" id="metaRangeTo">
+                <button type="button" class="range-apply" onclick="applyMetaRangeCustom()">Aplicar período</button>
+              </div>
+            </div>
+          </div>
           <select class="client-select-real" id="metaClientSelect" onchange="onMetaClientChange()">
             <option value="">📁 Todos os clientes (exemplo)</option>
           </select>
@@ -1112,10 +1129,10 @@
       <div id="metaNotConnected" class="offline-banner" style="display:none;">⚠ Este cliente ainda não tem Meta Ads conectado. Vá em Clientes → abre o cliente → Integrações pra conectar.</div>
 
       <div class="grid">
-        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value" id="metaKpiSpend">R$ 11.240</div><div class="kpi-delta up">▲ 9,8%</div></div>
-        <div class="kpi"><div class="kpi-label">CTR médio</div><div class="kpi-value" id="metaKpiCtr">2,84%</div><div class="kpi-delta up">▲ 0,4pp</div></div>
-        <div class="kpi"><div class="kpi-label">CPA médio</div><div class="kpi-value" id="metaKpiCpa">R$ 32,90</div><div class="kpi-delta down">▼ 5,1%</div></div>
-        <div class="kpi"><div class="kpi-label">ROAS</div><div class="kpi-value" id="metaKpiRoas">4,1x</div><div class="kpi-delta up">▲ 0,3x</div></div>
+        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value" id="metaKpiSpend">R$ 11.240</div><div class="kpi-delta up meta-demo-delta">▲ 9,8%</div></div>
+        <div class="kpi"><div class="kpi-label">CTR médio</div><div class="kpi-value" id="metaKpiCtr">2,84%</div><div class="kpi-delta up meta-demo-delta">▲ 0,4pp</div></div>
+        <div class="kpi"><div class="kpi-label" id="metaKpi3Label">CPA médio</div><div class="kpi-value" id="metaKpiCpa">R$ 32,90</div><div class="kpi-delta down meta-demo-delta">▼ 5,1%</div></div>
+        <div class="kpi"><div class="kpi-label" id="metaKpi4Label">ROAS</div><div class="kpi-value" id="metaKpiRoas">4,1x</div><div class="kpi-delta up meta-demo-delta">▲ 0,3x</div></div>
       </div>
 
       <div class="g-tabs">
@@ -2131,10 +2148,13 @@
       cpc: brl2(c.insights?.cpc),
       conv: c.insights?.conversions || 0,
       perf: c.insights?.targetPerformancePct ?? null,
+      n: { spend: c.insights?.spend || 0, ctr: c.insights?.ctr || 0, cpc: c.insights?.cpc || 0 },
       ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({
         name: a.name, set: as.name,
-        spend: brl(a.insights?.spend || 0), ctr: pct1(a.insights?.ctr), cpc: brl2(a.insights?.cpc),
+        spend: brl2(a.insights?.spend || 0), ctr: pct1(a.insights?.ctr), cpc: brl2(a.insights?.cpc),
         conv: a.insights?.conversions || 0, perf: a.insights?.targetPerformancePct ?? null,
+        n: { spend: a.insights?.spend || 0, ctr: a.insights?.ctr || 0, cpc: a.insights?.cpc || 0 },
+        thumb: a.thumbnailUrl || '',
       }))),
     }));
   }
@@ -2142,9 +2162,24 @@
   // Desenha a tela inteira de Meta Ads (campanhas, destaques, funil,
   // evolução, públicos, criativos) a partir de uma lista de campanhas
   // no formato "de tela" — chamada tanto com o exemplo quanto com dados reais.
-  function renderMetaView(metaCampaigns){
+  // Miniatura do criativo; sem imagem (ou se falhar ao carregar), cai no quadrado laranja.
+  function adThumbHtml(a){
+    if (!a.thumb) return '<div class="ad-thumb"></div>';
+    return `<div class="ad-thumb has-img"><img src="${escapeHtml(a.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.className='ad-thumb';this.remove()"></div>`;
+  }
+
+  function renderMetaView(metaCampaigns, real = false){
     const campaignListEl = document.getElementById('campaignList');
     campaignListEl.innerHTML = '';
+    if (real) {
+      // Só o que rodou de verdade no período: campanhas e anúncios com gasto,
+      // do que mais investiu pro que menos.
+      metaCampaigns = metaCampaigns
+        .map(c => ({ ...c, ads: c.ads.filter(a => a.n.spend > 0).sort((a,b) => b.n.spend - a.n.spend) }))
+        .filter(c => c.n.spend > 0 || c.ads.length)
+        .sort((a,b) => b.n.spend - a.n.spend);
+      if (!metaCampaigns.length) campaignListEl.innerHTML = '<p class="footnote" style="border:none; padding:12px 4px;">Nenhuma campanha com investimento nesse período. Tente um período maior.</p>';
+    }
     metaCampaigns.forEach((c,idx)=>{
       const block = document.createElement('div');
       block.className = 'campaign-block' + (idx===0 ? ' open' : '');
@@ -2153,7 +2188,7 @@
 
       const adsHtml = c.ads.map(a => `
         <div class="ad-row">
-          <div class="ad-thumb"></div>
+          ${adThumbHtml(a)}
           <div>
             <div class="ad-name">${a.name}</div>
             <div class="ad-set">${a.set}</div>
@@ -2195,13 +2230,35 @@
     });
 
     // KPIs do topo
+    if (real) {
+      // Dados reais: só números que vêm da Meta (sem ROAS/CPA/variações de exemplo).
+      const tSpend = metaCampaigns.reduce((s,c) => s + c.n.spend, 0);
+      const tResults = metaCampaigns.reduce((s,c) => s + c.conv, 0);
+      const tClicks = metaCampaigns.reduce((s,c) => s + (c.n.cpc > 0 ? c.n.spend / c.n.cpc : 0), 0);
+      const tImpr = metaCampaigns.reduce((s,c) => s + ((c.n.cpc > 0 && c.n.ctr > 0) ? (c.n.spend / c.n.cpc) / (c.n.ctr / 100) : 0), 0);
+      document.getElementById('metaKpiSpend').textContent = brl2(tSpend);
+      document.getElementById('metaKpiCtr').textContent = pct1(tImpr > 0 ? (tClicks / tImpr) * 100 : 0);
+      document.getElementById('metaKpi3Label').textContent = 'Custo por resultado';
+      document.getElementById('metaKpiCpa').textContent = tResults > 0 ? brl2(tSpend / tResults) : '—';
+      document.getElementById('metaKpi4Label').textContent = 'Resultados';
+      document.getElementById('metaKpiRoas').textContent = tResults.toLocaleString('pt-BR');
+      document.querySelectorAll('.meta-demo-delta').forEach(e => e.style.display = 'none');
+    } else {
+      document.getElementById('metaKpi3Label').textContent = 'CPA médio';
+      document.getElementById('metaKpi4Label').textContent = 'ROAS';
+      document.getElementById('metaKpiRoas').textContent = '4,1x';
+      document.getElementById('metaKpiCpa').textContent = 'R$ 32,90';
+      document.querySelectorAll('.meta-demo-delta').forEach(e => e.style.display = '');
+    }
     const totalSpend = metaCampaigns.reduce((s,c) => s + parseFloat(c.spend.replace(/[^\d,]/g,'').replace(',','.')), 0);
     const avgCtr = metaCampaigns.reduce((s,c) => s + parseFloat(c.ctr.replace(',','.')), 0) / (metaCampaigns.length || 1);
-    document.getElementById('metaKpiSpend').textContent = brl(totalSpend);
-    document.getElementById('metaKpiCtr').textContent = avgCtr.toFixed(2).replace('.',',') + '%';
+    if (!real) {
+      document.getElementById('metaKpiSpend').textContent = brl(totalSpend);
+      document.getElementById('metaKpiCtr').textContent = avgCtr.toFixed(2).replace('.',',') + '%';
+    }
 
     const allAds = [];
-    metaCampaigns.forEach(c => c.ads.forEach(a => allAds.push({ ...a, campaign: c.name })));
+    metaCampaigns.forEach(c => c.ads.forEach(a => { if (!real || a.n.spend > 0) allAds.push({ ...a, campaign: c.name }); }));
     if (!allAds.length) {
       ['metaHighlights','metaFunnel','publicosTable','criativosTable'].forEach(id => document.getElementById(id).innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados suficientes ainda.</p>');
       document.getElementById('metaEvoChart').innerHTML = '';
@@ -2209,9 +2266,15 @@
     }
 
     // --- Destaques ---
-    const topCampaign = [...metaCampaigns].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,'')))[0];
-    const topAd = [...allAds].sort((a,b) => a.cpc.localeCompare(b.cpc))[0];
-    const bestCtrAd = [...allAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0];
+    const topCampaign = real
+      ? [...metaCampaigns].sort((a,b) => b.n.spend - a.n.spend)[0]
+      : [...metaCampaigns].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,'')))[0];
+    const topAd = real
+      ? [...allAds].filter(a => a.n.cpc > 0).sort((a,b) => a.n.cpc - b.n.cpc)[0] || allAds[0]
+      : [...allAds].sort((a,b) => a.cpc.localeCompare(b.cpc))[0];
+    const bestCtrAd = real
+      ? [...allAds].sort((a,b) => b.n.ctr - a.n.ctr)[0]
+      : [...allAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0];
     const highlights = [
       { icon:'💰', title:`Investimento concentrado em "${topCampaign.name}"`, sub:`${topCampaign.spend} do total investido no período` },
       { icon:'📈', title:`Anúncio com melhor CTR: "${bestCtrAd.name}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${bestCtrAd.campaign}` },
@@ -2224,6 +2287,11 @@
         <div class="highlight-sub">${h.sub}</div>
       </div>`).join('');
 
+    const soon = '<p class="footnote" style="border:none; padding:0;">Esta visão ainda não usa dados reais da Meta, então foi desativada pra não mostrar números inventados. Chega numa próxima versão.</p>';
+    if (real) {
+      document.getElementById('metaFunnel').innerHTML = soon;
+      document.getElementById('metaEvoChart').innerHTML = soon;
+    }
     // --- Funil (impressões → cliques → visitas à página → conversões) ---
     const totalConv = metaCampaigns.reduce((s,c) => s + c.conv, 0);
     const funnel = [
@@ -2240,12 +2308,12 @@
         funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
       }
     });
-    document.getElementById('metaFunnel').innerHTML = funnelHtml;
+    if (!real) document.getElementById('metaFunnel').innerHTML = funnelHtml;
 
     // --- Evolução diária ---
     const evoChart = document.getElementById('metaEvoChart');
-    evoChart.innerHTML = '';
-    for (let i = 0; i < 20; i++) {
+    if (!real) evoChart.innerHTML = '';
+    for (let i = 0; i < (real ? 0 : 20); i++) {
       const bar = document.createElement('div');
       bar.className = 'bar';
       bar.style.height = (25 + Math.round(Math.random() * 140)) + 'px';
@@ -2257,10 +2325,10 @@
     allAds.forEach(a => {
       const key = a.set + '|' + a.campaign;
       if (!publicosMap[key]) publicosMap[key] = { set: a.set, campaign: a.campaign, spend: 0, conv: 0, ctrs: [], cpcs: [] };
-      publicosMap[key].spend += parseFloat(a.spend.replace('R$', '').replace(/\./g,'').replace(',','.'));
+      publicosMap[key].spend += real ? a.n.spend : parseFloat(a.spend.replace('R$', '').replace(/\./g,'').replace(',','.'));
       publicosMap[key].conv += a.conv;
-      publicosMap[key].ctrs.push(parseFloat(a.ctr));
-      publicosMap[key].cpcs.push(parseFloat(a.cpc.replace('R$','').replace(',','.')));
+      publicosMap[key].ctrs.push(real ? a.n.ctr : parseFloat(a.ctr));
+      publicosMap[key].cpcs.push(real ? a.n.cpc : parseFloat(a.cpc.replace('R$','').replace(',','.')));
     });
     const publicosEl = document.getElementById('publicosTable');
     publicosEl.innerHTML = '';
@@ -2275,10 +2343,10 @@
     // --- Criativos ---
     const criativosEl = document.getElementById('criativosTable');
     criativosEl.innerHTML = '';
-    [...allAds].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,''))).forEach(a => {
+    [...allAds].sort((a,b) => real ? b.n.spend - a.n.spend : parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,''))).forEach(a => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><div class="ad-thumb"></div></td>
+        <td>${adThumbHtml(a)}</td>
         <td>${a.name}</td>
         <td>${a.campaign}</td>
         <td>${a.spend}</td>
@@ -2462,31 +2530,61 @@
     });
   }
 
+  // ---- Período da tela Meta Ads (valendo de verdade pro cliente selecionado) ----
+  let metaRange = { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+  function toggleMetaRangeMenu(){ document.getElementById('metaRangeMenu').classList.toggle('open'); }
+  document.addEventListener('click', (ev) => {
+    const picker = document.getElementById('metaRangePicker');
+    if (picker && !picker.contains(ev.target)) document.getElementById('metaRangeMenu')?.classList.remove('open');
+  });
+  function applyMetaRangePreset(days){
+    document.querySelectorAll('.range-preset[data-mdays]').forEach(b => b.classList.toggle('active', Number(b.dataset.mdays) === days));
+    metaRange = { from: isoDaysAgo(days - 1), to: isoDaysAgo(0) };
+    document.getElementById('metaRangeFrom').value = metaRange.from;
+    document.getElementById('metaRangeTo').value = metaRange.to;
+    document.getElementById('metaRangeLabel').textContent = `Últimos ${days} dias`;
+    document.getElementById('metaRangeMenu').classList.remove('open');
+    onMetaClientChange();
+  }
+  function applyMetaRangeCustom(){
+    const from = document.getElementById('metaRangeFrom').value;
+    const to = document.getElementById('metaRangeTo').value;
+    if (!from || !to || from > to) { alert('Escolha um período válido (De ≤ Até).'); return; }
+    document.querySelectorAll('.range-preset[data-mdays]').forEach(b => b.classList.remove('active'));
+    const fmt = d => d.split('-').reverse().join('/');
+    metaRange = { from, to };
+    document.getElementById('metaRangeLabel').textContent = `${fmt(from)} – ${fmt(to)}`;
+    document.getElementById('metaRangeMenu').classList.remove('open');
+    onMetaClientChange();
+  }
+
   async function onMetaClientChange(){
     const id = document.getElementById('metaClientSelect').value;
     const banner = document.getElementById('metaNotConnected');
     const subtitle = document.getElementById('metaViewSubtitle');
     banner.style.display = 'none';
 
-    if (!id) { subtitle.textContent = 'Campanhas, conjuntos de anúncios e anúncios · dados de demonstração'; renderMetaView(mockMetaCampaigns); return; }
+    if (!id) { subtitle.textContent = 'Campanhas, conjuntos de anúncios e anúncios · dados de demonstração'; renderMetaView(mockMetaCampaigns, false); return; }
 
     const account = rawAccountsById[id];
     subtitle.textContent = `Campanhas, conjuntos de anúncios e anúncios · ${account.name}`;
     if (account.meta?.status !== 'connected') {
       banner.style.display = 'flex';
-      renderMetaView([]);
+      renderMetaView([], true);
       return;
     }
     try {
-      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/campaigns`, { headers: authHeaders() });
+      const qs = new URLSearchParams({ from: metaRange.from, to: metaRange.to }).toString();
+      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/campaigns?${qs}`, { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar campanhas.');
-      renderMetaView(mapMetaApiToViewShape(data));
+      if (id !== document.getElementById('metaClientSelect').value) return; // trocou de cliente enquanto carregava
+      renderMetaView(mapMetaApiToViewShape(data), true);
     } catch (err) {
       banner.style.display = 'flex';
       banner.textContent = `⚠ ${err.message}`;
-      renderMetaView([]);
+      renderMetaView([], true);
     }
   }
 
@@ -3486,7 +3584,7 @@
       objective: objectiveLabels[c.objective] || c.objective || '—',
       active: c.status === 'ACTIVE',
       ins: c.insights || { spend:0, ctr:0, cpc:0, conversions:0 },
-      ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({ name:a.name, set:as.name, campaign:c.name, ins:a.insights || { spend:0, ctr:0, cpc:0, conversions:0 } }))),
+      ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({ name:a.name, set:as.name, campaign:c.name, thumb:a.thumbnailUrl || '', ins:a.insights || { spend:0, ctr:0, cpc:0, conversions:0 } }))),
     }));
     const spending = camps.filter(c => c.ins.spend > 0);
     if (!spending.length) {
@@ -3521,7 +3619,7 @@
 
     const allAds = camps.flatMap(c => c.ads).filter(a => a.ins.spend > 0).sort((a,b) => b.ins.spend - a.ins.spend).slice(0, 15);
     const adRows = allAds.map(a => `<tr>
-      <td>${esc(a.name)}</td><td>${esc(a.campaign)}<div class="footnote" style="border:none; padding:0;">${esc(a.set)}</div></td>
+      <td><div style="display:flex; align-items:center; gap:10px;">${adThumbHtml(a)}<span>${esc(a.name)}</span></div></td><td>${esc(a.campaign)}<div class="footnote" style="border:none; padding:0;">${esc(a.set)}</div></td>
       <td>${brl2(a.ins.spend)}</td><td>${pct1(a.ins.ctr)}</td><td>${brl2(a.ins.cpc)}</td>
       <td>${a.ins.conversions.toLocaleString('pt-BR')}</td><td>${costPer(a.ins.spend, a.ins.conversions)}</td></tr>`).join('');
 
