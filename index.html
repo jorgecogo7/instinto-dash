@@ -464,6 +464,65 @@
   .balance-critical{ background: rgba(232,81,79,0.18); color: var(--red); animation: pulse-alert 1.6s infinite; }
   @keyframes pulse-alert{ 0%,100%{opacity:1;} 50%{opacity:0.55;} }
 
+  /* ---- Clientes: alternância Cards / Tabela ---- */
+  .view-toggle{ display:flex; gap:2px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px; padding:2px; }
+  .view-toggle-btn{ font-size:12px; font-weight:600; padding:6px 12px; border-radius:6px; border:none; background:transparent; color:var(--text-dim); cursor:pointer; }
+  .view-toggle-btn.active{ background:var(--bg-panel); color:var(--text); }
+
+  .clients-cards-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(250px,1fr)); gap:14px; margin-bottom:20px; }
+  .client-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px; cursor:pointer; transition:border-color .15s ease, transform .15s ease;
+  }
+  .client-card:hover{ border-color: rgba(255,176,32,0.45); transform:translateY(-1px); }
+  .client-card-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .client-card-avatar{
+    width:38px; height:38px; border-radius:10px; background:var(--bg-panel-3);
+    display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--text-dim);
+    flex-shrink:0;
+  }
+  .client-card-name{ font-size:14px; font-weight:700; color:var(--text); line-height:1.25; }
+  .client-card-niche{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .client-card-platforms{ display:flex; gap:5px; align-items:center; min-height:24px; margin-bottom:14px; }
+  .client-card-stats{ display:flex; justify-content:space-between; gap:10px; padding-top:12px; border-top:1px solid var(--line); }
+  .client-card-stat-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:0.3px; color:var(--text-dim); margin-bottom:2px; }
+  .client-card-stat-value{ font-size:12.5px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; }
+  .client-card-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+  .client-card-add{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    border:1.5px dashed var(--line); border-radius:var(--radius); min-height:172px;
+    color:var(--text-dim); font-size:12.5px; font-weight:600; cursor:pointer; background:transparent;
+  }
+  .client-card-add:hover{ border-color:rgba(255,176,32,0.5); color:var(--text); }
+
+  /* ---- Detalhe do cliente: ícones de plataforma no cabeçalho ---- */
+  .cd-header-platforms{ display:flex; gap:6px; align-items:center; }
+
+  /* ---- Aba Integrações: contas conectadas + visão geral ---- */
+  .conn-table-wrap{ background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:22px; }
+  .conn-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .conn-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-dim); font-weight:600; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--bg-panel-2); }
+  .conn-table td{ padding:11px 16px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .conn-table tr:last-child td{ border-bottom:none; }
+  .conn-account-name{ display:flex; align-items:center; gap:10px; font-weight:600; }
+  .conn-empty-row td{ color:var(--text-dim); text-align:center; padding:22px; }
+
+  .integ-overview-label{ font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.4px; margin:0 0 10px; }
+  .integ-overview-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:26px; }
+  .integ-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px; text-align:center; cursor:pointer; transition:border-color .15s ease;
+  }
+  .integ-card:hover{ border-color:rgba(255,176,32,0.45); }
+  .integ-card.soon{ opacity:0.55; cursor:default; }
+  .integ-card.soon:hover{ border-color:var(--line); }
+  .integ-card-icon{ width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:15px; margin:0 auto 10px; }
+  .integ-card-name{ font-size:12.5px; font-weight:700; color:var(--text); margin-bottom:3px; }
+  .integ-card-status{ font-size:10.5px; color:var(--text-dim); margin-bottom:10px; }
+  .integ-card-btn{ font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; background:var(--bg-panel-2); border:1px solid var(--line); color:var(--text); cursor:pointer; width:100%; }
+  .integ-card-btn:hover{ border-color:rgba(255,176,32,0.5); }
+  .integ-card-btn[disabled]{ cursor:default; opacity:0.6; }
+
   /* ---- Banner de backend offline ---- */
   .offline-banner{
     background: rgba(232,81,79,0.1); border:1px solid rgba(232,81,79,0.35); color: var(--red);
@@ -1288,10 +1347,16 @@
       <div class="clients-toolbar">
         <input type="text" id="clientSearch" class="client-search" placeholder="Buscar por nome ou nicho..." oninput="renderClientsMgmt()">
         <span class="clients-count" id="clientsCount"></span>
+        <div class="view-toggle" id="clientsViewToggle">
+          <button type="button" class="view-toggle-btn" data-mode="cards" onclick="setClientsViewMode('cards')">⊞ Cards</button>
+          <button type="button" class="view-toggle-btn" data-mode="table" onclick="setClientsViewMode('table')">☰ Tabela</button>
+        </div>
         <button class="btn-add" onclick="openAddClientModal()">+ Novo cliente</button>
       </div>
 
-      <div class="clients-table-wrap">
+      <div class="clients-cards-grid" id="clientsCardsGrid"></div>
+
+      <div class="clients-table-wrap" id="clientsTableWrap">
         <table class="clients-table">
           <thead>
             <tr>
@@ -1468,6 +1533,10 @@
           <p id="clientDetailSub">Dashboard, integrações e link de compartilhamento</p>
           <button type="button" class="btn-edit-client" onclick="openEditClientModal()">✎ Editar cliente</button>
         </div>
+        <div class="topbar-right">
+          <div class="cd-header-platforms" id="cdHeaderPlatforms"></div>
+          <button type="button" class="btn-cancel" onclick="setClientDetailTab('integrations')">🔌 Gerenciar integrações</button>
+        </div>
       </div>
 
       <div class="client-detail-tabs">
@@ -1630,6 +1699,16 @@
 
       <!-- ===== Aba: Integrações ===== -->
       <div class="cd-pane" id="cdPaneIntegrations">
+      <div class="conn-table-wrap">
+        <table class="conn-table">
+          <thead><tr><th>Conta</th><th>Status</th><th>Identificador</th><th></th></tr></thead>
+          <tbody id="cdConnAccountsTable"></tbody>
+        </table>
+      </div>
+
+      <div class="integ-overview-label">Visão geral das integrações</div>
+      <div class="integ-overview-grid" id="cdIntegOverviewGrid"></div>
+
       <div class="integration-card">
         <div class="integration-head">
           <div>
@@ -1677,9 +1756,9 @@
         </div>
         <div id="metaConnectError" class="modal-error" style="display:none;"></div>
         <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
-          <button class="btn-add" onclick="saveMetaConnection()">Salvar</button>
+          <button class="btn-add" onclick="saveMetaConnection()">Salvar e verificar</button>
         </div>
-        <div class="footnote" style="margin-top:4px;">Ainda não verifica contra a API de verdade — isso liga assim que o App no Meta for Developers estiver pronto. Por enquanto, salva os IDs e marca como "pendente".</div>
+        <div class="footnote" style="margin-top:4px;">Confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder. Se o token da Meta ainda não estiver configurado no servidor, salva os IDs e deixa como "pendente".</div>
       </div>
 
       <div class="integration-card">
@@ -2000,7 +2079,9 @@
   }
 
   /* ---------- Meta Ads: campaigns + ads ---------- */
-  const perfColor = pct => pct >= 100 ? 'var(--green)' : pct >= 80 ? 'var(--amber)' : 'var(--red)';
+  const perfColor = pct => pct == null ? '#565C66' : pct >= 100 ? 'var(--green)' : pct >= 80 ? 'var(--amber)' : 'var(--red)';
+  // Dados reais da Meta não trazem meta por campanha (ainda não existe esse cadastro) — mostra "sem meta" em vez de inventar 100%.
+  const perfText = pct => pct == null ? 'sem meta' : pct + '% da meta';
   const brl2 = v => (v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
   const pct1 = v => (v || 0).toFixed(1).replace('.', ',') + '%';
 
@@ -2030,7 +2111,9 @@
   // Converte o formato que o backend/API do Meta devolve (campaign -> adsets -> ads,
   // com números em "insights") pro formato que a tela usa (achatado, com strings prontas).
   function mapMetaApiToViewShape(apiCampaigns){
-    const objectiveLabels = { CONVERSIONS:'Conversões', REACH:'Alcance', TRAFFIC:'Tráfego', AWARENESS:'Reconhecimento' };
+    const objectiveLabels = { CONVERSIONS:'Conversões', REACH:'Alcance', TRAFFIC:'Tráfego', AWARENESS:'Reconhecimento',
+      OUTCOME_SALES:'Vendas', OUTCOME_LEADS:'Cadastros', OUTCOME_ENGAGEMENT:'Engajamento / Mensagens', OUTCOME_TRAFFIC:'Tráfego',
+      OUTCOME_AWARENESS:'Reconhecimento', OUTCOME_APP_PROMOTION:'App' };
     return apiCampaigns.map(c => ({
       name: c.name,
       objective: objectiveLabels[c.objective] || c.objective || 'Conversões',
@@ -2039,11 +2122,11 @@
       ctr: pct1(c.insights?.ctr),
       cpc: brl2(c.insights?.cpc),
       conv: c.insights?.conversions || 0,
-      perf: c.insights?.targetPerformancePct || 100,
+      perf: c.insights?.targetPerformancePct ?? null,
       ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({
         name: a.name, set: as.name,
         spend: brl(a.insights?.spend || 0), ctr: pct1(a.insights?.ctr), cpc: brl2(a.insights?.cpc),
-        conv: a.insights?.conversions || 0, perf: a.insights?.targetPerformancePct || 100,
+        conv: a.insights?.conversions || 0, perf: a.insights?.targetPerformancePct ?? null,
       }))),
     }));
   }
@@ -2072,8 +2155,8 @@
           <div><div class="micro-label">CPC</div><div class="micro-value">${a.cpc}</div></div>
           <div><div class="micro-label">Conv.</div><div class="micro-value">${a.conv}</div></div>
           <div>
-            <div class="perf-badge" style="color:${perfColor(a.perf)}">${a.perf}% da meta</div>
-            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(a.perf,140)/140*100}%; background:${perfColor(a.perf)}"></div></div>
+            <div class="perf-badge" style="color:${perfColor(a.perf)}">${perfText(a.perf)}</div>
+            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(a.perf||0,140)/140*100}%; background:${perfColor(a.perf)}"></div></div>
           </div>
         </div>`).join('');
 
@@ -2092,8 +2175,8 @@
           <div><div class="cell-label">CPC</div><div class="cell-value">${c.cpc}</div></div>
           <div><div class="cell-label">Conv.</div><div class="cell-value">${c.conv}</div></div>
           <div>
-            <div class="perf-badge" style="color:${perfColor(c.perf)}">${c.perf}% da meta</div>
-            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(c.perf,140)/140*100}%; background:${perfColor(c.perf)}"></div></div>
+            <div class="perf-badge" style="color:${perfColor(c.perf)}">${perfText(c.perf)}</div>
+            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(c.perf||0,140)/140*100}%; background:${perfColor(c.perf)}"></div></div>
           </div>
           <div class="chev">▶</div>
         </div>
@@ -2194,7 +2277,7 @@
         <td>${a.ctr}</td>
         <td>${a.cpc}</td>
         <td>${a.conv}</td>
-        <td><span style="color:${perfColor(a.perf)}; font-weight:700;">${a.perf}%</span></td>`;
+        <td><span style="color:${perfColor(a.perf)}; font-weight:700;">${a.perf == null ? '—' : a.perf + '%'}</span></td>`;
       criativosEl.appendChild(tr);
     });
   }
@@ -2560,12 +2643,12 @@
     ]);
     metaCampaigns.forEach(c => {
       const adsRows = c.ads.map(a => `
-        <tr><td style="padding-left:18px; color:#6b7280;">↳ ${a.name}</td><td>${a.spend}</td><td>${a.ctr}</td><td>${a.cpc}</td><td>${a.conv}</td><td>${a.perf}% da meta</td></tr>`).join('');
+        <tr><td style="padding-left:18px; color:#6b7280;">↳ ${a.name}</td><td>${a.spend}</td><td>${a.ctr}</td><td>${a.cpc}</td><td>${a.conv}</td><td>${perfText(a.perf)}</td></tr>`).join('');
       html += `<div class="pr-panel">
         <h3>${c.name} <span style="font-weight:400; color:#6b7280; font-size:11.5px;">— ${c.objective} · ${c.status==='on'?'Ativa':'Pausada'}</span></h3>
         <table><thead><tr><th>Anúncio</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Performance</th></tr></thead>
         <tbody>
-          <tr style="font-weight:700;"><td>Total da campanha</td><td>${c.spend}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td><td>${c.perf}% da meta</td></tr>
+          <tr style="font-weight:700;"><td>Total da campanha</td><td>${c.spend}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td><td>${perfText(c.perf)}</td></tr>
           ${adsRows}
         </tbody></table></div>`;
     });
@@ -2623,6 +2706,58 @@
     return `<div class="balance-cell"><span class="balance-value">${brl(c.pixBalance)}</span><span class="balance-chip ${cls}">${label}</span></div>`;
   }
 
+  const PLATFORM_ICON_META = {
+    meta: { cls:'icon-meta', label:'M', title:'Meta Ads' },
+    google: { cls:'icon-google', label:'G', title:'Google Ads' },
+    ig: { cls:'icon-ig', label:'IG', title:'Instagram' },
+  };
+  function platformIconBadge(p, size){
+    const m = PLATFORM_ICON_META[p];
+    if (!m) return '';
+    const px = size || 24;
+    return `<div class="platform-icon ${m.cls}" style="width:${px}px; height:${px}px; font-size:${Math.round(px*0.4)}px;" title="${m.title}">${m.label}</div>`;
+  }
+
+  function clientCardHtml(c){
+    const platformsHtml = c.platforms.length
+      ? c.platforms.map(p => platformIconBadge(p, 24)).join('')
+      : `<span style="font-size:11px; color:var(--text-dim);">Nenhuma plataforma conectada</span>`;
+    return `
+      <div class="client-card" onclick="openClientDetail('${c.id}')">
+        <div class="client-card-head">
+          <div class="client-card-avatar">${initials(c.name)}</div>
+          <div>
+            <div class="client-card-name">${c.name}</div>
+            <div class="client-card-niche">${c.niche}</div>
+          </div>
+        </div>
+        <div class="client-card-platforms">${platformsHtml}</div>
+        <div class="client-card-stats">
+          <div>
+            <div class="client-card-stat-label">Contrato</div>
+            <div class="client-card-stat-value">${brl(c.contract)}/mês</div>
+          </div>
+          <div>
+            <div class="client-card-stat-label">Verba diária</div>
+            <div class="client-card-stat-value">${brl(c.daily)}/dia</div>
+          </div>
+        </div>
+        <div class="client-card-foot">
+          ${statusChip(c.status)}
+          <div class="owner-dot" title="Responsável">${c.owner}</div>
+        </div>
+      </div>`;
+  }
+
+  function setClientsViewMode(mode){
+    localStorage.setItem('clientsViewMode', mode);
+    const cardsGrid = document.getElementById('clientsCardsGrid');
+    const tableWrap = document.getElementById('clientsTableWrap');
+    if (cardsGrid) cardsGrid.style.display = mode === 'table' ? 'none' : 'grid';
+    if (tableWrap) tableWrap.style.display = mode === 'table' ? 'block' : 'none';
+    document.querySelectorAll('#clientsViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  }
+
   function renderClientsMgmt(){
     const query = (document.getElementById('clientSearch')?.value || '').trim().toLowerCase();
     const activeClients = clientsMgmt.filter(c => c.status !== 'inativo');
@@ -2654,6 +2789,13 @@
         <td><button class="btn-deactivate" onclick="deactivateClient('${c.id}','${c.name.replace(/'/g,"\\'")}')">Desativar</button></td>`;
       tbody.appendChild(tr);
     });
+
+    const cardsGrid = document.getElementById('clientsCardsGrid');
+    cardsGrid.innerHTML = filtered.map(clientCardHtml).join('') +
+      `<button type="button" class="client-card-add" onclick="openAddClientModal()"><span style="font-size:20px; line-height:1;">+</span> Novo cliente</button>`;
+
+    setClientsViewMode(localStorage.getItem('clientsViewMode') || 'cards');
+
     document.getElementById('clientsCount').textContent =
       query ? `${filtered.length} de ${activeClients.length} clientes` : `${activeClients.length} clientes cadastrados`;
 
@@ -3041,6 +3183,52 @@
     document.getElementById('metaIgIdInput').value = account.meta?.igBusinessId || '';
     document.getElementById('metaConnectError').style.display = 'none';
 
+    const igConnected = account.instagramApi?.status === 'connected';
+    const headerPlatforms = [];
+    if (googleConnected) headerPlatforms.push('google');
+    if (metaStatus === 'connected') headerPlatforms.push('meta');
+    if (igConnected) headerPlatforms.push('ig');
+    document.getElementById('cdHeaderPlatforms').innerHTML = headerPlatforms.length
+      ? headerPlatforms.map(p => platformIconBadge(p, 26)).join('')
+      : `<span style="font-size:11.5px; color:var(--text-dim);">Nenhuma integração ativa</span>`;
+
+    const connRows = [];
+    if (googleConnected) connRows.push({ p:'google', name:'Google Ads', sub: account.google?.customerId || '—', status:'ativo' });
+    if (metaStatus === 'connected' || metaStatus === 'pending') connRows.push({ p:'meta', name:'Meta Ads', sub: account.meta?.adAccountId || '—', status: metaStatus === 'connected' ? 'ativo' : 'onboarding' });
+    if (igConnected) connRows.push({ p:'ig', name:'Instagram', sub: account.meta?.igBusinessId || '—', status:'ativo' });
+    const connTbody = document.getElementById('cdConnAccountsTable');
+    connTbody.innerHTML = connRows.length
+      ? connRows.map(r => `
+        <tr>
+          <td><div class="conn-account-name">${platformIconBadge(r.p, 26)}${r.name}</div></td>
+          <td>${statusChip(r.status)}</td>
+          <td style="color:var(--text-dim);">${r.sub}</td>
+          <td></td>
+        </tr>`).join('')
+      : `<tr class="conn-empty-row"><td colspan="4">Nenhuma conta conectada ainda — use os cards abaixo pra conectar.</td></tr>`;
+
+    const integItems = [
+      { p:'google', name:'Google Ads', connected: googleConnected, field:'googleCustomerIdInput' },
+      { p:'meta', name:'Meta Ads', connected: metaStatus === 'connected', pending: metaStatus === 'pending', field:'metaAdAccountInput' },
+      { p:'ig', name:'Instagram', connected: igConnected, field:'metaIgIdInput' },
+    ];
+    const integSoon = ['Google Analytics 4', 'Google Meu Negócio'];
+    document.getElementById('cdIntegOverviewGrid').innerHTML =
+      integItems.map(it => `
+        <div class="integ-card" onclick="focusIntegrationField('${it.field}')">
+          <div class="integ-card-icon platform-icon ${PLATFORM_ICON_META[it.p].cls}">${PLATFORM_ICON_META[it.p].label}</div>
+          <div class="integ-card-name">${it.name}</div>
+          <div class="integ-card-status">${it.connected ? 'Conectado' : it.pending ? 'Pendente' : 'Não conectado'}</div>
+          <button type="button" class="integ-card-btn">${it.connected ? 'Gerenciar' : 'Conectar'}</button>
+        </div>`).join('') +
+      integSoon.map(name => `
+        <div class="integ-card soon">
+          <div class="integ-card-icon" style="background:var(--bg-panel-3); color:var(--text-dim);">…</div>
+          <div class="integ-card-name">${name}</div>
+          <div class="integ-card-status">Em breve</div>
+          <button type="button" class="integ-card-btn" disabled>—</button>
+        </div>`).join('');
+
     const shareUrl = `${location.origin}${location.pathname}?share=${account.shareToken}`;
     document.getElementById('shareLinkText').textContent = shareUrl;
 
@@ -3136,6 +3324,12 @@
   let cdCurrentRange = null; // { from, to }
   let cdSocialLoaded = false;
   let insightsPlatform = 'meta';
+
+  function focusIntegrationField(fieldId){
+    setClientDetailTab('integrations');
+    const el = document.getElementById(fieldId);
+    if (el) setTimeout(() => { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.focus(); }, 50);
+  }
 
   function setClientDetailTab(tab){
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');

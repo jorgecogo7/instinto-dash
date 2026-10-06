@@ -4,7 +4,8 @@ const metaService = require('../services/metaService');
 
 const router = express.Router();
 
-// GET /api/meta/:clientId/campaigns — campanhas > conjuntos > anúncios de um cliente
+// GET /api/meta/:clientId/campaigns[?period=last_7d|last_14d|last_30d|this_month|last_month]
+// — campanhas > conjuntos > anúncios de um cliente (padrão: últimos 30 dias)
 router.get('/:clientId/campaigns', async (req, res) => {
   const account = (await accountsStore.getAll()).find((a) => a.id === req.params.clientId);
   if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
@@ -13,7 +14,7 @@ router.get('/:clientId/campaigns', async (req, res) => {
   }
 
   try {
-    const campaigns = await metaService.getCampaignsWithAds(account.meta.adAccountId);
+    const campaigns = await metaService.getCampaignsWithAds(account.meta.adAccountId, req.query.period);
     res.json(campaigns);
   } catch (err) {
     console.error(err); res.status(502).json({ error: err.message });

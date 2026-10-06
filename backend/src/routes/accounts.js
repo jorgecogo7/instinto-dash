@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const accountsStore = require('../data/accountsStore');
+const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
 
 const router = express.Router();
@@ -134,19 +135,44 @@ router.post('/:id/connect-google', async (req, res) => {
 });
 
 // POST /api/accounts/:id/meta-connection — salva os IDs do Meta (Ad
-// Account, Página, Instagram Business) informados manualmente. Ainda
-// não faz verificação real contra a API — isso liga quando o App do
-// Meta for Developers estiver pronto (fica marcado como "pendente" até lá).
+// Account, Página, Instagram Business). Com o token do usuário do sistema
+// configurado, TESTA de verdade contra a Graph API e só marca como
+// "conectado" se a Meta confirmar a conta de anúncios. Sem token, salva e
+// deixa "pendente" (comportamento antigo), pra não perder o que foi digitado.
 router.post('/:id/meta-connection', async (req, res) => {
   const adAccountId = sanitizeString(req.body.adAccountId, 40);
   const pageId = sanitizeString(req.body.pageId, 40);
   const igBusinessId = sanitizeString(req.body.igBusinessId, 40);
 
   try {
-    const updated = await accountsStore.update(req.params.id, {
-      meta: { status: adAccountId ? 'pending' : 'not_connected', adAccountId, pageId, igBusinessId },
-    });
-    if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    const account = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    let meta = { status: 'not_connected', adAccountId, pageId, igBusinessId };
+
+    if (adAccountId) {
+      meta.status = 'pending';
+      let verified = null;
+      try {
+        verified = await metaService.verifyAdAccount(adAccountId);
+      } catch (err) {
+        return res.status(400).json({
+          error: `Não consegui confirmar essa conta na Meta: ${err.message}`,
+        });
+      }
+      if (verified) {
+        meta = {
+          ...meta,
+          status: 'connected',
+          adAccountId: verified.id,
+          accountName: verified.name,
+          currency: verified.currency,
+          accountActive: verified.active,
+        };
+      }
+    }
+
+    const updated = await accountsStore.update(req.params.id, { meta });
     res.json(updated);
   } catch (err) {
     console.error(err);
