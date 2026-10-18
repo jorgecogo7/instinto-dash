@@ -67,6 +67,35 @@ function build(range) {
     });
   }
 
+  function breakdowns(t, rand) {
+    const split = (labels, weights) => {
+      const sum = weights.reduce((a, b) => a + b, 0);
+      return labels.map((label, i) => {
+        const f = weights[i] / sum;
+        const spend = t.spend * f, impressions = t.impressions * f * (0.85 + rand() * 0.3);
+        const clicks = t.clicks * f * (0.8 + rand() * 0.4), results = Math.round(t.results * f * (0.7 + rand() * 0.6));
+        return { label, spend, impressions, clicks, linkClicks: clicks * 0.7, reach: impressions / 1.2, results,
+          ctr: clicks / impressions * 100, cpc: spend / clicks, cpm: spend / impressions * 1000, frequency: 1.2,
+          costPerResult: results ? spend / results : 0, linkCtr: clicks * 0.7 / impressions * 100, costPerLinkClick: spend / (clicks * 0.7) };
+      });
+    };
+    const ages = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+    const ageW = [0.12, 0.3, 0.28, 0.16, 0.09, 0.05];
+    const ageGender = [];
+    ages.forEach((age, i) => [['Feminino', 0.58], ['Masculino', 0.38], ['Não informado', 0.04]].forEach(([gender, g]) => {
+      const f = ageW[i] * g;
+      ageGender.push({ age, gender, spend: t.spend * f, impressions: t.impressions * f, clicks: t.clicks * f, results: Math.round(t.results * f * (0.7 + rand() * 0.6)) });
+    }));
+    return {
+      ageGender,
+      age: split(ages, ageW),
+      gender: split(['Feminino', 'Masculino', 'Não informado'], [0.58, 0.38, 0.04]),
+      placements: split(['Instagram · Feed', 'Instagram · Stories', 'Instagram · Reels', 'Facebook · Feed', 'Facebook · Stories', 'Facebook · Marketplace', 'Audience Network · Apps e sites'], [0.31, 0.22, 0.18, 0.15, 0.06, 0.05, 0.03]),
+      platforms: split(['Instagram', 'Facebook', 'Audience Network'], [0.71, 0.26, 0.03]),
+      regions: split(['São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Paraná', 'Santa Catarina', 'Rio Grande do Sul', 'Bahia'], [0.52, 0.14, 0.1, 0.08, 0.06, 0.06, 0.04]),
+    };
+  }
+
   function totals(ads) {
     const t = ads.reduce((acc, a) => ({
       spend: acc.spend + a.spend,
@@ -79,6 +108,9 @@ function build(range) {
     }), { spend: 0, impressions: 0, reach: 0, clicks: 0, linkClicks: 0, results: 0, engagement: 0 });
     return {
       ...t,
+      video25: ads.reduce((s, a) => s + a.video25, 0),
+      linkCtr: (t.linkClicks / t.impressions) * 100,
+      costPerLinkClick: t.spend / t.linkClicks,
       ctr: (t.clicks / t.impressions) * 100,
       cpc: t.spend / t.clicks,
       cpm: (t.spend / t.impressions) * 1000,
@@ -131,6 +163,7 @@ function build(range) {
     daily,
     campaigns,
     ads,
+    breakdowns: breakdowns(t, rng(seed + 11)),
   };
 }
 

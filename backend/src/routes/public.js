@@ -4,6 +4,7 @@ const accountsStore = require('../data/accountsStore');
 const googleService = require('../services/googleService');
 const metaService = require('../services/metaService');
 const leadsStore = require('../data/leadsStore');
+const instagramService = require('../services/instagramService');
 
 const router = express.Router();
 
@@ -39,6 +40,62 @@ router.get('/:token', async (req, res) => {
     meta: metaData.status === 'fulfilled' ? metaData.value : null,
     google: googleData.status === 'fulfilled' ? googleData.value : null,
   });
+});
+
+// Plataformas que o painel do cliente mostra (mesma regra do painel interno).
+function wantedPlatforms(account) {
+  const mOn = account.meta?.status === 'connected';
+  const gOn = account.google?.status === 'connected';
+  const model = account.dashboardModel || 'auto';
+  const wanted = model === 'meta' ? ['meta'] : model === 'google' ? ['google']
+    : model === 'combined' ? ['meta', 'google'] : [...(mOn ? ['meta'] : []), ...(gOn ? ['google'] : [])];
+  return wanted.filter((p) => (p === 'meta' ? mOn : gOn));
+}
+
+// GET /api/public/:token/info — dados básicos pro painel do cliente (link
+// compartilhado). Nada interno: sem contrato, saldo, IDs de conta etc.
+router.get('/:token/info', async (req, res) => {
+  const account = await accountsStore.getByShareToken(req.params.token);
+  if (!account) return res.status(404).json({ error: 'Link inválido ou expirado.' });
+  res.json({
+    name: account.name,
+    niche: account.niche,
+    platforms: wantedPlatforms(account),
+    dashboardModel: account.dashboardModel || 'auto',
+    hasInstagram: Boolean(account.instagramApi?.igUserId || account.meta?.igBusinessId || account.meta?.pageId),
+  });
+});
+
+// GET /api/public/:token/(meta|google|instagram)?from&to — os mesmos
+// relatórios do painel interno, só daquele cliente.
+router.get('/:token/:kind(meta|google|instagram)', async (req, res) => {
+  const account = await accountsStore.getByShareToken(req.params.token);
+  if (!account) return res.status(404).json({ error: 'Link inválido ou expirado.' });
+  const range = { from: req.query.from, to: req.query.to };
+  const kind = req.params.kind;
+  try {
+    if (kind === 'meta') {
+      if (!wantedPlatforms(account).includes('meta')) return res.status(409).json({ error: 'Meta Ads não está ativo neste painel.' });
+      return res.json(await metaService.getAccountReport(account.meta.adAccountId, range));
+    }
+    if (kind === 'google') {
+      if (!wantedPlatforms(account).includes('google')) return res.status(409).json({ error: 'Google Ads não está ativo neste painel.' });
+      return res.json(await googleService.getAccountReport(account.google.customerId, range));
+    }
+    let igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
+    if (!igUserId && account.meta?.pageId) {
+      const ig = await metaService.findInstagramForPage(account.meta.pageId);
+      if (ig) {
+        igUserId = ig.id;
+        await accountsStore.update(account.id, { meta: { ...account.meta, igBusinessId: ig.id } });
+      }
+    }
+    const report = await instagramService.getOrganicReport(igUserId, range);
+    return res.json({ ...report, igConfigured: Boolean(igUserId) });
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: 'Não foi possível carregar os dados agora. Tente de novo em instantes.' });
+  }
 });
 
 // POST /api/public/leads — o formulário de Captação & CRM que qualquer

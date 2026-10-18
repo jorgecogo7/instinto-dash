@@ -699,6 +699,66 @@
   .ig-kpi-grid .kpi.ig-accent-purple{ border-top-color:#B36BFF; }
   .ig-kpi-grid .kpi.ig-accent-pink{ border-top-color:#FF5DA2; }
 
+
+
+
+  /* ===================== Link do cliente (modo público) ===================== */
+  .public-brand{ display:none; align-items:center; gap:8px; margin-bottom:14px; font-size:12px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--text-dim); }
+  .public-brand img{ width:26px; height:26px; object-fit:contain; }
+  body.public-mode .public-brand{ display:flex; }
+  body.public-mode .sidebar,
+  body.public-mode .cd-back-link,
+  body.public-mode .btn-edit-client,
+  body.public-mode #view-client-detail > .topbar .topbar-right,
+  body.public-mode #cdTabBtnInsights,
+  body.public-mode #cdTabBtnContract,
+  body.public-mode #cdTabBtnHistory,
+  body.public-mode #cdTabBtnIntegrations,
+  body.public-mode #cdMetricsBtn,
+  body.public-mode #cdMetricsPicker,
+  body.public-mode #cdModelWarning,
+  body.public-mode #backendOfflineBanner,
+  body.public-mode .kpi-hint{ display:none !important; }
+  body.public-mode .main{ max-width:1180px; margin:0 auto; }
+  body.public-mode .kpi-clickable{ cursor:default; }
+
+  /* ---- Meta: funil e dia da semana ---- */
+  .funnel{ display:flex; flex-direction:column; gap:10px; }
+  .funnel-row{ display:grid; grid-template-columns: 150px 1fr 170px; gap:14px; align-items:center; }
+  .funnel-label{ font-size:12.5px; color:var(--text-dim); font-weight:600; }
+  .funnel-track{ background:var(--bg-panel-2); border-radius:8px; height:34px; overflow:hidden; }
+  .funnel-bar{ height:100%; border-radius:8px; display:flex; align-items:center; padding:0 12px; min-width:64px; }
+  .funnel-bar span{ color:#fff; font-weight:800; font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .funnel-rate{ font-size:11.5px; color:var(--text-dim); }
+  @media (max-width: 700px){ .funnel-row{ grid-template-columns: 1fr; gap:4px; } }
+  .weekday-bars{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; align-items:end; }
+  .wd-col{ text-align:center; }
+  .wd-val{ font-size:12px; font-weight:700; margin-bottom:4px; font-variant-numeric:tabular-nums; }
+  .wd-bar-wrap{ height:130px; display:flex; align-items:flex-end; justify-content:center; background:var(--bg-panel-2); border-radius:8px; }
+  .wd-bar{ width:62%; border-radius:6px 6px 2px 2px; background: linear-gradient(180deg, #4C7EFF, rgba(76,126,255,.35)); }
+  .wd-col.best .wd-bar{ background: linear-gradient(180deg, #22B573, rgba(34,181,115,.35)); }
+  .wd-col.best .wd-val{ color:var(--green); }
+  .wd-label{ font-size:12px; margin-top:6px; font-weight:600; }
+  .wd-sub{ font-size:10.5px; color:var(--text-dim); }
+  .panels > .panel{ min-width:0; }
+  #ovTopCamps table{ min-width:0; }
+  /* ---- Visão geral: seletor de clientes ---- */
+  .ov-client-picker{ position:relative; }
+  .ov-client-menu{ display:none; position:absolute; right:0; top:calc(100% + 6px); z-index:30; width:290px; max-height:380px; overflow:auto; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,.35); padding:8px; }
+  .ov-client-menu.open{ display:block; }
+  .ov-menu-actions{ display:flex; gap:6px; padding:4px 4px 8px; border-bottom:1px solid var(--line); margin-bottom:6px; }
+  .ov-menu-actions button{ flex:1; font-family:inherit; font-size:12px; padding:6px; border-radius:7px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); cursor:pointer; }
+  .ov-client-opt{ display:flex; align-items:center; gap:9px; padding:7px 6px; border-radius:7px; font-size:13px; cursor:pointer; }
+  .ov-client-opt:hover{ background:var(--bg-panel-2); }
+  .ov-client-opt input{ accent-color: var(--flame); }
+  .ov-client-opt .ov-pf{ margin-left:auto; display:flex; gap:3px; }
+  .ov-row-link{ cursor:pointer; }
+  .ov-row-link:hover .cell-main{ color:var(--flame); }
+  .ov-pf-badge{ font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; }
+  .ov-pf-badge.m{ background:rgba(76,126,255,.16); color:var(--blue); }
+  .ov-pf-badge.g{ background:rgba(255,176,32,.16); color:#D98E00; }
+  .ov-delta{ font-size:11px; font-weight:600; display:block; }
+  .ov-delta.good{ color:var(--green); } .ov-delta.bad{ color:var(--red); }
   /* ===================== Painel do cliente — Anúncios v2 ===================== */
   .cd-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:4px 0 18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
   .cd-subtabs{ display:flex; gap:22px; }
@@ -1006,6 +1066,59 @@
   .leadform-success{ text-align:center; padding:20px 4px; }
   .leadform-success h2{ font-size:19px; margin-bottom:8px; }
   .leadform-success p{ font-size:13.5px; color:var(--text-dim); }
+  /* ===================== Celular ===================== */
+  @media (max-width: 760px){
+    .main{ padding:12px !important; }
+    #view-client-detail{ padding:16px 12px 32px; border-radius:16px; }
+    #view-client-detail > .topbar h1{ font-size:21px; }
+    .client-detail-tabs{ flex-wrap:nowrap !important; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; margin:0 -12px 12px; padding:0 12px; }
+    .client-detail-tabs::-webkit-scrollbar{ display:none; }
+    .client-detail-tabs .g-tab{ flex-shrink:0; }
+    .cd-toolbar{ flex-direction:row !important; align-items:center !important; gap:8px; }
+    .cd-subtabs{ gap:16px; overflow-x:auto; }
+    .range-picker-btn{ font-size:12px; padding:7px 10px; }
+    .range-picker-menu{ right:0; left:auto; max-width:calc(100vw - 24px); }
+    .cd-section-title h2{ font-size:18px; }
+    .cd-section-sub{ font-size:11px; }
+    .kpi2-grid, #cdCombinedKpis, .kpi-grid, .ig-kpi-grid{ grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap:8px; }
+    .kpi2{ padding:12px 12px; border-radius:12px; }
+    .kpi2-label{ font-size:10px; letter-spacing:.4px; }
+    .kpi2-value{ font-size:17px; overflow-wrap:anywhere; }
+    .kpi2-vs{ display:none; }
+    .kpi2-prev{ font-size:10.5px; }
+    .kpi2-delta{ font-size:10.5px; }
+    .kpi{ padding:12px; }
+    .kpi-value{ font-size:19px; }
+    .kpi-delta, .kpi-prev{ font-size:10.5px; }
+    .vs-label{ display:none; }
+    .panel{ padding:14px; border-radius:14px; }
+    .panel-head h3{ font-size:13.5px; }
+    .dual-chart{ height:auto; }
+    .panel table:not(.sort-table):not(.mini-table){ display:block; overflow-x:auto; white-space:nowrap; }
+    .table-scroll table{ min-width:640px; }
+    .creative-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px; }
+    .creative-band{ padding:7px 10px; }
+    .creative-band-value{ font-size:17px; }
+    .creative-body{ padding:9px 10px 4px; }
+    .creative-name{ font-size:12px; }
+    .creative-metrics .m-val{ font-size:12px; }
+    .creative-tag{ display:none; }
+    .chip-row{ flex-wrap:nowrap; align-items:flex-start; }
+    .chip-row-label{ display:none; }
+    .chips{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; scrollbar-width:none; }
+    .chips::-webkit-scrollbar{ display:none; }
+    .chip{ flex-shrink:0; }
+    .donut-row{ grid-template-columns:1fr; }
+    .donut-body{ justify-content:center; }
+    .ig-profile-banner{ padding:16px !important; }
+    .ig-posts-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px; }
+    .ig-post-stats{ grid-template-columns: repeat(3,1fr); font-size:10px; }
+    .ig-ranking-grid{ grid-template-columns:1fr; }
+    .weekday-bars{ gap:4px; }
+    .wd-val{ font-size:10.5px; }
+    .wd-bar-wrap{ height:100px; }
+    .wd-sub{ font-size:9.5px; }
+  }
 </style>
 </head>
 <body>
@@ -1122,43 +1235,26 @@
       <div class="topbar">
         <div>
           <h1>Visão geral</h1>
-          <p>Últimos 30 dias · dados de demonstração</p>
+          <p id="ovSub">Carregando os clientes…</p>
         </div>
         <div class="topbar-right">
-          <div class="date-select">Últimos 30 dias ▾</div>
-          <div class="client-select">📁 Todos os clientes ▾</div>
+          <select class="client-select-real" id="ovRange" onchange="loadOverview()">
+            <option value="7">Últimos 7 dias</option>
+            <option value="14">Últimos 14 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+          </select>
+          <div class="ov-client-picker" id="ovClientPicker">
+            <button type="button" class="client-select" onclick="toggleOvClientMenu(event)">📁 <span id="ovClientLabel">Todos os clientes</span> ▾</button>
+            <div class="ov-client-menu" id="ovClientMenu"></div>
+          </div>
           <button class="btn-pdf" onclick="downloadPdf('overview')">⬇ Baixar PDF</button>
         </div>
       </div>
 
-      <div class="status-strip">
-        <div class="status-pill"><span class="dot off"></span> Meta Ads · não conectado</div>
-        <div class="status-pill"><span class="dot off"></span> Google Ads · não conectado</div>
-        <div class="status-pill"><span class="dot off"></span> Instagram · não conectado</div>
-      </div>
-
-      <div class="grid">
-        <div class="kpi">
-          <div class="kpi-label">Investimento total</div>
-          <div class="kpi-value">R$ 18.420</div>
-          <div class="kpi-delta up">▲ 12,4% vs período anterior</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Cliques</div>
-          <div class="kpi-value">9.812</div>
-          <div class="kpi-delta up">▲ 6,1%</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">CPC médio</div>
-          <div class="kpi-value">R$ 1,88</div>
-          <div class="kpi-delta down">▼ 3,2%</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Conversões</div>
-          <div class="kpi-value">341</div>
-          <div class="kpi-delta up">▲ 18,7%</div>
-        </div>
-      </div>
+      <div class="status-strip" id="ovStatusStrip"></div>
+      <div class="kpi2-grid" id="ovKpis"></div>
+      <div id="ovErrors" class="footnote" style="display:none; border:none; padding:0 0 14px;"></div>
 
       <div class="panels">
         <div class="panel" style="margin-bottom:0;">
@@ -1169,52 +1265,23 @@
               <span class="source-tag tag-google">Google</span>
             </div>
           </div>
-          <div class="chart" id="chart"></div>
+          <div id="ovChart" style="position:relative;"></div>
         </div>
 
         <div class="panel" style="margin-bottom:0;">
-          <div class="panel-head"><h3>Top campanhas</h3></div>
-          <table>
-            <thead><tr><th>Campanha</th><th>Fonte</th><th>Resultado</th></tr></thead>
-            <tbody>
-              <tr><td><div class="campaign-name"><span class="swatch" style="background:var(--blue)"></span>Conversão · Remarketing</div></td><td>Meta</td><td>142 conv.</td></tr>
-              <tr><td><div class="campaign-name"><span class="swatch" style="background:var(--amber)"></span>Pesquisa · Marca</div></td><td>Google</td><td>98 conv.</td></tr>
-              <tr><td><div class="campaign-name"><span class="swatch" style="background:var(--blue)"></span>Prospecção · Lookalike</div></td><td>Meta</td><td>67 conv.</td></tr>
-              <tr><td><div class="campaign-name"><span class="swatch" style="background:var(--pink)"></span>Reels · Alcance</div></td><td>Instagram</td><td>34 conv.</td></tr>
-            </tbody>
-          </table>
+          <div class="panel-head"><div><h3>Top campanhas</h3><div class="panel-head-sub">Mais resultados no período, entre os clientes selecionados</div></div></div>
+          <div class="table-scroll" id="ovTopCamps"></div>
         </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h3>Clientes no período</h3><div class="panel-head-sub">Clique num cliente pra abrir o painel dele · clique num cabeçalho pra reordenar</div></div></div>
+        <div class="table-scroll" id="ovClientsTable"></div>
       </div>
 
       <div class="panel" id="pixAlertPanel" style="display:none;">
         <div class="panel-head"><h3>⚠ Alertas de saldo Pix</h3><span class="panel-head-sub">Clientes com verba acabando</span></div>
         <div id="pixAlertList"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-head"><h3>Conexões</h3></div>
-        <div class="connect-row">
-          <div class="connect-left">
-            <div class="platform-icon icon-meta">M</div>
-            <div><div class="connect-name">Meta Ads</div><div class="connect-sub">Facebook &amp; Instagram Ads Manager</div></div>
-          </div>
-          <button class="btn" disabled title="Aguardando credenciais do Meta for Developers">Conectar</button>
-        </div>
-        <div class="connect-row">
-          <div class="connect-left">
-            <div class="platform-icon icon-google">G</div>
-            <div><div class="connect-name">Google Ads</div><div class="connect-sub">Campanhas de pesquisa e display</div></div>
-          </div>
-          <button class="btn" disabled title="Aguardando credenciais do Google Cloud Console">Conectar</button>
-        </div>
-        <div class="connect-row">
-          <div class="connect-left">
-            <div class="platform-icon icon-ig">IG</div>
-            <div><div class="connect-name">Instagram Business</div><div class="connect-sub">Alcance, engajamento e Reels</div></div>
-          </div>
-          <button class="btn" disabled title="Aguardando credenciais do Meta for Developers">Conectar</button>
-        </div>
-        <div class="footnote">Este é um protótipo com dados de exemplo. Os botões ficam ativos assim que as credenciais forem configuradas no backend.</div>
       </div>
 
       <div class="panel">
@@ -1679,7 +1746,8 @@
     <section class="view" id="view-client-detail">
       <div class="topbar">
         <div>
-          <p style="cursor:pointer; color:var(--flame); margin-bottom:6px;" onclick="backToClients()">← Voltar para Clientes</p>
+          <div class="public-brand"><img id="publicBrandLogo" alt=""><span>Instinto Digital</span></div>
+          <p class="cd-back-link" style="cursor:pointer; color:var(--flame); margin-bottom:6px;" onclick="backToClients()">← Voltar para Clientes</p>
           <h1 id="clientDetailName">Cliente</h1>
           <p id="clientDetailSub">Dashboard, integrações e link de compartilhamento</p>
           <button type="button" class="btn-edit-client" onclick="openEditClientModal()">✎ Editar cliente</button>
@@ -2201,7 +2269,9 @@
     const params = new URLSearchParams(location.search);
     const shareToken = params.get('share');
     if (shareToken) {
-      loadPublicView(shareToken);
+      // Espera o resto do script carregar (o painel do cliente é definido mais abaixo).
+      document.getElementById('loginScreen').style.display = 'none';
+      setTimeout(() => loadPublicView(shareToken), 0);
       return;
     }
     if (params.get('captar')) {
@@ -2278,13 +2348,230 @@
     if (connCountEl) connCountEl.textContent = `${clients.length} conta${clients.length === 1 ? '' : 's'} cadastrada${clients.length === 1 ? '' : 's'}`;
   }
 
-  /* ---------- overview chart ---------- */
-  const chart = document.getElementById('chart');
-  for(let i=0;i<20;i++){
-    const bar = document.createElement('div');
-    bar.className = 'bar' + (i % 3 === 0 ? ' g' : '');
-    bar.style.height = (30 + Math.round(Math.random()*130)) + 'px';
-    chart.appendChild(bar);
+
+  /* ===================== Visão geral (dados reais dos clientes) ===================== */
+  const OV_SEL_KEY = 'instintoDashOvClients';
+  let ovLast = null;
+  let ovSeq = 0;
+
+  function ovActiveAccounts(){
+    return Object.values(rawAccountsById).filter(a => a.status !== 'inativo')
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR'));
+  }
+  // Seleção guardada só neste navegador (null = todos os clientes).
+  function ovGetSelection(){
+    try { const v = JSON.parse(localStorage.getItem(OV_SEL_KEY) || 'null'); return Array.isArray(v) ? v : null; } catch (e) { return null; }
+  }
+  function ovSetSelection(ids){
+    try { if (ids === null) localStorage.removeItem(OV_SEL_KEY); else localStorage.setItem(OV_SEL_KEY, JSON.stringify(ids)); } catch (e) {}
+  }
+  function ovSelectedAccounts(){
+    const sel = ovGetSelection();
+    const all = ovActiveAccounts();
+    return sel === null ? all : all.filter(a => sel.includes(a.id));
+  }
+  function ovPlatformsOf(a){
+    return cdWantedPlatforms(a).filter(p => p === 'meta' ? a.meta?.status === 'connected' : a.google?.status === 'connected');
+  }
+
+  function toggleOvClientMenu(ev){
+    ev && ev.stopPropagation();
+    document.getElementById('ovClientMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', (ev) => {
+    const picker = document.getElementById('ovClientPicker');
+    if (picker && !picker.contains(ev.target)) document.getElementById('ovClientMenu')?.classList.remove('open');
+  });
+
+  function renderOvClientMenu(){
+    const menu = document.getElementById('ovClientMenu');
+    if (!menu) return;
+    const all = ovActiveAccounts();
+    const sel = ovGetSelection();
+    const isOn = id => sel === null || sel.includes(id);
+    menu.innerHTML = `<div class="ov-menu-actions"><button type="button" onclick="ovSelectAll()">Todos</button><button type="button" onclick="ovSelectNone()">Nenhum</button></div>` +
+      (all.length ? all.map(a => {
+        const pf = ovPlatformsOf(a);
+        return `<label class="ov-client-opt"><input type="checkbox" ${isOn(a.id) ? 'checked' : ''} onchange="ovToggleClient('${a.id}', this.checked)">${escapeHtml(a.name)}
+          <span class="ov-pf">${pf.includes('meta') ? '<span class="ov-pf-badge m">Meta</span>' : ''}${pf.includes('google') ? '<span class="ov-pf-badge g">Google</span>' : ''}</span></label>`;
+      }).join('') : '<div class="footnote" style="border:none; padding:6px;">Nenhum cliente ativo cadastrado.</div>');
+    const n = ovSelectedAccounts().length;
+    document.getElementById('ovClientLabel').textContent = sel === null ? 'Todos os clientes'
+      : n === 1 ? ovSelectedAccounts()[0].name : `${n} clientes`;
+  }
+  function ovToggleClient(id, on){
+    const all = ovActiveAccounts().map(a => a.id);
+    let sel = ovGetSelection() ?? all.slice();
+    sel = on ? [...new Set([...sel, id])] : sel.filter(x => x !== id);
+    ovSetSelection(sel.length === all.length && all.every(x => sel.includes(x)) ? null : sel);
+    renderOvClientMenu();
+    loadOverview();
+  }
+  function ovSelectAll(){ ovSetSelection(null); renderOvClientMenu(); loadOverview(); }
+  function ovSelectNone(){ ovSetSelection([]); renderOvClientMenu(); loadOverview(); }
+
+  async function ovFetchJson(url){
+    const res = await fetch(url, { headers: authHeaders() });
+    if (res.status === 401) { logout(); throw new Error('sessão expirada'); }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  async function loadOverview(){
+    if (!document.getElementById('ovKpis')) return;
+    const seq = ++ovSeq;
+    const days = Number(document.getElementById('ovRange').value) || 30;
+    const range = { from: isoDaysAgo(days - 1), to: isoDaysAgo(0) };
+    const accounts = ovSelectedAccounts();
+    const sub = document.getElementById('ovSub');
+    const qs = new URLSearchParams(range).toString();
+
+    const withAds = accounts.filter(a => ovPlatformsOf(a).length);
+    sub.textContent = `Últimos ${days} dias · ${accounts.length} cliente${accounts.length === 1 ? '' : 's'} · carregando dados…`;
+    document.getElementById('ovKpis').innerHTML = '<div class="footnote" style="border:none; padding:0;">Carregando dados dos clientes…</div>';
+
+    // Busca Meta/Google de cada cliente, no máximo 4 ao mesmo tempo.
+    const jobs = [];
+    withAds.forEach(a => ovPlatformsOf(a).forEach(p => jobs.push({ a, p })));
+    const results = [];
+    let next = 0;
+    async function worker(){
+      while (next < jobs.length) {
+        const job = jobs[next++];
+        const url = job.p === 'meta' ? `${API_BASE_URL}/api/meta/${job.a.id}/report?${qs}` : `${API_BASE_URL}/api/google/${job.a.id}/report?${qs}`;
+        try { results.push({ ...job, data: await ovFetchJson(url) }); }
+        catch (err) { results.push({ ...job, error: err.message }); }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(4, jobs.length) }, worker));
+    if (seq !== ovSeq) return;
+
+    // Agrega por cliente e no total.
+    const empty = () => ({ spend:0, impressions:0, clicks:0, conv:0 });
+    const add = (acc, t, p) => {
+      acc.spend += t.spend || 0; acc.impressions += t.impressions || 0; acc.clicks += t.clicks || 0;
+      acc.conv += p === 'meta' ? (t.results || 0) : (t.conversions || 0);
+    };
+    const total = empty(), prevTotal = empty();
+    const perClient = {};
+    const daily = {};
+    const camps = [];
+    const errors = [];
+    let anyMock = false;
+    results.forEach(r => {
+      if (r.error) { errors.push(`${r.a.name} (${r.p === 'meta' ? 'Meta' : 'Google'}): ${r.error}`); return; }
+      const d = r.data;
+      if (d.mock) anyMock = true;
+      const c = perClient[r.a.id] || (perClient[r.a.id] = { id:r.a.id, name:r.a.name, pf:[], cur:empty(), prev:empty() });
+      c.pf.push(r.p);
+      add(c.cur, d.totals || {}, r.p); add(c.prev, d.previousTotals || {}, r.p);
+      add(total, d.totals || {}, r.p); add(prevTotal, d.previousTotals || {}, r.p);
+      (r.p === 'meta' ? (d.daily || []) : (d.dailySpend || [])).forEach(x => {
+        const day = daily[x.date] || (daily[x.date] = { date:x.date, meta:0, google:0 });
+        day[r.p] += x.spend || 0;
+      });
+      (d.campaigns || []).forEach(cp => {
+        const res = r.p === 'meta' ? (cp.results || 0) : (cp.conv ?? cp.conversions ?? 0);
+        camps.push({ client:r.a.name, clientId:r.a.id, name:cp.name, source:r.p, results:res, spend:cp.spend || 0 });
+      });
+    });
+
+    const deriv = t => ({ ...t, cpc: t.clicks ? t.spend / t.clicks : 0, cpa: t.conv ? t.spend / t.conv : 0, ctr: t.impressions ? t.clicks / t.impressions * 100 : 0 });
+    const T = deriv(total), P = deriv(prevTotal);
+    ovLast = { range, days, accounts, T, P, perClient: Object.values(perClient), camps, anyMock };
+
+    const connected = { meta:0, google:0, ig:0 };
+    accounts.forEach(a => {
+      if (a.meta?.status === 'connected') connected.meta++;
+      if (a.google?.status === 'connected') connected.google++;
+      if (a.meta?.igBusinessId || a.instagramApi?.igUserId) connected.ig++;
+    });
+    const pill = (n, label) => `<div class="status-pill"><span class="dot ${n ? 'on' : 'off'}"></span> ${label} · ${n} de ${accounts.length} cliente${accounts.length === 1 ? '' : 's'}</div>`;
+    document.getElementById('ovStatusStrip').innerHTML = pill(connected.meta, 'Meta Ads') + pill(connected.google, 'Google Ads') + pill(connected.ig, 'Instagram');
+
+    sub.textContent = `Últimos ${days} dias (${dateBr(range.from)} – ${dateBr(range.to)}) · ${accounts.length} cliente${accounts.length === 1 ? '' : 's'} selecionado${accounts.length === 1 ? '' : 's'}${anyMock ? ' · inclui dados de exemplo' : ''}`;
+
+    if (!accounts.length) {
+      document.getElementById('ovKpis').innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhum cliente selecionado — escolha os clientes no botão "📁" acima.</div>';
+    } else {
+      document.getElementById('ovKpis').innerHTML = [
+        kpi2Html({ label:'Investimento total', value:T.spend, prev:P.spend, fmt:brl2 }),
+        kpi2Html({ label:'Impressões', value:T.impressions, prev:P.impressions, fmt:compactFmt }),
+        kpi2Html({ label:'Cliques', value:T.clicks, prev:P.clicks, fmt:intFmt }),
+        kpi2Html({ label:'CPC médio', value:T.cpc, prev:P.cpc, fmt:brl2, invert:true }),
+        kpi2Html({ label:'Conversões', value:T.conv, prev:P.conv, fmt:intFmt, title:'Conversões do Google Ads + resultados da Meta (conversas, leads, compras…)' }),
+        kpi2Html({ label:'Custo por conversão', value:T.cpa, prev:P.cpa, fmt:brl2, invert:true }),
+      ].join('');
+    }
+    const errEl = document.getElementById('ovErrors');
+    errEl.style.display = errors.length ? 'block' : 'none';
+    errEl.textContent = errors.length ? `⚠ Não carregou: ${errors.join(' · ')}` : '';
+
+    renderOvChart(Object.values(daily).sort((a, b) => a.date.localeCompare(b.date)));
+
+    const campCols = [
+      { key:'name', label:'Campanha', sortVal:c => c.name, cell:c => `<div class="cell-main">${escapeHtml(c.name)}</div><div class="cell-sub">${escapeHtml(c.client)}</div>` },
+      { key:'source', label:'Fonte', sortVal:c => c.source, cell:c => c.source === 'meta' ? '<span class="ov-pf-badge m">Meta</span>' : '<span class="ov-pf-badge g">Google</span>' },
+      { key:'results', label:'Resultado', num:true, cell:c => `${convFmt(c.results)} conv.` },
+      { key:'cpa', label:'Custo/conv.', num:true, sortVal:c => c.results ? c.spend / c.results : -1, cell:c => c.results ? brl2(c.spend / c.results) : '—' },
+    ];
+    const topCamps = camps.filter(c => c.results > 0).sort((a, b) => b.results - a.results).slice(0, 8);
+    sortRenderers.ovCamps = () => { document.getElementById('ovTopCamps').innerHTML = sortTableHtml('ovCamps', campCols, topCamps, { key:'results', dir:-1 }); };
+    sortRenderers.ovCamps();
+
+    const deltaTag = (cur, prev, invert) => {
+      if (!(prev > 0)) return '';
+      const pct = (cur - prev) / prev * 100;
+      const up = pct >= 0;
+      return `<span class="ov-delta ${(invert ? !up : up) ? 'good' : 'bad'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span>`;
+    };
+    const rows = accounts.map(a => {
+      const c = perClient[a.id];
+      const cur = deriv(c ? c.cur : empty()), prev = deriv(c ? c.prev : empty());
+      return { id:a.id, name:a.name, pf: ovPlatformsOf(a), loaded: !!c, cur, prev, spend:cur.spend, conv:cur.conv, cpa:cur.cpa, cpc:cur.cpc, clicks:cur.clicks };
+    });
+    const clientCols = [
+      { key:'name', label:'Cliente', sortVal:r => r.name, cell:r => `<div class="cell-main">${escapeHtml(r.name)}</div><div class="cell-sub">${r.pf.length ? r.pf.map(p => p === 'meta' ? 'Meta' : 'Google').join(' + ') : 'sem anúncios conectados'}</div>` },
+      { key:'spend', label:'Investido', num:true, cell:r => r.loaded ? `${brl2(r.spend)}${deltaTag(r.cur.spend, r.prev.spend)}` : '—' },
+      { key:'clicks', label:'Cliques', num:true, cell:r => r.loaded ? intFmt(r.clicks) : '—' },
+      { key:'cpc', label:'CPC', num:true, cell:r => r.loaded && r.clicks ? `${brl2(r.cpc)}${deltaTag(r.cur.cpc, r.prev.cpc, true)}` : '—' },
+      { key:'conv', label:'Conversões', num:true, cell:r => r.loaded ? `${convFmt(r.conv)}${deltaTag(r.cur.conv, r.prev.conv)}` : '—' },
+      { key:'cpa', label:'Custo/conv.', num:true, sortVal:r => r.conv ? r.cpa : -1, cell:r => r.loaded && r.conv ? `${brl2(r.cpa)}${deltaTag(r.cur.cpa, r.prev.cpa, true)}` : '—' },
+    ];
+    sortRenderers.ovClients = () => {
+      document.getElementById('ovClientsTable').innerHTML = sortTableHtml('ovClients', clientCols, rows, { key:'spend', dir:-1 },
+        { rowAttr: r => `class="ov-row-link" onclick="openClientDetail('${r.id}')"` });
+    };
+    sortRenderers.ovClients();
+  }
+
+  // Barras empilhadas: investimento diário Meta (azul) + Google (âmbar).
+  function renderOvChart(days){
+    const el = document.getElementById('ovChart');
+    if (!days.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0;">Sem investimento no período.</div>'; return; }
+    const W = Math.max(320, el.clientWidth || 700), H = 220, padL = 58, padR = 8, padT = 10, padB = 24;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = days.length;
+    const max = Math.max(...days.map(d => d.meta + d.google));
+    const nice = niceAxisStep(max, 4);
+    const slot = plotW / n, bw = Math.max(2, slot * 0.68);
+    const y = v => padT + plotH - (v / (nice.max || 1)) * plotH;
+    let grid = '', bars = '', xl = '';
+    for (let g = 0; g <= nice.count; g++) {
+      const v = nice.step * g, yy = y(v);
+      grid += `<line x1="${padL}" x2="${W - padR}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-dasharray="${g ? '3,4' : '0'}"/><text x="${padL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--text-dim)">${axisBrl(v)}</text>`;
+    }
+    const every = Math.max(1, Math.ceil(n / 8));
+    days.forEach((d, i) => {
+      const x = padL + i * slot + (slot - bw) / 2;
+      const yG = y(d.google), yM = y(d.google + d.meta);
+      const tip = `<title>${dateBr(d.date)} — Meta: ${brl2(d.meta)} · Google: ${brl2(d.google)} · Total: ${brl2(d.meta + d.google)}</title>`;
+      if (d.google > 0) bars += `<rect x="${x.toFixed(1)}" y="${yG.toFixed(1)}" width="${bw.toFixed(1)}" height="${(padT + plotH - yG).toFixed(1)}" fill="#F5A524" rx="2">${tip}</rect>`;
+      if (d.meta > 0) bars += `<rect x="${x.toFixed(1)}" y="${yM.toFixed(1)}" width="${bw.toFixed(1)}" height="${(yG - yM).toFixed(1)}" fill="#4C7EFF" rx="2">${tip}</rect>`;
+      if ((i % every === 0 && (n - 1 - i >= every * 0.6 || i === 0)) || i === n - 1) xl += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
+    });
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">${grid}${bars}${xl}</svg>`;
   }
 
   /* ---------- Meta Ads: campaigns + ads ---------- */
@@ -2872,6 +3159,7 @@
   const logoSrc = document.querySelector('.brand-mark-img').src;
   { const l1 = document.getElementById('loginLogo'); if (l1) l1.src = logoSrc; }
   { const l2 = document.getElementById('publicLogo'); if (l2) l2.src = logoSrc; }
+  { const l3 = document.getElementById('publicBrandLogo'); if (l3) l3.src = logoSrc; }
   { const l3 = document.getElementById('leadFormLogo'); if (l3) l3.src = logoSrc; }
   document.getElementById('favicon').href = logoSrc;
   const todayStr = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
@@ -2906,19 +3194,24 @@
 
   function buildOverviewReport(){
     let html = reportHeader('Visão geral consolidada · Meta Ads + Google Ads');
+    if (!ovLast) return html + '<p>Os dados ainda estão carregando.</p>' + reportFooter();
+    const { T, perClient, camps, accounts, range } = ovLast;
+    html += `<p style="margin:0 0 12px; font-size:12px;">${accounts.length} cliente(s) · ${dateBr(range.from)} – ${dateBr(range.to)}</p>`;
     html += kpiGrid([
-      { label:'Investimento total', value:'R$ 18.420' },
-      { label:'Cliques', value:'9.812' },
-      { label:'CPC médio', value:'R$ 1,88' },
-      { label:'Conversões', value:'341' },
+      { label:'Investimento total', value:brl2(T.spend) },
+      { label:'Cliques', value:intFmt(T.clicks) },
+      { label:'CPC médio', value:brl2(T.cpc) },
+      { label:'Conversões', value:intFmt(T.conv) },
+      { label:'Custo por conversão', value:T.conv ? brl2(T.cpa) : '—' },
     ]);
-    html += `<div class="pr-panel"><h3>Top campanhas</h3>
-      <table><thead><tr><th>Campanha</th><th>Fonte</th><th>Resultado</th></tr></thead><tbody>
-        <tr><td>Conversão · Remarketing</td><td>Meta</td><td>142 conv.</td></tr>
-        <tr><td>Pesquisa · Marca</td><td>Google</td><td>98 conv.</td></tr>
-        <tr><td>Prospecção · Lookalike</td><td>Meta</td><td>67 conv.</td></tr>
-        <tr><td>Reels · Alcance</td><td>Instagram</td><td>34 conv.</td></tr>
-      </tbody></table></div>`;
+    const clients = perClient.slice().sort((a, b) => b.cur.spend - a.cur.spend);
+    html += `<div class="pr-panel"><h3>Clientes</h3><table><thead><tr><th>Cliente</th><th>Investido</th><th>Cliques</th><th>Conversões</th><th>Custo/conv.</th></tr></thead><tbody>
+      ${clients.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${brl2(c.cur.spend)}</td><td>${intFmt(c.cur.clicks)}</td><td>${convFmt(c.cur.conv)}</td><td>${c.cur.conv ? brl2(c.cur.spend / c.cur.conv) : '—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+    const top = camps.filter(c => c.results > 0).sort((a, b) => b.results - a.results).slice(0, 8);
+    html += `<div class="pr-panel"><h3>Top campanhas</h3><table><thead><tr><th>Campanha</th><th>Cliente</th><th>Fonte</th><th>Resultado</th></tr></thead><tbody>
+      ${top.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.client)}</td><td>${c.source === 'meta' ? 'Meta' : 'Google'}</td><td>${convFmt(c.results)} conv.</td></tr>`).join('')}
+    </tbody></table></div>`;
     html += reportFooter();
     return html;
   }
@@ -3203,6 +3496,8 @@
       renderSidebarAndConnections(data.filter(a => a.status !== 'inativo').map(toConnShape));
       populateClientSelectors();
       if (banner) banner.style.display = 'none';
+      renderOvClientMenu();
+      loadOverview();
     } catch (err) {
       console.error('Não consegui falar com o backend:', err);
       clientsMgmt = [];
@@ -3703,6 +3998,12 @@
   const convFmt = v => (Math.round((v || 0) * 10) / 10).toLocaleString('pt-BR');
 
   /* ===================== Aba Anúncios: Todos / Meta / Google ===================== */
+  let PUBLIC_TOKEN = null;              // preenchido quando a página é o link do cliente
+  function cdReportUrl(kind, qs){
+    return PUBLIC_TOKEN
+      ? `${API_BASE_URL}/api/public/${encodeURIComponent(PUBLIC_TOKEN)}/${kind}?${qs}`
+      : `${API_BASE_URL}/api/${kind}/${currentClientId}/report?${qs}`;
+  }
   let cdPlatformView = 'all';           // 'all' | 'meta' | 'google'
   let cdAvailable = { meta:false, google:false };
   let cdLoadSeq = 0;
@@ -3757,9 +4058,23 @@
     document.getElementById('cdDashboardContent').style.display = showGoogle ? 'block' : 'none';
     document.getElementById('cdCombinedSection').style.display = showCombined ? 'block' : 'none';
     // Os gráficos do Google são desenhados com o painel visível (medidas reais).
-    if (showGoogle && cdLastGoogle) renderGoogleDualCharts(cdLastGoogle);
-    if (showMeta && cdLastMeta) renderMetaDualCharts(cdLastMeta);
+    if (showGoogle && cdLastGoogle) { renderGoogleDualCharts(cdLastGoogle); if (cdLastTotals) renderKpiGrid(cdLastTotals, cdLastDeltas, cdLastPrevTotals); }
+    if (showMeta && cdLastMeta) { renderMetaDualCharts(cdLastMeta); renderMetaInsightsBlocks(cdLastMeta); }
   }
+
+  // Girou o celular / redimensionou: redesenha os gráficos na largura nova.
+  let cdResizeTimer = null;
+  let cdLastWidth = window.innerWidth;
+  window.addEventListener('resize', () => {
+    if (Math.abs(window.innerWidth - cdLastWidth) < 40) return;
+    cdLastWidth = window.innerWidth;
+    clearTimeout(cdResizeTimer);
+    cdResizeTimer = setTimeout(() => {
+      if (!document.getElementById('view-client-detail').classList.contains('active')) return;
+      if (document.getElementById('cdPaneOverview').classList.contains('active')) applyPlatformView();
+      if (document.getElementById('cdPaneSocial').classList.contains('active') && igLastData) renderSocialPanel(igLastData);
+    }, 250);
+  });
 
   async function loadClientDashboard(){
     const account = rawAccountsById[currentClientId];
@@ -3813,7 +4128,7 @@
     try {
       const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
-      const res = await fetch(`${API_BASE_URL}/api/google/${currentClientId}/report?${qs}`, { headers: authHeaders() });
+      const res = await fetch(cdReportUrl('google', qs), { headers: authHeaders() });
       if (res.status === 401) { logout(); return null; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados.');
@@ -3841,7 +4156,7 @@
     body.innerHTML = '<div class="footnote" style="border:none; padding:0; text-align:center;">Carregando dados da Meta…</div>';
     try {
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
-      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/report?${qs}`, { headers: authHeaders() });
+      const res = await fetch(cdReportUrl('meta', qs), { headers: authHeaders() });
       if (res.status === 401) { logout(); return null; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados da Meta.');
@@ -3865,7 +4180,7 @@
       const pct = ((value - prev) / prev) * 100;
       const up = pct >= 0;
       const cls = Math.abs(pct) < 0.05 ? 'neutral' : ((invert ? !up : up) ? 'good' : 'bad');
-      delta = `<div class="kpi2-delta ${cls}">${up ? '↗' : '↘'} ${up ? '+' : '−'}${Math.abs(pct).toFixed(1).replace('.', ',')}% vs período ant.</div>`;
+      delta = `<div class="kpi2-delta ${cls}">${up ? '↗' : '↘'} ${up ? '+' : '−'}${Math.abs(pct).toFixed(1).replace('.', ',')}% <span class="kpi2-vs"> vs período ant.</span></div>`;
     } else if (hasPrev && prev === 0 && value > 0) {
       delta = '<div class="kpi2-delta neutral">novo no período</div>';
     }
@@ -3903,7 +4218,7 @@
   /* ---------- Tabelas ordenáveis (clique no cabeçalho) ---------- */
   const sortStates = {};
   const sortRenderers = {};
-  function sortTableHtml(id, cols, rows, defaultSort){
+  function sortTableHtml(id, cols, rows, defaultSort, opts = {}){
     const st = sortStates[id] || (sortStates[id] = { ...defaultSort });
     const col = cols.find(c => c.key === st.key) || cols[0];
     const val = r => col.sortVal ? col.sortVal(r) : r[col.key];
@@ -3916,7 +4231,7 @@
       const on = c.key === st.key;
       return `<th class="${c.num ? 'num' : ''}${on ? ' sorted' : ''}" onclick="sortTableBy('${id}','${c.key}')"${c.title ? ` title="${escapeAttr(c.title)}"` : ''}>${c.label}${on ? (st.dir < 0 ? ' ↓' : ' ↑') : ''}</th>`;
     }).join('');
-    const body = sorted.map(r => `<tr>${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.cell(r)}</td>`).join('')}</tr>`).join('');
+    const body = sorted.map(r => `<tr${opts.rowAttr ? ' ' + opts.rowAttr(r) : ''}>${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.cell(r)}</td>`).join('')}</tr>`).join('');
     return `<table class="sort-table"><thead><tr>${head}</tr></thead><tbody>${body || `<tr><td colspan="${cols.length}" class="footnote" style="border:none;">Sem dados nesse período.</td></tr>`}</tbody></table>`;
   }
   function sortTableBy(id, key){
@@ -3931,7 +4246,9 @@
   function renderDualChart(el, daily, A, B){
     if (!el) return;
     if (!daily || !daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
-    const W = 1000, H = 215, padL = 74, padR = 70, padT = 12, padB = 26;
+    const W = Math.max(300, el.clientWidth || 1000);
+    const narrow = W < 560;
+    const H = narrow ? 200 : 215, padL = narrow ? 52 : 74, padR = narrow ? 44 : 70, padT = 12, padB = 26;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const n = daily.length;
     const xStep = n > 1 ? plotW / (n - 1) : 0;
@@ -3950,10 +4267,10 @@
     for (let g = 0; g <= gridCount; g++) {
       const y = padT + (plotH / gridCount) * g;
       grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '3,4'}" />`;
-      labelsL += `<text x="${padL - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11.5" fill="var(--text-dim)">${A.axisFmt(a.step * (gridCount - g))}</text>`;
-      labelsR += `<text x="${W - padR + 10}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11.5" fill="var(--text-dim)">${B.axisFmt(b.step * (gridCount - g))}</text>`;
+      labelsL += `<text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="${narrow ? 10 : 11.5}" fill="var(--text-dim)">${A.axisFmt(a.step * (gridCount - g))}</text>`;
+      labelsR += `<text x="${W - padR + 8}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="${narrow ? 10 : 11.5}" fill="var(--text-dim)">${B.axisFmt(b.step * (gridCount - g))}</text>`;
     }
-    const every = Math.max(1, Math.ceil(n / 9));
+    const every = Math.max(1, Math.ceil(n / (narrow ? 4 : 9)));
     let xl = '';
     daily.forEach((d, i) => { if ((i % every === 0 && (n - 1 - i >= every * 0.6 || i === 0)) || i === n - 1) xl += `<text x="${xAt(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`; });
     const pa = smoothPathD(daily.map((d, i) => ({ x: xAt(i), y: yA(a.vals[i]) }))).trim();
@@ -3989,10 +4306,12 @@
       tip.innerHTML = `<div class="ctt-date">${dateBr(daily[i].date)}</div><div style="color:${A.color}">● ${A.label}: ${A.fmt(a.vals[i])}</div><div style="color:${B.color}">● ${B.label}: ${B.fmt(b.vals[i])}</div>`;
       const cr = el.getBoundingClientRect();
       let left = e.clientX - cr.left + 14;
-      if (left + 200 > cr.width) left = e.clientX - cr.left - 200;
+      if (left + 200 > cr.width) left = Math.max(4, cr.width - 204);
       tip.style.left = Math.max(4, left) + 'px'; tip.style.top = '4px';
     });
     rect.addEventListener('mouseleave', () => { [line, ca, cb].forEach(x => x.setAttribute('opacity', '0')); tip.style.display = 'none'; });
+    rect.addEventListener('touchstart', e => { const t0 = e.touches[0]; rect.dispatchEvent(new MouseEvent('mousemove', { clientX: t0.clientX, clientY: t0.clientY })); }, { passive:true });
+    rect.addEventListener('touchmove', e => { const t0 = e.touches[0]; rect.dispatchEvent(new MouseEvent('mousemove', { clientX: t0.clientX, clientY: t0.clientY })); }, { passive:true });
   }
 
   const CH_BLUE = '#4C7EFF', CH_GREEN = '#22B573', CH_AMBER = '#F5A524', CH_PINK = '#FF5DA2', CH_PURPLE = '#9B7BFF';
@@ -4097,12 +4416,34 @@
       kpi2Html({ label:'CPC', value:t.cpc, prev:p.cpc, fmt:brl2, invert:true, accent:metaAccent }),
       kpi2Html({ label:'CPM', value:t.cpm, prev:p.cpm, fmt:brl2, invert:true, accent:metaAccent }),
       kpi2Html({ label:'Frequência', value:t.frequency, prev:p.frequency, fmt:dec2, accent:metaAccent, title:'Quantas vezes, em média, cada pessoa viu os anúncios.' }),
+      kpi2Html({ label:'Cliques no link', value:t.linkClicks, prev:p.linkClicks, fmt:intFmt, accent:metaAccent, title:'Cliques que levaram pra fora do anúncio (site, WhatsApp, formulário…).' }),
+      kpi2Html({ label:'CTR do link', value:t.linkCtr, prev:p.linkCtr, fmt:pct2, accent:metaAccent }),
+      kpi2Html({ label:'Custo por clique no link', value:t.costPerLinkClick, prev:p.costPerLinkClick, fmt:brl2, invert:true, accent:metaAccent }),
+      kpi2Html({ label:'Engajamento', value:t.engagement, prev:p.engagement, fmt:compactFmt, accent:metaAccent, title:'Curtidas, comentários, compartilhamentos, salvamentos e cliques na publicação.' }),
+      kpi2Html({ label:'Vídeo assistido 25%', value:t.video25, prev:p.video25, fmt:compactFmt, accent:metaAccent }),
     ].join('');
 
     body.innerHTML = `
       <div class="kpi2-grid">${kpis}</div>
       <div class="panel"><div class="panel-head"><h3>Investimento e ${escapeHtml(rl.toLowerCase())}</h3></div><div class="dual-chart" id="mChartSpend"></div></div>
       <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="mChartClicks"></div></div>
+      <div class="panel"><div class="panel-head"><div><h3>Funil do período</h3><div class="panel-head-sub">De quem viu o anúncio até quem virou ${escapeHtml(rl.toLowerCase())}</div></div></div><div id="mFunnel"></div></div>
+      <div class="cd-social-grid">
+        <div class="panel" style="margin-bottom:0;"><div class="panel-head"><div><h3>Público por idade e gênero</h3><div class="panel-head-sub" id="mAgeSub"></div></div></div><div id="mAgeChart"></div></div>
+        <div id="mGenderDonut"></div>
+      </div>
+      <div class="cd-social-grid" style="margin-top:14px;">
+        <div id="mPlatformDonut"></div>
+        <div class="panel" style="margin-bottom:0;"><div class="panel-head"><div><h3>Dia da semana</h3><div class="panel-head-sub">${escapeHtml(rl)} somados por dia da semana no período</div></div></div><div id="mWeekday"></div></div>
+      </div>
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head"><div><h3>Posicionamentos</h3><div class="panel-head-sub">Onde os anúncios apareceram · clique num cabeçalho pra reordenar</div></div></div>
+        <div class="table-scroll" id="mPlacements"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Regiões</h3><div class="panel-head-sub">Estados com mais investimento</div></div></div>
+        <div class="table-scroll" id="mRegions"></div>
+      </div>
       <div class="panel">
         <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">Troque o critério pra reordenar — a faixa colorida mostra a métrica escolhida</div></div></div>
         <div class="chip-row"><span class="chip-row-label">Ordenar por</span><div class="chips" id="metaCreativeChips"></div></div>
@@ -4118,6 +4459,7 @@
       </div>`;
 
     renderMetaCreatives();
+    renderMetaInsightsBlocks(r);
 
     const adCols = [
       { key:'name', label:'Anúncio', sortVal:a => a.name, cell:a => `<div class="ad-cell">${adThumbHtml2(a)}<div><div class="cell-main">${escapeHtml(a.name)}</div><div class="cell-sub">${escapeHtml(a.adset || '')}</div></div></div>` },
@@ -4155,6 +4497,116 @@
     };
     sortRenderers.metaCamp();
     applyPlatformView();
+  }
+
+
+  // Funil, público, posicionamentos, regiões e dia da semana (Meta).
+  function renderMetaInsightsBlocks(r){
+    if (!document.getElementById('mFunnel')) return;
+    const t = r.totals || {};
+    const rl = r.resultLabel || 'Resultados';
+    const bd = r.breakdowns || {};
+
+    // Funil
+    const steps = [
+      { label:'Impressões', v:t.impressions },
+      { label:'Alcance', v:t.reach, rate:t.impressions ? null : null },
+      { label:'Cliques', v:t.clicks },
+      { label:'Cliques no link', v:t.linkClicks },
+      { label:rl, v:t.results },
+    ].filter(x => x.v > 0 || x.label === rl);
+    const maxV = Math.max(1, ...steps.map(x => x.v || 0));
+    const funnelColors = ['#4C7EFF', '#6A8DFF', '#9B7BFF', '#C77DFF', '#22B573'];
+    document.getElementById('mFunnel').innerHTML = `<div class="funnel">${steps.map((st, i) => {
+      const prev = steps[i - 1];
+      const rate = prev && prev.v ? (st.v / prev.v * 100) : null;
+      const w = Math.max(4, Math.sqrt((st.v || 0) / maxV) * 100);
+      return `<div class="funnel-row">
+        <div class="funnel-label">${escapeHtml(st.label)}</div>
+        <div class="funnel-track"><div class="funnel-bar" style="width:${w.toFixed(1)}%; background:${funnelColors[i % funnelColors.length]};"><span>${intFmt(st.v)}</span></div></div>
+        <div class="funnel-rate">${rate === null ? '' : `${rate < 1 ? rate.toFixed(2).replace('.', ',') : rate.toFixed(1).replace('.', ',')}% da etapa anterior`}</div>
+      </div>`;
+    }).join('')}</div>`;
+
+    // Idade x gênero (barras empilhadas) — resultados quando houver, senão investimento.
+    const ag = bd.ageGender || [];
+    const useResults = ag.some(x => x.results > 0);
+    const metricKey = useResults ? 'results' : 'spend';
+    document.getElementById('mAgeSub').textContent = useResults ? `${rl} por faixa etária` : 'Investimento por faixa etária';
+    const ages = [...new Set(ag.map(x => x.age))].filter(Boolean).sort();
+    const genders = ['Feminino', 'Masculino', 'Não informado'];
+    const gCol = { Feminino:'#FF5DA2', Masculino:'#4C7EFF', 'Não informado':'#8A919C' };
+    const ageEl = document.getElementById('mAgeChart');
+    if (!ages.length) ageEl.innerHTML = '<div class="footnote" style="border:none; padding:0;">Sem dados de idade e gênero no período.</div>';
+    else {
+      const W = Math.max(320, ageEl.clientWidth || 600), H = 220, padL = 52, padB = 26, padT = 8;
+      const sums = ages.map(a => genders.reduce((s, g) => s + ag.filter(x => x.age === a && x.gender === g).reduce((q, x) => q + (x[metricKey] || 0), 0), 0));
+      const nice = niceAxisStep(Math.max(...sums), 4);
+      const plotH = H - padB - padT, plotW = W - padL - 6, bw = plotW / ages.length;
+      const fmtAxis = useResults ? axisNum : axisBrl;
+      const fmtVal = useResults ? intFmt : brl2;
+      let g = '', bars = '';
+      for (let i = 0; i <= nice.count; i++) {
+        const y = padT + plotH - (i * nice.step / nice.max) * plotH;
+        g += `<line x1="${padL}" x2="${W}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-dasharray="${i ? '3,4' : '0'}"/><text x="${padL - 6}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--text-dim)">${fmtAxis(i * nice.step)}</text>`;
+      }
+      ages.forEach((a, i) => {
+        let y0 = padT + plotH;
+        const x = padL + i * bw + bw * 0.18, w = bw * 0.64;
+        genders.forEach(gn => {
+          const v = ag.filter(x => x.age === a && x.gender === gn).reduce((q, x) => q + (x[metricKey] || 0), 0);
+          if (!(v > 0)) return;
+          const h = (v / nice.max) * plotH;
+          bars += `<rect x="${x.toFixed(1)}" y="${(y0 - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${gCol[gn]}"><title>${a} · ${gn}: ${fmtVal(v)}</title></rect>`;
+          y0 -= h;
+        });
+        bars += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${a}</text>`;
+      });
+      ageEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${g}${bars}</svg>
+        <div class="dual-legend">${genders.filter(gn => ag.some(x => x.gender === gn)).map(gn => `<span style="color:${gCol[gn]}"><i style="background:${gCol[gn]}"></i>${gn}</span>`).join('')}</div>`;
+    }
+
+    // Gênero (rosca) e plataformas (rosca)
+    const gender = bd.gender || [];
+    document.getElementById('mGenderDonut').innerHTML = donutCardHtml(useResults ? `${rl} por gênero` : 'Investimento por gênero',
+      gender.map(x => ({ label:x.label, value: x[metricKey] || 0, color: gCol[x.label] })), useResults ? intFmt : brl);
+    const plats = bd.platforms || [];
+    const pCol = { Instagram:'#FF5DA2', Facebook:'#4C7EFF', 'Audience Network':'#F5A524', Messenger:'#22C3C3', Threads:'#8A919C' };
+    document.getElementById('mPlatformDonut').innerHTML = donutCardHtml('Investimento por plataforma',
+      plats.map(x => ({ label:x.label, value:x.spend, color:pCol[x.label] })), brl);
+
+    // Dia da semana
+    const wd = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(l => ({ l, spend:0, results:0 }));
+    (r.daily || []).forEach(d => { const k = new Date(d.date + 'T12:00:00').getDay(); wd[k].spend += d.spend || 0; wd[k].results += d.results || 0; });
+    const order = [1, 2, 3, 4, 5, 6, 0].map(i => wd[i]);
+    const wdKey = order.some(x => x.results > 0) ? 'results' : 'spend';
+    const maxWd = Math.max(1, ...order.map(x => x[wdKey]));
+    const best = order.reduce((a, b) => (b[wdKey] > a[wdKey] ? b : a), order[0]);
+    document.getElementById('mWeekday').innerHTML = `<div class="weekday-bars">${order.map(x => `
+      <div class="wd-col${x === best && x[wdKey] > 0 ? ' best' : ''}">
+        <div class="wd-val">${wdKey === 'results' ? intFmt(x.results) : brl(x.spend)}</div>
+        <div class="wd-bar-wrap"><div class="wd-bar" style="height:${Math.max(2, x[wdKey] / maxWd * 100).toFixed(1)}%"></div></div>
+        <div class="wd-label">${x.l}</div>
+        <div class="wd-sub">${wdKey === 'results' ? (x.results ? brl2(x.spend / x.results) : '—') : ''}</div>
+      </div>`).join('')}</div>
+      <div class="footnote" style="border:none; padding:8px 0 0;">${wdKey === 'results' ? `Embaixo: custo por resultado. Melhor dia: <b>${best.l}</b>.` : 'Sem resultados no período — mostrando investimento.'}</div>`;
+
+    // Posicionamentos e regiões
+    const bdCols = (first) => [
+      { key:'label', label:first, sortVal:x => x.label, cell:x => `<span class="cell-main">${escapeHtml(x.label)}</span>` },
+      { key:'spend', label:'Investido', num:true, cell:x => brl2(x.spend) },
+      { key:'impressions', label:'Impressões', num:true, cell:x => compactFmt(x.impressions) },
+      { key:'clicks', label:'Cliques', num:true, cell:x => intFmt(x.clicks) },
+      { key:'ctr', label:'CTR', num:true, cell:x => pct2(x.ctr) },
+      { key:'cpc', label:'CPC', num:true, cell:x => x.clicks ? brl2(x.cpc) : '—' },
+      { key:'cpm', label:'CPM', num:true, cell:x => brl2(x.cpm) },
+      { key:'results', label:rl, num:true, cell:x => intFmt(x.results) },
+      { key:'costPerResult', label:'Custo/result.', num:true, sortVal:x => x.results ? x.costPerResult : -1, cell:x => x.results ? brl2(x.costPerResult) : '—' },
+    ];
+    sortRenderers.mPlacements = () => { document.getElementById('mPlacements').innerHTML = sortTableHtml('mPlacements', bdCols('Posicionamento'), bd.placements || [], { key:'spend', dir:-1 }); };
+    sortRenderers.mPlacements();
+    sortRenderers.mRegions = () => { document.getElementById('mRegions').innerHTML = sortTableHtml('mRegions', bdCols('Região'), bd.regions || [], { key:'spend', dir:-1 }); };
+    sortRenderers.mRegions();
   }
 
   function setMetaCreativeSort(id){ metaCreativeSort = id; metaShowAllCreatives = false; renderMetaCreatives(); }
@@ -4341,7 +4793,7 @@
       : [{ id: 'spend', label: 'Investimento', color: 'var(--blue)', fmt: brl, get: t => t.spend }];
     const single = series.length === 1;
 
-    const W = 1000, H = 230;
+    const W = Math.max(300, chartEl.clientWidth || 1000), H = 230;
     const padL = 54, padR = 16, padT = 18, padB = 26;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const n = daily.length;
@@ -4371,7 +4823,7 @@
       }
     }
 
-    const maxXLabels = 8;
+    const maxXLabels = W < 560 ? 4 : 8;
     const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
     let xLabels = '';
     daily.forEach((d, i) => {
@@ -4928,7 +5380,7 @@
     try {
       const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
-      const res = await fetch(`${API_BASE_URL}/api/instagram/${id}/report?${qs}`, { headers: authHeaders() });
+      const res = await fetch(cdReportUrl('instagram', qs), { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados do Instagram.');
@@ -4960,7 +5412,10 @@
     document.getElementById('igFollowing').textContent = igCompact(p.followingCount);
 
     const banner = document.getElementById('igMockBanner');
-    if (data.mock) {
+    if (data.mock && PUBLIC_TOKEN) {
+      banner.style.display = 'flex';
+      banner.textContent = 'Os dados do Instagram ainda estão sendo conectados pela agência — por enquanto, esta é uma prévia com dados de exemplo.';
+    } else if (data.mock) {
       banner.style.display = 'flex';
       banner.innerHTML = data.igConfigured
         ? '⚠ Dados de exemplo — o servidor ainda não tem o token da Meta configurado, então não dá pra ler o Instagram de verdade.'
@@ -5011,7 +5466,7 @@
     const maxAge = Math.max(0, ...age.map(a => a.value));
     if (!age.length || maxAge <= 0) ageEl.innerHTML = '<div class="footnote" style="border:none; padding:0;">A Meta só libera esse dado pra perfis com 100+ seguidores.</div>';
     else {
-      const W = 600, H = 200, padL = 40, padB = 24, padT = 8;
+      const W = Math.max(300, ageEl.clientWidth || 600), H = 200, padL = 40, padB = 24, padT = 8;
       const nice = niceAxisStep(maxAge, 4);
       const plotH = H - padB - padT, plotW = W - padL - 6;
       const bw = plotW / age.length;
@@ -5026,7 +5481,7 @@
         bars += `<rect x="${x.toFixed(1)}" y="${(padT + plotH - h).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#9B7BFF"><title>${a.label}: ${a.value.toLocaleString('pt-BR')}</title></rect>
           <text x="${(x + bw * 0.36).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${a.label}</text>`;
       });
-      ageEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">${g}${bars}</svg>`;
+      ageEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${g}${bars}</svg>`;
     }
 
     const gender = demo.gender || [];
@@ -5145,7 +5600,7 @@
     const barW = Math.max(2, plotW / n - barGap);
     const max = Math.max(1, ...daily.map(d => d.newFollowers || 0)) * 1.15;
     const yAt = v => padT + plotH - (v / max) * plotH;
-    const maxXLabels = 8;
+    const maxXLabels = W < 560 ? 4 : 8;
     const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
     let bars = '', xLabels = '';
     daily.forEach((d, i) => {
@@ -5182,7 +5637,7 @@
       gridLines += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '2,3'}" />`;
       leftLabels += `<text x="4" y="${(y+4).toFixed(1)}" text-anchor="start" font-size="11" fill="var(--text-dim)">${igCompact(max * (1 - g/gridCount))}</text>`;
     }
-    const maxXLabels = 8;
+    const maxXLabels = W < 560 ? 4 : 8;
     const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
     let xLabels = '';
     daily.forEach((d, i) => {
@@ -5265,38 +5720,31 @@
 
   /* ---------- Visão pública do cliente (link compartilhado, sem login) ---------- */
   async function loadPublicView(token){
+    PUBLIC_TOKEN = token;
+    document.body.classList.add('public-mode');
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('publicView').style.display = 'flex';
-    const contentEl = document.getElementById('publicContent');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/public/${token}`);
-      if (!res.ok) throw new Error((await res.json()).error || 'Link inválido.');
-      const data = await res.json();
-
-      document.getElementById('publicClientName').textContent = data.account.name;
-      document.getElementById('publicClientNiche').textContent = data.account.niche;
-
-      let html = '<div class="grid">';
-      html += `<div class="kpi"><div class="kpi-label">Meta Ads</div><div class="kpi-value" style="font-size:16px;">${data.account.metaConnected ? '✅ Conectado' : '— Não conectado'}</div></div>`;
-      html += `<div class="kpi"><div class="kpi-label">Google Ads</div><div class="kpi-value" style="font-size:16px;">${data.account.googleConnected ? '✅ Conectado' : '— Não conectado'}</div></div>`;
-      html += `<div class="kpi"><div class="kpi-label">Instagram</div><div class="kpi-value" style="font-size:16px;">${data.account.instagramConnected ? '✅ Conectado' : '— Não conectado'}</div></div>`;
-      html += '</div>';
-
-      if (data.google?.campaigns) {
-        html += '<div class="panel"><div class="panel-head"><h3>Campanhas Google Ads</h3></div><table><thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>Conv.</th></tr></thead><tbody>';
-        data.google.campaigns.forEach(c => {
-          html += `<tr><td>${c.name}</td><td>${c.type}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.conv}</td></tr>`;
-        });
-        html += '</tbody></table></div>';
-      }
-
-      if (!data.account.metaConnected && !data.account.googleConnected) {
-        html += '<div class="panel"><p class="footnote" style="border-top:none; padding-top:0;">Nenhuma plataforma conectada ainda — assim que sua agência conectar Meta ou Google Ads, os dados de campanha aparecem aqui automaticamente.</p></div>';
-      }
-
-      contentEl.innerHTML = html;
+      const res = await fetch(`${API_BASE_URL}/api/public/${encodeURIComponent(token)}/info`);
+      const info = await res.json();
+      if (!res.ok) throw new Error(info.error || 'Link inválido.');
+      document.title = `${info.name} · Resultados · Instinto Digital`;
+      const on = p => info.platforms.includes(p) ? 'connected' : 'not_connected';
+      rawAccountsById['__public'] = {
+        id: '__public', name: info.name, niche: info.niche, dashboardModel: 'auto',
+        meta: { status: on('meta'), igBusinessId: info.hasInstagram ? 'sim' : null },
+        google: { status: on('google') }, instagramApi: {},
+      };
+      document.getElementById('mainApp').style.display = 'flex';
+      document.getElementById('cdTabBtnSocial').style.display = info.hasInstagram ? '' : 'none';
+      const noAds = !info.platforms.length;
+      openClientDetail('__public', noAds && info.hasInstagram ? 'social' : 'overview');
+      document.getElementById('clientDetailSub').textContent = `Relatório de resultados${info.niche ? ' · ' + info.niche : ''}`;
+      if (noAds) document.getElementById('cdTabBtnOverview').style.display = 'none';
     } catch (err) {
-      contentEl.innerHTML = `<div class="modal-error" style="display:block;">${err.message}</div>`;
+      document.getElementById('publicView').style.display = 'flex';
+      document.getElementById('publicClientName').textContent = 'Não foi possível abrir o relatório';
+      document.getElementById('publicContent').innerHTML = `<div class="modal-error" style="display:block;"></div>`;
+      document.getElementById('publicContent').firstChild.textContent = err.message;
     }
   }
 

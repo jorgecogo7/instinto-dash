@@ -302,6 +302,8 @@ function derive(t) {
     cpm: t.impressions > 0 ? (t.spend / t.impressions) * 1000 : 0,
     frequency: t.reach > 0 ? t.impressions / t.reach : 0,
     costPerResult: t.results > 0 ? t.spend / t.results : 0,
+    linkCtr: t.impressions > 0 ? ((t.linkClicks || 0) / t.impressions) * 100 : 0,
+    costPerLinkClick: t.linkClicks > 0 ? t.spend / t.linkClicks : 0,
   };
 }
 
@@ -361,6 +363,7 @@ function totalsFrom(accountRow, adRows) {
     // pra bater com a tabela de anúncios.
     results: adRows.reduce((s, r) => s + r.results, 0),
     engagement: Math.round(actionValue(a.actions, 'post_engagement')),
+    video25: adRows.reduce((s, r) => s + (r.video25 || 0), 0),
   });
 }
 
@@ -371,9 +374,62 @@ function accountResultLabel(adRows) {
   return labels.size === 1 ? [...labels][0] : 'Resultados';
 }
 
+// Rótulos dos posicionamentos (publisher_platform + platform_position).
+const PLATFORM_LABELS = { facebook: 'Facebook', instagram: 'Instagram', audience_network: 'Audience Network', messenger: 'Messenger', threads: 'Threads' };
+const POSITION_LABELS = {
+  feed: 'Feed', story: 'Stories', instagram_stories: 'Stories', facebook_stories: 'Stories',
+  reels: 'Reels', instagram_reels: 'Reels', facebook_reels: 'Reels', facebook_reels_overlay: 'Reels (sobreposição)',
+  marketplace: 'Marketplace', video_feeds: 'Feed de vídeos', search: 'Resultados de busca', instream_video: 'Vídeo in-stream',
+  right_hand_column: 'Coluna da direita', instagram_explore: 'Explorar', instagram_explore_grid_home: 'Explorar (grade)',
+  instagram_profile_feed: 'Feed do perfil', profile_feed: 'Feed do perfil', messenger_inbox: 'Caixa de entrada',
+  messenger_stories: 'Stories', an_classic: 'Apps e sites', rewarded_video: 'Vídeo premiado', notification: 'Notificações',
+};
+const GENDER_LABELS = { female: 'Feminino', male: 'Masculino', unknown: 'Não informado' };
+
+function mapBreakdownRows(rows, labelFn) {
+  const map = {};
+  rows.forEach((r) => {
+    const label = labelFn(r);
+    const e = map[label] || (map[label] = { label, spend: 0, impressions: 0, clicks: 0, linkClicks: 0, reach: 0, results: 0 });
+    e.spend += num(r.spend);
+    e.impressions += num(r.impressions);
+    e.clicks += num(r.clicks);
+    e.linkClicks += num(r.inline_link_clicks);
+    e.reach += num(r.reach);
+    e.results += pickResult(r.actions).value;
+  });
+  return Object.values(map).map((e) => derive(e)).sort((a, b) => b.spend - a.spend);
+}
+
+async function fetchBreakdowns(accountId, range) {
+  const fields = 'spend,impressions,clicks,inline_link_clicks,reach,actions';
+  const get = async (breakdowns) => {
+    try {
+      return await graphGetAll(`${accountId}/insights`, insightsParams(range, { fields, breakdowns }), 5);
+    } catch (e) {
+      console.warn(`Meta: detalhamento por ${breakdowns} indisponível:`, e.message);
+      return [];
+    }
+  };
+  const [ageGender, placement, region] = await Promise.all([
+    get('age,gender'), get('publisher_platform,platform_position'), get('region'),
+  ]);
+  return {
+    ageGender: ageGender.map((r) => ({
+      age: r.age, gender: GENDER_LABELS[r.gender] || r.gender,
+      spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks), results: pickResult(r.actions).value,
+    })),
+    gender: mapBreakdownRows(ageGender, (r) => GENDER_LABELS[r.gender] || r.gender),
+    age: mapBreakdownRows(ageGender, (r) => r.age).sort((a, b) => String(a.label).localeCompare(String(b.label))),
+    placements: mapBreakdownRows(placement, (r) => `${PLATFORM_LABELS[r.publisher_platform] || r.publisher_platform} · ${POSITION_LABELS[r.platform_position] || r.platform_position}`),
+    platforms: mapBreakdownRows(placement, (r) => PLATFORM_LABELS[r.publisher_platform] || r.publisher_platform),
+    regions: mapBreakdownRows(region, (r) => r.region || 'Desconhecida').slice(0, 15),
+  };
+}
+
 async function fetchRealReport(accountId, range) {
   const prev = period.previousRange(range);
-  const [accCur, accPrev, adsCur, adsPrev, adsDaily, thumbs] = await Promise.all([
+  const [accCur, accPrev, adsCur, adsPrev, adsDaily, thumbs, breakdowns] = await Promise.all([
     graphGetAll(`${accountId}/insights`, insightsParams(range, { fields: ACCOUNT_FIELDS })),
     graphGetAll(`${accountId}/insights`, insightsParams(prev, { fields: ACCOUNT_FIELDS })),
     graphGetAll(`${accountId}/insights`, insightsParams(range, { level: 'ad', fields: AD_FIELDS }), 10),
@@ -382,6 +438,7 @@ async function fetchRealReport(accountId, range) {
       level: 'ad', time_increment: '1', fields: 'ad_id,spend,impressions,clicks,actions',
     }), 20),
     fetchCreativeThumbs(accountId),
+    fetchBreakdowns(accountId, range),
   ]);
 
   const ads = adsCur.map(mapAdRow).filter((a) => a.spend > 0);
@@ -425,13 +482,13 @@ async function fetchRealReport(accountId, range) {
   });
   const campaigns = Object.values(campMap).map((c) => derive(c)).sort((x, y) => y.spend - x.spend);
 
-  return { range, previousRange: prev, resultLabel: accountResultLabel(ads), totals, previousTotals, daily, campaigns, ads };
+  return { range, previousRange: prev, resultLabel: accountResultLabel(ads), totals, previousTotals, daily, campaigns, ads, breakdowns };
 }
 
 function withDeltas(report) {
   const t = report.totals;
   const p = report.previousTotals;
-  const keys = ['spend', 'impressions', 'reach', 'clicks', 'linkClicks', 'results', 'engagement', 'ctr', 'cpc', 'cpm', 'frequency', 'costPerResult'];
+  const keys = ['spend', 'impressions', 'reach', 'clicks', 'linkClicks', 'results', 'engagement', 'ctr', 'cpc', 'cpm', 'frequency', 'costPerResult', 'linkCtr', 'costPerLinkClick', 'video25'];
   const deltas = {};
   keys.forEach((k) => { deltas[k] = period.pctDelta(t[k] || 0, p[k] || 0); });
   return { ...report, deltas };

@@ -1,6 +1,7 @@
 const express = require('express');
 const accountsStore = require('../data/accountsStore');
 const instagramService = require('../services/instagramService');
+const metaService = require('../services/metaService');
 
 const router = express.Router();
 
@@ -14,7 +15,16 @@ router.get('/:clientId/report', async (req, res) => {
   if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
   try {
-    const igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
+    let igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
+    // Só a Página do Facebook cadastrada? Descobre o Instagram ligado a ela
+    // e guarda no cliente, pra não precisar digitar o ID na mão.
+    if (!igUserId && account.meta?.pageId) {
+      const ig = await metaService.findInstagramForPage(account.meta.pageId);
+      if (ig) {
+        igUserId = ig.id;
+        await accountsStore.update(account.id, { meta: { ...account.meta, igBusinessId: ig.id } });
+      }
+    }
     const report = await instagramService.getOrganicReport(igUserId, {
       from: req.query.from, to: req.query.to,
     });
