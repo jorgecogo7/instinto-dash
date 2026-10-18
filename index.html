@@ -1194,6 +1194,12 @@
   .rp-box.good{ background:#EEFBF4; border:1px solid #C7EEDA; } .rp-box.good .rp-box-t{ color:#0E7A4D; }
   .rp-box.warn{ background:#FFF7EA; border:1px solid #FBE1B4; } .rp-box.warn .rp-box-t{ color:#A86500; }
   .rp-box.note{ background:#F4F6FF; border:1px solid #DCE3FF; } .rp-box.note .rp-box-t{ color:#2F6BFF; }
+  .rp-box.ai{ background:#FFF8F3; border:1px solid #FFD9C2; } .rp-box.ai .rp-box-t{ color:#E04A10; }
+  .rp-ai-block{ margin:8px 0 10px; }
+  .rp-ai-h{ font-size:12.5px; margin-bottom:2px; }
+  .rp-ai-block p{ font-size:12.5px; line-height:1.6; }
+  .rp-ai-foot{ font-size:9.5px; color:#8A93A6; margin-top:8px; border-top:1px solid #FFE3D3; padding-top:8px; }
+  .rp-ai-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin:14px 0 6px; flex-wrap:wrap; }
   .rp-creatives{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .rp-cr{ border:1px solid #E6E9F2; border-radius:14px; overflow:hidden; }
   .rp-cr-img{ height:200px; position:relative; background:linear-gradient(135deg,#FFE3D6,#DCE6FF); display:flex; align-items:center; justify-content:center; font-size:30px; }
@@ -2173,8 +2179,13 @@
           <div class="rp-modal-sub">Período: <b id="rpPeriod"></b> (o mesmo selecionado no painel) · com a marca da Instinto Digital</div>
           <div id="rpOptions"></div>
           <div id="rpNoteWrap">
-            <label class="modal-label">Comentário do gestor (opcional — aparece no resumo)</label>
+            <label class="modal-label">Comentário do gestor (opcional — vai na última página, "Análise das campanhas")</label>
             <textarea class="modal-input" id="rpNote" rows="3" placeholder="Ex.: Semana com ótimo custo por conversa. Próximo passo: testar novos criativos em vídeo."></textarea>
+            <div class="rp-ai-row">
+              <label class="modal-label" style="margin:0;">Análise da IA (opcional — você pode editar antes de gerar)</label>
+              <button type="button" class="btn-cancel" id="rpAiBtn" onclick="writeReportAnalysis()">✨ Escrever com IA</button>
+            </div>
+            <textarea class="modal-input" id="rpAi" rows="7" placeholder="Clique em “Escrever com IA” pra gerar uma análise curta das campanhas com os números do período."></textarea>
           </div>
           <div class="rp-modal-actions">
             <span class="rp-status" id="rpStatus"></span>
@@ -3428,7 +3439,7 @@
     </div>`;
   }
 
-  function buildClientReport({ client, range, prevRange, meta, google, ig, sections, note }){
+  function buildClientReport({ client, range, prevRange, meta, google, ig, sections, note, ai }){
     const pages = [];
     const per = `${dateBr(range.from)} a ${dateBr(range.to)}`;
     const today = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
@@ -3473,7 +3484,6 @@
         </div>
         ${h.good.length ? `<div class="rp-box good"><div class="rp-box-t">✓ Destaques</div><ul>${h.good.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
         ${h.warn.length ? `<div class="rp-box warn"><div class="rp-box-t">⚑ Pontos de atenção</div><ul>${h.warn.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
-        ${note ? `<div class="rp-box note"><div class="rp-box-t">💬 Comentário do gestor</div><p>${escapeHtml(note).replace(/\n/g, '<br>')}</p></div>` : ''}
       `, client, n++, { section:'Resumo' }));
     }
 
@@ -3609,14 +3619,24 @@
       `, client, n++, { section:'Instagram' }));
     }
 
-    // Encerramento
-    pages.push(rpPage(`
-      <div class="rp-end">
-        <img src="${logoSrc}" alt="">
-        <div class="rp-end-t">Obrigado pela confiança!</div>
-        <p>Seguimos acompanhando os números todos os dias pra fazer o seu investimento render cada vez mais.</p>
-        <div class="rp-end-b">Instinto Digital · Tráfego pago e performance</div>
-      </div>`, client, n++, { cls:'rp-cover rp-closing', noHeader:true, noFooter:true }));
+    // Análise das campanhas (última página): comentário do gestor + análise da IA
+    if (note || (ai && ai.trim())) {
+      const aiHtml = (ai || '').trim().split(/\n{2,}/).map(block => {
+        const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+        const bullets = lines.filter(l => /^[•\-–]/.test(l));
+        const head = lines.filter(l => !/^[•\-–]/.test(l)).join(' ');
+        const m = head.match(/^([^:]{2,30}):\s*(.*)$/);
+        const title = m ? `<b>${escapeHtml(m[1])}</b>` : '';
+        const text = m ? escapeHtml(m[2]) : escapeHtml(head);
+        return `<div class="rp-ai-block">${title ? `<div class="rp-ai-h">${title}</div>` : ''}${text ? `<p>${text}</p>` : ''}${bullets.length ? `<ul>${bullets.map(b => `<li>${escapeHtml(b.replace(/^[•\-–]\s*/, ''))}</li>`).join('')}</ul>` : ''}</div>`;
+      }).join('');
+      pages.push(rpPage(`
+        <h1 class="rp-h1">Análise das campanhas</h1>
+        <p class="rp-lead">${per}</p>
+        ${note ? `<div class="rp-box note"><div class="rp-box-t">💬 Comentário do gestor</div><p>${escapeHtml(note).replace(/\n/g, '<br>')}</p></div>` : ''}
+        ${ai && ai.trim() ? `<div class="rp-box ai"><div class="rp-box-t">✨ Análise da IA</div>${aiHtml}<div class="rp-ai-foot">Análise gerada por inteligência artificial a partir dos números do período.</div></div>` : ''}
+      `, client, n++, { section:'Análise' }));
+    }
     return pages.join('');
   }
 
@@ -3637,6 +3657,8 @@
       opt('campaigns', 'Campanhas e palavras-chave', !lockedByVis || vis.ads_campaigns, (hasMeta || hasGoogle) && (!lockedByVis || vis.ads_campaigns)) +
       opt('instagram', 'Instagram', true, hasIg && (!lockedByVis || vis.social));
     document.getElementById('rpNoteWrap').style.display = lockedByVis ? 'none' : '';
+    const range = cdCurrentRange || {};
+    if (rpAiFor !== `${currentClientId}:${range.from}:${range.to}`) { document.getElementById('rpAi').value = ''; document.getElementById('rpNote').value = ''; rpAiFor = null; }
     document.getElementById('rpPeriod').textContent = cdCurrentRange ? `${dateBr(cdCurrentRange.from)} a ${dateBr(cdCurrentRange.to)}` : '';
     document.getElementById('rpStatus').textContent = '';
     document.getElementById('rpGenBtn').disabled = false;
@@ -3644,13 +3666,42 @@
   }
   function closeReportModal(){ document.getElementById('rpModal').classList.remove('open'); }
 
+  // Pede pra IA escrever a análise do período (texto editável antes do PDF).
+  let rpAiFor = null;
+  async function writeReportAnalysis(){
+    const btn = document.getElementById('rpAiBtn');
+    const box = document.getElementById('rpAi');
+    const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+    btn.disabled = true; btn.textContent = '✨ Escrevendo…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/insights/${currentClientId}/report-analysis`, {
+        method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify(range),
+      });
+      if (res.status === 401) { logout(); return; }
+      const a = await res.json();
+      if (!res.ok) throw new Error(a.error || 'Não foi possível gerar a análise.');
+      const parts = [];
+      if (a.visaoGeral) parts.push(`Visão geral: ${a.visaoGeral}`);
+      if (a.meta) parts.push(`Meta Ads: ${a.meta}`);
+      if (a.google) parts.push(`Google Ads: ${a.google}`);
+      if (a.proximosPassos && a.proximosPassos.length) parts.push(`Próximos passos:\n${a.proximosPassos.map(x => `• ${x}`).join('\n')}`);
+      box.value = parts.join('\n\n');
+      rpAiFor = `${currentClientId}:${range.from}:${range.to}`;
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '✨ Escrever com IA';
+    }
+  }
+
   async function generateClientReport(){
     const btn = document.getElementById('rpGenBtn');
     const st = document.getElementById('rpStatus');
     btn.disabled = true;
     const sections = {};
     document.querySelectorAll('#rpOptions input[data-rp]').forEach(i => { sections[i.dataset.rp] = i.checked; });
-    const note = document.getElementById('rpNote').value.trim();
+    const note = (CLIENT_MODE || PUBLIC_TOKEN) ? '' : document.getElementById('rpNote').value.trim();
+    const ai = (CLIENT_MODE || PUBLIC_TOKEN) ? '' : document.getElementById('rpAi').value.trim();
     const client = rawAccountsById[currentClientId]?.name || 'Cliente';
     const holder = document.getElementById('rpRender');
     try {
@@ -3675,7 +3726,7 @@
       for (const src of RP_LIBS) await rpLoadScript(src);
 
       st.textContent = 'Montando as páginas…';
-      holder.innerHTML = buildClientReport({ client, range, prevRange, meta, google, ig, sections, note });
+      holder.innerHTML = buildClientReport({ client, range, prevRange, meta, google, ig, sections, note, ai });
       await Promise.all([...holder.querySelectorAll('img')].map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 8000); })));
       holder.querySelectorAll('img').forEach(img => { if (!img.naturalWidth) img.style.visibility = 'hidden'; });
 

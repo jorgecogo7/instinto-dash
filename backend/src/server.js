@@ -70,6 +70,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     mockData: config.useMockData,
     loginConfigured: !!(config.auth.username && config.auth.passwordHash),
+    aiConfigured: !!config.anthropic.apiKey,
   });
 });
 
