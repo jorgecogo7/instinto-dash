@@ -5,6 +5,8 @@ const googleService = require('../services/googleService');
 const metaService = require('../services/metaService');
 const leadsStore = require('../data/leadsStore');
 const instagramService = require('../services/instagramService');
+const formsStore = require('../data/formsStore');
+const formService = require('../services/formService');
 
 const router = express.Router();
 
@@ -40,6 +42,108 @@ router.get('/:token', async (req, res) => {
     meta: metaData.status === 'fulfilled' ? metaData.value : null,
     google: googleData.status === 'fulfilled' ? googleData.value : null,
   });
+});
+
+/* ---------- Formulários próprios (link público /f/slug) ---------- */
+
+async function publishedForm(slug) {
+  const form = await formsStore.getBySlug(String(slug || '').slice(0, 80));
+  return form && form.status === 'published' ? form : null;
+}
+
+// GET /api/public/forms/:slug — definição pública do formulário (sem pontos/token).
+router.get('/forms/:slug', async (req, res) => {
+  try {
+    const form = await publishedForm(req.params.slug);
+    if (!form) return res.status(404).json({ error: 'Este formulário não existe ou não está publicado.' });
+    res.json(formService.publicForm(form));
+  } catch (err) {
+    console.error(err); res.status(500).json({ error: 'Não foi possível abrir o formulário agora.' });
+  }
+});
+
+// POST /api/public/forms/:slug/event { type: 'view' | 'start' } — contadores da taxa de conversão.
+router.post('/forms/:slug/event', async (req, res) => {
+  try {
+    const form = await publishedForm(req.params.slug);
+    if (!form) return res.status(404).json({ error: 'Formulário não encontrado.' });
+    if (['view', 'start'].includes(req.body.type)) await formsStore.bumpStat(form.id, req.body.type);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err); res.status(500).json({ ok: false });
+  }
+});
+
+// POST /api/public/forms/:slug/submit — grava a resposta, calcula a
+// qualificação no servidor e devolve qual tela final mostrar.
+router.post('/forms/:slug/submit', async (req, res) => {
+  if (req.body.website) return res.json({ ok: true, qualified: false, disqualified: false }); // honeypot
+  try {
+    const form = await publishedForm(req.params.slug);
+    if (!form) return res.status(404).json({ error: 'Formulário não encontrado.' });
+
+    const answers = formService.cleanAnswers(form, req.body.answers);
+    if (!Object.keys(answers).length) return res.status(400).json({ error: 'Responda pelo menos uma pergunta.' });
+
+    const result = formService.evaluate(form, answers);
+    const readable = formService.answersReadable(form, answers);
+    const contact = formService.contactFrom(form, answers);
+    const m = req.body.meta || {};
+    const pick = (k, max = 200) => (typeof m[k] === 'string' ? m[k].slice(0, max) : undefined);
+    const meta = {
+      utm_source: pick('utm_source'), utm_medium: pick('utm_medium'), utm_campaign: pick('utm_campaign'),
+      utm_content: pick('utm_content'), utm_term: pick('utm_term'), fbclid: pick('fbclid', 500), gclid: pick('gclid', 500),
+      referrer: pick('referrer', 500), url: pick('url', 800), fbp: pick('fbp'), fbc: pick('fbc', 500),
+      ip: (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim(),
+      userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
+    };
+    const eventIds = req.body.eventIds || {};
+    const response = {
+      id: crypto.randomBytes(8).toString('hex'),
+      formId: form.id,
+      createdAt: new Date().toISOString(),
+      answers, readable, contact, result, meta,
+    };
+    await formsStore.addResponse(form.id, response);
+    await formsStore.bumpStat(form.id, 'complete');
+    if (result.qualified) await formsStore.bumpStat(form.id, 'qualified');
+
+    if (form.integrations.createCrmLead) {
+      const temperature = !result.usesQualification ? null : result.qualified ? 'quente' : 'frio';
+      await leadsStore.add({
+        id: crypto.randomBytes(8).toString('hex'),
+        name: contact.name || 'Sem nome', email: contact.email || null, phone: contact.phone || null,
+        company: contact.company || null, niche: null, budget: null,
+        message: readable.map((x) => `${x.question}: ${x.answer}`).join('\n').slice(0, 4000),
+        source: `formulario:${form.slug}`, stage: 'novo', owner: null, notes: null,
+        score: result.usesQualification ? result.score : null, temperature,
+        reasoning: result.reasons.join(' · ') || null, nextAction: null, scoredAt: null, convertedAccountId: null,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      }).catch((e) => console.warn('Lead do formulário não entrou no CRM:', e.message));
+    }
+
+    // API de Conversões e webhook não seguram a resposta do lead.
+    const url = meta.url || '';
+    const safeEventId = (v) => (typeof v === 'string' ? v.slice(0, 80) : undefined);
+    formService.sendCapi(form, { eventName: form.tracking.leadEvent, eventId: safeEventId(eventIds.lead) || response.id, contact, meta, url });
+    if (result.usesQualification) {
+      formService.sendCapi(form, {
+        eventName: result.qualified ? form.tracking.qualifiedEvent : form.tracking.disqualifiedEvent,
+        eventId: safeEventId(eventIds.qualification) || `${response.id}-q`, contact, meta, url,
+      });
+    }
+    formService.sendWebhook(form, {
+      form: { id: form.id, slug: form.slug, name: form.name },
+      responseId: response.id, createdAt: response.createdAt,
+      contact, answers: readable, qualified: result.qualified, score: result.score, utm: {
+        source: meta.utm_source, medium: meta.utm_medium, campaign: meta.utm_campaign, content: meta.utm_content, term: meta.utm_term,
+      },
+    });
+
+    res.json({ ok: true, qualified: result.qualified, disqualified: result.disqualified, usesQualification: result.usesQualification });
+  } catch (err) {
+    console.error(err); res.status(500).json({ error: 'Não foi possível enviar agora. Tente novamente em instantes.' });
+  }
 });
 
 // Plataformas que o painel do cliente mostra (mesma regra do painel interno).

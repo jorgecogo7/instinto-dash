@@ -78,4 +78,43 @@ function ensureContractsTable() {
   return contractsTableReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable };
+// Formulários próprios (estilo Typeform): definição, respostas e contadores
+// diários (visitas, inícios, envios) pra taxa de conversão.
+let formsTablesReady = null;
+function ensureFormsTables() {
+  if (!formsTablesReady) {
+    const pool = getPool();
+    formsTablesReady = Promise.all([
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS forms (
+          id VARCHAR(191) PRIMARY KEY,
+          slug VARCHAR(191) NOT NULL UNIQUE,
+          data JSON NOT NULL
+        )
+      `),
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS form_responses (
+          id VARCHAR(191) PRIMARY KEY,
+          form_id VARCHAR(191) NOT NULL,
+          created_at DATETIME NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_form_created (form_id, created_at)
+        )
+      `),
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS form_stats (
+          form_id VARCHAR(191) NOT NULL,
+          day DATE NOT NULL,
+          views INT NOT NULL DEFAULT 0,
+          starts INT NOT NULL DEFAULT 0,
+          completes INT NOT NULL DEFAULT 0,
+          qualified INT NOT NULL DEFAULT 0,
+          PRIMARY KEY (form_id, day)
+        )
+      `),
+    ]);
+  }
+  return formsTablesReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables };

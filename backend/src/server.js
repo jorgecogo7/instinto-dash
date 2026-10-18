@@ -12,6 +12,7 @@ const insightsRoutes = require('./routes/insights');
 const feedbackRoutes = require('./routes/feedback');
 const leadsRoutes = require('./routes/leads');
 const contractsRoutes = require('./routes/contracts');
+const formsRoutes = require('./routes/forms');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
 
@@ -23,7 +24,7 @@ app.use(rateLimit);
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', config.allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -45,6 +46,7 @@ app.use('/api/insights', requireAdminAuth, insightsRoutes);
 app.use('/api/feedback', requireAdminAuth, feedbackRoutes);
 app.use('/api/leads', requireAdminAuth, leadsRoutes);
 app.use('/api/contracts', requireAdminAuth, contractsRoutes);
+app.use('/api/forms', requireAdminAuth, formsRoutes);
 
 app.post('/api/sync', requireAdminAuth, async (req, res) => {
   try {

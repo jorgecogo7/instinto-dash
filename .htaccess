@@ -1,0 +1,5 @@
+# Link curto dos formulários: /f/nome-do-formulario -> form.html?f=nome-do-formulario
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^f/([A-Za-z0-9-]+)/?$ form.html?f=$1 [L,QSA]
+</IfModule>

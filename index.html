@@ -1066,6 +1066,111 @@
   .leadform-success{ text-align:center; padding:20px 4px; }
   .leadform-success h2{ font-size:19px; margin-bottom:8px; }
   .leadform-success p{ font-size:13.5px; color:var(--text-dim); }
+
+  /* ===================== Formulários ===================== */
+  .fm-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap:14px; }
+  .fm-card{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); box-shadow:var(--card-shadow); padding:16px 18px; cursor:pointer; transition:transform .15s, border-color .15s; }
+  .fm-card:hover{ transform:translateY(-2px); border-color:rgba(255,176,32,.45); }
+  .fm-card-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .fm-card-name{ font-size:15px; font-weight:700; }
+  .fm-card-client{ font-size:11.5px; color:var(--text-dim); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fm-status{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; background:var(--bg-panel-3); color:var(--text-dim); }
+  .fm-status.published{ background:rgba(53,196,138,.16); color:var(--green); }
+  .fm-status.disq{ background:rgba(232,81,79,.14); color:var(--red); }
+  .fm-card-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:16px 0 12px; }
+  .fm-card-stats span{ display:block; font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-dim); }
+  .fm-card-stats b{ font-size:19px; font-variant-numeric:tabular-nums; }
+  .fm-card-foot{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding-top:10px; font-size:12px; color:var(--text-dim); }
+  .fm-card-actions{ display:flex; gap:4px; }
+  .fm-card-actions button, .fm-icon-btn{ width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); cursor:pointer; font-size:13px; font-family:inherit; }
+  .fm-icon-btn:disabled{ opacity:.35; cursor:default; }
+  .fm-icon-btn.danger:hover{ border-color:var(--red); }
+  .fm-empty{ grid-column:1/-1; text-align:center; padding:50px 20px; background:var(--bg-panel); border:1px dashed var(--line); border-radius:var(--radius-lg); }
+  .fm-empty h3{ margin:10px 0 6px; }
+  .fm-empty p{ color:var(--text-dim); font-size:13px; max-width:420px; margin:0 auto 16px; }
+
+  .fm-edit-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .fm-back{ color:var(--flame); cursor:pointer; font-size:13px; margin-bottom:6px; }
+  .fm-name-input{ font-family:inherit; font-size:22px; font-weight:700; color:var(--text); background:transparent; border:1px solid transparent; border-radius:8px; padding:2px 6px; margin-left:-6px; width:min(560px, 100%); }
+  .fm-name-input:hover, .fm-name-input:focus{ border-color:var(--line); outline:none; background:var(--bg-panel); }
+  .fm-sub{ font-size:12.5px; color:var(--text-dim); margin-top:4px; }
+  .fm-sub code{ font-size:12px; }
+  .fm-head-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .fm-status-toggle{ display:flex; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:9px; padding:2px; }
+  .fm-status-toggle button{ font-family:inherit; font-size:12.5px; font-weight:600; padding:7px 12px; border:none; border-radius:7px; background:transparent; color:var(--text-dim); cursor:pointer; }
+  .fm-status-toggle button.active{ background:var(--bg-panel); color:var(--text); box-shadow:var(--card-shadow); }
+  .fm-status-toggle button.active:last-child{ color:var(--green); }
+  .fm-tabs{ display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:16px; overflow-x:auto; scrollbar-width:none; }
+  .fm-tabs::-webkit-scrollbar{ display:none; }
+  .fm-tabs button{ flex-shrink:0; font-family:inherit; font-size:13px; font-weight:600; padding:10px 12px; border:none; background:none; color:var(--text-dim); cursor:pointer; border-bottom:2px solid transparent; }
+  .fm-tabs button.active{ color:var(--text); border-bottom-color:var(--flame); }
+  .fm-save-msg{ font-size:12.5px; margin:-6px 0 12px; word-break:break-all; }
+  .fm-save-msg.ok{ color:var(--green); } .fm-save-msg.err{ color:var(--red); }
+  .fm-panel{ max-width:880px; }
+  .fm-row{ margin-bottom:4px; }
+  .fm-help{ font-size:11.5px; color:var(--text-dim); margin-top:5px; line-height:1.5; }
+  .fm-2col{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  .fm-check{ display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
+  .fm-check input{ accent-color:var(--flame); width:16px; height:16px; }
+  .fm-color{ width:64px; height:38px; border:1px solid var(--line); border-radius:8px; background:var(--bg-panel-2); padding:3px; cursor:pointer; }
+  .fm-inline{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:13px; margin-top:6px; }
+  .fm-inline-sel{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim); }
+  .fm-inline-sel .modal-input{ width:auto; min-width:150px; padding:7px 10px; font-size:12.5px; }
+  .fm-warn{ max-width:880px; font-size:12.5px; padding:9px 12px; border-radius:10px; margin-bottom:8px; }
+  .fm-warn.err{ background:rgba(232,81,79,.12); color:var(--red); border:1px solid rgba(232,81,79,.3); }
+  .fm-warn.warn{ background:rgba(255,176,32,.1); color:#D98E00; border:1px solid rgba(255,176,32,.3); }
+  .fm-fields{ display:flex; flex-direction:column; gap:12px; max-width:880px; }
+  .fm-field{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); box-shadow:var(--card-shadow); padding:14px 16px 16px; }
+  .fm-field-head{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .fm-field-num{ width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg, var(--flame), var(--amber)); color:#1a0e05; font-weight:800; font-size:12.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fm-field-title{ font-weight:700; font-size:14px; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .fm-req{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); }
+  .fm-field-tools{ display:flex; gap:4px; }
+  .fm-opts-head{ font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--text-dim); margin:14px 0 6px; }
+  .fm-opt{ border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:8px; background:var(--bg-panel-2); }
+  .fm-opt-top{ display:flex; align-items:center; gap:8px; }
+  .fm-opt-letter{ width:24px; height:24px; border-radius:6px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; color:var(--flame); flex-shrink:0; }
+  .fm-opt-grid{ display:grid; grid-template-columns: 90px 1fr 1.3fr 1fr; gap:8px; margin-top:8px; }
+  .fm-opt-grid label{ display:block; font-size:10.5px; color:var(--text-dim); margin-bottom:3px; }
+  .fm-opt-grid .modal-input{ padding:7px 9px; font-size:12.5px; }
+  .fm-add-opt{ font-family:inherit; font-size:12.5px; border:1px dashed var(--line); background:none; color:var(--text); border-radius:10px; padding:8px 12px; cursor:pointer; }
+  .fm-add-row{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:14px; max-width:880px; font-size:12.5px; color:var(--text-dim); }
+  .fm-events{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .fm-events > div{ display:grid; grid-template-columns: 240px 1fr; gap:12px; align-items:center; }
+  .fm-events b{ padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:var(--bg-panel-2); }
+  .fm-events span{ font-size:12.5px; color:var(--text-dim); }
+  .fm-link-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .fm-link-row code{ flex:1; min-width:200px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); font-size:12.5px; word-break:break-all; }
+  .fm-link-row a{ text-decoration:none; }
+  .fm-pt{ display:inline-block; font-size:11.5px; padding:3px 8px; border-radius:7px; margin:2px 4px 2px 0; background:var(--bg-panel-2); border:1px solid var(--line); }
+  .fm-pt.qualifies{ border-color:rgba(53,196,138,.5); color:var(--green); }
+  .fm-pt.disqualifies{ border-color:rgba(232,81,79,.5); color:var(--red); }
+  .fm-resp-list{ display:flex; flex-direction:column; gap:6px; }
+  .fm-resp{ border:1px solid var(--line); border-radius:10px; background:var(--bg-panel-2); }
+  .fm-resp summary{ list-style:none; cursor:pointer; display:flex; justify-content:space-between; gap:10px; padding:10px 12px; align-items:center; flex-wrap:wrap; }
+  .fm-resp summary::-webkit-details-marker{ display:none; }
+  .fm-resp summary span{ font-size:12px; color:var(--text-dim); margin-left:8px; }
+  .fm-resp-meta{ display:flex; align-items:center; gap:4px; }
+  .fm-resp-body{ padding:0 12px 12px; }
+  .fm-qa{ padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .fm-qa div{ color:var(--text-dim); margin-bottom:2px; }
+  .fm-preview{ display:none; position:fixed; inset:0; z-index:200; background:rgba(5,8,14,.7); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:16px; }
+  .fm-preview.open{ display:flex; }
+  .fm-preview-box{ background:var(--bg-panel); border:1px solid var(--line); border-radius:18px; padding:12px; display:flex; flex-direction:column; gap:10px; max-height:100%; width:auto; }
+  .fm-preview-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:space-between; }
+  .fm-preview-sizes{ display:flex; gap:6px; }
+  .fm-preview-note{ font-size:11.5px; color:var(--text-dim); }
+  .fm-preview-frame-wrap{ width:390px; height:min(760px, calc(100vh - 110px)); border-radius:14px; overflow:hidden; border:1px solid var(--line); margin:0 auto; transition:width .2s; }
+  .fm-preview.desktop .fm-preview-frame-wrap{ width:min(1100px, calc(100vw - 60px)); }
+  .fm-preview-frame-wrap iframe{ width:100%; height:100%; border:0; display:block; }
+  @media (max-width: 760px){
+    .fm-2col{ grid-template-columns:1fr; }
+    .fm-opt-grid{ grid-template-columns:1fr 1fr; }
+    .fm-events > div{ grid-template-columns:1fr; gap:4px; }
+    .fm-card-stats b{ font-size:16px; }
+    .fm-name-input{ font-size:19px; }
+    .fm-preview-frame-wrap{ width:calc(100vw - 56px); }
+  }
   /* ===================== Celular ===================== */
   @media (max-width: 760px){
     .main{ padding:12px !important; }
@@ -1211,6 +1316,7 @@
     <nav class="nav">
       <div class="nav-item" data-view="clients">👥 Clientes</div>
       <div class="nav-item" data-view="crm">🧲 Captação & CRM</div>
+      <div class="nav-item" data-view="forms">📝 Formulários</div>
     </nav>
 
     <div class="nav-divider">Clientes</div>
@@ -1615,6 +1721,59 @@
     </section>
 
     <!-- ================= CAPTAÇÃO & CRM ================= -->
+    <!-- ================= FORMULÁRIOS (estilo Typeform) ================= -->
+    <section class="view" id="view-forms">
+      <!-- Lista -->
+      <div id="fmListMode">
+        <div class="topbar">
+          <div>
+            <h1>Formulários</h1>
+            <p>Formulários próprios, uma pergunta por tela, com pixel, qualificação e lead direto no CRM.</p>
+          </div>
+          <div class="topbar-right">
+            <button type="button" class="btn-add" onclick="fmCreate()">+ Novo formulário</button>
+          </div>
+        </div>
+        <div class="kpi2-grid" id="fmKpis"></div>
+        <div id="fmListError" class="offline-banner" style="display:none;"></div>
+        <div class="fm-grid" id="fmGrid"></div>
+      </div>
+
+      <!-- Editor -->
+      <div id="fmEditMode" style="display:none;">
+        <div class="fm-edit-head">
+          <div style="min-width:0;">
+            <p class="fm-back" onclick="fmBackToList()">← Formulários</p>
+            <input class="fm-name-input" id="fmName" placeholder="Nome interno do formulário" oninput="fmCurrent.name = this.value; fmDirty()">
+            <div class="fm-sub" id="fmSub"></div>
+          </div>
+          <div class="fm-head-actions">
+            <div class="fm-status-toggle" id="fmStatusToggle"></div>
+            <button type="button" class="btn-cancel" onclick="fmOpenPreview()">👁 Prévia</button>
+            <button type="button" class="btn-add" id="fmSaveBtn" onclick="fmSave()">Salvar</button>
+          </div>
+        </div>
+        <div class="fm-tabs" id="fmTabs"></div>
+        <div id="fmSaveMsg" class="fm-save-msg"></div>
+        <div id="fmTabBody"></div>
+      </div>
+
+      <!-- Prévia -->
+      <div class="fm-preview" id="fmPreview" onclick="if (event.target === this) fmClosePreview()">
+        <div class="fm-preview-box">
+          <div class="fm-preview-bar">
+            <div class="fm-preview-sizes">
+              <button type="button" class="chip active" data-size="mobile" onclick="fmPreviewSize('mobile')">📱 Celular</button>
+              <button type="button" class="chip" data-size="desktop" onclick="fmPreviewSize('desktop')">🖥 Computador</button>
+            </div>
+            <span class="fm-preview-note">Prévia sem salvar · não conta visita nem dispara pixel</span>
+            <button type="button" class="btn-cancel" onclick="fmClosePreview()">Fechar ✕</button>
+          </div>
+          <div class="fm-preview-frame-wrap"><iframe id="fmPreviewFrame" title="Prévia do formulário"></iframe></div>
+        </div>
+      </div>
+    </section>
+
     <section class="view" id="view-crm">
       <div class="topbar">
         <div>
@@ -2292,6 +2451,7 @@
       item.classList.add('active');
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById('view-' + item.dataset.view).classList.add('active');
+      if (item.dataset.view === 'forms') { document.getElementById('fmEditMode').style.display === 'none' && loadForms(); }
     });
   });
 
@@ -2348,6 +2508,562 @@
     if (connCountEl) connCountEl.textContent = `${clients.length} conta${clients.length === 1 ? '' : 's'} cadastrada${clients.length === 1 ? '' : 's'}`;
   }
 
+
+  /* ===================== Formulários (estilo Typeform) ===================== */
+  const FORM_BASE_URL = 'https://dash.instintodigital.com.br/f/';
+  let fmForms = [];
+  let fmCurrent = null;          // formulário aberto no editor
+  let fmTab = 'general';
+  let fmIsDirty = false;
+  let fmResponses = null;
+
+  const FM_TYPES = [
+    ['short_text', 'Texto curto'], ['long_text', 'Texto longo'], ['email', 'E-mail'], ['phone', 'Telefone / WhatsApp'],
+    ['number', 'Número'], ['date', 'Data'], ['choice', 'Múltipla escolha (uma)'], ['multi_choice', 'Múltipla escolha (várias)'],
+    ['yes_no', 'Sim / Não'], ['rating', 'Nota (escala)'], ['statement', 'Texto informativo (sem resposta)'],
+  ];
+  const FM_MAP = [['', '—'], ['name', 'Nome'], ['phone', 'WhatsApp / telefone'], ['email', 'E-mail'], ['company', 'Empresa'], ['city', 'Cidade'], ['instagram', 'Instagram']];
+  const fmUid = () => Math.random().toString(36).slice(2, 9);
+  const fmHasOptions = t => t === 'choice' || t === 'multi_choice' || t === 'yes_no';
+
+  function fmTemplate(){
+    return {
+      name: 'Novo formulário', status: 'draft', clientId: null,
+      welcome: { enabled: true, title: 'Responda rapidinho e a gente te chama no WhatsApp', text: 'Leva menos de 1 minuto.', imageUrl: '', buttonText: 'Começar' },
+      theme: { mode: 'dark', accent: '#FF5A1E', logoUrl: '' },
+      fields: [
+        { id: fmUid(), type: 'short_text', label: 'Qual é o seu nome?', description: '', required: true, placeholder: '', mapTo: 'name', goTo: 'next' },
+        { id: fmUid(), type: 'phone', label: 'Qual é o seu WhatsApp?', description: 'Com DDD — é por lá que vamos falar com você.', required: true, placeholder: '', mapTo: 'phone', goTo: 'next' },
+        { id: fmUid(), type: 'choice', label: 'Qual dessas situações melhor descreve o seu momento?', description: '', required: true, placeholder: '', mapTo: '', goTo: 'next', options: [
+          { id: fmUid(), label: 'Quero começar agora', points: 40, qualification: 'neutral', goTo: 'next', metaEvent: '' },
+          { id: fmUid(), label: 'Estou pesquisando para os próximos meses', points: 20, qualification: 'neutral', goTo: 'next', metaEvent: '' },
+          { id: fmUid(), label: 'Só estou curioso', points: 0, qualification: 'disqualifies', goTo: 'next', metaEvent: '' },
+        ] },
+      ],
+      scoring: { enabled: false, minScore: 30 },
+      ending: { title: 'Prontinho! Recebemos suas respostas.', text: 'Em breve alguém da nossa equipe vai falar com você.', buttonText: '', buttonUrl: '', redirectUrl: '', whatsapp: '', whatsappText: '' },
+      endingDisqualified: { title: 'Obrigado pelo interesse!', text: 'No momento, nosso atendimento não é o ideal pro seu perfil. Mas fica de olho nas nossas redes!', redirectUrl: '' },
+      tracking: { metaPixelId: '', capiToken: '', capiTestCode: '', ga4Id: '', gtmId: '', startEvent: 'IniciouFormulario', leadEvent: 'Lead', qualifiedEvent: 'LeadQualificado', disqualifiedEvent: 'LeadDesqualificado', stepEvents: false },
+      integrations: { createCrmLead: true, webhookUrl: '' },
+      privacyUrl: '',
+    };
+  }
+
+  async function fmApi(path, opts = {}){
+    const res = await fetch(`${API_BASE_URL}/api/forms${path}`, { ...opts, headers: { ...authHeaders(), 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+    if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  /* ---------- Lista ---------- */
+  async function loadForms(){
+    const err = document.getElementById('fmListError');
+    try {
+      fmForms = await fmApi('');
+      err.style.display = 'none';
+    } catch (e) {
+      fmForms = [];
+      err.style.display = 'flex';
+      err.textContent = `⚠ Não consegui carregar os formulários: ${e.message}`;
+    }
+    renderFormsList();
+  }
+
+  const fmRate = (a, b) => b > 0 ? (a / b * 100) : 0;
+  const fmPct = v => v.toFixed(1).replace('.', ',') + '%';
+
+  function renderFormsList(){
+    const tot = fmForms.reduce((acc, f) => { const s = f.stats || {}; acc.views += s.views || 0; acc.starts += s.starts || 0; acc.completes += s.completes || 0; acc.qualified += s.qualified || 0; return acc; }, { views:0, starts:0, completes:0, qualified:0 });
+    const k = (label, value, sub) => `<div class="kpi2"><div class="kpi2-label">${label}</div><div class="kpi2-value">${value}</div><div class="kpi2-prev">${sub || ''}</div></div>`;
+    document.getElementById('fmKpis').innerHTML =
+      k('Formulários', intFmt(fmForms.length), `${fmForms.filter(f => f.status === 'published').length} publicados`) +
+      k('Visitas', intFmt(tot.views), 'abriram o link') +
+      k('Respostas', intFmt(tot.completes), `${fmPct(fmRate(tot.completes, tot.views))} de quem abriu`) +
+      k('Qualificados', intFmt(tot.qualified), `${fmPct(fmRate(tot.qualified, tot.completes))} das respostas`);
+    const grid = document.getElementById('fmGrid');
+    if (!fmForms.length) {
+      grid.innerHTML = `<div class="fm-empty"><div style="font-size:34px;">📝</div><h3>Nenhum formulário ainda</h3><p>Crie o primeiro — já vem com um modelo de nome, WhatsApp e uma pergunta de qualificação pra você adaptar.</p><button type="button" class="btn-add" onclick="fmCreate()">+ Criar formulário</button></div>`;
+      return;
+    }
+    grid.innerHTML = fmForms.map(f => {
+      const s = f.stats || {};
+      const client = f.clientId && rawAccountsById[f.clientId] ? rawAccountsById[f.clientId].name : 'Instinto Digital';
+      return `<div class="fm-card" onclick="fmOpen('${f.id}')">
+        <div class="fm-card-head">
+          <div style="min-width:0;"><div class="fm-card-name">${escapeHtml(f.name)}</div><div class="fm-card-client">${escapeHtml(client)} · /f/${escapeHtml(f.slug)}</div></div>
+          <span class="fm-status ${f.status}">${f.status === 'published' ? 'Publicado' : 'Rascunho'}</span>
+        </div>
+        <div class="fm-card-stats">
+          <div><span>Visitas</span><b>${intFmt(s.views)}</b></div>
+          <div><span>Inícios</span><b>${intFmt(s.starts)}</b></div>
+          <div><span>Respostas</span><b>${intFmt(s.completes)}</b></div>
+          <div><span>Conversão</span><b>${fmPct(fmRate(s.completes || 0, s.views || 0))}</b></div>
+        </div>
+        <div class="fm-card-foot">
+          <span>${(f.fields || []).length} pergunta${(f.fields || []).length === 1 ? '' : 's'}${s.completes ? ` · ${fmPct(fmRate(s.qualified || 0, s.completes))} qualificados` : ''}</span>
+          <div class="fm-card-actions" onclick="event.stopPropagation()">
+            ${f.status === 'published' ? `<button type="button" title="Copiar link" onclick="fmCopy('${FORM_BASE_URL}${f.slug}', this)">🔗</button>` : ''}
+            <button type="button" title="Duplicar" onclick="fmDuplicate('${f.id}')">⧉</button>
+            <button type="button" title="Excluir" onclick="fmDelete('${f.id}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function fmCreate(){
+    try {
+      const created = await fmApi('', { method:'POST', body: JSON.stringify(fmTemplate()) });
+      await loadForms();
+      fmOpen(created.id);
+    } catch (e) { alert(`Não consegui criar: ${e.message}`); }
+  }
+  async function fmDuplicate(id){
+    try { await fmApi(`/${id}/duplicate`, { method:'POST' }); await loadForms(); }
+    catch (e) { alert(`Não consegui duplicar: ${e.message}`); }
+  }
+  async function fmDelete(id){
+    const f = fmForms.find(x => x.id === id);
+    if (!confirm(`Excluir o formulário "${f ? f.name : ''}" e todas as respostas dele? Isso não pode ser desfeito.`)) return;
+    try { await fmApi(`/${id}`, { method:'DELETE' }); await loadForms(); }
+    catch (e) { alert(`Não consegui excluir: ${e.message}`); }
+  }
+  function fmCopy(text, btn){
+    const done = () => { if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1200); } };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => prompt('Copie o link:', text));
+    else prompt('Copie o link:', text);
+  }
+
+  /* ---------- Editor ---------- */
+  async function fmOpen(id){
+    try {
+      const f = await fmApi(`/${id}`);
+      fmCurrent = f;
+      fmResponses = null;
+      fmIsDirty = false;
+      fmTab = 'general';
+      document.getElementById('fmListMode').style.display = 'none';
+      document.getElementById('fmEditMode').style.display = 'block';
+      document.getElementById('fmName').value = f.name;
+      renderFmHead();
+      renderFmTab();
+      window.scrollTo(0, 0);
+    } catch (e) { alert(`Não consegui abrir: ${e.message}`); }
+  }
+  function fmBackToList(){
+    if (fmIsDirty && !confirm('Você tem alterações não salvas. Sair mesmo assim?')) return;
+    fmCurrent = null;
+    document.getElementById('fmEditMode').style.display = 'none';
+    document.getElementById('fmListMode').style.display = 'block';
+    loadForms();
+  }
+  function fmDirty(){
+    fmIsDirty = true;
+    document.getElementById('fmSaveBtn').textContent = 'Salvar *';
+    document.getElementById('fmSaveMsg').textContent = '';
+  }
+  function renderFmHead(){
+    const f = fmCurrent;
+    document.getElementById('fmSub').innerHTML = `${f.status === 'published' ? '<b style="color:var(--green)">Publicado</b>' : 'Rascunho'} · <code>/f/${escapeHtml(f.slug)}</code>`;
+    document.getElementById('fmStatusToggle').innerHTML =
+      `<button type="button" class="${f.status === 'draft' ? 'active' : ''}" onclick="fmSetStatus('draft')">Rascunho</button><button type="button" class="${f.status === 'published' ? 'active' : ''}" onclick="fmSetStatus('published')">Publicado</button>`;
+    const tabs = [['general','⚙ Geral'],['fields','☰ Perguntas'],['scoring','🎯 Qualificação'],['endings','🏁 Telas finais'],['tracking','📡 Pixel e eventos'],['share','🔗 Compartilhar'],['responses','📊 Respostas']];
+    document.getElementById('fmTabs').innerHTML = tabs.map(([id, l]) => `<button type="button" class="${fmTab === id ? 'active' : ''}" onclick="fmSetTab('${id}')">${l}</button>`).join('');
+    document.getElementById('fmSaveBtn').textContent = fmIsDirty ? 'Salvar *' : 'Salvar';
+  }
+  function fmSetTab(t){ fmTab = t; renderFmHead(); renderFmTab(); }
+  function fmSetStatus(st){ fmCurrent.status = st; fmDirty(); renderFmHead(); }
+
+  async function fmSave(){
+    const btn = document.getElementById('fmSaveBtn');
+    const msg = document.getElementById('fmSaveMsg');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      const saved = await fmApi(`/${fmCurrent.id}`, { method:'PUT', body: JSON.stringify(fmCurrent) });
+      fmCurrent = { ...saved, stats: fmCurrent.stats, daily: fmCurrent.daily };
+      fmIsDirty = false;
+      msg.className = 'fm-save-msg ok';
+      msg.textContent = fmCurrent.status === 'published' ? `✓ Salvo e no ar: ${FORM_BASE_URL}${fmCurrent.slug}` : '✓ Salvo como rascunho (o link só funciona depois de publicar).';
+      renderFmHead();
+      if (fmTab !== 'fields') renderFmTab();
+    } catch (e) {
+      msg.className = 'fm-save-msg err';
+      msg.textContent = `⚠ ${e.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = fmIsDirty ? 'Salvar *' : 'Salvar';
+    }
+  }
+
+  // Liga um campo da tela a um caminho do formulário (ex.: "welcome.title").
+  function fmGet(path){ return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), fmCurrent); }
+  function fmSetPath(path, value){
+    const keys = path.split('.');
+    let o = fmCurrent;
+    keys.slice(0, -1).forEach(k => { if (o[k] == null) o[k] = {}; o = o[k]; });
+    o[keys[keys.length - 1]] = value;
+    fmDirty();
+  }
+  function fmInput(path, opts = {}){
+    const v = fmGet(path);
+    const type = opts.type || 'text';
+    const ph = opts.placeholder ? ` placeholder="${escapeAttr(opts.placeholder)}"` : '';
+    if (type === 'textarea') return `<textarea class="modal-input" rows="${opts.rows || 3}"${ph} oninput="fmSetPath('${path}', this.value)">${escapeHtml(v || '')}</textarea>`;
+    if (type === 'checkbox') return `<label class="fm-check"><input type="checkbox" ${v ? 'checked' : ''} onchange="fmSetPath('${path}', this.checked)${opts.rerender ? '; renderFmTab()' : ''}"> ${opts.label || ''}</label>`;
+    if (type === 'number') return `<input class="modal-input" type="number"${ph} value="${escapeAttr(v ?? '')}" oninput="fmSetPath('${path}', this.value === '' ? 0 : Number(this.value))${opts.rerender ? '; fmRefreshScoring()' : ''}">`;
+    if (type === 'color') return `<input class="fm-color" type="color" value="${escapeAttr(v || '#FF5A1E')}" oninput="fmSetPath('${path}', this.value)">`;
+    if (type === 'select') return `<select class="modal-input" onchange="fmSetPath('${path}', this.value)${opts.rerender ? '; renderFmTab()' : ''}">${opts.options.map(([val, l]) => `<option value="${escapeAttr(val)}" ${String(v ?? '') === String(val) ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+    return `<input class="modal-input" type="${type}"${ph} value="${escapeAttr(v ?? '')}" oninput="fmSetPath('${path}', this.value)">`;
+  }
+  const fmRow = (label, control, help) => `<div class="fm-row"><label class="modal-label">${label}</label>${control}${help ? `<div class="fm-help">${help}</div>` : ''}</div>`;
+
+  function renderFmTab(){
+    const body = document.getElementById('fmTabBody');
+    const f = fmCurrent;
+    if (fmTab === 'general') {
+      const clients = [['', 'Instinto Digital (agência)'], ...ovActiveAccounts().map(a => [a.id, a.name])];
+      body.innerHTML = `
+        <div class="panel fm-panel">
+          <div class="panel-head"><h3>Tela de apresentação</h3></div>
+          ${fmInput('welcome.enabled', { type:'checkbox', label:'Mostrar tela de apresentação antes das perguntas', rerender:true })}
+          ${f.welcome.enabled ? `
+            ${fmRow('Título', fmInput('welcome.title', { placeholder:'Ex.: Descubra em 1 minuto se você se encaixa' }))}
+            ${fmRow('Texto de apoio', fmInput('welcome.text', { type:'textarea', rows:4 }))}
+            <div class="fm-2col">
+              ${fmRow('Imagem (link)', fmInput('welcome.imageUrl', { placeholder:'https://…/imagem.jpg' }), 'Cole o link de uma imagem (ex.: do Drive público, do site ou do Instagram).')}
+              ${fmRow('Texto do botão', fmInput('welcome.buttonText', { placeholder:'Começar' }))}
+            </div>` : '<div class="fm-help">Desligado: o formulário abre direto na primeira pergunta.</div>'}
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><h3>Aparência</h3></div>
+          <div class="fm-2col">
+            ${fmRow('Tema', fmInput('theme.mode', { type:'select', options:[['dark','Escuro'],['light','Claro']] }))}
+            ${fmRow('Cor principal', fmInput('theme.accent', { type:'color' }))}
+          </div>
+          ${fmRow('Logo (link, opcional)', fmInput('theme.logoUrl', { placeholder:'https://…/logo.png' }), 'Aparece no canto superior esquerdo.')}
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><h3>Organização</h3></div>
+          ${fmRow('Cliente', fmInput('clientId', { type:'select', options: clients }), 'Só pra organizar a lista. Não muda nada no formulário.')}
+          ${fmRow('Política de privacidade (link)', fmInput('privacyUrl', { placeholder:'https://…/privacidade' }), 'Recomendado pela LGPD quando o formulário pede contato.')}
+        </div>`;
+    } else if (fmTab === 'fields') {
+      renderFmFields();
+    } else if (fmTab === 'scoring') {
+      renderFmScoring();
+    } else if (fmTab === 'endings') {
+      body.innerHTML = `
+        <div class="panel fm-panel">
+          <div class="panel-head"><div><h3>Tela final — lead aprovado</h3><div class="panel-head-sub">O que aparece depois do envio (ou pra todo mundo, se não houver qualificação).</div></div></div>
+          ${fmRow('Título', fmInput('ending.title'))}
+          ${fmRow('Texto', fmInput('ending.text', { type:'textarea' }))}
+          <div class="fm-2col">
+            ${fmRow('Botão de WhatsApp (número com DDD)', fmInput('ending.whatsapp', { placeholder:'5511999999999' }), 'Mostra um botão "Falar no WhatsApp".')}
+            ${fmRow('Mensagem pronta do WhatsApp', fmInput('ending.whatsappText', { placeholder:'Oi! Acabei de responder o formulário.' }))}
+          </div>
+          <div class="fm-2col">
+            ${fmRow('Botão extra — texto', fmInput('ending.buttonText', { placeholder:'Ver o site' }))}
+            ${fmRow('Botão extra — link', fmInput('ending.buttonUrl', { placeholder:'https://…' }))}
+          </div>
+          ${fmRow('Redirecionar automaticamente para', fmInput('ending.redirectUrl', { placeholder:'https://… (opcional)' }), 'Se preencher, o lead é levado pra esse link 2 segundos depois.')}
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><div><h3>Tela final — lead desqualificado</h3><div class="panel-head-sub">Usada quando a pontuação fica abaixo do mínimo ou quando ele escolhe uma opção que desqualifica.</div></div></div>
+          ${fmRow('Título', fmInput('endingDisqualified.title'))}
+          ${fmRow('Texto', fmInput('endingDisqualified.text', { type:'textarea' }))}
+          ${fmRow('Redirecionar automaticamente para', fmInput('endingDisqualified.redirectUrl', { placeholder:'https://… (opcional)' }))}
+        </div>`;
+    } else if (fmTab === 'tracking') {
+      const t = f.tracking;
+      body.innerHTML = `
+        <div class="panel fm-panel">
+          <div class="panel-head"><div><h3>Pixel da Meta</h3><div class="panel-head-sub">Carregado só nesta página do formulário.</div></div></div>
+          ${fmRow('ID do Pixel', fmInput('tracking.metaPixelId', { placeholder:'123456789012345' }))}
+          <div class="fm-2col">
+            ${fmRow('Token da API de Conversões (opcional)', `<input class="modal-input" type="password" placeholder="${t.capiToken === '__keep__' ? '•••••• salvo — deixe assim pra manter' : 'Cole o token gerado no Gerenciador de Eventos'}" value="" oninput="fmSetPath('tracking.capiToken', this.value || '${t.capiToken === '__keep__' ? '__keep__' : ''}')">`, 'Manda o Lead também pelo servidor (não é bloqueado por navegador), sem contar em dobro.')}
+            ${fmRow('Código de teste (opcional)', fmInput('tracking.capiTestCode', { placeholder:'TEST12345' }), 'Do Gerenciador de Eventos → Testar eventos. Apague depois de testar.')}
+          </div>
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><div><h3>Eventos disparados</h3><div class="panel-head-sub">Nomes padrão da Meta (Lead, CompleteRegistration, Contact…) viram eventos padrão; qualquer outro nome vira evento personalizado.</div></div></div>
+          <div class="fm-events">
+            <div><b>PageView</b><span>quando o formulário abre</span></div>
+            <div>${fmInput('tracking.startEvent')}<span>quando a pessoa começa a responder</span></div>
+            <div>${fmInput('tracking.leadEvent')}<span>quando envia o formulário</span></div>
+            <div>${fmInput('tracking.qualifiedEvent')}<span>quando envia e está qualificado</span></div>
+            <div>${fmInput('tracking.disqualifiedEvent')}<span>quando envia e foi desqualificado</span></div>
+          </div>
+          ${fmInput('tracking.stepEvents', { type:'checkbox', label:'Disparar <b>EtapaFormulario</b> a cada pergunta respondida (pra ver onde as pessoas desistem)' })}
+          <div class="fm-help" style="margin-top:10px;">Cada opção de resposta também pode disparar um evento próprio — configure em <b>Perguntas</b> (campo "Evento do Meta" da opção).</div>
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><h3>Google</h3></div>
+          <div class="fm-2col">
+            ${fmRow('ID do GA4 (opcional)', fmInput('tracking.ga4Id', { placeholder:'G-XXXXXXXXXX' }), 'Envia form_start, generate_lead e lead_qualificado.')}
+            ${fmRow('ID do Google Tag Manager (opcional)', fmInput('tracking.gtmId', { placeholder:'GTM-XXXXXXX' }), 'Os eventos também vão pro dataLayer: form_view, form_start, form_step, form_submit, lead_qualified.')}
+          </div>
+        </div>`;
+    } else if (fmTab === 'share') {
+      const url = FORM_BASE_URL + f.slug;
+      const embed = `<iframe src="${url}" style="width:100%;height:620px;border:0;border-radius:12px;" allow="clipboard-write"></iframe>`;
+      body.innerHTML = `
+        ${f.status !== 'published' ? '<div class="offline-banner" style="display:flex; margin-bottom:14px;">⚠ Este formulário está em rascunho — o link só funciona depois de mudar pra "Publicado" e salvar.</div>' : ''}
+        <div class="panel fm-panel">
+          <div class="panel-head"><h3>Link do formulário</h3></div>
+          <div class="fm-link-row"><code id="fmLinkText">${escapeHtml(url)}</code><button type="button" class="btn-add" onclick="fmCopy(document.getElementById('fmLinkText').textContent, this)">Copiar</button>${f.status === 'published' ? `<a class="btn-cancel" href="${escapeAttr(url)}" target="_blank" rel="noopener">Abrir ↗</a>` : ''}</div>
+          ${fmRow('Endereço (depois de /f/)', `<input class="modal-input" value="${escapeAttr(f.slug)}" oninput="fmSetPath('slug', this.value)">`, 'Só letras, números e hífen. Mudar o endereço quebra links já divulgados.')}
+          <div class="fm-help" style="margin-top:12px;">Nos anúncios, acrescente as UTMs no link (ex.: <code>?utm_source=meta&amp;utm_campaign=nome</code>) — elas ficam salvas em cada resposta.</div>
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><div><h3>Colocar dentro de um site</h3><div class="panel-head-sub">Cole este código na página onde o formulário deve aparecer.</div></div></div>
+          <div class="fm-link-row"><code id="fmEmbedText">${escapeHtml(embed)}</code><button type="button" class="btn-add" onclick="fmCopy(document.getElementById('fmEmbedText').textContent, this)">Copiar</button></div>
+        </div>
+        <div class="panel fm-panel">
+          <div class="panel-head"><h3>Pra onde vão as respostas</h3></div>
+          ${fmInput('integrations.createCrmLead', { type:'checkbox', label:'Criar um lead no <b>Captação & CRM</b> a cada resposta (com pontuação e temperatura)' })}
+          ${fmRow('Webhook (opcional)', fmInput('integrations.webhookUrl', { placeholder:'https://hooks.zapier.com/…' }), 'Manda cada resposta pra Zapier, Make, n8n ou o CRM do cliente (só https).')}
+        </div>`;
+    } else if (fmTab === 'responses') {
+      renderFmResponses();
+    }
+  }
+
+  /* ---------- Perguntas ---------- */
+  function fmWarnings(){
+    const f = fmCurrent, w = [];
+    const usesDisq = f.scoring.enabled || f.fields.some(x => (x.options || []).some(o => o.qualification === 'disqualifies' || o.goTo === 'end_disqualified'));
+    if (!f.fields.some(x => x.type !== 'statement')) w.push(['err', 'Adicione pelo menos uma pergunta.']);
+    if (!f.fields.some(x => x.mapTo === 'phone' || x.mapTo === 'email' || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'O formulário não pede WhatsApp nem e-mail — o lead chega sem contato.']);
+    if (usesDisq && !f.endingDisqualified.title) w.push(['err', 'Existe desqualificação, mas a tela final de desqualificado está sem título (aba Telas finais).']);
+    if (!f.privacyUrl && f.fields.some(x => x.mapTo || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'Coleta contato sem link de política de privacidade (LGPD) — recomendado configurar na aba Geral.']);
+    const ids = new Set(f.fields.map(x => x.id));
+    f.fields.forEach((x, i) => (x.options || []).forEach(o => { if (o.goTo && !['next','end','end_disqualified'].includes(o.goTo) && !ids.has(o.goTo)) w.push(['err', `Pergunta ${i + 1}: a opção "${o.label}" leva pra uma pergunta que não existe mais.`]); }));
+    return w;
+  }
+
+  function fmGoToOptions(idx){
+    const f = fmCurrent;
+    return [['next', 'Seguir pra próxima'], ...f.fields.map((x, i) => i === idx ? null : [x.id, `Ir pra ${i + 1}. ${(x.label || '').slice(0, 40)}`]).filter(Boolean), ['end', 'Encerrar (enviar)'], ['end_disqualified', 'Encerrar como desqualificado']];
+  }
+
+  function renderFmFields(){
+    const f = fmCurrent;
+    const warns = fmWarnings();
+    const card = (x, i) => {
+      const p = `fields.${i}`;
+      const opts = fmHasOptions(x.type) ? `
+        <div class="fm-opts-head">Opções${f.scoring.enabled ? ' · pontos contam na qualificação' : ''}</div>
+        ${(x.options || []).map((o, k) => `
+          <div class="fm-opt">
+            <div class="fm-opt-top">
+              <span class="fm-opt-letter">${String.fromCharCode(65 + k)}</span>
+              <input class="modal-input" value="${escapeAttr(o.label)}" placeholder="Texto da opção" oninput="fmSetPath('${p}.options.${k}.label', this.value)" ${x.type === 'yes_no' ? '' : ''}>
+              ${x.type === 'yes_no' ? '' : `<button type="button" class="fm-icon-btn" title="Remover opção" onclick="fmRemoveOption(${i}, ${k})">✕</button>`}
+            </div>
+            <div class="fm-opt-grid">
+              <div><label>Pontos</label><input class="modal-input" type="number" value="${escapeAttr(o.points ?? 0)}" oninput="fmSetPath('${p}.options.${k}.points', Number(this.value) || 0)"></div>
+              <div><label>Qualificação</label><select class="modal-input" onchange="fmSetPath('${p}.options.${k}.qualification', this.value)">${[['neutral','Neutro'],['qualifies','Qualifica'],['disqualifies','Desqualifica']].map(([v, l]) => `<option value="${v}" ${o.qualification === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+              <div><label>Depois</label><select class="modal-input" onchange="fmSetPath('${p}.options.${k}.goTo', this.value)">${fmGoToOptions(i).map(([v, l]) => `<option value="${escapeAttr(v)}" ${o.goTo === v ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select></div>
+              <div><label>Evento do Meta</label><input class="modal-input" value="${escapeAttr(o.metaEvent || '')}" placeholder="ex.: LeadQuente" oninput="fmSetPath('${p}.options.${k}.metaEvent', this.value.replace(/[^A-Za-z0-9_]/g, ''))"></div>
+            </div>
+          </div>`).join('')}
+        ${x.type === 'yes_no' ? '' : `<button type="button" class="fm-add-opt" onclick="fmAddOption(${i})">+ Opção</button>`}` : '';
+      return `<div class="fm-field" id="fmField_${i}">
+        <div class="fm-field-head">
+          <span class="fm-field-num">${i + 1}</span>
+          <span class="fm-field-title">${escapeHtml(x.label || 'Pergunta sem título')}</span>
+          ${x.required ? '<span class="fm-req">Obrigatória</span>' : ''}
+          <div class="fm-field-tools">
+            <button type="button" class="fm-icon-btn" title="Subir" ${i === 0 ? 'disabled' : ''} onclick="fmMoveField(${i}, -1)">↑</button>
+            <button type="button" class="fm-icon-btn" title="Descer" ${i === f.fields.length - 1 ? 'disabled' : ''} onclick="fmMoveField(${i}, 1)">↓</button>
+            <button type="button" class="fm-icon-btn" title="Duplicar" onclick="fmDuplicateField(${i})">⧉</button>
+            <button type="button" class="fm-icon-btn danger" title="Excluir" onclick="fmRemoveField(${i})">🗑</button>
+          </div>
+        </div>
+        <div class="fm-2col">
+          <div class="fm-row"><label class="modal-label">Pergunta</label><input class="modal-input" value="${escapeAttr(x.label)}" oninput="fmSetPath('${p}.label', this.value); this.closest('.fm-field').querySelector('.fm-field-title').textContent = this.value || 'Pergunta sem título'"></div>
+          <div class="fm-row"><label class="modal-label">Tipo</label><select class="modal-input" onchange="fmChangeType(${i}, this.value)">${FM_TYPES.map(([v, l]) => `<option value="${v}" ${x.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        </div>
+        <div class="fm-row"><label class="modal-label">Descrição (opcional)</label><input class="modal-input" value="${escapeAttr(x.description || '')}" oninput="fmSetPath('${p}.description', this.value)"></div>
+        ${x.type === 'statement' ? '' : `<div class="fm-inline">
+          <label class="fm-check"><input type="checkbox" ${x.required ? 'checked' : ''} onchange="fmSetPath('${p}.required', this.checked); renderFmFields()"> Obrigatória</label>
+          <label class="fm-inline-sel">Salvar como <select class="modal-input" onchange="fmSetPath('${p}.mapTo', this.value)">${FM_MAP.map(([v, l]) => `<option value="${v}" ${(x.mapTo || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          ${x.type === 'rating' ? `<label class="fm-inline-sel">Nota até <select class="modal-input" onchange="fmSetPath('${p}.max', Number(this.value))">${[3,4,5,7,10].map(n => `<option ${Number(x.max || 5) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
+          ${['short_text','long_text','email','phone','number'].includes(x.type) ? `<label class="fm-inline-sel">Exemplo no campo <input class="modal-input" value="${escapeAttr(x.placeholder || '')}" oninput="fmSetPath('${p}.placeholder', this.value)"></label>` : ''}
+        </div>`}
+        ${opts}
+        ${x.type === 'choice' || x.type === 'yes_no' ? '' : `<div class="fm-inline" style="margin-top:8px;"><label class="fm-inline-sel">Depois desta pergunta <select class="modal-input" onchange="fmSetPath('${p}.goTo', this.value)">${fmGoToOptions(i).map(([v, l]) => `<option value="${escapeAttr(v)}" ${(x.goTo || 'next') === v ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select></label></div>`}
+      </div>`;
+    };
+    document.getElementById('fmTabBody').innerHTML = `
+      ${warns.map(([k, m]) => `<div class="fm-warn ${k}">${k === 'err' ? '✕' : '⚠'} ${escapeHtml(m)}</div>`).join('')}
+      <div class="fm-fields">${f.fields.map(card).join('')}</div>
+      <div class="fm-add-row">
+        <span>Adicionar:</span>
+        ${[['short_text','Texto'],['phone','WhatsApp'],['email','E-mail'],['choice','Escolha única'],['multi_choice','Várias escolhas'],['yes_no','Sim/Não'],['rating','Nota'],['long_text','Texto longo'],['statement','Texto informativo']].map(([t, l]) => `<button type="button" class="chip" onclick="fmAddField('${t}')">+ ${l}</button>`).join('')}
+      </div>`;
+  }
+
+  function fmNewField(type){
+    const base = { id: fmUid(), type, label: '', description: '', required: type !== 'statement', placeholder: '', mapTo: type === 'phone' ? 'phone' : type === 'email' ? 'email' : '', goTo: 'next' };
+    if (type === 'choice' || type === 'multi_choice') base.options = [1, 2, 3].map(n => ({ id: fmUid(), label: `Opção ${n}`, points: 0, qualification: 'neutral', goTo: 'next', metaEvent: '' }));
+    if (type === 'yes_no') base.options = ['Sim', 'Não'].map(l => ({ id: fmUid(), label: l, points: 0, qualification: 'neutral', goTo: 'next', metaEvent: '' }));
+    if (type === 'rating') base.max = 5;
+    if (type === 'statement') base.label = 'Texto informativo';
+    return base;
+  }
+  function fmAddField(type){
+    fmCurrent.fields.push(fmNewField(type)); fmDirty(); renderFmFields();
+    const el = document.getElementById(`fmField_${fmCurrent.fields.length - 1}`);
+    if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.querySelector('input')?.focus(); }
+  }
+  function fmRemoveField(i){
+    if (!confirm('Excluir esta pergunta?')) return;
+    const removed = fmCurrent.fields.splice(i, 1)[0];
+    fmCurrent.fields.forEach(x => { if (x.goTo === removed.id) x.goTo = 'next'; (x.options || []).forEach(o => { if (o.goTo === removed.id) o.goTo = 'next'; }); });
+    fmDirty(); renderFmFields();
+  }
+  function fmDuplicateField(i){
+    const c = JSON.parse(JSON.stringify(fmCurrent.fields[i]));
+    c.id = fmUid(); (c.options || []).forEach(o => o.id = fmUid());
+    fmCurrent.fields.splice(i + 1, 0, c); fmDirty(); renderFmFields();
+  }
+  function fmMoveField(i, d){
+    const a = fmCurrent.fields, j = i + d;
+    if (j < 0 || j >= a.length) return;
+    [a[i], a[j]] = [a[j], a[i]]; fmDirty(); renderFmFields();
+  }
+  function fmChangeType(i, type){
+    const old = fmCurrent.fields[i];
+    const n = fmNewField(type);
+    n.id = old.id; n.label = old.label; n.description = old.description; n.required = type === 'statement' ? false : old.required;
+    if (fmHasOptions(type) && fmHasOptions(old.type) && type !== 'yes_no' && old.type !== 'yes_no') n.options = old.options;
+    if (!n.mapTo) n.mapTo = old.mapTo && !['phone','email'].includes(old.mapTo) ? old.mapTo : n.mapTo;
+    fmCurrent.fields[i] = n; fmDirty(); renderFmFields();
+  }
+  function fmAddOption(i){
+    const opts = fmCurrent.fields[i].options;
+    opts.push({ id: fmUid(), label: `Opção ${opts.length + 1}`, points: 0, qualification: 'neutral', goTo: 'next', metaEvent: '' });
+    fmDirty(); renderFmFields();
+  }
+  function fmRemoveOption(i, k){
+    if (fmCurrent.fields[i].options.length <= 1) return;
+    fmCurrent.fields[i].options.splice(k, 1); fmDirty(); renderFmFields();
+  }
+
+  /* ---------- Qualificação ---------- */
+  function fmScoreRange(){
+    let min = 0, max = 0;
+    fmCurrent.fields.forEach(x => {
+      if (!x.options || !x.options.length) return;
+      const pts = x.options.map(o => Number(o.points) || 0);
+      if (x.type === 'multi_choice') { max += pts.filter(p => p > 0).reduce((a, b) => a + b, 0); min += pts.filter(p => p < 0).reduce((a, b) => a + b, 0); }
+      else { max += Math.max(...pts); min += x.required ? Math.min(...pts) : Math.min(0, ...pts); }
+    });
+    return { min, max };
+  }
+  function fmRefreshScoring(){ const el = document.getElementById('fmScoreSummary'); if (el) el.innerHTML = fmScoreSummaryHtml(); }
+  function fmScoreSummaryHtml(){
+    const r = fmScoreRange(), s = fmCurrent.scoring;
+    return `Pontuação possível: de <b>${r.min}</b> a <b>${r.max}</b> pontos.${s.enabled ? ` Quem fizer menos de <b>${s.minScore}</b> é desqualificado.${s.minScore > r.max ? ' <span style="color:var(--red)">⚠ Ninguém consegue atingir esse mínimo.</span>' : ''}` : ''}`;
+  }
+  function renderFmScoring(){
+    const f = fmCurrent;
+    const rows = f.fields.map((x, i) => x.options ? `<tr><td><b>${i + 1}.</b> ${escapeHtml(x.label || 'Sem título')}</td><td>${x.options.map(o => `<span class="fm-pt ${o.qualification}">${escapeHtml(o.label)} · ${o.points || 0} pts${o.qualification === 'qualifies' ? ' · qualifica' : o.qualification === 'disqualifies' ? ' · desqualifica' : ''}</span>`).join(' ')}</td></tr>` : '').join('');
+    document.getElementById('fmTabBody').innerHTML = `
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Regra de pontuação</h3><div class="panel-head-sub">Soma os pontos das opções escolhidas. O cálculo é feito no servidor — o lead não vê os pontos.</div></div></div>
+        <div class="fm-inline">
+          ${fmInput('scoring.enabled', { type:'checkbox', label:'Desqualificar quando a pontuação final for menor que', rerender:true })}
+          <div style="width:110px;">${fmInput('scoring.minScore', { type:'number', rerender:true })}</div><span>pontos</span>
+        </div>
+        <div class="fm-help" id="fmScoreSummary" style="margin-top:10px;">${fmScoreSummaryHtml()}</div>
+      </div>
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Como cada resposta pontua</h3><div class="panel-head-sub">Pra mudar pontos, "Qualifica/Desqualifica" ou o caminho, edite em Perguntas.</div></div></div>
+        <div class="fm-help" style="margin-bottom:10px;">Um lead é <b>desqualificado</b> se escolher qualquer opção marcada como "Desqualifica", se cair em "Encerrar como desqualificado" ou se ficar abaixo da pontuação mínima. Os desqualificados veem a tela final própria e disparam o evento de desqualificado no pixel.</div>
+        <table class="mini-table fm-score-table"><tbody>${rows || '<tr><td>Nenhuma pergunta de escolha ainda.</td></tr>'}</tbody></table>
+      </div>`;
+  }
+
+  /* ---------- Respostas ---------- */
+  async function renderFmResponses(){
+    const body = document.getElementById('fmTabBody');
+    const s = fmCurrent.stats || { views:0, starts:0, completes:0, qualified:0 };
+    const k = (label, value, sub) => `<div class="kpi2"><div class="kpi2-label">${label}</div><div class="kpi2-value">${value}</div><div class="kpi2-prev">${sub || ''}</div></div>`;
+    body.innerHTML = `<div class="kpi2-grid">
+        ${k('Visitas', intFmt(s.views), 'abriram o link')}
+        ${k('Começaram', intFmt(s.starts), `${fmPct(fmRate(s.starts, s.views))} das visitas`)}
+        ${k('Enviaram', intFmt(s.completes), `${fmPct(fmRate(s.completes, s.starts))} de quem começou`)}
+        ${k('Qualificados', intFmt(s.qualified), `${fmPct(fmRate(s.qualified, s.completes))} dos envios`)}
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Respostas</h3><div class="panel-head-sub">Clique numa linha pra ver tudo que a pessoa respondeu</div></div><button type="button" class="btn-cancel" onclick="fmDownloadCsv()">⬇ Baixar planilha (CSV)</button></div>
+        <div id="fmRespList"><div class="footnote" style="border:none; padding:0;">Carregando…</div></div>
+      </div>`;
+    try {
+      fmResponses = await fmApi(`/${fmCurrent.id}/responses`);
+    } catch (e) {
+      document.getElementById('fmRespList').innerHTML = `<div class="offline-banner" style="display:flex;">⚠ ${escapeHtml(e.message)}</div>`;
+      return;
+    }
+    const list = fmResponses || [];
+    if (!list.length) { document.getElementById('fmRespList').innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhuma resposta ainda.</div>'; return; }
+    document.getElementById('fmRespList').innerHTML = `<div class="fm-resp-list">${list.map((r, i) => {
+      const q = r.result || {};
+      const tag = !q.usesQualification ? '' : q.qualified ? '<span class="fm-status published">Qualificado</span>' : '<span class="fm-status disq">Desqualificado</span>';
+      const c = r.contact || {};
+      return `<details class="fm-resp">
+        <summary>
+          <div><b>${escapeHtml(c.name || 'Sem nome')}</b><span>${escapeHtml(c.phone || c.email || '')}</span></div>
+          <div class="fm-resp-meta">${tag}${q.usesQualification ? `<span>${q.score} pts</span>` : ''}<span>${new Date(r.createdAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}</span></div>
+        </summary>
+        <div class="fm-resp-body">
+          ${(r.readable || []).map(a => `<div class="fm-qa"><div>${escapeHtml(a.question)}</div><b>${escapeHtml(a.answer)}</b></div>`).join('')}
+          ${q.reasons && q.reasons.length ? `<div class="fm-help">Motivo: ${escapeHtml(q.reasons.join(' · '))}</div>` : ''}
+          ${r.meta && (r.meta.utm_source || r.meta.utm_campaign) ? `<div class="fm-help">Origem: ${escapeHtml([r.meta.utm_source, r.meta.utm_medium, r.meta.utm_campaign, r.meta.utm_content].filter(Boolean).join(' · '))}</div>` : ''}
+          ${c.phone ? `<a class="btn-add" style="display:inline-block; margin-top:8px; text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/${escapeAttr((c.phone.replace(/\D/g, '').length <= 11 ? '55' : '') + c.phone.replace(/\D/g, ''))}">Chamar no WhatsApp</a>` : ''}
+        </div>
+      </details>`;
+    }).join('')}</div>`;
+  }
+  async function fmDownloadCsv(){
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/forms/${fmCurrent.id}/responses?format=csv`, { headers: authHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `respostas-${fmCurrent.slug}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch (e) { alert(`Não consegui baixar: ${e.message}`); }
+  }
+
+  /* ---------- Prévia ---------- */
+  function fmOpenPreview(){
+    const box = document.getElementById('fmPreview');
+    const frame = document.getElementById('fmPreviewFrame');
+    box.classList.add('open');
+    fmPreviewSize('mobile');
+    frame.src = `form.html?preview=1&t=${Date.now()}`;
+  }
+  function fmClosePreview(){
+    document.getElementById('fmPreview').classList.remove('open');
+    document.getElementById('fmPreviewFrame').src = 'about:blank';
+  }
+  function fmPreviewSize(size){
+    document.querySelectorAll('.fm-preview-sizes .chip').forEach(b => b.classList.toggle('active', b.dataset.size === size));
+    document.getElementById('fmPreview').classList.toggle('desktop', size === 'desktop');
+  }
+  window.addEventListener('message', (ev) => {
+    if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'instinto-form-preview-ready' || !fmCurrent) return;
+    const frame = document.getElementById('fmPreviewFrame');
+    frame.contentWindow.postMessage({ type: 'instinto-form-preview', form: JSON.parse(JSON.stringify(fmCurrent)) }, location.origin);
+  });
+  window.addEventListener('beforeunload', (e) => { if (fmIsDirty) { e.preventDefault(); e.returnValue = ''; } });
 
   /* ===================== Visão geral (dados reais dos clientes) ===================== */
   const OV_SEL_KEY = 'instintoDashOvClients';

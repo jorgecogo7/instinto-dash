@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Formulário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#FF5A1E;
+    --bg:#0E1014; --bg2:#171A20; --line:#2A2F38; --text:#F2F4F7; --dim:#9AA2AE; --opt:#1C2028;
+  }
+  :root[data-mode="light"]{
+    --bg:#F6F7FB; --bg2:#FFFFFF; --line:#E3E6EE; --text:#151B2E; --dim:#6B7487; --opt:#FFFFFF;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ background:var(--bg); color:var(--text); font-family:'Inter', -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden; }
+  .progress{ position:fixed; top:0; left:0; right:0; height:4px; background:color-mix(in srgb, var(--accent) 15%, transparent); z-index:10; }
+  .progress-bar{ height:100%; width:0; background:var(--accent); transition:width .45s cubic-bezier(.2,.8,.2,1); }
+  .brand-logo{ position:fixed; top:18px; left:22px; height:30px; z-index:9; }
+  .badge-preview{ position:fixed; top:14px; right:16px; z-index:11; font-size:11px; font-weight:700; letter-spacing:.6px; padding:5px 10px; border-radius:999px; background:var(--accent); color:#fff; }
+  .stage{ position:relative; height:100%; height:100dvh; overflow:hidden; }
+  .screen{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:72px 22px 96px; overflow-y:auto;
+    opacity:0; transform:translateY(40px); transition:opacity .4s ease, transform .45s cubic-bezier(.2,.8,.2,1); pointer-events:none; }
+  .screen.active{ opacity:1; transform:none; pointer-events:auto; }
+  .screen.leave-up{ opacity:0; transform:translateY(-40px); }
+  .card{ width:100%; max-width:640px; margin:auto 0; }
+  .q-num{ display:flex; align-items:center; gap:8px; font-size:14px; color:var(--accent); font-weight:700; margin-bottom:10px; }
+  .q-title{ font-size:clamp(21px, 4.6vw, 30px); line-height:1.25; font-weight:700; letter-spacing:-.3px; }
+  .q-title .req{ color:var(--accent); }
+  .q-desc{ font-size:clamp(15px, 3.6vw, 18px); color:var(--dim); margin-top:10px; line-height:1.5; white-space:pre-line; }
+  .welcome-img{ width:100%; max-height:42vh; object-fit:cover; border-radius:16px; margin-bottom:22px; display:block; }
+  .w-title{ font-size:clamp(25px, 6vw, 38px); line-height:1.15; font-weight:800; letter-spacing:-.6px; }
+  .w-text{ font-size:clamp(15px, 3.8vw, 19px); color:var(--dim); margin-top:14px; line-height:1.55; white-space:pre-line; }
+  .input{ width:100%; margin-top:26px; background:transparent; border:none; border-bottom:2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    color:var(--text); font-size:clamp(20px, 5vw, 26px); font-family:inherit; padding:8px 2px 10px; outline:none; transition:border-color .2s; border-radius:0; }
+  .input:focus{ border-bottom-color:var(--accent); }
+  .input::placeholder{ color:color-mix(in srgb, var(--dim) 55%, transparent); }
+  textarea.input{ resize:none; min-height:110px; line-height:1.4; }
+  .opts{ display:flex; flex-direction:column; gap:10px; margin-top:24px; max-width:520px; }
+  .opt{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; font-family:inherit; font-size:clamp(16px, 4vw, 18px); color:var(--text);
+    background:color-mix(in srgb, var(--accent) 7%, var(--opt)); border:1.5px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius:10px; padding:13px 14px; cursor:pointer;
+    transition:background .15s, border-color .15s, transform .1s; }
+  .opt:hover{ background:color-mix(in srgb, var(--accent) 16%, var(--opt)); }
+  .opt:active{ transform:scale(.99); }
+  .opt .key{ flex-shrink:0; width:26px; height:26px; border-radius:6px; border:1.5px solid color-mix(in srgb, var(--accent) 55%, var(--line)); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:var(--accent); background:var(--bg2); }
+  .opt.selected{ background:color-mix(in srgb, var(--accent) 22%, var(--opt)); border-color:var(--accent); }
+  .opt.selected .key{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .opt .check{ margin-left:auto; opacity:0; color:var(--accent); font-weight:800; }
+  .opt.selected .check{ opacity:1; }
+  .flash{ animation:flash .32s ease 2; }
+  @keyframes flash{ 50%{ background:color-mix(in srgb, var(--accent) 40%, var(--opt)); } }
+  .rating{ display:flex; gap:8px; margin-top:26px; flex-wrap:wrap; }
+  .rating .opt{ width:auto; min-width:52px; justify-content:center; padding:14px 0; font-weight:700; flex:1; }
+  .actions{ display:flex; align-items:center; gap:14px; margin-top:28px; flex-wrap:wrap; }
+  .btn{ font-family:inherit; font-size:17px; font-weight:700; color:#fff; background:var(--accent); border:none; border-radius:10px; padding:13px 26px; cursor:pointer;
+    box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent); transition:filter .15s, transform .1s; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn:active{ transform:scale(.98); }
+  .btn[disabled]{ opacity:.6; cursor:wait; }
+  .btn.ghost{ background:transparent; color:var(--text); border:1.5px solid var(--line); box-shadow:none; }
+  .btn.wa{ background:#22C55E; box-shadow:0 6px 18px rgba(34,197,94,.35); }
+  .hint{ font-size:13px; color:var(--dim); }
+  .hint b{ font-weight:600; }
+  .err{ margin-top:14px; font-size:14px; color:#fff; background:#E5484D; display:inline-block; padding:7px 12px; border-radius:8px; }
+  .nav{ position:fixed; right:18px; bottom:18px; display:flex; gap:2px; z-index:10; border-radius:10px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,.18); }
+  .nav button{ width:44px; height:40px; border:none; background:var(--accent); color:#fff; font-size:18px; cursor:pointer; font-family:inherit; }
+  .nav button:disabled{ opacity:.45; cursor:default; }
+  .powered{ position:fixed; left:18px; bottom:22px; font-size:12px; color:var(--dim); z-index:9; }
+  .privacy{ font-size:12.5px; color:var(--dim); margin-top:18px; }
+  .privacy a{ color:var(--dim); }
+  .end-icon{ width:62px; height:62px; border-radius:50%; background:color-mix(in srgb, var(--accent) 18%, transparent); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:30px; margin-bottom:20px; }
+  .center-msg{ text-align:center; color:var(--dim); font-size:16px; }
+  .spinner{ width:34px; height:34px; border-radius:50%; border:3px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color:var(--accent); animation:spin .8s linear infinite; margin:0 auto 14px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (max-width: 600px){
+    .screen{ padding:64px 20px 110px; align-items:flex-start; }
+    .card{ margin-top:6vh; }
+    .hint.kbd{ display:none; }
+    .powered{ display:none; }
+    .actions .btn{ flex:1; justify-content:center; }
+    .nav{ right:12px; bottom:14px; }
+  }
+  .hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+</style>
+</head>
+<body>
+<div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+<div class="stage" id="stage">
+  <div class="screen active"><div class="card center-msg"><div class="spinner"></div>Carregando…</div></div>
+</div>
+<div class="nav" id="nav" style="display:none;">
+  <button type="button" id="navUp" aria-label="Pergunta anterior">↑</button>
+  <button type="button" id="navDown" aria-label="Próxima pergunta">↓</button>
+</div>
+<input class="hp" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+<script>
+(function(){
+  // Mesmo servidor do Dash.
+  var API = 'https://api.instintodigital.com.br';
+  var params = new URLSearchParams(location.search);
+  var slug = params.get('f') || (location.pathname.match(/\/f\/([a-z0-9-]+)/i) || [])[1] || '';
+  var PREVIEW = params.get('preview') === '1';
+
+  var form = null;               // definição
+  var order = [];                // perguntas (sem nada removido)
+  var answers = {};              // fieldId -> valor
+  var history = [];              // índices visitados (pra voltar)
+  var current = -1;              // -1 = boas-vindas
+  var started = false;
+  var submitting = false;
+  var session = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+  var stage = document.getElementById('stage');
+  var bar = document.getElementById('progressBar');
+  var nav = document.getElementById('nav');
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  /* ---------------- Rastreamento (Pixel da Meta, GA4, GTM) ---------------- */
+  var STANDARD = ['AddPaymentInfo','AddToCart','AddToWishlist','CompleteRegistration','Contact','CustomizeProduct','Donate','FindLocation','InitiateCheckout','Lead','Purchase','Schedule','Search','StartTrial','SubmitApplication','Subscribe','ViewContent'];
+  window.dataLayer = window.dataLayer || [];
+  function dl(event, data){ if (PREVIEW) return; var o = { event: event, form_slug: slug }; for (var k in (data||{})) o[k] = data[k]; window.dataLayer.push(o); }
+  function fb(name, data, eventId){
+    if (PREVIEW || !window.fbq || !name) return;
+    var opts = eventId ? { eventID: eventId } : undefined;
+    if (STANDARD.indexOf(name) >= 0) window.fbq('track', name, data || {}, opts);
+    else window.fbq('trackCustom', name, data || {}, opts);
+  }
+  function ga(name, data){ if (PREVIEW || !window.gtag) return; window.gtag('event', name, data || {}); }
+
+  function loadTracking(t){
+    if (PREVIEW || !t) return;
+    if (t.metaPixelId) {
+      !function(f,b,e,v,n,t2,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t2=b.createElement(e);t2.async=!0;t2.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t2,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', t.metaPixelId);
+      window.fbq('track', 'PageView');
+    }
+    if (t.ga4Id) {
+      var g = document.createElement('script'); g.async = true; g.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(t.ga4Id); document.head.appendChild(g);
+      window.gtag = function(){ window.dataLayer.push(arguments); };
+      window.gtag('js', new Date()); window.gtag('config', t.ga4Id);
+    }
+    if (t.gtmId) {
+      window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      var m = document.createElement('script'); m.async = true; m.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(t.gtmId); document.head.appendChild(m);
+    }
+  }
+  function cookie(name){ var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : undefined; }
+  function trackingMeta(){
+    var fbc = cookie('_fbc');
+    if (!fbc && params.get('fbclid')) fbc = 'fb.1.' + Date.now() + '.' + params.get('fbclid');
+    return {
+      utm_source: params.get('utm_source') || undefined, utm_medium: params.get('utm_medium') || undefined,
+      utm_campaign: params.get('utm_campaign') || undefined, utm_content: params.get('utm_content') || undefined,
+      utm_term: params.get('utm_term') || undefined, fbclid: params.get('fbclid') || undefined, gclid: params.get('gclid') || undefined,
+      referrer: document.referrer || undefined, url: location.href, fbp: cookie('_fbp'), fbc: fbc
+    };
+  }
+  function ping(type){
+    if (PREVIEW) return;
+    try { fetch(API + '/api/public/forms/' + encodeURIComponent(slug) + '/event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type: type }), keepalive: true }); } catch (e) {}
+  }
+  function markStarted(){
+    if (started) return;
+    started = true;
+    ping('start');
+    fb(form.tracking.startEvent, { form: slug });
+    ga('form_start', { form_slug: slug });
+    dl('form_start');
+  }
+
+  /* ---------------- Telas ---------------- */
+  function show(html, dir){
+    var old = stage.querySelector('.screen.active');
+    var el = document.createElement('div');
+    el.className = 'screen';
+    el.innerHTML = '<div class="card">' + html + '</div>';
+    if (dir === 'back') el.style.transform = 'translateY(-40px)';
+    stage.appendChild(el);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      el.style.transform = '';
+      el.classList.add('active');
+      if (old) {
+        old.classList.remove('active');
+        if (dir !== 'back') old.classList.add('leave-up'); else old.style.transform = 'translateY(40px)';
+        setTimeout(function(){ old.remove(); }, 450);
+      }
+    }); });
+    return el;
+  }
+  function setProgress(){
+    var total = order.length || 1;
+    var done = Math.max(0, current);
+    bar.style.width = (current >= order.length ? 100 : (done / total) * 100) + '%';
+  }
+  function letter(i){ return String.fromCharCode(65 + i); }
+
+  function renderWelcome(){
+    var w = form.welcome;
+    current = -1; setProgress(); nav.style.display = 'none';
+    var html = (w.imageUrl ? '<img class="welcome-img" src="' + esc(w.imageUrl) + '" alt="">' : '') +
+      '<div class="w-title">' + esc(w.title) + '</div>' +
+      (w.text ? '<div class="w-text">' + esc(w.text) + '</div>' : '') +
+      '<div class="actions"><button type="button" class="btn" id="startBtn">' + esc(w.buttonText || 'Começar') + ' →</button><span class="hint kbd">pressione <b>Enter ↵</b></span></div>' +
+      (form.privacyUrl ? '<div class="privacy">Ao continuar, você concorda com a nossa <a href="' + esc(form.privacyUrl) + '" target="_blank" rel="noopener">política de privacidade</a>.</div>' : '');
+    var el = show(html);
+    el.querySelector('#startBtn').onclick = function(){ markStarted(); go(0); };
+    keyHandler = function(e){ if (e.key === 'Enter') { markStarted(); go(0); } };
+  }
+
+  var keyHandler = null;
+  document.addEventListener('keydown', function(e){ if (keyHandler) keyHandler(e); });
+
+  function fieldNumber(i){
+    // Numeração só das perguntas (textos informativos não contam).
+    var n = 0;
+    for (var k = 0; k <= i; k++) if (order[k].type !== 'statement') n++;
+    return n;
+  }
+
+  function renderField(i, dir){
+    current = i; setProgress();
+    var f = order[i];
+    nav.style.display = 'flex';
+    document.getElementById('navUp').disabled = history.length === 0 && !form.welcome.enabled;
+    var html = (f.type !== 'statement' ? '<div class="q-num">' + fieldNumber(i) + ' →</div>' : '') +
+      '<div class="q-title">' + esc(f.label) + (f.required ? ' <span class="req">*</span>' : '') + '</div>' +
+      (f.description ? '<div class="q-desc">' + esc(f.description) + '</div>' : '');
+    var v = answers[f.id];
+    var isLast = i === order.length - 1;
+    var okLabel = isLast ? 'Enviar' : 'OK';
+
+    if (f.type === 'choice' || f.type === 'yes_no' || f.type === 'multi_choice') {
+      html += '<div class="opts">' + f.options.map(function(o, k){
+        var sel = f.type === 'multi_choice' ? (Array.isArray(v) && v.indexOf(o.id) >= 0) : v === o.id;
+        return '<button type="button" class="opt' + (sel ? ' selected' : '') + '" data-id="' + esc(o.id) + '"><span class="key">' + letter(k) + '</span><span>' + esc(o.label) + '</span><span class="check">✓</span></button>';
+      }).join('') + '</div>';
+      if (f.type === 'multi_choice') html += '<div class="hint" style="margin-top:12px;">Escolha quantas quiser</div><div class="actions"><button type="button" class="btn" id="okBtn">' + okLabel + ' ✓</button></div>';
+    } else if (f.type === 'rating') {
+      var max = f.max || 5;
+      html += '<div class="rating">';
+      for (var r = 1; r <= max; r++) html += '<button type="button" class="opt' + (v === r ? ' selected' : '') + '" data-val="' + r + '">' + r + '</button>';
+      html += '</div>';
+    } else if (f.type === 'statement') {
+      html += '<div class="actions"><button type="button" class="btn" id="okBtn">' + (isLast ? 'Enviar' : 'Continuar') + ' →</button><span class="hint kbd">pressione <b>Enter ↵</b></span></div>';
+    } else {
+      var t = { email:'email', phone:'tel', number:'number', date:'date' }[f.type] || 'text';
+      var ph = f.placeholder || { email:'nome@email.com', phone:'(11) 99999-9999', number:'0', short_text:'Digite sua resposta aqui…', long_text:'Digite sua resposta aqui…' }[f.type] || '';
+      var mode = f.type === 'phone' ? ' inputmode="tel" autocomplete="tel"' : f.type === 'email' ? ' inputmode="email" autocomplete="email"' : f.mapTo === 'name' ? ' autocomplete="name"' : '';
+      html += f.type === 'long_text'
+        ? '<textarea class="input" id="inp" placeholder="' + esc(ph) + '">' + esc(v || '') + '</textarea>'
+        : '<input class="input" id="inp" type="' + t + '"' + mode + ' placeholder="' + esc(ph) + '" value="' + esc(v == null ? '' : v) + '">';
+      html += '<div class="actions"><button type="button" class="btn" id="okBtn">' + okLabel + ' ✓</button><span class="hint kbd">' + (f.type === 'long_text' ? '<b>Shift + Enter ↵</b> pra nova linha' : 'pressione <b>Enter ↵</b>') + '</span></div>';
+    }
+    html += '<div id="errBox"></div>';
+    var el = show(html, dir);
+    bind(el, f, i);
+  }
+
+  function showErr(el, msg){ el.querySelector('#errBox').innerHTML = '<div class="err">⚠ ' + esc(msg) + '</div>'; }
+
+  function phoneMask(s){
+    var d = s.replace(/\D/g, '').slice(0, 13);
+    if (d.length > 11 && d.indexOf('55') === 0) d = d.slice(2);
+    if (d.length <= 2) return d ? '(' + d : '';
+    if (d.length <= 6) return '(' + d.slice(0,2) + ') ' + d.slice(2);
+    if (d.length <= 10) return '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
+    return '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7,11);
+  }
+
+  function validate(f, v){
+    var empty = v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
+    if (empty) return f.required ? 'Esta pergunta é obrigatória' : null;
+    if (f.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return 'Confira o e-mail — parece incompleto';
+    if (f.type === 'phone' && String(v).replace(/\D/g, '').length < 10) return 'Informe o telefone com DDD';
+    return null;
+  }
+
+  function bind(el, f, i){
+    var inp = el.querySelector('#inp');
+    var okBtn = el.querySelector('#okBtn');
+    if (inp) {
+      setTimeout(function(){ try { inp.focus({ preventScroll:true }); } catch (e) {} }, 420);
+      inp.addEventListener('input', function(){
+        if (f.type === 'phone') inp.value = phoneMask(inp.value);
+        if (!started && inp.value) markStarted();
+        el.querySelector('#errBox').innerHTML = '';
+      });
+    }
+    function commitInput(){
+      var v = inp ? inp.value.trim() : undefined;
+      if (f.type === 'number' && v !== '') v = Number(v);
+      var e = validate(f, v);
+      if (e) return showErr(el, e);
+      if (v === '' || v === undefined) delete answers[f.id]; else answers[f.id] = v;
+      advance(i, f.goTo);
+    }
+    if (okBtn) okBtn.onclick = function(){
+      if (f.type === 'multi_choice') {
+        var e = validate(f, answers[f.id]);
+        if (e) return showErr(el, e);
+        return advance(i, f.goTo);
+      }
+      if (f.type === 'statement') return advance(i, f.goTo);
+      commitInput();
+    };
+    var opts = el.querySelectorAll('.opt');
+    opts.forEach(function(b){
+      b.onclick = function(){
+        markStarted();
+        if (f.type === 'rating') {
+          answers[f.id] = Number(b.getAttribute('data-val'));
+          opts.forEach(function(x){ x.classList.toggle('selected', x === b); });
+          b.classList.add('flash');
+          return setTimeout(function(){ advance(i, f.goTo); }, 380);
+        }
+        var oid = b.getAttribute('data-id');
+        var o = f.options.filter(function(x){ return x.id === oid; })[0];
+        if (f.type === 'multi_choice') {
+          var arr = Array.isArray(answers[f.id]) ? answers[f.id].slice() : [];
+          var at = arr.indexOf(oid);
+          if (at >= 0) arr.splice(at, 1); else { arr.push(oid); if (o && o.metaEvent) fb(o.metaEvent, { form: slug, answer: o.label }); }
+          answers[f.id] = arr;
+          b.classList.toggle('selected');
+          el.querySelector('#errBox').innerHTML = '';
+          return;
+        }
+        answers[f.id] = oid;
+        opts.forEach(function(x){ x.classList.toggle('selected', x === b); });
+        b.classList.add('flash');
+        if (o && o.metaEvent) fb(o.metaEvent, { form: slug, answer: o.label });
+        setTimeout(function(){ advance(i, o ? o.goTo : 'next'); }, 380);
+      };
+    });
+    keyHandler = function(e){
+      if (submitting) return;
+      if (e.key === 'Enter' && !(f.type === 'long_text' && e.shiftKey)) {
+        if (okBtn) { e.preventDefault(); okBtn.click(); }
+        return;
+      }
+      if (opts.length && !inp && /^[a-z0-9]$/i.test(e.key) && !e.metaKey && !e.ctrlKey) {
+        var idx = f.type === 'rating' ? Number(e.key) - 1 : e.key.toUpperCase().charCodeAt(0) - 65;
+        if (f.type === 'rating' && e.key === '0') idx = 9;
+        if (opts[idx]) opts[idx].click();
+      }
+    };
+  }
+
+  function advance(i, goTo){
+    var f = order[i];
+    if (form.tracking.stepEvents && f.type !== 'statement') fb('EtapaFormulario', { form: slug, step: fieldNumber(i), question: f.label });
+    dl('form_step', { step: i + 1, question: f.label });
+    if (goTo === 'end' || goTo === 'end_disqualified') return submit();
+    var next = i + 1;
+    if (goTo && goTo !== 'next') {
+      for (var k = 0; k < order.length; k++) if (order[k].id === goTo) { next = k; break; }
+    }
+    if (next >= order.length) return submit();
+    history.push(i);
+    go(next);
+  }
+
+  function go(i, dir){ renderField(i, dir); }
+
+  function back(){
+    if (submitting) return;
+    if (history.length) { var prev = history.pop(); renderField(prev, 'back'); }
+    else if (form.welcome.enabled && current >= 0) renderWelcome();
+  }
+  document.getElementById('navUp').onclick = back;
+  document.getElementById('navDown').onclick = function(){
+    var b = stage.querySelector('.screen.active #okBtn');
+    if (b) b.click();
+    else if (order[current] && answers[order[current].id] !== undefined) advance(current, 'next');
+    else if (order[current] && !order[current].required) advance(current, 'next');
+  };
+
+  /* ---------------- Envio ---------------- */
+  function previewEvaluate(){
+    // Só na prévia do editor (o servidor é quem decide de verdade).
+    var score = 0, dis = false, uses = !!(form.scoring && form.scoring.enabled);
+    form.fields.forEach(function(f){
+      (f.options || []).forEach(function(o){
+        var picked = Array.isArray(answers[f.id]) ? answers[f.id].indexOf(o.id) >= 0 : answers[f.id] === o.id;
+        if (o.qualification && o.qualification !== 'neutral') uses = true;
+        if (o.goTo === 'end_disqualified') uses = true;
+        if (!picked) return;
+        score += Number(o.points) || 0;
+        if (o.qualification === 'disqualifies' || o.goTo === 'end_disqualified') dis = true;
+      });
+    });
+    if (form.scoring && form.scoring.enabled && score < Number(form.scoring.minScore || 0)) dis = true;
+    return { ok:true, qualified: uses && !dis, disqualified: dis, usesQualification: uses, score: score };
+  }
+
+  function submit(){
+    if (submitting) return;
+    submitting = true;
+    current = order.length; setProgress(); nav.style.display = 'none';
+    show('<div class="center-msg"><div class="spinner"></div>Enviando…</div>');
+    var leadId = 'lead-' + session, qId = 'q-' + session;
+    var done = function(res){
+      var contact = {};
+      fb(form.tracking.leadEvent, { form: slug }, leadId);
+      ga('generate_lead', { form_slug: slug });
+      dl('form_submit', { qualified: !!res.qualified });
+      if (res.usesQualification) {
+        fb(res.qualified ? form.tracking.qualifiedEvent : form.tracking.disqualifiedEvent, { form: slug }, qId);
+        ga(res.qualified ? 'lead_qualificado' : 'lead_desqualificado', { form_slug: slug });
+        dl(res.qualified ? 'lead_qualified' : 'lead_disqualified');
+      }
+      renderEnd(res);
+    };
+    if (PREVIEW) return setTimeout(function(){ done(previewEvaluate()); }, 500);
+    fetch(API + '/api/public/forms/' + encodeURIComponent(slug) + '/submit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ answers: answers, meta: trackingMeta(), eventIds: { lead: leadId, qualification: qId }, website: document.getElementById('hp').value })
+    }).then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.error || 'Erro ao enviar'); return j; }); })
+      .then(done)
+      .catch(function(err){
+        submitting = false;
+        var el = show('<div class="q-title">Não foi possível enviar</div><div class="q-desc">' + esc(err.message) + '</div><div class="actions"><button type="button" class="btn" id="retry">Tentar de novo</button></div>');
+        el.querySelector('#retry').onclick = submit;
+      });
+  }
+
+  function renderEnd(res){
+    keyHandler = null;
+    var e = res.disqualified ? form.endingDisqualified : form.ending;
+    var redirect = e.redirectUrl;
+    var html = '<div class="end-icon">' + (res.disqualified ? '✓' : '🎉') + '</div>' +
+      '<div class="w-title">' + esc(e.title) + '</div>' +
+      (e.text ? '<div class="w-text">' + esc(e.text) + '</div>' : '');
+    var acts = '';
+    if (!res.disqualified && form.ending.whatsapp) {
+      acts += '<a class="btn wa" href="https://wa.me/' + esc(form.ending.whatsapp) + (form.ending.whatsappText ? '?text=' + encodeURIComponent(form.ending.whatsappText) : '') + '" target="_blank" rel="noopener">Falar no WhatsApp</a>';
+    }
+    if (!res.disqualified && form.ending.buttonUrl) {
+      acts += '<a class="btn' + (acts ? ' ghost' : '') + '" href="' + esc(form.ending.buttonUrl) + '" target="_blank" rel="noopener">' + esc(form.ending.buttonText || 'Continuar') + '</a>';
+    }
+    if (redirect) acts += '<span class="hint">Redirecionando…</span>';
+    if (acts) html += '<div class="actions">' + acts + '</div>';
+    show(html);
+    if (redirect && !PREVIEW) setTimeout(function(){ location.href = redirect; }, 2200);
+  }
+
+  /* ---------------- Início ---------------- */
+  function start(def){
+    form = def;
+    order = form.fields || [];
+    document.documentElement.style.setProperty('--accent', (form.theme && form.theme.accent) || '#FF5A1E');
+    document.documentElement.setAttribute('data-mode', (form.theme && form.theme.mode) || 'dark');
+    document.title = (form.welcome && form.welcome.title) || 'Formulário';
+    if (form.theme && form.theme.logoUrl) {
+      var lg = document.createElement('img'); lg.className = 'brand-logo'; lg.src = form.theme.logoUrl; lg.alt = ''; document.body.appendChild(lg);
+    }
+    if (PREVIEW) { var b = document.createElement('div'); b.className = 'badge-preview'; b.textContent = 'PRÉVIA'; document.body.appendChild(b); }
+    loadTracking(form.tracking);
+    ping('view');
+    dl('form_view');
+    stage.innerHTML = '';
+    answers = {}; history = []; started = false; submitting = false;
+    if (!order.length) { show('<div class="center-msg">Este formulário ainda não tem perguntas.</div>'); return; }
+    if (form.welcome && form.welcome.enabled) renderWelcome(); else go(0);
+  }
+
+  if (PREVIEW) {
+    // O editor do Dash manda o formulário (ainda não salvo) por mensagem.
+    window.addEventListener('message', function(ev){
+      if (ev.origin !== location.origin) return;
+      if (ev.data && ev.data.type === 'instinto-form-preview') start(ev.data.form);
+    });
+    if (window.parent !== window) window.parent.postMessage({ type: 'instinto-form-preview-ready' }, location.origin);
+    else if (window.opener) window.opener.postMessage({ type: 'instinto-form-preview-ready' }, location.origin);
+    return;
+  }
+  if (!slug) { stage.innerHTML = '<div class="screen active"><div class="card center-msg">Link de formulário inválido.</div></div>'; return; }
+  fetch(API + '/api/public/forms/' + encodeURIComponent(slug))
+    .then(function(r){ return r.json().then(function(j){ if (!r.ok) throw new Error(j.error || 'Formulário indisponível'); return j; }); })
+    .then(start)
+    .catch(function(err){ stage.innerHTML = '<div class="screen active"><div class="card center-msg">' + esc(err.message) + '</div></div>'; });
+})();
+</script>
+</body>
+</html>
