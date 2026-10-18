@@ -1129,6 +1129,111 @@
   body.client-mode .client-detail-tabs{ display:none !important; }
   body.client-mode .ws-btn{ cursor:default; pointer-events:none; }
   body.client-mode .fm-name-input{ pointer-events:none; }
+
+  /* ===================== Relatório PDF ===================== */
+  .btn-report{ display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:8px; border:none; cursor:pointer;
+    background:linear-gradient(90deg, var(--flame), var(--amber)); color:#1a0e05; white-space:nowrap; }
+  .btn-report:hover{ filter:brightness(1.07); }
+  .cd-toolbar-right{ display:flex; align-items:center; gap:8px; }
+  .rp-modal{ display:none; position:fixed; inset:0; z-index:210; background:rgba(5,8,14,.65); backdrop-filter:blur(3px); align-items:center; justify-content:center; padding:16px; }
+  .rp-modal.open{ display:flex; }
+  .rp-modal-box{ width:min(520px, 100%); max-height:calc(100vh - 32px); overflow:auto; background:var(--bg-panel); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:0 30px 60px rgba(0,0,0,.4); }
+  .rp-modal-box h3{ font-size:17px; }
+  .rp-modal-sub{ font-size:12.5px; color:var(--text-dim); margin:4px 0 12px; }
+  .rp-modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; align-items:center; flex-wrap:wrap; }
+  .rp-status{ font-size:12.5px; color:var(--text-dim); margin-right:auto; }
+  #rpRender{ position:fixed; left:-12000px; top:0; width:794px; z-index:-1; }
+
+  .rp-page{ width:794px; height:1123px; background:#fff; color:#151B2E; font-family:'Inter','IBM Plex Sans',-apple-system,'Segoe UI',sans-serif; position:relative; overflow:hidden; display:flex; flex-direction:column; }
+  .rp-head{ display:flex; justify-content:space-between; align-items:center; padding:26px 40px 14px; border-bottom:3px solid #FF5A1E; }
+  .rp-brand{ display:flex; align-items:center; gap:9px; font-weight:800; font-size:14px; letter-spacing:.3px; }
+  .rp-brand img{ width:28px; height:28px; object-fit:contain; }
+  .rp-head-r{ text-align:right; font-size:13px; font-weight:700; }
+  .rp-head-r span{ display:block; font-size:10.5px; font-weight:600; color:#FF5A1E; text-transform:uppercase; letter-spacing:.8px; margin-top:2px; }
+  .rp-body{ flex:1; padding:22px 40px 10px; overflow:hidden; }
+  .rp-foot{ display:flex; justify-content:space-between; padding:12px 40px 20px; font-size:10px; color:#8A93A6; border-top:1px solid #EEF0F5; }
+  .rp-h1{ font-size:24px; font-weight:800; letter-spacing:-.4px; margin-bottom:4px; display:flex; align-items:center; gap:10px; }
+  .rp-lead{ font-size:12.5px; color:#6B7487; margin-bottom:16px; }
+  .rp-pf{ width:30px; height:30px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:15px; font-weight:800; }
+  .rp-pf.meta{ background:linear-gradient(135deg,#0866FF,#4C7EFF); }
+  .rp-pf.google{ background:linear-gradient(135deg,#4285F4,#34A853); }
+  .rp-pf.ig{ background:linear-gradient(135deg,#8B5CF6,#FF4F93); }
+  .rp-kpis{ display:grid; gap:10px; margin:12px 0 14px; }
+  .rp-kpis.k4{ grid-template-columns:repeat(2,1fr); }
+  .rp-kpis.k3{ grid-template-columns:repeat(3,1fr); }
+  .rp-kpis.k5{ grid-template-columns:repeat(5,1fr); }
+  .rp-kpi{ border:1px solid #E6E9F2; border-radius:12px; padding:11px 12px; background:#fff; border-top:3px solid #FF8A3D; }
+  .rp-kpi.big{ padding:16px; background:linear-gradient(180deg,#FFF6F0,#fff 70%); }
+  .rp-kpi-l{ font-size:9.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#6B7487; }
+  .rp-kpi-v{ font-size:19px; font-weight:800; margin-top:5px; letter-spacing:-.3px; }
+  .rp-kpi.big .rp-kpi-v{ font-size:28px; }
+  .rp-kpi-p{ font-size:10.5px; margin-top:4px; white-space:nowrap; }
+  .rp-kpi-a{ font-size:9.5px; color:#8A93A6; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rp-d{ margin-left:0 !important; }
+  .rp-d{ font-weight:700; margin-left:2px; }
+  .rp-d.good{ color:#16A36A; } .rp-d.bad{ color:#E5484D; } .rp-d.neutral{ color:#8A93A6; }
+  .rp-card{ border:1px solid #E6E9F2; border-radius:14px; padding:14px 16px; margin-bottom:12px; }
+  .rp-card-t{ font-size:13px; font-weight:700; margin-bottom:10px; }
+  .rp-legend{ display:flex; gap:16px; justify-content:center; font-size:10.5px; color:#6B7487; margin-top:2px; }
+  .rp-legend i{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+  .rp-bars{ display:flex; flex-direction:column; gap:7px; }
+  .rp-bar-row{ display:grid; grid-template-columns:120px 1fr 90px; gap:10px; align-items:center; font-size:11.5px; }
+  .rp-bar-l{ color:#4A5368; font-weight:600; }
+  .rp-bar-t{ height:14px; background:#F2F4F9; border-radius:7px; overflow:hidden; }
+  .rp-bar-t div{ height:100%; border-radius:7px; }
+  .rp-bar-v{ text-align:right; font-weight:700; }
+  .rp-table{ width:100%; border-collapse:collapse; font-size:11px; }
+  .rp-table th{ text-align:left; font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6B7487; padding:6px 6px; border-bottom:1.5px solid #E6E9F2; }
+  .rp-table td{ padding:7px 6px; border-bottom:1px solid #F0F2F7; }
+  .rp-table .n{ text-align:right; white-space:nowrap; }
+  .rp-table td:first-child{ font-weight:600; max-width:260px; }
+  .rp-2col{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .rp-box{ border-radius:14px; padding:14px 16px; margin-top:12px; font-size:12.5px; line-height:1.55; }
+  .rp-box ul{ padding-left:18px; } .rp-box li{ margin:3px 0; }
+  .rp-box-t{ font-weight:800; font-size:13px; margin-bottom:6px; }
+  .rp-box.good{ background:#EEFBF4; border:1px solid #C7EEDA; } .rp-box.good .rp-box-t{ color:#0E7A4D; }
+  .rp-box.warn{ background:#FFF7EA; border:1px solid #FBE1B4; } .rp-box.warn .rp-box-t{ color:#A86500; }
+  .rp-box.note{ background:#F4F6FF; border:1px solid #DCE3FF; } .rp-box.note .rp-box-t{ color:#2F6BFF; }
+  .rp-creatives{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .rp-cr{ border:1px solid #E6E9F2; border-radius:14px; overflow:hidden; }
+  .rp-cr-img{ height:200px; position:relative; background:linear-gradient(135deg,#FFE3D6,#DCE6FF); display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .rp-cr-img img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .rp-cr-img b{ position:absolute; top:8px; left:8px; background:#fff; color:#151B2E; font-size:11px; padding:2px 8px; border-radius:999px; }
+  .rp-cr-b{ padding:10px 11px 12px; }
+  .rp-cr-n{ font-size:11.5px; font-weight:700; height:30px; overflow:hidden; word-break:break-word; }
+  .rp-cr-g{ display:grid; grid-template-columns:1fr 1fr; gap:6px 8px; margin-top:6px; }
+  .rp-cr-g span{ display:block; font-size:8.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#8A93A6; }
+  .rp-cr-g b{ font-size:12.5px; }
+  .rp-ig{ display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:14px; background:linear-gradient(90deg,#8B5CF6,#FF4F93); color:#fff; margin:10px 0 4px; }
+  .rp-ig-av{ width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-weight:800; overflow:hidden; flex-shrink:0; }
+  .rp-ig-av img{ width:100%; height:100%; object-fit:cover; }
+  .rp-ig-n{ font-weight:800; font-size:15px; } .rp-ig-h{ font-size:12px; opacity:.9; }
+  .rp-ig > div:nth-child(2){ flex:1; }
+  .rp-ig-s{ text-align:center; } .rp-ig-s b{ display:block; font-size:18px; } .rp-ig-s span{ font-size:9.5px; text-transform:uppercase; letter-spacing:.5px; opacity:.9; }
+  .rp-posts{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .rp-post-img{ height:150px; border-radius:10px; overflow:hidden; position:relative; background:linear-gradient(135deg,#EDE4FF,#FFE0EE); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .rp-post-img img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .rp-post-c{ font-size:10.5px; color:#4A5368; margin-top:6px; height:42px; overflow:hidden; }
+  .rp-post-s{ font-size:10px; color:#6B7487; display:flex; gap:8px; margin-top:4px; } .rp-post-s b{ color:#151B2E; }
+
+  .rp-cover{ background:linear-gradient(160deg,#1A0C06 0%,#2A1206 45%,#FF5A1E 140%); color:#fff; }
+  .rp-cover .rp-body{ display:flex; flex-direction:column; padding:70px 64px 56px; }
+  .rp-cover-top{ display:flex; align-items:center; gap:14px; }
+  .rp-cover-logo{ width:58px; height:58px; object-fit:contain; }
+  .rp-cover-brand{ font-weight:800; letter-spacing:4px; font-size:15px; }
+  .rp-cover-mid{ margin-top:auto; margin-bottom:auto; }
+  .rp-cover-kicker{ font-size:14px; letter-spacing:3px; text-transform:uppercase; color:#FFB020; font-weight:700; }
+  .rp-cover-title{ font-size:52px; font-weight:800; letter-spacing:-1.2px; line-height:1.05; margin:14px 0 18px; }
+  .rp-cover-period{ font-size:22px; font-weight:600; }
+  .rp-cover-sub{ font-size:13px; opacity:.75; margin-top:6px; }
+  .rp-cover-chips{ display:flex; gap:8px; margin-top:26px; }
+  .rp-cover-chips span{ font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); }
+  .rp-cover-foot{ display:flex; justify-content:space-between; font-size:13px; opacity:.9; border-top:1px solid rgba(255,255,255,.2); padding-top:18px; }
+  .rp-end{ margin:auto; text-align:center; max-width:460px; }
+  .rp-end img{ width:72px; height:72px; object-fit:contain; }
+  .rp-end-t{ font-size:34px; font-weight:800; margin:18px 0 10px; }
+  .rp-end p{ font-size:15px; opacity:.85; line-height:1.6; }
+  .rp-end-b{ margin-top:40px; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#FFB020; font-weight:700; }
   /* ===================== Formulários ===================== */
   .fm-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap:14px; }
   .fm-card{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); box-shadow:var(--card-shadow); padding:16px 18px; cursor:pointer; transition:transform .15s, border-color .15s; }
@@ -1256,7 +1361,8 @@
     .client-detail-tabs{ flex-wrap:nowrap !important; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; margin:0 -12px 12px; padding:0 12px; }
     .client-detail-tabs::-webkit-scrollbar{ display:none; }
     .client-detail-tabs .g-tab{ flex-shrink:0; }
-    .cd-toolbar{ flex-direction:row !important; align-items:center !important; gap:8px; }
+    .cd-toolbar{ flex-direction:row !important; align-items:center !important; gap:8px; flex-wrap:wrap; }
+    .btn-report{ padding:7px 10px; font-size:12px; }
     .cd-subtabs{ gap:16px; overflow-x:auto; }
     .range-picker-btn{ font-size:12px; padding:7px 10px; }
     .range-picker-menu{ right:0; left:auto; max-width:calc(100vw - 24px); }
@@ -2040,6 +2146,8 @@
 
       <div class="cd-toolbar" id="cdToolbar">
         <div class="cd-subtabs" id="cdPlatformTabs"></div>
+        <div class="cd-toolbar-right">
+          <button type="button" class="btn-report" onclick="openReportModal()">⬇ Baixar PDF</button>
         <div class="range-picker" id="cdRangePicker">
           <button type="button" class="range-picker-btn" onclick="toggleRangeMenu()">📅 <span id="cdRangeLabel">Últimos 30 dias</span> ▾</button>
           <div class="range-picker-menu" id="cdRangeMenu">
@@ -2056,7 +2164,26 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
+
+      <div class="rp-modal" id="rpModal" onclick="if (event.target === this) closeReportModal()">
+        <div class="rp-modal-box">
+          <h3>Relatório em PDF</h3>
+          <div class="rp-modal-sub">Período: <b id="rpPeriod"></b> (o mesmo selecionado no painel) · com a marca da Instinto Digital</div>
+          <div id="rpOptions"></div>
+          <div id="rpNoteWrap">
+            <label class="modal-label">Comentário do gestor (opcional — aparece no resumo)</label>
+            <textarea class="modal-input" id="rpNote" rows="3" placeholder="Ex.: Semana com ótimo custo por conversa. Próximo passo: testar novos criativos em vídeo."></textarea>
+          </div>
+          <div class="rp-modal-actions">
+            <span class="rp-status" id="rpStatus"></span>
+            <button type="button" class="btn-cancel" onclick="closeReportModal()">Cancelar</button>
+            <button type="button" class="btn-add" id="rpGenBtn" onclick="generateClientReport()">⬇ Gerar PDF</button>
+          </div>
+        </div>
+      </div>
+      <div id="rpRender" aria-hidden="true"></div>
 
       <!-- ===== Aba: Anúncios (dashboard real do cliente) ===== -->
       <div class="cd-pane active" id="cdPaneOverview">
@@ -3195,6 +3322,383 @@
   });
   window.addEventListener('beforeunload', (e) => { if (fmIsDirty) { e.preventDefault(); e.returnValue = ''; } });
 
+
+
+  /* ===================== Relatório em PDF (marca Instinto Digital) ===================== */
+  const RP_LIBS = [
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  ];
+  const RP = { orange:'#FF5A1E', amber:'#FFB020', ink:'#151B2E', dim:'#6B7487', line:'#E6E9F2', soft:'#F6F7FB', blue:'#2F6BFF', green:'#16A36A', red:'#E5484D', pink:'#FF4F93', purple:'#8B5CF6' };
+
+  function rpLoadScript(src){
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[data-rp="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src; s.async = true; s.dataset.rp = src;
+      s.onload = resolve; s.onerror = () => reject(new Error('Não consegui carregar o gerador de PDF. Confira a internet e tente de novo.'));
+      document.head.appendChild(s);
+    });
+  }
+
+  // Imagens da Meta passam pelo nosso servidor (CORS) pra entrarem no PDF.
+  const rpImg = url => url ? `${API_BASE_URL}/api/media?u=${encodeURIComponent(url)}` : '';
+
+  function rpDelta(cur, prev, invert){
+    if (!(prev > 0)) return '';
+    const pct = (cur - prev) / prev * 100;
+    if (Math.abs(pct) < 0.05) return `<span class="rp-d neutral">= estável</span>`;
+    const up = pct >= 0;
+    return `<span class="rp-d ${(invert ? !up : up) ? 'good' : 'bad'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span>`;
+  }
+  function rpKpi(label, cur, prev, fmt, invert, big){
+    return `<div class="rp-kpi${big ? ' big' : ''}"><div class="rp-kpi-l">${label}</div><div class="rp-kpi-v">${fmt(cur || 0)}</div>
+      <div class="rp-kpi-p">${prev !== undefined && prev !== null ? rpDelta(cur || 0, prev || 0, invert) || '&nbsp;' : '&nbsp;'}</div>
+      <div class="rp-kpi-a">${prev !== undefined && prev !== null ? `antes: ${fmt(prev || 0)}` : ''}</div></div>`;
+  }
+
+  // Gráfico simples com cores fixas (o gerador de PDF não lê variáveis de CSS).
+  function rpChart(daily, A, B, W = 700, H = 200){
+    if (!daily || !daily.length) return '';
+    const padL = 56, padR = 46, padT = 10, padB = 24, pw = W - padL - padR, ph = H - padT - padB, n = daily.length;
+    const av = daily.map(d => Number(A.get(d)) || 0), bv = daily.map(d => Number(B.get(d)) || 0);
+    const na = niceAxisStep(Math.max(0, ...av), 4), nb = niceAxisStep(Math.max(0, ...bv), 4);
+    const cnt = na.count, maxA = na.max || 1, maxB = nb.max || 1;
+    const slot = pw / n, bw = Math.max(2, slot * 0.62);
+    const yA = v => padT + ph - (v / maxA) * ph, yB = v => padT + ph - (v / maxB) * ph;
+    let g = '', bars = '', xl = '';
+    for (let i = 0; i <= cnt; i++) {
+      const y = padT + (ph / cnt) * i;
+      g += `<line x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}" stroke="${RP.line}" stroke-width="1"/>
+        <text x="${padL - 6}" y="${y + 4}" font-size="10" text-anchor="end" fill="${RP.dim}">${A.axis(na.step * (cnt - i))}</text>
+        <text x="${W - padR + 6}" y="${y + 4}" font-size="10" fill="${RP.dim}">${B.axis(maxB * (cnt - i) / cnt)}</text>`;
+    }
+    const every = Math.max(1, Math.ceil(n / 8));
+    daily.forEach((d, i) => {
+      const x = padL + i * slot + (slot - bw) / 2;
+      bars += `<rect x="${x.toFixed(1)}" y="${yA(av[i]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(padT + ph - yA(av[i])).toFixed(1)}" rx="2" fill="${A.color}" opacity="0.85"/>`;
+      if ((i % every === 0 && n - 1 - i >= every * 0.6) || i === n - 1) xl += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 6}" font-size="10" text-anchor="middle" fill="${RP.dim}">${dateBr(d.date).slice(0, 5)}</text>`;
+    });
+    const pts = bv.map((v, i) => ({ x: padL + i * slot + slot / 2, y: yB(v) }));
+    const line = smoothPathD(pts).trim();
+    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}${bars}
+      <path d="${line}" fill="none" stroke="${B.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${xl}</svg>
+      <div class="rp-legend"><span><i style="background:${A.color}"></i>${A.label}</span><span><i style="background:${B.color}"></i>${B.label}</span></div>`;
+  }
+
+  function rpBars(items, valueFmt, color, max, sqrt){
+    const m = max || Math.max(1, ...items.map(x => x.value));
+    const w = v => sqrt ? Math.sqrt(v / m) * 100 : v / m * 100;
+    return `<div class="rp-bars">${items.map(x => `<div class="rp-bar-row"><span class="rp-bar-l">${escapeHtml(x.label)}</span><div class="rp-bar-t"><div style="width:${Math.max(2, w(x.value)).toFixed(1)}%; background:${x.color || color};"></div></div><span class="rp-bar-v">${valueFmt(x.value)}</span></div>`).join('')}</div>`;
+  }
+
+  function rpTable(head, rows){
+    return `<table class="rp-table"><thead><tr>${head.map((h, i) => `<th${i ? ' class="n"' : ''}>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }
+
+  // Frases automáticas de destaque (o que melhorou e o que pede atenção).
+  function rpHighlights(meta, google){
+    const good = [], warn = [];
+    const pct = (c, p) => p > 0 ? (c - p) / p * 100 : null;
+    const f1 = v => Math.abs(v).toFixed(1).replace('.', ',') + '%';
+    if (meta) {
+      const t = meta.totals, p = meta.previousTotals, rl = (meta.resultLabel || 'resultados').toLowerCase();
+      const r = pct(t.results, p.results), c = pct(t.costPerResult, p.costPerResult);
+      if (t.results > 0) (r !== null && r < -5 ? warn : good).push(`<b>${intFmt(t.results)} ${rl}</b> pela Meta${r !== null ? ` (${r >= 0 ? '+' : '−'}${f1(r)} vs período anterior)` : ''}.`);
+      if (c !== null && t.results > 0) (c <= 0 ? good : (c > 10 ? warn : good)).push(`Custo por resultado de <b>${brl2(t.costPerResult)}</b>${c <= 0 ? `, <b>${f1(c)} mais barato</b>` : `, ${f1(c)} mais caro`} que no período anterior.`);
+      const best = (meta.ads || []).filter(a => a.results > 0).sort((a, b) => b.results - a.results)[0];
+      if (best) good.push(`Criativo destaque: <b>${escapeHtml(best.name)}</b>, com ${intFmt(best.results)} ${rl} a ${brl2(best.costPerResult)} cada.`);
+      if (t.frequency > 3) warn.push(`Frequência em ${dec2(t.frequency)}: o público já viu os anúncios muitas vezes — hora de renovar criativos.`);
+    }
+    if (google) {
+      const t = google.totals, p = google.previousTotals || {};
+      const r = pct(t.conversions, p.conversions), c = pct(t.costPerConv, p.costPerConv);
+      if (t.conversions > 0) (r !== null && r < -5 ? warn : good).push(`<b>${convFmt(t.conversions)} conversões</b> no Google${r !== null ? ` (${r >= 0 ? '+' : '−'}${f1(r)})` : ''}, a ${brl2(t.costPerConv)} cada${c !== null ? (c <= 0 ? ` (${f1(c)} mais barato)` : ` (${f1(c)} mais caro)`) : ''}.`);
+      const ctr = pct(t.ctr, p.ctr);
+      if (ctr !== null && ctr > 5) good.push(`CTR do Google subiu para <b>${pct2(t.ctr)}</b> (+${f1(ctr)}): os anúncios estão atraindo mais cliques.`);
+    }
+    return { good: good.slice(0, 4), warn: warn.slice(0, 2) };
+  }
+
+  function rpPage(inner, client, n, opts = {}){
+    return `<div class="rp-page${opts.cls ? ' ' + opts.cls : ''}">
+      ${opts.noHeader ? '' : `<div class="rp-head"><div class="rp-brand"><img src="${logoSrc}" alt=""><span>Instinto Digital</span></div><div class="rp-head-r">${escapeHtml(client)}<span>${opts.section || ''}</span></div></div>`}
+      <div class="rp-body">${inner}</div>
+      ${opts.noFooter ? '' : `<div class="rp-foot"><span>Relatório gerado pelo Instinto Dash · Instinto Digital</span><span>${n}</span></div>`}
+    </div>`;
+  }
+
+  function buildClientReport({ client, range, prevRange, meta, google, ig, sections, note }){
+    const pages = [];
+    const per = `${dateBr(range.from)} a ${dateBr(range.to)}`;
+    const today = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+    let n = 1;
+
+    // Capa
+    pages.push(rpPage(`
+      <div class="rp-cover-top">
+        <img class="rp-cover-logo" src="${logoSrc}" alt="">
+        <div class="rp-cover-brand">INSTINTO DIGITAL</div>
+      </div>
+      <div class="rp-cover-mid">
+        <div class="rp-cover-kicker">Relatório de performance</div>
+        <div class="rp-cover-title">${escapeHtml(client)}</div>
+        <div class="rp-cover-period">${per}</div>
+        ${prevRange ? `<div class="rp-cover-sub">Comparado com ${dateBr(prevRange.from)} a ${dateBr(prevRange.to)}</div>` : ''}
+        <div class="rp-cover-chips">${[meta && 'Meta Ads', google && 'Google Ads', ig && 'Instagram'].filter(Boolean).map(x => `<span>${x}</span>`).join('')}</div>
+      </div>
+      <div class="rp-cover-foot"><div>Preparado por <b>Instinto Digital</b></div><div>${today}</div></div>`, client, n++, { cls:'rp-cover', noHeader:true, noFooter:true }));
+
+    // Resumo
+    if (sections.summary && (meta || google)) {
+      const h = rpHighlights(meta, google);
+      const sum = (key, mkey) => (google ? (google.totals[key] || 0) : 0) + (meta ? (meta.totals[mkey || key] || 0) : 0);
+      const sumP = (key, mkey) => (google ? ((google.previousTotals || {})[key] || 0) : 0) + (meta ? (meta.previousTotals[mkey || key] || 0) : 0);
+      const spend = sum('spend'), clicks = sum('clicks'), impr = sum('impressions'), conv = sum('conversions', 'results');
+      const pSpend = sumP('spend'), pClicks = sumP('clicks'), pImpr = sumP('impressions'), pConv = sumP('conversions', 'results');
+      const convLabel = meta && !google ? (meta.resultLabel || 'Resultados') : 'Conversões';
+      pages.push(rpPage(`
+        <h1 class="rp-h1">Resumo do período</h1>
+        <p class="rp-lead">${per}${meta && google ? ' · Meta Ads + Google Ads' : meta ? ' · Meta Ads' : ' · Google Ads'}</p>
+        <div class="rp-kpis k4">
+          ${rpKpi('Investimento', spend, pSpend, brl2, false, true)}
+          ${rpKpi(convLabel, conv, pConv, intFmt, false, true)}
+          ${rpKpi(`Custo por ${meta && !google ? 'resultado' : 'conversão'}`, conv ? spend / conv : 0, pConv ? pSpend / pConv : 0, brl2, true, true)}
+          ${rpKpi('Cliques', clicks, pClicks, intFmt, false, true)}
+        </div>
+        <div class="rp-kpis k3">
+          ${rpKpi('Impressões', impr, pImpr, compactFmt)}
+          ${rpKpi('CPC médio', clicks ? spend / clicks : 0, pClicks ? pSpend / pClicks : 0, brl2, true)}
+          ${rpKpi('CTR', impr ? clicks / impr * 100 : 0, pImpr ? pClicks / pImpr * 100 : 0, pct2)}
+        </div>
+        ${h.good.length ? `<div class="rp-box good"><div class="rp-box-t">✓ Destaques</div><ul>${h.good.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
+        ${h.warn.length ? `<div class="rp-box warn"><div class="rp-box-t">⚑ Pontos de atenção</div><ul>${h.warn.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
+        ${note ? `<div class="rp-box note"><div class="rp-box-t">💬 Comentário do gestor</div><p>${escapeHtml(note).replace(/\n/g, '<br>')}</p></div>` : ''}
+      `, client, n++, { section:'Resumo' }));
+    }
+
+    // Meta Ads
+    if (meta && sections.meta) {
+      const t = meta.totals, p = meta.previousTotals, rl = meta.resultLabel || 'Resultados', bd = meta.breakdowns || {};
+      pages.push(rpPage(`
+        <h1 class="rp-h1"><span class="rp-pf meta">∞</span> Meta Ads</h1>
+        <div class="rp-kpis k5">
+          ${rpKpi('Investimento', t.spend, p.spend, brl2)}
+          ${rpKpi(rl, t.results, p.results, intFmt)}
+          ${rpKpi('Custo por resultado', t.costPerResult, p.costPerResult, brl2, true)}
+          ${rpKpi('Alcance', t.reach, p.reach, compactFmt)}
+          ${rpKpi('Impressões', t.impressions, p.impressions, compactFmt)}
+          ${rpKpi('Cliques', t.clicks, p.clicks, intFmt)}
+          ${rpKpi('CTR', t.ctr, p.ctr, pct2)}
+          ${rpKpi('CPC', t.cpc, p.cpc, brl2, true)}
+          ${rpKpi('CPM', t.cpm, p.cpm, brl2, true)}
+          ${rpKpi('Frequência', t.frequency, p.frequency, dec2)}
+        </div>
+        <div class="rp-card"><div class="rp-card-t">Investimento e ${escapeHtml(rl.toLowerCase())} por dia</div>
+          ${rpChart(meta.daily, { label:'Investimento (R$)', color:'#9DB8FF', get:d => d.spend, axis:axisBrl }, { label:rl, color:RP.green, get:d => d.results, axis:axisNum })}</div>
+        <div class="rp-card"><div class="rp-card-t">Funil</div>
+          ${rpBars([
+            { label:'Impressões', value:t.impressions, color:'#2F6BFF' }, { label:'Alcance', value:t.reach, color:'#5B8BFF' },
+            { label:'Cliques', value:t.clicks, color:'#8B5CF6' }, { label:'Cliques no link', value:t.linkClicks || 0, color:'#B57BFF' },
+            { label:rl, value:t.results, color:RP.green }].filter(x => x.value > 0), intFmt, RP.blue, t.impressions, true)}
+        </div>`, client, n++, { section:'Meta Ads' }));
+
+      const ads = (meta.ads || []).slice().sort((a, b) => (b.results - a.results) || (b.spend - a.spend));
+      if (sections.creatives && ads.length) {
+        const top = ads.slice(0, 6);
+        pages.push(rpPage(`
+          <h1 class="rp-h1">Melhores criativos</h1>
+          <p class="rp-lead">Os anúncios com mais ${escapeHtml(rl.toLowerCase())} no período</p>
+          <div class="rp-creatives">${top.map((a, i) => `
+            <div class="rp-cr">
+              <div class="rp-cr-img">${a.thumbnailUrl ? `<img src="${rpImg(a.thumbnailUrl)}" crossorigin="anonymous" alt="">` : '<span>🖼</span>'}<b>#${i + 1}</b></div>
+              <div class="rp-cr-b">
+                <div class="rp-cr-n">${escapeHtml(a.name)}</div>
+                <div class="rp-cr-g">
+                  <div><span>${escapeHtml(a.resultLabel || rl)}</span><b>${a.results ? intFmt(a.results) : '—'}</b></div>
+                  <div><span>Custo/result.</span><b>${a.results ? brl2(a.costPerResult) : '—'}</b></div>
+                  <div><span>Investido</span><b>${brl2(a.spend)}</b></div>
+                  <div><span>CTR</span><b>${pct2(a.ctr)}</b></div>
+                </div>
+              </div>
+            </div>`).join('')}</div>`, client, n++, { section:'Meta Ads · Criativos' }));
+      }
+
+      if (sections.audience && ((bd.age || []).length || (bd.placements || []).length)) {
+        const metricKey = (bd.age || []).some(x => x.results > 0) ? 'results' : 'spend';
+        const gColor = { Feminino:RP.pink, Masculino:RP.blue, 'Não informado':'#9AA2AE' };
+        pages.push(rpPage(`
+          <h1 class="rp-h1">Quem viu e onde</h1>
+          <div class="rp-2col">
+            <div class="rp-card"><div class="rp-card-t">${metricKey === 'results' ? escapeHtml(rl) : 'Investimento'} por idade</div>${rpBars((bd.age || []).map(x => ({ label:x.label, value:x[metricKey] || 0 })), metricKey === 'results' ? intFmt : brl, RP.purple)}</div>
+            <div class="rp-card"><div class="rp-card-t">${metricKey === 'results' ? escapeHtml(rl) : 'Investimento'} por gênero</div>${rpBars((bd.gender || []).map(x => ({ label:x.label, value:x[metricKey] || 0, color:gColor[x.label] })), metricKey === 'results' ? intFmt : brl, RP.blue)}</div>
+          </div>
+          <div class="rp-card"><div class="rp-card-t">Posicionamentos</div>
+            ${rpTable(['Posicionamento', 'Investido', 'Impressões', 'CTR', escapeHtml(rl), 'Custo/result.'], (bd.placements || []).slice(0, 8).map(x => [escapeHtml(x.label), brl2(x.spend), compactFmt(x.impressions), pct2(x.ctr), intFmt(x.results), x.results ? brl2(x.costPerResult) : '—']))}</div>
+          ${(bd.regions || []).length ? `<div class="rp-card"><div class="rp-card-t">Regiões</div>
+            ${rpTable(['Região', 'Investido', 'Cliques', escapeHtml(rl), 'Custo/result.'], bd.regions.slice(0, 6).map(x => [escapeHtml(x.label), brl2(x.spend), intFmt(x.clicks), intFmt(x.results), x.results ? brl2(x.costPerResult) : '—']))}</div>` : ''}
+        `, client, n++, { section:'Meta Ads · Público' }));
+      }
+    }
+
+    // Google Ads
+    if (google && sections.google) {
+      const t = google.totals, p = google.previousTotals || {};
+      const camps = (google.campaigns || []).slice().sort((a, b) => b.spend - a.spend).slice(0, 8);
+      pages.push(rpPage(`
+        <h1 class="rp-h1"><span class="rp-pf google">G</span> Google Ads</h1>
+        <div class="rp-kpis k5">
+          ${rpKpi('Investimento', t.spend, p.spend, brl2)}
+          ${rpKpi('Conversões', t.conversions, p.conversions, convFmt)}
+          ${rpKpi('Custo por conversão', t.costPerConv, p.costPerConv, brl2, true)}
+          ${rpKpi('Cliques', t.clicks, p.clicks, intFmt)}
+          ${rpKpi('Impressões', t.impressions, p.impressions, compactFmt)}
+          ${rpKpi('CTR', t.ctr, p.ctr, pct2)}
+          ${rpKpi('CPC médio', t.cpc, p.cpc, brl2, true)}
+          ${rpKpi('Taxa de conversão', t.convRate, p.convRate, pct2)}
+          ${rpKpi('1ª posição', t.topImpressionShare, p.topImpressionShare, pct2)}
+          ${t.conversionsValue ? rpKpi('ROAS', t.roas, p.roas, v => dec2(v) + 'x') : rpKpi('Todas as conversões', t.allConversions, p.allConversions, convFmt)}
+        </div>
+        <div class="rp-card"><div class="rp-card-t">Investimento e conversões por dia</div>
+          ${rpChart(google.dailySpend, { label:'Investimento (R$)', color:'#FFD48A', get:d => d.spend, axis:axisBrl }, { label:'Conversões', color:RP.blue, get:d => d.conversions, axis:axisNum })}</div>
+        ${sections.campaigns ? `<div class="rp-card"><div class="rp-card-t">Campanhas</div>
+          ${rpTable(['Campanha', 'Investido', 'Cliques', 'CTR', 'Conv.', 'Custo/conv.'], camps.map(c => { const cv = c.conv ?? c.conversions ?? 0; return [escapeHtml(c.name), brl2(c.spend), intFmt(c.clicks), pct2(c.ctr), convFmt(cv), cv ? brl2(c.spend / cv) : '—']; }))}</div>` : ''}
+      `, client, n++, { section:'Google Ads' }));
+      if (sections.campaigns && (google.keywords || []).length) {
+        const dev = google.deviceBreakdown || [];
+        pages.push(rpPage(`
+          <h1 class="rp-h1">Palavras-chave e dispositivos</h1>
+          <div class="rp-card"><div class="rp-card-t">Palavras-chave com mais cliques</div>
+            ${rpTable(['Palavra-chave', 'Impressões', 'Cliques', 'CTR', 'Conv.', 'Custo/conv.'], google.keywords.slice().sort((a, b) => b.clicks - a.clicks).slice(0, 10).map(k => [escapeHtml(k.keyword), intFmt(k.impressions), intFmt(k.clicks), pct2(k.ctr), convFmt(k.conversions), k.conversions ? brl2(k.costPerConv) : '—']))}</div>
+          ${dev.length && sections.audience ? `<div class="rp-2col">
+            <div class="rp-card"><div class="rp-card-t">Investimento por dispositivo</div>${rpBars(dev.map(d => ({ label:d.label, value:d.spend })), brl, '#F5A524')}</div>
+            <div class="rp-card"><div class="rp-card-t">Conversões por dispositivo</div>${rpBars(dev.map(d => ({ label:d.label, value:d.conversions })), convFmt, RP.blue)}</div>
+          </div>` : ''}
+        `, client, n++, { section:'Google Ads' }));
+      }
+    }
+
+    // Instagram
+    if (ig && sections.instagram) {
+      const m = ig.metrics || {}, pf = ig.profile || {};
+      const posts = (ig.posts || []).slice().sort((a, b) => (b.reach || 0) - (a.reach || 0)).slice(0, 4);
+      const age = (ig.demographics || {}).age || [];
+      const val = v => v === null || v === undefined ? '—' : compactFmt(v);
+      const dl = d => d === null || d === undefined ? '' : `<span class="rp-d ${d >= 0 ? 'good' : 'bad'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(1).replace('.', ',')}%</span>`;
+      pages.push(rpPage(`
+        <h1 class="rp-h1"><span class="rp-pf ig">◎</span> Instagram</h1>
+        <div class="rp-ig">
+          <div class="rp-ig-av">${pf.pictureUrl ? `<img src="${rpImg(pf.pictureUrl)}" crossorigin="anonymous" alt="">` : escapeHtml(pf.avatarInitials || 'IG')}</div>
+          <div><div class="rp-ig-n">${escapeHtml(pf.displayName || '')}</div><div class="rp-ig-h">@${escapeHtml(pf.username || '')}</div></div>
+          <div class="rp-ig-s"><b>${compactFmt(pf.followersCount)}</b><span>seguidores</span></div>
+          <div class="rp-ig-s"><b>${compactFmt(pf.postsCount)}</b><span>publicações</span></div>
+        </div>
+        <div class="rp-kpis k3">
+          <div class="rp-kpi"><div class="rp-kpi-l">Novos seguidores</div><div class="rp-kpi-v">${m.newFollowers == null ? '—' : '+' + compactFmt(m.newFollowers)}</div><div class="rp-kpi-p">${dl(m.newFollowersDeltaPct)}</div></div>
+          <div class="rp-kpi"><div class="rp-kpi-l">Alcance</div><div class="rp-kpi-v">${val(m.reach)}</div><div class="rp-kpi-p">${dl(m.reachDeltaPct)}</div></div>
+          <div class="rp-kpi"><div class="rp-kpi-l">Visitas ao perfil</div><div class="rp-kpi-v">${val(m.profileVisits)}</div><div class="rp-kpi-p">${dl(m.profileVisitsDeltaPct)}</div></div>
+          <div class="rp-kpi"><div class="rp-kpi-l">Contas com engajamento</div><div class="rp-kpi-v">${val(m.engagedAccounts)}</div><div class="rp-kpi-p">${dl(m.engagedAccountsDeltaPct)}</div></div>
+          <div class="rp-kpi"><div class="rp-kpi-l">Cliques no link</div><div class="rp-kpi-v">${val(m.linkClicks)}</div><div class="rp-kpi-p">${dl(m.linkClicksDeltaPct)}</div></div>
+          <div class="rp-kpi"><div class="rp-kpi-l">Publicações no período</div><div class="rp-kpi-v">${val(m.postsInPeriod)}</div><div class="rp-kpi-p"></div></div>
+        </div>
+        ${posts.length ? `<div class="rp-card"><div class="rp-card-t">Posts com maior alcance</div><div class="rp-posts">${posts.map(p => `
+          <div class="rp-post"><div class="rp-post-img">${p.thumbnailUrl ? `<img src="${rpImg(p.thumbnailUrl)}" crossorigin="anonymous" alt="">` : '<span>📷</span>'}</div>
+            <div class="rp-post-c">${escapeHtml((p.caption || 'Sem legenda').slice(0, 70))}${(p.caption || '').length > 70 ? '…' : ''}</div>
+            <div class="rp-post-s"><span><b>${val(p.reach)}</b> alcance</span><span><b>${val(p.likes)}</b> curtidas</span></div></div>`).join('')}</div></div>` : ''}
+        ${age.some(a => a.value > 0) ? `<div class="rp-card"><div class="rp-card-t">Seguidores por idade</div>${rpBars(age.filter(a => a.value > 0), compactFmt, RP.purple)}</div>` : ''}
+      `, client, n++, { section:'Instagram' }));
+    }
+
+    // Encerramento
+    pages.push(rpPage(`
+      <div class="rp-end">
+        <img src="${logoSrc}" alt="">
+        <div class="rp-end-t">Obrigado pela confiança!</div>
+        <p>Seguimos acompanhando os números todos os dias pra fazer o seu investimento render cada vez mais.</p>
+        <div class="rp-end-b">Instinto Digital · Tráfego pago e performance</div>
+      </div>`, client, n++, { cls:'rp-cover rp-closing', noHeader:true, noFooter:true }));
+    return pages.join('');
+  }
+
+  /* ---------- Janela de opções e geração ---------- */
+  function openReportModal(){
+    const m = document.getElementById('rpModal');
+    const vis = visOf(rawAccountsById[currentClientId]);
+    const hasMeta = cdAvailable.meta, hasGoogle = cdAvailable.google;
+    const hasIg = document.getElementById('cdTabBtnSocial').style.display !== 'none' && !!(rawAccountsById[currentClientId]?.meta?.igBusinessId || rawAccountsById[currentClientId]?.meta?.pageId || rawAccountsById[currentClientId]?.instagramApi?.igUserId);
+    const lockedByVis = CLIENT_MODE || PUBLIC_TOKEN;
+    const opt = (key, label, on, show = true) => show ? `<label class="vis-row"><input type="checkbox" data-rp="${key}" ${on ? 'checked' : ''}><span><b>${label}</b></span></label>` : '';
+    document.getElementById('rpOptions').innerHTML =
+      opt('summary', 'Resumo com destaques', true, hasMeta || hasGoogle) +
+      opt('meta', 'Meta Ads', true, hasMeta) +
+      opt('creatives', 'Melhores criativos (com imagens)', !lockedByVis || vis.ads_creatives, hasMeta && (!lockedByVis || vis.ads_creatives)) +
+      opt('audience', 'Público, posicionamentos e dispositivos', !lockedByVis || vis.ads_audience, (hasMeta || hasGoogle) && (!lockedByVis || vis.ads_audience)) +
+      opt('google', 'Google Ads', true, hasGoogle) +
+      opt('campaigns', 'Campanhas e palavras-chave', !lockedByVis || vis.ads_campaigns, (hasMeta || hasGoogle) && (!lockedByVis || vis.ads_campaigns)) +
+      opt('instagram', 'Instagram', true, hasIg && (!lockedByVis || vis.social));
+    document.getElementById('rpNoteWrap').style.display = lockedByVis ? 'none' : '';
+    document.getElementById('rpPeriod').textContent = cdCurrentRange ? `${dateBr(cdCurrentRange.from)} a ${dateBr(cdCurrentRange.to)}` : '';
+    document.getElementById('rpStatus').textContent = '';
+    document.getElementById('rpGenBtn').disabled = false;
+    m.classList.add('open');
+  }
+  function closeReportModal(){ document.getElementById('rpModal').classList.remove('open'); }
+
+  async function generateClientReport(){
+    const btn = document.getElementById('rpGenBtn');
+    const st = document.getElementById('rpStatus');
+    btn.disabled = true;
+    const sections = {};
+    document.querySelectorAll('#rpOptions input[data-rp]').forEach(i => { sections[i.dataset.rp] = i.checked; });
+    const note = document.getElementById('rpNote').value.trim();
+    const client = rawAccountsById[currentClientId]?.name || 'Cliente';
+    const holder = document.getElementById('rpRender');
+    try {
+      st.textContent = 'Juntando os dados…';
+      let ig = null;
+      if (sections.instagram) {
+        const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+        if (igLastData && igLastData.range && igLastData.range.from === range.from && igLastData.range.to === range.to) ig = igLastData;
+        else {
+          const r = await fetch(cdReportUrl('instagram', new URLSearchParams(range).toString()), { headers: authHeaders() });
+          if (r.ok) ig = await r.json();
+        }
+        if (ig && ig.mock) ig = null; // não manda dado de exemplo pro cliente
+      }
+      const meta = cdAvailable.meta && sections.meta !== false ? cdLastMeta : null;
+      const google = cdAvailable.google && sections.google !== false ? cdLastGoogle : null;
+      if (!meta && !google && !ig) throw new Error('Ainda não há dados carregados pra montar o relatório. Espere o painel terminar de carregar.');
+      const range = (meta || google || ig).range || cdCurrentRange;
+      const prevRange = (meta || google || ig).previousRange || null;
+
+      st.textContent = 'Carregando o gerador de PDF…';
+      for (const src of RP_LIBS) await rpLoadScript(src);
+
+      st.textContent = 'Montando as páginas…';
+      holder.innerHTML = buildClientReport({ client, range, prevRange, meta, google, ig, sections, note });
+      await Promise.all([...holder.querySelectorAll('img')].map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 8000); })));
+      holder.querySelectorAll('img').forEach(img => { if (!img.naturalWidth) img.style.visibility = 'hidden'; });
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait', compress:true });
+      const pages = [...holder.querySelectorAll('.rp-page')];
+      for (let i = 0; i < pages.length; i++) {
+        st.textContent = `Gerando página ${i + 1} de ${pages.length}…`;
+        const canvas = await window.html2canvas(pages[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+        if (i) pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, 210, 297);
+      }
+      const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      pdf.save(`Relatorio-${slug(client)}-${range.from}-a-${range.to}.pdf`);
+      st.textContent = '✓ PDF baixado.';
+      setTimeout(closeReportModal, 900);
+    } catch (e) {
+      st.textContent = `⚠ ${e.message}`;
+    } finally {
+      holder.innerHTML = '';
+      btn.disabled = false;
+    }
+  }
 
 
   /* ===================== Área do cliente (login próprio) ===================== */
@@ -5373,13 +5877,13 @@
     const a = axis(A), b = axis(B);
     const gridCount = a.count;
     const yA = v => padT + plotH - (v / a.max) * plotH;
-    const yB = v => padT + plotH - (v / (b.step * gridCount || 1)) * plotH;
+    const yB = v => padT + plotH - (v / (b.max || 1)) * plotH;
     let grid = '', labelsL = '', labelsR = '';
     for (let g = 0; g <= gridCount; g++) {
       const y = padT + (plotH / gridCount) * g;
       grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '3,4'}" />`;
       labelsL += `<text x="${padL - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="${narrow ? 10 : 11.5}" fill="var(--text-dim)">${A.axisFmt(a.step * (gridCount - g))}</text>`;
-      labelsR += `<text x="${W - padR + 8}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="${narrow ? 10 : 11.5}" fill="var(--text-dim)">${B.axisFmt(b.step * (gridCount - g))}</text>`;
+      labelsR += `<text x="${W - padR + 8}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="${narrow ? 10 : 11.5}" fill="var(--text-dim)">${B.axisFmt(b.max * (gridCount - g) / gridCount)}</text>`;
     }
     const every = Math.max(1, Math.ceil(n / (narrow ? 4 : 9)));
     let xl = '';

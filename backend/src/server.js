@@ -14,6 +14,7 @@ const leadsRoutes = require('./routes/leads');
 const contractsRoutes = require('./routes/contracts');
 const formsRoutes = require('./routes/forms');
 const clientRoutes = require('./routes/client');
+const mediaRoutes = require('./routes/media');
 const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
@@ -38,6 +39,8 @@ app.use('/api/auth', authRoutes);
 // Rota pública — o link que o cliente abre. Sem login, sem chave, só
 // enxerga o cliente daquele token específico.
 app.use('/api/public', publicRoutes);
+// Imagens da Meta com CORS (pro PDF). Sem login: só repassa imagens públicas dos CDNs da Meta.
+app.use('/api/media', mediaRoutes);
 
 // Tudo abaixo daqui exige o dono estar logado (token de sessão válido).
 app.use('/api/accounts', requireAdminAuth, accountsRoutes);
