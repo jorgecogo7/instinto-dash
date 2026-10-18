@@ -1,6 +1,8 @@
 const config = require('../config');
 const mockMeta = require('../data/mockMeta');
 const cache = require('../lib/cache');
+const period = require('../lib/period');
+const mockMetaReport = require('../data/mockMetaReport');
 
 // META_GRAPH_BASE existe só pra testes locais (servidor falso da Graph API).
 // Em produção fica vazio e usa o endereço oficial da Meta.
@@ -154,8 +156,8 @@ async function fetchCreativeThumbs(accountId) {
 
   const statuses = JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'ARCHIVED']);
   const attempts = [
-    'creative.thumbnail_width(320).thumbnail_height(320){thumbnail_url,image_url}',
-    'creative{thumbnail_url,image_url}',
+    'effective_status,creative.thumbnail_width(480).thumbnail_height(480){thumbnail_url,image_url}',
+    'effective_status,creative{thumbnail_url,image_url}',
   ];
   let ads = null;
   for (const creativeField of attempts) {
@@ -167,11 +169,16 @@ async function fetchCreativeThumbs(accountId) {
     }
   }
   const map = {};
+  const statusMap = {};
   (ads || []).forEach((a) => {
     const c = a.creative || {};
-    const url = c.thumbnail_url || c.image_url;
+    const url = c.image_url || c.thumbnail_url;
     if (a.id && url) map[a.id] = url;
+    if (a.id && a.effective_status) statusMap[a.id] = a.effective_status;
   });
+  // O mapa de status vai "pendurado" no de miniaturas pra não quebrar quem
+  // já usa fetchCreativeThumbs só pelas imagens.
+  Object.defineProperty(map, '__status', { value: statusMap, enumerable: false });
   cache.set(cacheKey, map, ads ? 60 * 30 : 120);
   return map;
 }
@@ -252,4 +259,224 @@ async function verifyAdAccount(adAccountId) {
   };
 }
 
-module.exports = { getCampaignsWithAds, verifyAdAccount, hasRealCredentials, normalizeAdAccountId, mapMetaResponse };
+
+/* ===================== Relatório completo da conta ===================== */
+
+// Nome amigável do tipo de resultado (o que aparece embaixo do número).
+const RESULT_LABELS = {
+  purchase: 'Compras',
+  omni_purchase: 'Compras',
+  'offsite_conversion.fb_pixel_purchase': 'Compras',
+  lead: 'Leads',
+  'offsite_conversion.fb_pixel_lead': 'Leads no site',
+  'onsite_conversion.lead_grouped': 'Leads (formulário)',
+  'onsite_conversion.messaging_conversation_started_7d': 'Conversas iniciadas',
+  omni_complete_registration: 'Cadastros',
+};
+
+function pickResult(actions) {
+  if (!Array.isArray(actions)) return { type: null, value: 0 };
+  for (const type of RESULT_ACTIONS) {
+    const found = actions.find((a) => a.action_type === type);
+    if (found) return { type, value: Math.round(num(found.value)) };
+  }
+  return { type: null, value: 0 };
+}
+
+function actionValue(actions, type) {
+  if (!Array.isArray(actions)) return 0;
+  const found = actions.find((a) => a.action_type === type);
+  return found ? num(found.value) : 0;
+}
+
+function sumActions(list) {
+  return Array.isArray(list) ? list.reduce((s, a) => s + num(a.value), 0) : 0;
+}
+
+// Métricas derivadas a partir dos números absolutos (nunca média de médias).
+function derive(t) {
+  return {
+    ...t,
+    ctr: t.impressions > 0 ? (t.clicks / t.impressions) * 100 : 0,
+    cpc: t.clicks > 0 ? t.spend / t.clicks : 0,
+    cpm: t.impressions > 0 ? (t.spend / t.impressions) * 1000 : 0,
+    frequency: t.reach > 0 ? t.impressions / t.reach : 0,
+    costPerResult: t.results > 0 ? t.spend / t.results : 0,
+  };
+}
+
+const AD_FIELDS = [
+  'ad_id', 'ad_name', 'adset_name', 'campaign_name', 'campaign_id',
+  'spend', 'impressions', 'reach', 'frequency', 'clicks', 'inline_link_clicks',
+  'ctr', 'cpc', 'cpm', 'actions', 'video_p25_watched_actions',
+].join(',');
+const ACCOUNT_FIELDS = 'spend,impressions,reach,frequency,clicks,inline_link_clicks,actions';
+
+function insightsParams(range, extra = {}) {
+  return {
+    time_range: JSON.stringify({ since: range.from, until: range.to }),
+    limit: '500',
+    ...extra,
+  };
+}
+
+function mapAdRow(r) {
+  const res = pickResult(r.actions);
+  const spend = num(r.spend);
+  const impressions = num(r.impressions);
+  const clicks = num(r.clicks);
+  return {
+    id: r.ad_id,
+    name: r.ad_name,
+    adset: r.adset_name,
+    campaign: r.campaign_name,
+    campaignId: r.campaign_id,
+    spend,
+    impressions,
+    reach: num(r.reach),
+    frequency: num(r.frequency),
+    clicks,
+    linkClicks: num(r.inline_link_clicks),
+    ctr: num(r.ctr),
+    cpc: num(r.cpc),
+    cpm: num(r.cpm),
+    results: res.value,
+    resultType: res.type,
+    resultLabel: res.type ? RESULT_LABELS[res.type] : null,
+    costPerResult: res.value > 0 ? spend / res.value : 0,
+    engagement: Math.round(actionValue(r.actions, 'post_engagement')),
+    video25: Math.round(sumActions(r.video_p25_watched_actions)),
+  };
+}
+
+function totalsFrom(accountRow, adRows) {
+  const a = accountRow || {};
+  return derive({
+    spend: num(a.spend),
+    impressions: num(a.impressions),
+    reach: num(a.reach),
+    clicks: num(a.clicks),
+    linkClicks: num(a.inline_link_clicks),
+    // Resultados = soma do resultado de cada anúncio (cada um no seu tipo),
+    // pra bater com a tabela de anúncios.
+    results: adRows.reduce((s, r) => s + r.results, 0),
+    engagement: Math.round(actionValue(a.actions, 'post_engagement')),
+  });
+}
+
+// Rótulo do resultado da conta: se todos os anúncios usam o mesmo tipo,
+// usa o nome dele (ex: "Conversas iniciadas"); se mistura, "Resultados".
+function accountResultLabel(adRows) {
+  const labels = new Set(adRows.filter((r) => r.results > 0).map((r) => r.resultLabel));
+  return labels.size === 1 ? [...labels][0] : 'Resultados';
+}
+
+async function fetchRealReport(accountId, range) {
+  const prev = period.previousRange(range);
+  const [accCur, accPrev, adsCur, adsPrev, adsDaily, thumbs] = await Promise.all([
+    graphGetAll(`${accountId}/insights`, insightsParams(range, { fields: ACCOUNT_FIELDS })),
+    graphGetAll(`${accountId}/insights`, insightsParams(prev, { fields: ACCOUNT_FIELDS })),
+    graphGetAll(`${accountId}/insights`, insightsParams(range, { level: 'ad', fields: AD_FIELDS }), 10),
+    graphGetAll(`${accountId}/insights`, insightsParams(prev, { level: 'ad', fields: 'ad_id,spend,actions' }), 10),
+    graphGetAll(`${accountId}/insights`, insightsParams(range, {
+      level: 'ad', time_increment: '1', fields: 'ad_id,spend,impressions,clicks,actions',
+    }), 20),
+    fetchCreativeThumbs(accountId),
+  ]);
+
+  const ads = adsCur.map(mapAdRow).filter((a) => a.spend > 0);
+  const statusMap = thumbs.__status || {};
+  ads.forEach((a) => {
+    if (thumbs[a.id]) a.thumbnailUrl = thumbs[a.id];
+    if (statusMap[a.id]) a.status = statusMap[a.id];
+  });
+  ads.sort((x, y) => (y.results - x.results) || (y.spend - x.spend));
+
+  const prevAds = adsPrev.map(mapAdRow);
+  const totals = totalsFrom(accCur[0], ads);
+  const previousTotals = totalsFrom(accPrev[0], prevAds);
+
+  // Série diária: soma das linhas anúncio×dia (resultado de cada anúncio no
+  // tipo dele), preenchendo com zero os dias sem veiculação.
+  const byDay = {};
+  period.eachDay(range).forEach((d) => { byDay[d] = { date: d, spend: 0, impressions: 0, clicks: 0, results: 0 }; });
+  adsDaily.forEach((r) => {
+    const d = byDay[r.date_start];
+    if (!d) return;
+    d.spend += num(r.spend);
+    d.impressions += num(r.impressions);
+    d.clicks += num(r.clicks);
+    d.results += pickResult(r.actions).value;
+  });
+  const daily = Object.values(byDay).map((d) => ({
+    ...d,
+    ctr: d.impressions > 0 ? (d.clicks / d.impressions) * 100 : 0,
+    cpc: d.clicks > 0 ? d.spend / d.clicks : 0,
+    costPerResult: d.results > 0 ? d.spend / d.results : 0,
+  }));
+
+  // Campanhas (agregadas a partir dos anúncios do período).
+  const campMap = {};
+  ads.forEach((a) => {
+    const c = campMap[a.campaignId] || (campMap[a.campaignId] = {
+      id: a.campaignId, name: a.campaign, spend: 0, impressions: 0, clicks: 0, results: 0, reach: 0,
+    });
+    c.spend += a.spend; c.impressions += a.impressions; c.clicks += a.clicks; c.results += a.results;
+  });
+  const campaigns = Object.values(campMap).map((c) => derive(c)).sort((x, y) => y.spend - x.spend);
+
+  return { range, previousRange: prev, resultLabel: accountResultLabel(ads), totals, previousTotals, daily, campaigns, ads };
+}
+
+function withDeltas(report) {
+  const t = report.totals;
+  const p = report.previousTotals;
+  const keys = ['spend', 'impressions', 'reach', 'clicks', 'linkClicks', 'results', 'engagement', 'ctr', 'cpc', 'cpm', 'frequency', 'costPerResult'];
+  const deltas = {};
+  keys.forEach((k) => { deltas[k] = period.pctDelta(t[k] || 0, p[k] || 0); });
+  return { ...report, deltas };
+}
+
+/**
+ * Relatório completo de Meta Ads de uma conta num período (from/to):
+ * totais + período anterior + variação, evolução diária, campanhas e
+ * todos os anúncios com investimento (com miniatura do criativo).
+ */
+async function getAccountReport(adAccountId, options = {}) {
+  const range = period.normalizeRange(options.from, options.to);
+  const accountId = normalizeAdAccountId(adAccountId);
+  const cacheKey = `meta:report:${accountId || 'mock'}:${range.from}:${range.to}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  let result;
+  if (!hasRealCredentials()) {
+    result = withDeltas(mockMetaReport.build(range));
+  } else {
+    if (!accountId) throw new Error('Este cliente ainda não tem um ID de conta de anúncios da Meta.');
+    result = withDeltas(await fetchRealReport(accountId, range));
+  }
+  cache.set(cacheKey, result, 60 * 20);
+  return result;
+}
+
+/**
+ * Descobre o Instagram Business vinculado a uma Página do Facebook.
+ * Melhor esforço: devolve null se não houver ou se a Meta recusar.
+ */
+async function findInstagramForPage(pageId) {
+  if (!hasRealCredentials() || !pageId) return null;
+  try {
+    const json = await graphGet(String(pageId).trim(), { fields: 'instagram_business_account{id,username}' });
+    return json.instagram_business_account || null;
+  } catch (e) {
+    console.warn('Meta: não consegui achar o Instagram da Página:', e.message);
+    return null;
+  }
+}
+
+module.exports = {
+  getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
+  hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll,
+};
+

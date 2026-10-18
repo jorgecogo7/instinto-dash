@@ -9,7 +9,12 @@ const router = express.Router();
 const EDITABLE_FIELDS = [
   'name', 'niche', 'contractValue', 'dailyBudget', 'owner',
   'site', 'instagram', 'drive', 'payment', 'pixBalance', 'status',
+  'dashboardModel',
 ];
+
+// Modelo do painel de anúncios do cliente: quais plataformas aparecem.
+// 'auto' = mostra o que estiver conectado.
+const DASHBOARD_MODELS = new Set(['auto', 'meta', 'google', 'combined']);
 
 function sanitizeString(value, maxLength) {
   if (typeof value !== 'string') return null;
@@ -81,6 +86,9 @@ router.post('/', async (req, res) => {
 // PATCH /api/accounts/:id — edita campos de gestão (protegido contra mass assignment).
 router.patch('/:id', async (req, res) => {
   const changes = pickEditableFields(req.body);
+  if (changes.dashboardModel !== undefined && !DASHBOARD_MODELS.has(changes.dashboardModel)) {
+    return res.status(400).json({ error: 'Modelo de dashboard inválido.' });
+  }
   if (Object.keys(changes).length === 0) {
     return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
   }
@@ -170,6 +178,12 @@ router.post('/:id/meta-connection', async (req, res) => {
           accountActive: verified.active,
         };
       }
+    }
+
+    // Só a Página informada? Tenta achar o Instagram Business vinculado a ela.
+    if (!meta.igBusinessId && pageId) {
+      const ig = await metaService.findInstagramForPage(pageId);
+      if (ig) meta.igBusinessId = ig.id;
     }
 
     const updated = await accountsStore.update(req.params.id, { meta });

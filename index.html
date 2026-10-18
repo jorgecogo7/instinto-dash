@@ -589,7 +589,7 @@
   .public-title{ font-size:22px; font-weight:700; }
 
   /* ---- Página de detalhe do cliente (Visão geral / Integrações) ---- */
-  .client-detail-tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .client-detail-tabs{ display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
   .cd-pane{ display:none; }
   .cd-pane.active{ display:block; }
   .btn-edit-client{
@@ -698,6 +698,140 @@
   .ig-kpi-grid .kpi{ border-top:3px solid transparent; }
   .ig-kpi-grid .kpi.ig-accent-purple{ border-top-color:#B36BFF; }
   .ig-kpi-grid .kpi.ig-accent-pink{ border-top-color:#FF5DA2; }
+
+  /* ===================== Painel do cliente — Anúncios v2 ===================== */
+  .cd-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:4px 0 18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .cd-subtabs{ display:flex; gap:22px; }
+  .cd-subtab{ background:none; border:none; padding:6px 2px 9px; font-size:14px; font-weight:600; color:var(--text-dim); cursor:pointer; border-bottom:2px solid transparent; font-family:inherit; }
+  .cd-subtab:hover{ color:var(--text); }
+  .cd-subtab.active{ color:var(--text); border-image: linear-gradient(90deg, var(--flame), var(--amber)) 1; border-bottom-width:2px; border-bottom-style:solid; }
+  .cd-subtab:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .cd-platform-block{ margin-bottom:34px; }
+  .cd-section-title{ display:flex; align-items:center; justify-content:center; gap:12px; margin:6px 0 6px; }
+  .cd-section-title::before, .cd-section-title::after{ content:''; flex:1; height:1px; background:var(--line); }
+  .cd-section-title h2{ font-size:22px; font-weight:800; letter-spacing:-0.3px; background: linear-gradient(90deg, var(--flame), var(--amber)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cd-section-logos{ display:flex; gap:4px; padding:6px 9px; border-radius:999px; background:var(--bg-panel); border:1px solid var(--card-border); box-shadow:var(--card-shadow); }
+  .pf-logo{ width:24px; height:24px; border-radius:7px; display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; }
+  .pf-meta{ background: linear-gradient(135deg, #0866FF, #4C7EFF); }
+  .pf-google{ background: conic-gradient(#4285F4 0 25%, #34A853 0 50%, #FBBC05 0 75%, #EA4335 0); }
+  .cd-section-sub{ text-align:center; font-size:11.5px; color:var(--text-dim); margin-bottom:16px; }
+
+  .kpi2-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap:12px; margin-bottom:18px; }
+  .kpi2{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:14px; padding:15px 16px; box-shadow:var(--card-shadow); position:relative; overflow:hidden; }
+  .kpi2::before{ content:''; position:absolute; left:0; right:0; top:0; height:3px; background:var(--kpi2-accent, linear-gradient(90deg, var(--flame), var(--amber))); opacity:.9; }
+  .kpi2.big{ grid-column: 1 / -1; }
+  #cdCombinedKpis{ grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); }
+  .kpi2-label{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.6px; }
+  .kpi2-value{ font-size:24px; font-weight:800; margin-top:6px; font-variant-numeric:tabular-nums; letter-spacing:-0.4px; }
+  .kpi2.big .kpi2-value{ font-size:30px; }
+  .kpi2-prev{ font-size:11.5px; color:var(--text-dim); margin-top:6px; }
+  .kpi2-delta{ font-size:12px; font-weight:600; margin-top:3px; }
+  .kpi2-delta.good{ color:var(--green); } .kpi2-delta.bad{ color:var(--red); } .kpi2-delta.neutral{ color:var(--text-dim); font-weight:500; }
+  .kpi-prev{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+
+  .dual-chart{ position:relative; height:240px; }
+  .dual-chart svg{ display:block; overflow:visible; }
+  .dual-legend{ display:flex; justify-content:center; gap:18px; font-size:12px; margin-top:4px; }
+  .dual-legend span{ display:flex; align-items:center; gap:6px; }
+  .dual-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+
+  .table-scroll{ overflow-x:auto; margin:0 -4px; }
+  .table-scroll table{ min-width:720px; }
+  .sort-table th{ cursor:pointer; user-select:none; white-space:nowrap; }
+  .sort-table th:hover{ color:var(--text); }
+  .sort-table th.sorted{ color:var(--text); }
+  .sort-table td.num, .sort-table th.num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sort-table td .cell-sub{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .sort-table td .cell-main{ font-weight:600; }
+  .ad-cell{ display:flex; align-items:center; gap:11px; min-width:210px; position:relative; }
+  .ad-thumb{ width:40px; height:40px; border-radius:9px; object-fit:cover; flex-shrink:0; background:var(--bg-panel-3); }
+  .ad-thumb-ph{ width:40px; height:40px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; background: linear-gradient(135deg, rgba(255,90,30,.25), rgba(76,126,255,.25)); }
+  .ad-preview{ display:none; position:absolute; left:0; bottom:48px; z-index:20; width:220px; border-radius:12px; overflow:hidden; box-shadow:0 18px 40px rgba(0,0,0,.35); border:1px solid var(--line); background:var(--bg-panel); }
+  .ad-preview img{ width:100%; display:block; }
+  .ad-cell:hover .ad-preview{ display:block; }
+
+  .donut-row{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:14px; margin-bottom:18px; }
+  .donut-card{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); box-shadow:var(--card-shadow); padding:18px; }
+  .donut-card h3{ font-size:14px; font-weight:600; margin-bottom:14px; }
+  .donut-body{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .donut-legend{ flex:1; min-width:170px; display:grid; grid-template-columns: 1fr auto auto; gap:6px 12px; font-size:12.5px; align-items:center; }
+  .donut-legend .lg-name{ display:flex; align-items:center; gap:7px; }
+  .donut-legend .lg-name i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .donut-legend .lg-pct{ font-weight:700; text-align:right; }
+  .donut-legend .lg-val{ color:var(--text-dim); text-align:right; }
+
+  .chip-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .chip-row-label{ font-size:11px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--text-dim); min-width:84px; }
+  .chips{ display:flex; gap:7px; flex-wrap:wrap; }
+  .chip{ font-family:inherit; font-size:12.5px; padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text-dim); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .chip i{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+  .chip:hover{ color:var(--text); }
+  .chip.active{ color:var(--text); border-color: rgba(255,176,32,.55); background: linear-gradient(90deg, rgba(255,90,30,.14), rgba(255,176,32,.08)); font-weight:600; }
+
+  .creative-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(215px,1fr)); gap:14px; margin-top:14px; }
+  .creative-card{ background:var(--bg-panel-2); border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+  .creative-media{ position:relative; aspect-ratio: 1/1; background: linear-gradient(135deg, rgba(255,90,30,.22), rgba(76,126,255,.22)); display:flex; align-items:center; justify-content:center; font-size:34px; }
+  .creative-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .creative-rank{ position:absolute; top:10px; left:10px; z-index:2; font-size:11.5px; font-weight:800; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.92); color:#1B2340; }
+  .creative-tag{ position:absolute; top:38px; left:10px; z-index:2; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:999px; background:#FFE9B8; color:#7A4B00; }
+  .creative-band{ padding:9px 14px; background: color-mix(in srgb, var(--band, var(--amber)) 14%, var(--bg-panel)); }
+  .creative-band-label{ font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color: var(--band, var(--amber)); }
+  .creative-band-value{ font-size:22px; font-weight:800; color: var(--band, var(--amber)); }
+  .creative-body{ padding:12px 14px 6px; flex:1; }
+  .creative-name{ font-size:13px; font-weight:700; word-break:break-word; }
+  .creative-sub{ font-size:11px; color:var(--text-dim); margin-top:2px; word-break:break-word; }
+  .creative-status{ position:absolute; top:10px; right:10px; z-index:2; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:999px; }
+  .creative-status.on{ background:#D9F7E9; color:#0E7A4D; }
+  .creative-status.off{ background:rgba(255,255,255,.9); color:#5B6478; }
+  .creative-metrics{ display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; margin-top:10px; }
+  .creative-metrics .m-label{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-dim); }
+  .creative-metrics .m-val{ font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .creative-more{ display:none; }
+  .creative-card.open .creative-more{ display:grid; }
+  .creative-toggle{ border:none; border-top:1px solid var(--line); background:none; color:var(--text-dim); font-family:inherit; font-size:12px; padding:9px; cursor:pointer; margin-top:8px; }
+  .creative-toggle:hover{ color:var(--text); }
+  .show-all-btn{ display:block; margin:14px auto 0; font-family:inherit; font-size:12.5px; padding:8px 16px; border-radius:999px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); cursor:pointer; }
+
+  /* ---- Redes Sociais v2 ---- */
+  .ig-source-line{ font-size:12px; color:var(--text-dim); margin:-4px 0 12px; }
+  .ig-avatar img{ width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
+  .ig-note{ font-size:12px; color:var(--text-dim); margin:22px 0 10px; }
+  .cd-social-grid + .cd-social-grid{ margin-top:14px; }
+  .ig-ranking-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(330px,1fr)); gap:12px; }
+  .ig-rank-card{ display:flex; gap:12px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--bg-panel-2); text-decoration:none; color:inherit; }
+  .ig-rank-card:hover{ border-color: rgba(255,93,162,.45); }
+  .ig-thumb{ width:68px; height:68px; border-radius:10px; object-fit:cover; flex-shrink:0; background: linear-gradient(135deg, #B36BFF55, #FF5DA255); position:relative; display:flex; align-items:center; justify-content:center; font-size:22px; overflow:hidden; }
+  .ig-thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .ig-type-badge{ position:absolute; left:4px; bottom:4px; z-index:2; font-size:8.5px; font-weight:800; padding:1px 5px; border-radius:4px; background:rgba(0,0,0,.6); color:#fff; letter-spacing:.3px; }
+  .ig-rank-title{ font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; }
+  .ig-rank-caption{ font-size:11.5px; color:var(--text-dim); margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ig-rank-stat{ font-size:12px; margin-top:5px; color:var(--text-dim); }
+  .ig-rank-stat b{ font-size:15px; }
+  .ig-posts-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap:12px; margin-top:12px; }
+  .ig-post{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg-panel-2); text-decoration:none; color:inherit; display:flex; flex-direction:column; }
+  .ig-post:hover{ border-color: rgba(179,107,255,.5); }
+  .ig-post .ig-thumb{ width:100%; height:auto; aspect-ratio:1/1; border-radius:0; font-size:30px; }
+  .ig-post-body{ padding:10px 12px 12px; }
+  .ig-post-date{ font-size:11px; color:var(--text-dim); }
+  .ig-post-caption{ font-size:12px; margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:31px; }
+  .ig-post-stats{ display:grid; grid-template-columns: repeat(3,1fr); gap:6px; margin-top:9px; font-size:11px; color:var(--text-dim); }
+  .ig-post-stats b{ display:block; font-size:13px; color:var(--text); }
+  .ig-post-stats .hl b{ color:#FF5DA2; }
+  .mini-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .mini-table th{ text-align:left; font-size:11px; font-weight:600; color:var(--text-dim); padding:7px 4px; border-bottom:1px solid var(--line); }
+  .mini-table td{ padding:8px 4px; border-bottom:1px solid var(--line); }
+  .mini-table td.num, .mini-table th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .mini-table td.acc{ color:var(--blue); font-weight:700; }
+  .mini-table tr:last-child td{ border-bottom:none; }
+  .cd-model-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .cd-model-row select{ max-width:340px; }
+  .cd-model-status{ font-size:12px; color:var(--text-dim); }
+  @media (max-width: 640px){
+    .cd-toolbar{ flex-direction:column; align-items:stretch; }
+    .ig-ranking-grid{ grid-template-columns:1fr; }
+    .cd-section-title h2{ font-size:18px; }
+  }
   #cdFollowersChart, #cdReachChart{ height:190px; display:block; position:relative; }
   #cdFollowersChart svg, #cdReachChart svg{ display:block; overflow:visible; }
   .cd-social-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
@@ -1565,42 +1699,47 @@
         <button type="button" class="g-tab" id="cdTabBtnIntegrations" onclick="setClientDetailTab('integrations')">Integrações</button>
       </div>
 
-      <!-- ===== Aba: Visão geral (dashboard real do cliente) ===== -->
-      <div class="cd-pane active" id="cdPaneOverview">
-        <div class="topbar" style="margin-bottom:14px;">
-          <div></div>
-          <div class="topbar-right">
-            <div class="range-picker" id="cdRangePicker">
-              <button type="button" class="range-picker-btn" onclick="toggleRangeMenu()">📅 <span id="cdRangeLabel">Últimos 30 dias</span> ▾</button>
-              <div class="range-picker-menu" id="cdRangeMenu">
-                <button type="button" class="range-preset active" data-days="7" onclick="applyRangePreset(7)">Últimos 7 dias</button>
-                <button type="button" class="range-preset" data-days="14" onclick="applyRangePreset(14)">Últimos 14 dias</button>
-                <button type="button" class="range-preset" data-days="30" onclick="applyRangePreset(30)">Últimos 30 dias</button>
-                <button type="button" class="range-preset" data-days="90" onclick="applyRangePreset(90)">Últimos 90 dias</button>
-                <div class="range-custom">
-                  <label>De</label>
-                  <input type="date" id="cdRangeFrom">
-                  <label>Até</label>
-                  <input type="date" id="cdRangeTo">
-                  <button type="button" class="range-apply" onclick="applyRangeCustom()">Aplicar período</button>
-                </div>
-              </div>
+      <div class="cd-toolbar" id="cdToolbar">
+        <div class="cd-subtabs" id="cdPlatformTabs"></div>
+        <div class="range-picker" id="cdRangePicker">
+          <button type="button" class="range-picker-btn" onclick="toggleRangeMenu()">📅 <span id="cdRangeLabel">Últimos 30 dias</span> ▾</button>
+          <div class="range-picker-menu" id="cdRangeMenu">
+            <button type="button" class="range-preset active" data-days="7" onclick="applyRangePreset(7)">Últimos 7 dias</button>
+            <button type="button" class="range-preset" data-days="14" onclick="applyRangePreset(14)">Últimos 14 dias</button>
+            <button type="button" class="range-preset" data-days="30" onclick="applyRangePreset(30)">Últimos 30 dias</button>
+            <button type="button" class="range-preset" data-days="90" onclick="applyRangePreset(90)">Últimos 90 dias</button>
+            <div class="range-custom">
+              <label>De</label>
+              <input type="date" id="cdRangeFrom">
+              <label>Até</label>
+              <input type="date" id="cdRangeTo">
+              <button type="button" class="range-apply" onclick="applyRangeCustom()">Aplicar período</button>
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- ===== Aba: Anúncios (dashboard real do cliente) ===== -->
+      <div class="cd-pane active" id="cdPaneOverview">
         <div id="cdGoogleNotConnected" class="offline-banner" style="display:none;"></div>
         <div id="cdLoading" class="footnote" style="display:none; border:none; padding:0;">Carregando dados do período…</div>
 
-        <div id="cdMetaSection" style="display:none; margin-bottom:22px;">
-          <div class="panel-head" style="margin-bottom:12px;">
-            <h3 style="font-size:15px;">Meta Ads</h3>
-            <span class="panel-head-sub" id="cdMetaSub"></span>
-          </div>
+        <div id="cdModelWarning" class="offline-banner" style="display:none;"></div>
+
+        <div id="cdCombinedSection" class="cd-platform-block" style="display:none;">
+          <div class="cd-section-title"><span class="cd-section-logos"><span class="pf-logo pf-meta">∞</span><span class="pf-logo pf-google">G</span></span><h2>Meta + Google Ads</h2></div>
+          <div class="kpi2-grid" id="cdCombinedKpis"></div>
+        </div>
+
+        <div id="cdMetaSection" class="cd-platform-block" style="display:none;">
+          <div class="cd-section-title"><span class="cd-section-logos"><span class="pf-logo pf-meta">∞</span></span><h2>Meta Ads</h2></div>
+          <div class="cd-section-sub" id="cdMetaSub"></div>
           <div id="cdMetaBody"></div>
         </div>
 
-        <div id="cdDashboardContent" style="display:none;">
+        <div id="cdDashboardContent" class="cd-platform-block" style="display:none;">
+          <div class="cd-section-title"><span class="cd-section-logos"><span class="pf-logo pf-google">G</span></span><h2>Google Ads</h2></div>
+          <div class="cd-section-sub" id="cdGoogleSub"></div>
           <div class="panel-head" style="margin-bottom:12px;">
             <h3 style="font-size:15px;">Resumo do período</h3>
             <button type="button" class="btn-customize" id="cdMetricsBtn" onclick="toggleMetricsPanel(event)">⚙ Personalizar métricas</button>
@@ -1620,12 +1759,13 @@
             <div id="cdDailyChart"></div>
           </div>
 
+          <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="gChartClicks"></div></div>
+          <div class="panel"><div class="panel-head"><h3>Conversões e taxa de conversão</h3></div><div class="dual-chart" id="gChartConv"></div></div>
+          <div class="panel"><div class="panel-head"><h3>Custo e CPC médio</h3></div><div class="dual-chart" id="gChartCost"></div></div>
+
           <div class="panel">
-            <div class="panel-head"><h3>Campanhas</h3></div>
-            <table>
-              <thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Impr.</th><th>Cliques</th><th title="% de cliques a cada 100 impressões.">CTR</th><th title="Custo médio pago por clique.">CPC</th><th>Conv.</th><th title="Quanto você pagou, em média, por cada conversão.">Custo/Conv.</th></tr></thead>
-              <tbody id="cdCampaignsTable"></tbody>
-            </table>
+            <div class="panel-head"><div><h3>Todas as campanhas</h3><div class="panel-head-sub">Clique num cabeçalho pra reordenar</div></div></div>
+            <div class="table-scroll" id="cdCampaignsTableWrap"></div>
           </div>
 
           <div class="panel">
@@ -1636,10 +1776,7 @@
             </table>
           </div>
 
-          <div class="panel">
-            <div class="panel-head"><h3>Desempenho por dispositivo</h3></div>
-            <div class="device-grid" id="cdDeviceGrid"></div>
-          </div>
+          <div class="donut-row" id="cdDeviceDonuts"></div>
 
           <div class="panel">
             <div class="panel-head"><h3>Sexo</h3></div>
@@ -1657,6 +1794,8 @@
       <div class="cd-pane" id="cdPaneSocial">
         <div class="footnote" id="cdSocialLoading" style="border:none; padding:0 0 14px;">Carregando dados do Instagram…</div>
         <div id="cdSocialContent" style="display:none;">
+          <div id="igMockBanner" class="offline-banner" style="display:none;"></div>
+          <div class="ig-source-line" id="igSourceLine"></div>
           <div class="ig-profile-card">
             <div class="ig-profile-banner">
               <div class="ig-avatar" id="igAvatar">--</div>
@@ -1687,7 +1826,39 @@
             </div>
           </div>
 
-          <div class="footnote">Exemplo — assim que o Instagram Business do cliente for vinculado (aba Integrações), estes dados passam a vir da API de verdade.</div>
+          <div class="ig-note" id="igDemoNote">Perfil dos seguidores <b>hoje</b> — não muda com o período selecionado.</div>
+          <div class="cd-social-grid">
+            <div class="panel" style="margin-bottom:0;">
+              <div class="panel-head"><h3>Audiência por faixa etária</h3></div>
+              <div id="igAgeChart"></div>
+            </div>
+            <div class="panel" style="margin-bottom:0;">
+              <div class="panel-head"><h3>Seguidores por gênero</h3></div>
+              <div id="igGenderDonut"></div>
+            </div>
+          </div>
+          <div class="cd-social-grid">
+            <div class="panel" style="margin-bottom:0;">
+              <div class="panel-head"><div><h3>Cidades com mais seguidores</h3><div class="panel-head-sub" id="igCitiesSub"></div></div></div>
+              <div id="igCitiesTable"></div>
+            </div>
+            <div class="panel" style="margin-bottom:0;">
+              <div class="panel-head"><div><h3>Países com mais seguidores</h3><div class="panel-head-sub" id="igCountriesSub"></div></div></div>
+              <div id="igCountriesTable"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><div><h3>Ranking de posts</h3><div class="panel-head-sub">Destaques entre as publicações do período</div></div></div>
+            <div class="ig-ranking-grid" id="igRanking"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><div><h3>Posts publicados</h3><div class="panel-head-sub">Clique num post pra abrir no Instagram</div></div></div>
+            <div class="chip-row"><span class="chip-row-label">Tipo</span><div id="igTypeChips" class="chips"></div></div>
+            <div class="chip-row"><span class="chip-row-label">Ordenar por</span><div id="igSortChips" class="chips"></div></div>
+            <div class="ig-posts-grid" id="igPostsGrid"></div>
+          </div>
         </div>
       </div>
 
@@ -1724,6 +1895,18 @@
 
       <!-- ===== Aba: Integrações ===== -->
       <div class="cd-pane" id="cdPaneIntegrations">
+      <div class="panel cd-model-panel">
+        <div class="panel-head"><div><h3>Modelo do painel de anúncios</h3><div class="panel-head-sub">Define quais plataformas aparecem na aba Anúncios deste cliente — nem todo cliente anuncia nas duas.</div></div></div>
+        <div class="cd-model-row">
+          <select class="modal-input" id="cdModelSelect" onchange="saveDashboardModel(this.value)">
+            <option value="auto">Automático (o que estiver conectado)</option>
+            <option value="meta">Meta Ads</option>
+            <option value="google">Google Ads</option>
+            <option value="combined">Combinado (Meta + Google)</option>
+          </select>
+          <span class="cd-model-status" id="cdModelStatus"></span>
+        </div>
+      </div>
       <div class="conn-table-wrap">
         <table class="conn-table">
           <thead><tr><th>Conta</th><th>Status</th><th>Identificador</th><th></th></tr></thead>
@@ -2054,7 +2237,8 @@
 
   /* ---------- clients (sidebar + tables) ---------- */
   const initials = n => n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  const brl = v => (v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0 });
+  // Valores grandes sem centavos (R$ 6.534), pequenos com centavos (R$ 1,29).
+  const brl = v => { v = v || 0; const d = Math.abs(v) >= 100 ? 0 : 2; return v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:d, maximumFractionDigits:d }); };
   const brlCompact = v => { v = v || 0; return v >= 1000 ? 'R$' + (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k' : 'R$' + Math.round(v).toLocaleString('pt-BR'); };
   const dateBr = s => (s || '').split('-').reverse().join('/');
   const dotColor = s => s==='on' ? 'var(--green)' : s==='pending' ? 'var(--amber)' : '#565C66';
@@ -3346,6 +3530,12 @@
     document.getElementById('insightsContent').innerHTML = '<div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>';
     document.getElementById('insightsError').style.display = 'none';
 
+    document.getElementById('cdModelSelect').value = account.dashboardModel || 'auto';
+    document.getElementById('cdModelStatus').textContent = '';
+    cdPlatformView = 'all';
+    cdCurrentRange = { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+    igTypeFilter = 'all'; igPostSort = 'recent';
+    metaCreativeSort = 'results'; metaShowAllCreatives = false;
     setClientDetailTab(initialTab || 'overview');
     applyRangePreset(30);
   }
@@ -3450,6 +3640,9 @@
     document.getElementById('cdPaneContract').classList.toggle('active', tab === 'contract');
     document.getElementById('cdPaneHistory').classList.toggle('active', tab === 'history');
     document.getElementById('cdPaneIntegrations').classList.toggle('active', tab === 'integrations');
+    document.getElementById('cdToolbar').style.display = (tab === 'overview' || tab === 'social') ? 'flex' : 'none';
+    document.getElementById('cdPlatformTabs').style.visibility = tab === 'overview' ? 'visible' : 'hidden';
+    if (tab === 'overview') applyPlatformView();
     if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
     if (tab === 'contract') renderClientContractPane();
     if (tab === 'history') renderClientHistoryPane();
@@ -3468,6 +3661,12 @@
     return d.toISOString().slice(0,10);
   }
 
+  function onClientRangeChange(){
+    loadClientDashboard();
+    cdSocialLoaded = false;
+    if (document.getElementById('cdPaneSocial').classList.contains('active')) loadSocialPanel();
+  }
+
   function applyRangePreset(days){
     document.querySelectorAll('.range-preset[data-days]').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
     const to = isoDaysAgo(0);
@@ -3477,7 +3676,7 @@
     document.getElementById('cdRangeLabel').textContent = `Últimos ${days} dias`;
     cdCurrentRange = { from, to };
     document.getElementById('cdRangeMenu').classList.remove('open');
-    loadClientDashboard();
+    onClientRangeChange();
   }
 
   function applyRangeCustom(){
@@ -3489,155 +3688,557 @@
     document.getElementById('cdRangeLabel').textContent = `${fmt(from)} – ${fmt(to)}`;
     cdCurrentRange = { from, to };
     document.getElementById('cdRangeMenu').classList.remove('open');
-    loadClientDashboard();
+    onClientRangeChange();
   }
 
-  function deltaHtml(pct){
+  // invert=true pra métricas de custo (CPC, CPM, custo por conversão): cair é bom.
+  function deltaHtml(pct, invert){
     if (pct === null || pct === undefined || !isFinite(pct)) return '<span class="vs-label">sem dado do período anterior</span>';
     const up = pct >= 0;
-    return `<span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span><span class="vs-label">vs período anterior</span>`;
+    const good = invert ? !up : up;
+    return `<span class="${good ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span><span class="vs-label">vs período anterior</span>`;
   }
   // Conversões do Google Ads vêm com casas decimais (modelo de atribuição).
   // Arredondamos pra exibir de forma limpa, sem virar um número quebrado.
   const convFmt = v => (Math.round((v || 0) * 10) / 10).toLocaleString('pt-BR');
 
+  /* ===================== Aba Anúncios: Todos / Meta / Google ===================== */
+  let cdPlatformView = 'all';           // 'all' | 'meta' | 'google'
+  let cdAvailable = { meta:false, google:false };
+  let cdLoadSeq = 0;
+  let cdLastGoogle = null, cdLastMeta = null;
+  let cdLoadingCount = 0;
+
+  const intFmt = v => Math.round(v || 0).toLocaleString('pt-BR');
+  const compactFmt = v => {
+    v = v || 0;
+    if (Math.abs(v) >= 1e6) return (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'M';
+    if (Math.abs(v) >= 1e4) return (v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k';
+    return Math.round(v).toLocaleString('pt-BR');
+  };
+  const pct2 = v => (v || 0).toFixed(2).replace('.', ',') + '%';
+  const dec2 = v => (v || 0).toFixed(2).replace('.', ',');
+  const DASH_MODEL_LABELS = { auto:'Automático', meta:'Meta Ads', google:'Google Ads', combined:'Combinado (Meta + Google)' };
+
+  // Quais plataformas o painel deste cliente deve mostrar, conforme o
+  // "Modelo do painel" escolhido na aba Integrações.
+  function cdWantedPlatforms(account){
+    const gOn = account.google?.status === 'connected';
+    const mOn = account.meta?.status === 'connected';
+    const model = account.dashboardModel || 'auto';
+    if (model === 'meta') return ['meta'];
+    if (model === 'google') return ['google'];
+    if (model === 'combined') return ['meta','google'];
+    return [...(mOn ? ['meta'] : []), ...(gOn ? ['google'] : [])];
+  }
+
+  function renderPlatformTabs(){
+    const el = document.getElementById('cdPlatformTabs');
+    const both = cdAvailable.meta && cdAvailable.google;
+    const tabs = both
+      ? [['all','Todos'],['meta','Meta'],['google','Google']]
+      : cdAvailable.meta ? [['meta','Meta Ads']] : cdAvailable.google ? [['google','Google Ads']] : [];
+    el.innerHTML = tabs.map(([id,label]) =>
+      `<button type="button" class="cd-subtab${cdPlatformView === id ? ' active' : ''}" onclick="setPlatformView('${id}')">${label}</button>`).join('');
+  }
+
+  function setPlatformView(view){
+    cdPlatformView = view;
+    renderPlatformTabs();
+    applyPlatformView();
+  }
+
+  function applyPlatformView(){
+    const v = cdPlatformView;
+    const showMeta = cdAvailable.meta && (v === 'all' || v === 'meta');
+    const showGoogle = cdAvailable.google && (v === 'all' || v === 'google') && !!cdLastGoogle;
+    const showCombined = cdAvailable.meta && cdAvailable.google && v === 'all' && !!cdLastGoogle && !!cdLastMeta;
+    document.getElementById('cdMetaSection').style.display = showMeta ? 'block' : 'none';
+    document.getElementById('cdDashboardContent').style.display = showGoogle ? 'block' : 'none';
+    document.getElementById('cdCombinedSection').style.display = showCombined ? 'block' : 'none';
+    // Os gráficos do Google são desenhados com o painel visível (medidas reais).
+    if (showGoogle && cdLastGoogle) renderGoogleDualCharts(cdLastGoogle);
+    if (showMeta && cdLastMeta) renderMetaDualCharts(cdLastMeta);
+  }
+
   async function loadClientDashboard(){
     const account = rawAccountsById[currentClientId];
     if (!account) return;
+    const seq = ++cdLoadSeq;
     const banner = document.getElementById('cdGoogleNotConnected');
-    const content = document.getElementById('cdDashboardContent');
+    const warn = document.getElementById('cdModelWarning');
     const loading = document.getElementById('cdLoading');
-    const googleOn = account.google?.status === 'connected';
-    const metaOn = account.meta?.status === 'connected';
+    const gOn = account.google?.status === 'connected';
+    const mOn = account.meta?.status === 'connected';
+    const wanted = cdWantedPlatforms(account);
 
-    // O Meta aparece sempre que estiver conectado, com ou sem Google.
-    loadClientMeta(account, metaOn);
+    cdAvailable = { meta: wanted.includes('meta') && mOn, google: wanted.includes('google') && gOn };
+    cdLastGoogle = null; cdLastMeta = null;
+    if (!(cdAvailable.meta && cdAvailable.google)) cdPlatformView = cdAvailable.meta ? 'meta' : 'google';
+    else if (!['all','meta','google'].includes(cdPlatformView)) cdPlatformView = 'all';
+    renderPlatformTabs();
 
-    if (!googleOn) {
-      content.style.display = 'none';
+    banner.style.display = 'none';
+    const missing = wanted.filter(p => !(p === 'meta' ? mOn : gOn));
+    if (missing.length && wanted.length) {
+      warn.style.display = 'flex';
+      warn.innerHTML = `⚠ O modelo deste painel inclui ${missing.map(p => p === 'meta' ? 'Meta Ads' : 'Google Ads').join(' e ')}, mas a conta ainda não está conectada. <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab('integrations')">Conectar agora</a>`;
+    } else warn.style.display = 'none';
+
+    if (!cdAvailable.meta && !cdAvailable.google) {
+      applyPlatformView();
       loading.style.display = 'none';
-      if (metaOn) {
-        banner.style.display = 'none';
-      } else {
-        // Nenhuma plataforma de anúncios conectada ainda.
+      if (!missing.length) {
         banner.style.display = 'flex';
         banner.innerHTML = '⚠ Nenhuma plataforma de anúncios conectada pra este cliente. <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Conectar agora</a>';
       }
       return;
     }
-    banner.style.display = 'none';
-    content.style.display = 'none';
-    loading.style.display = 'block';
 
+    applyPlatformView();
+    loading.style.display = cdAvailable.google ? 'block' : 'none';
+    const [m, g] = await Promise.all([
+      cdAvailable.meta ? loadClientMeta(seq) : null,
+      cdAvailable.google ? loadClientGoogle(seq) : null,
+    ]);
+    if (seq !== cdLoadSeq) return;
+    loading.style.display = 'none';
+    cdLastMeta = m; cdLastGoogle = g;
+    renderCombined();
+    applyPlatformView();
+  }
+
+  async function loadClientGoogle(seq){
+    const banner = document.getElementById('cdGoogleNotConnected');
     try {
       const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
       const res = await fetch(`${API_BASE_URL}/api/google/${currentClientId}/report?${qs}`, { headers: authHeaders() });
-      if (res.status === 401) { logout(); return; }
+      if (res.status === 401) { logout(); return null; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados.');
+      if (seq !== cdLoadSeq) return null;
+      cdLastGoogle = data;
       renderClientDashboard(data);
-      loading.style.display = 'none';
-      content.style.display = 'block';
+      const rg = data.range || range;
+      document.getElementById('cdGoogleSub').textContent = `${dateBr(rg.from)} – ${dateBr(rg.to)}${data.previousRange ? ` · comparado com ${dateBr(data.previousRange.from)} – ${dateBr(data.previousRange.to)}` : ''}`;
+      return data;
     } catch (err) {
-      loading.style.display = 'none';
+      if (seq !== cdLoadSeq) return null;
       banner.style.display = 'flex';
       banner.textContent = `⚠ Google Ads: ${err.message}`;
+      return null;
     }
   }
 
-  // ---- Meta Ads dentro da visão geral do cliente (dados reais da Graph API) ----
-  async function loadClientMeta(account, metaOn){
-    const sec = document.getElementById('cdMetaSection');
+  // ---- Meta Ads: relatório completo (totais, período anterior, diário, anúncios) ----
+  async function loadClientMeta(seq){
     const body = document.getElementById('cdMetaBody');
     const sub = document.getElementById('cdMetaSub');
-    if (!metaOn) { sec.style.display = 'none'; body.innerHTML = ''; return; }
     const id = currentClientId;
     const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
-    const dBr = d => d.split('-').reverse().join('/');
-    sec.style.display = 'block';
-    sub.textContent = `${dBr(range.from)} – ${dBr(range.to)}`;
-    body.innerHTML = '<div class="footnote" style="border:none; padding:0;">Carregando dados da Meta…</div>';
+    sub.textContent = `${dateBr(range.from)} – ${dateBr(range.to)}`;
+    body.innerHTML = '<div class="footnote" style="border:none; padding:0; text-align:center;">Carregando dados da Meta…</div>';
     try {
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
-      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/campaigns?${qs}`, { headers: authHeaders() });
-      if (res.status === 401) { logout(); return; }
+      const res = await fetch(`${API_BASE_URL}/api/meta/${id}/report?${qs}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return null; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados da Meta.');
-      if (id !== currentClientId) return; // trocou de cliente enquanto carregava
+      if (seq !== cdLoadSeq || id !== currentClientId) return null;
+      cdLastMeta = data;
       renderClientMeta(data);
+      return data;
     } catch (err) {
-      if (id !== currentClientId) return;
+      if (seq !== cdLoadSeq || id !== currentClientId) return null;
       body.innerHTML = `<div class="offline-banner" style="display:flex;"></div>`;
       body.firstChild.textContent = `⚠ Meta Ads: ${err.message}`;
+      return null;
     }
   }
 
-  function renderClientMeta(apiCampaigns){
+  // Card de métrica com valor anterior e variação (verde = bom, vermelho = ruim).
+  function kpi2Html({ label, value, prev, fmt, invert, accent, big, title }){
+    const hasPrev = prev !== null && prev !== undefined;
+    let delta = '<div class="kpi2-delta neutral">sem dado do período anterior</div>';
+    if (hasPrev && prev > 0) {
+      const pct = ((value - prev) / prev) * 100;
+      const up = pct >= 0;
+      const cls = Math.abs(pct) < 0.05 ? 'neutral' : ((invert ? !up : up) ? 'good' : 'bad');
+      delta = `<div class="kpi2-delta ${cls}">${up ? '↗' : '↘'} ${up ? '+' : '−'}${Math.abs(pct).toFixed(1).replace('.', ',')}% vs período ant.</div>`;
+    } else if (hasPrev && prev === 0 && value > 0) {
+      delta = '<div class="kpi2-delta neutral">novo no período</div>';
+    }
+    return `<div class="kpi2${big ? ' big' : ''}"${accent ? ` style="--kpi2-accent:${accent};"` : ''}${title ? ` title="${escapeAttr(title)}"` : ''}>
+      <div class="kpi2-label">${label}</div>
+      <div class="kpi2-value">${fmt(value || 0)}</div>
+      <div class="kpi2-prev">Anterior: ${hasPrev ? fmt(prev || 0) : '—'}</div>
+      ${delta}
+    </div>`;
+  }
+
+  // Meta + Google somados (só quando o cliente tem as duas plataformas).
+  function renderCombined(){
+    const g = cdLastGoogle, m = cdLastMeta;
+    if (!g || !m) return;
+    const sum = (gt, mt) => {
+      const spend = (gt.spend || 0) + (mt.spend || 0);
+      const impressions = (gt.impressions || 0) + (mt.impressions || 0);
+      const clicks = (gt.clicks || 0) + (mt.clicks || 0);
+      const conv = (gt.conversions || 0) + (mt.results || 0);
+      return { spend, impressions, clicks, conv, cpl: conv > 0 ? spend / conv : 0, cpc: clicks > 0 ? spend / clicks : 0 };
+    };
+    const c = sum(g.totals || {}, m.totals || {});
+    const p = sum(g.previousTotals || {}, m.previousTotals || {});
+    document.getElementById('cdCombinedKpis').innerHTML = [
+      kpi2Html({ label:'Investimento', value:c.spend, prev:p.spend, fmt:brl2 }),
+      kpi2Html({ label:'Impressões', value:c.impressions, prev:p.impressions, fmt:compactFmt }),
+      kpi2Html({ label:'Cliques', value:c.clicks, prev:p.clicks, fmt:compactFmt }),
+      kpi2Html({ label:'Conversões', value:c.conv, prev:p.conv, fmt:intFmt, title:'Conversões do Google Ads + resultados da Meta (conversas, leads, compras…)' }),
+      kpi2Html({ label:'Custo por conversão', value:c.cpl, prev:p.cpl, fmt:brl2, invert:true }),
+      kpi2Html({ label:'CPC', value:c.cpc, prev:p.cpc, fmt:brl2, invert:true }),
+    ].join('');
+  }
+
+  /* ---------- Tabelas ordenáveis (clique no cabeçalho) ---------- */
+  const sortStates = {};
+  const sortRenderers = {};
+  function sortTableHtml(id, cols, rows, defaultSort){
+    const st = sortStates[id] || (sortStates[id] = { ...defaultSort });
+    const col = cols.find(c => c.key === st.key) || cols[0];
+    const val = r => col.sortVal ? col.sortVal(r) : r[col.key];
+    const sorted = rows.slice().sort((a, b) => {
+      const va = val(a), vb = val(b);
+      if (typeof va === 'string' || typeof vb === 'string') return String(va || '').localeCompare(String(vb || ''), 'pt-BR') * st.dir;
+      return ((va || 0) - (vb || 0)) * st.dir;
+    });
+    const head = cols.map(c => {
+      const on = c.key === st.key;
+      return `<th class="${c.num ? 'num' : ''}${on ? ' sorted' : ''}" onclick="sortTableBy('${id}','${c.key}')"${c.title ? ` title="${escapeAttr(c.title)}"` : ''}>${c.label}${on ? (st.dir < 0 ? ' ↓' : ' ↑') : ''}</th>`;
+    }).join('');
+    const body = sorted.map(r => `<tr>${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.cell(r)}</td>`).join('')}</tr>`).join('');
+    return `<table class="sort-table"><thead><tr>${head}</tr></thead><tbody>${body || `<tr><td colspan="${cols.length}" class="footnote" style="border:none;">Sem dados nesse período.</td></tr>`}</tbody></table>`;
+  }
+  function sortTableBy(id, key){
+    const st = sortStates[id];
+    if (!st) return;
+    if (st.key === key) st.dir = -st.dir; else { st.key = key; st.dir = -1; }
+    sortRenderers[id] && sortRenderers[id]();
+  }
+
+  /* ---------- Gráfico de linha com dois eixos ---------- */
+  // A = série da esquerda (área + linha), B = série da direita (linha).
+  function renderDualChart(el, daily, A, B){
+    if (!el) return;
+    if (!daily || !daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
+    const W = 1000, H = 215, padL = 74, padR = 70, padT = 12, padB = 26;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = daily.length;
+    const xStep = n > 1 ? plotW / (n - 1) : 0;
+    const xAt = i => padL + (n > 1 ? i * xStep : plotW / 2);
+    const ticks = 4;
+    const axis = S => {
+      const vals = daily.map(d => Number(S.get(d)) || 0);
+      const nice = niceAxisStep(Math.max(0, ...vals), ticks);
+      return { vals, max: nice.max || 1, step: nice.step, count: nice.count };
+    };
+    const a = axis(A), b = axis(B);
+    const gridCount = a.count;
+    const yA = v => padT + plotH - (v / a.max) * plotH;
+    const yB = v => padT + plotH - (v / (b.step * gridCount || 1)) * plotH;
+    let grid = '', labelsL = '', labelsR = '';
+    for (let g = 0; g <= gridCount; g++) {
+      const y = padT + (plotH / gridCount) * g;
+      grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${g === gridCount ? '0' : '3,4'}" />`;
+      labelsL += `<text x="${padL - 10}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11.5" fill="var(--text-dim)">${A.axisFmt(a.step * (gridCount - g))}</text>`;
+      labelsR += `<text x="${W - padR + 10}" y="${(y + 4).toFixed(1)}" text-anchor="start" font-size="11.5" fill="var(--text-dim)">${B.axisFmt(b.step * (gridCount - g))}</text>`;
+    }
+    const every = Math.max(1, Math.ceil(n / 9));
+    let xl = '';
+    daily.forEach((d, i) => { if ((i % every === 0 && (n - 1 - i >= every * 0.6 || i === 0)) || i === n - 1) xl += `<text x="${xAt(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`; });
+    const pa = smoothPathD(daily.map((d, i) => ({ x: xAt(i), y: yA(a.vals[i]) }))).trim();
+    const pb = smoothPathD(daily.map((d, i) => ({ x: xAt(i), y: yB(b.vals[i]) }))).trim();
+    const area = pa + ` L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
+    const gid = `dg_${el.id}`;
+    el.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${A.color}" stop-opacity="0.22"/><stop offset="100%" stop-color="${A.color}" stop-opacity="0"/></linearGradient></defs>
+        ${grid}
+        <path d="${area}" fill="url(#${gid})" stroke="none"/>
+        <path d="${pa}" fill="none" stroke="${A.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="${pb}" fill="none" stroke="${B.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${labelsL}${labelsR}${xl}
+        <line class="dc-line" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>
+        <circle class="dc-a" r="4" fill="${A.color}" stroke="var(--bg-panel)" stroke-width="2" opacity="0"/>
+        <circle class="dc-b" r="4" fill="${B.color}" stroke="var(--bg-panel)" stroke-width="2" opacity="0"/>
+        <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent" class="dc-rect"/>
+      </svg>
+      <div class="dual-legend"><span style="color:${A.color}"><i style="background:${A.color}"></i>${A.label}</span><span style="color:${B.color}"><i style="background:${B.color}"></i>${B.label}</span></div>
+      <div class="chart-tooltip" style="display:none;"></div>`;
+    const svg = el.querySelector('svg'), line = el.querySelector('.dc-line'), ca = el.querySelector('.dc-a'), cb = el.querySelector('.dc-b');
+    const tip = el.querySelector('.chart-tooltip'), rect = el.querySelector('.dc-rect');
+    rect.addEventListener('mousemove', e => {
+      const r = svg.getBoundingClientRect();
+      const mx = (e.clientX - r.left) * (W / r.width);
+      const i = Math.max(0, Math.min(n - 1, n > 1 ? Math.round((mx - padL) / xStep) : 0));
+      const x = xAt(i).toFixed(1);
+      line.setAttribute('x1', x); line.setAttribute('x2', x); line.setAttribute('opacity', '1');
+      ca.setAttribute('cx', x); ca.setAttribute('cy', yA(a.vals[i]).toFixed(1)); ca.setAttribute('opacity', '1');
+      cb.setAttribute('cx', x); cb.setAttribute('cy', yB(b.vals[i]).toFixed(1)); cb.setAttribute('opacity', '1');
+      tip.style.display = 'block';
+      tip.innerHTML = `<div class="ctt-date">${dateBr(daily[i].date)}</div><div style="color:${A.color}">● ${A.label}: ${A.fmt(a.vals[i])}</div><div style="color:${B.color}">● ${B.label}: ${B.fmt(b.vals[i])}</div>`;
+      const cr = el.getBoundingClientRect();
+      let left = e.clientX - cr.left + 14;
+      if (left + 200 > cr.width) left = e.clientX - cr.left - 200;
+      tip.style.left = Math.max(4, left) + 'px'; tip.style.top = '4px';
+    });
+    rect.addEventListener('mouseleave', () => { [line, ca, cb].forEach(x => x.setAttribute('opacity', '0')); tip.style.display = 'none'; });
+  }
+
+  const CH_BLUE = '#4C7EFF', CH_GREEN = '#22B573', CH_AMBER = '#F5A524', CH_PINK = '#FF5DA2', CH_PURPLE = '#9B7BFF';
+  const axisBrl = v => 'R$ ' + (v >= 1000 ? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k' : v.toLocaleString('pt-BR',{maximumFractionDigits: v < 10 ? 2 : 0}));
+  const axisNum = v => v >= 1000 ? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k' : v.toLocaleString('pt-BR',{maximumFractionDigits:1});
+  const axisPct = v => v.toLocaleString('pt-BR',{maximumFractionDigits:1}) + '%';
+
+  function renderGoogleDualCharts(data){
+    const daily = data.dailySpend || [];
+    renderDualChart(document.getElementById('gChartClicks'), daily,
+      { label:'Cliques', color:CH_BLUE, get:d => d.clicks, fmt:intFmt, axisFmt:axisNum },
+      { label:'CTR (%)', color:CH_GREEN, get:d => d.ctr, fmt:pct2, axisFmt:axisPct });
+    renderDualChart(document.getElementById('gChartConv'), daily,
+      { label:'Conversões', color:CH_BLUE, get:d => d.conversions, fmt:convFmt, axisFmt:axisNum },
+      { label:'Taxa de conversão (%)', color:CH_GREEN, get:d => d.convRate, fmt:pct2, axisFmt:axisPct });
+    renderDualChart(document.getElementById('gChartCost'), daily,
+      { label:'Custo (R$)', color:CH_BLUE, get:d => d.spend, fmt:brl2, axisFmt:axisBrl },
+      { label:'CPC médio (R$)', color:CH_GREEN, get:d => d.cpc, fmt:brl2, axisFmt:axisBrl });
+  }
+
+  function renderMetaDualCharts(r){
+    const daily = r.daily || [];
+    renderDualChart(document.getElementById('mChartSpend'), daily,
+      { label:'Investimento (R$)', color:CH_BLUE, get:d => d.spend, fmt:brl2, axisFmt:axisBrl },
+      { label:r.resultLabel || 'Resultados', color:CH_GREEN, get:d => d.results, fmt:intFmt, axisFmt:axisNum });
+    renderDualChart(document.getElementById('mChartClicks'), daily,
+      { label:'Cliques', color:CH_BLUE, get:d => d.clicks, fmt:intFmt, axisFmt:axisNum },
+      { label:'CTR (%)', color:CH_GREEN, get:d => d.ctr, fmt:pct2, axisFmt:axisPct });
+  }
+
+  /* ---------- Donut (rosca) ---------- */
+  const DONUT_COLORS = [CH_BLUE, CH_GREEN, CH_AMBER, CH_PURPLE, CH_PINK, '#22C3C3'];
+  function donutSvg(items, size){
+    const total = items.reduce((s, it) => s + (it.value || 0), 0);
+    const r = size / 2 - 14, c = 2 * Math.PI * r, cx = size / 2;
+    let offset = 0, arcs = '';
+    items.forEach((it, i) => {
+      const frac = total > 0 ? (it.value || 0) / total : 0;
+      if (frac <= 0) return;
+      const len = Math.max(0.8, frac * c - (items.length > 1 ? 2 : 0));
+      arcs += `<circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${it.color || DONUT_COLORS[i % DONUT_COLORS.length]}" stroke-width="18" stroke-dasharray="${len.toFixed(2)} ${(c - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${cx} ${cx})"/>`;
+      offset += frac * c;
+    });
+    if (!arcs) arcs = `<circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="var(--line)" stroke-width="20"/>`;
+    return { svgInner: arcs, total };
+  }
+  function donutCardHtml(title, items, fmtVal, centerSub, centerTop, bare){
+    const size = 150;
+    const list = items.filter(it => (it.value || 0) > 0).map((it, i) => ({ ...it, color: it.color || DONUT_COLORS[i % DONUT_COLORS.length] }));
+    const { svgInner, total } = donutSvg(list, size);
+    const top = list.slice().sort((a, b) => b.value - a.value)[0];
+    const topPct = top && total ? Math.round((top.value / total) * 100) : 0;
+    const legend = list.map(it => `<span class="lg-name"><i style="background:${it.color}"></i>${escapeHtml(it.label)}</span><span class="lg-pct">${total ? Math.round(it.value / total * 100) : 0}%</span><span class="lg-val">${fmtVal(it.value)}</span>`).join('');
+    return `<div class="donut-card"${bare ? ' style="border:none; box-shadow:none; padding:0; background:none;"' : ''}>${title ? `<h3>${title}</h3>` : ''}<div class="donut-body">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">${svgInner}
+        <text x="${size/2}" y="${size/2 + 2}" text-anchor="middle" font-size="22" font-weight="800" fill="var(--text)">${centerTop || (top ? topPct + '%' : '—')}</text>
+        <text x="${size/2}" y="${size/2 + 20}" text-anchor="middle" font-size="10.5" letter-spacing="0.6" fill="var(--text-dim)">${top ? escapeHtml((centerSub || top.label)).toUpperCase() : 'SEM DADOS'}</text>
+      </svg>
+      <div class="donut-legend">${legend || '<span class="footnote" style="border:none; padding:0;">Sem dados nesse período.</span>'}</div>
+    </div></div>`;
+  }
+
+  /* ---------- Meta Ads: tela completa ---------- */
+  let metaCreativeSort = 'results';
+  let metaShowAllCreatives = false;
+  const META_CREATIVE_SORTS = [
+    { id:'results', label:'Mais resultados', color:CH_BLUE, band:'results' },
+    { id:'cpr', label:'Menor custo por resultado', color:CH_GREEN, band:'cpr' },
+    { id:'ctr', label:'Maior CTR', color:CH_PURPLE, band:'ctr' },
+    { id:'cpc', label:'Menor CPC', color:'#E8514F', band:'cpc' },
+    { id:'spend', label:'Mais investido', color:CH_AMBER, band:'spend' },
+  ];
+
+  function adThumbHtml2(a){
+    const url = a.thumbnailUrl || a.thumb || '';
+    if (!url) return '<div class="ad-thumb-ph">🖼</div>';
+    const u = escapeAttr(url);
+    return `<img class="ad-thumb" src="${u}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=&quot;ad-thumb-ph&quot;>🖼</div>'"><div class="ad-preview"><img src="${u}" alt="" referrerpolicy="no-referrer"></div>`;
+  }
+
+  function renderClientMeta(r){
     const body = document.getElementById('cdMetaBody');
-    const esc = escapeHtml;
-    const objectiveLabels = { OUTCOME_SALES:'Vendas', OUTCOME_LEADS:'Cadastros', OUTCOME_ENGAGEMENT:'Engajamento / Mensagens',
-      OUTCOME_TRAFFIC:'Tráfego', OUTCOME_AWARENESS:'Reconhecimento', OUTCOME_APP_PROMOTION:'App',
-      CONVERSIONS:'Conversões', REACH:'Alcance', TRAFFIC:'Tráfego', AWARENESS:'Reconhecimento' };
-    const camps = (apiCampaigns || []).map(c => ({
-      name: c.name,
-      objective: objectiveLabels[c.objective] || c.objective || '—',
-      active: c.status === 'ACTIVE',
-      ins: c.insights || { spend:0, ctr:0, cpc:0, conversions:0 },
-      ads: (c.adsets || []).flatMap(as => (as.ads || []).map(a => ({ name:a.name, set:as.name, campaign:c.name, thumb:a.thumbnailUrl || '', ins:a.insights || { spend:0, ctr:0, cpc:0, conversions:0 } }))),
-    }));
-    const spending = camps.filter(c => c.ins.spend > 0);
-    if (!spending.length) {
-      body.innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhuma campanha com investimento nesse período.</div>';
+    const t = r.totals || {}, p = r.previousTotals || {};
+    const rl = r.resultLabel || 'Resultados';
+    document.getElementById('cdMetaSub').textContent =
+      `${dateBr(r.range.from)} – ${dateBr(r.range.to)} · comparado com ${dateBr(r.previousRange.from)} – ${dateBr(r.previousRange.to)}${r.mock ? ' · dados de exemplo' : ''}`;
+
+    if (!(t.spend > 0) && !(r.ads || []).length) {
+      body.innerHTML = '<div class="footnote" style="border:none; padding:0; text-align:center;">Nenhum anúncio com investimento nesse período.</div>';
       return;
     }
 
-    const costPer = (spend, n) => n > 0 ? brl2(spend / n) : '—';
-    const totalSpend = camps.reduce((s,c) => s + c.ins.spend, 0);
-    const totalResults = camps.reduce((s,c) => s + c.ins.conversions, 0);
-    // Cliques e impressões vêm só como taxas (CPC, CTR); reconstruímos os totais
-    // por campanha pra calcular CPC e CTR médios ponderados (não média simples).
-    const clicks = camps.reduce((s,c) => s + (c.ins.cpc > 0 ? c.ins.spend / c.ins.cpc : 0), 0);
-    const impressions = camps.reduce((s,c) => s + ((c.ins.cpc > 0 && c.ins.ctr > 0) ? (c.ins.spend / c.ins.cpc) / (c.ins.ctr / 100) : 0), 0);
-    const avgCpc = clicks > 0 ? totalSpend / clicks : 0;
-    const avgCtr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+    const metaAccent = 'linear-gradient(90deg, #0866FF, #4C7EFF)';
+    const kpis = [
+      kpi2Html({ label:'Investimento', value:t.spend, prev:p.spend, fmt:brl2, accent:metaAccent }),
+      kpi2Html({ label:rl, value:t.results, prev:p.results, fmt:intFmt, accent:metaAccent }),
+      kpi2Html({ label:'Custo por resultado', value:t.costPerResult, prev:p.costPerResult, fmt:brl2, invert:true, accent:metaAccent }),
+      kpi2Html({ label:'Alcance', value:t.reach, prev:p.reach, fmt:compactFmt, accent:metaAccent, title:'Pessoas diferentes que viram os anúncios no período.' }),
+      kpi2Html({ label:'Impressões', value:t.impressions, prev:p.impressions, fmt:compactFmt, accent:metaAccent }),
+      kpi2Html({ label:'Cliques', value:t.clicks, prev:p.clicks, fmt:compactFmt, accent:metaAccent }),
+      kpi2Html({ label:'CTR', value:t.ctr, prev:p.ctr, fmt:pct2, accent:metaAccent }),
+      kpi2Html({ label:'CPC', value:t.cpc, prev:p.cpc, fmt:brl2, invert:true, accent:metaAccent }),
+      kpi2Html({ label:'CPM', value:t.cpm, prev:p.cpm, fmt:brl2, invert:true, accent:metaAccent }),
+      kpi2Html({ label:'Frequência', value:t.frequency, prev:p.frequency, fmt:dec2, accent:metaAccent, title:'Quantas vezes, em média, cada pessoa viu os anúncios.' }),
+    ].join('');
 
-    const kpi = (label, value) => `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div></div>`;
-    const kpis = `<div class="kpi-grid" style="margin-bottom:18px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
-      ${kpi('Investido', brl2(totalSpend))}
-      ${kpi('Resultados', totalResults.toLocaleString('pt-BR'))}
-      ${kpi('Custo por resultado', costPer(totalSpend, totalResults))}
-      ${kpi('CTR médio', pct1(avgCtr))}
-      ${kpi('CPC médio', brl2(avgCpc))}
-    </div>`;
-
-    const statusPill = on => `<span style="color:${on ? 'var(--green)' : 'var(--muted, #8b919b)'}">● ${on ? 'Ativa' : 'Pausada'}</span>`;
-    const campRows = [...camps].sort((a,b) => b.ins.spend - a.ins.spend).map(c => `<tr>
-      <td>${esc(c.name)}</td><td>${esc(c.objective)}</td><td>${statusPill(c.active)}</td>
-      <td>${brl2(c.ins.spend)}</td><td>${pct1(c.ins.ctr)}</td><td>${brl2(c.ins.cpc)}</td>
-      <td>${c.ins.conversions.toLocaleString('pt-BR')}</td><td>${costPer(c.ins.spend, c.ins.conversions)}</td></tr>`).join('');
-
-    const allAds = camps.flatMap(c => c.ads).filter(a => a.ins.spend > 0).sort((a,b) => b.ins.spend - a.ins.spend).slice(0, 15);
-    const adRows = allAds.map(a => `<tr>
-      <td><div style="display:flex; align-items:center; gap:10px;">${adThumbHtml(a)}<span>${esc(a.name)}</span></div></td><td>${esc(a.campaign)}<div class="footnote" style="border:none; padding:0;">${esc(a.set)}</div></td>
-      <td>${brl2(a.ins.spend)}</td><td>${pct1(a.ins.ctr)}</td><td>${brl2(a.ins.cpc)}</td>
-      <td>${a.ins.conversions.toLocaleString('pt-BR')}</td><td>${costPer(a.ins.spend, a.ins.conversions)}</td></tr>`).join('');
-
-    body.innerHTML = `${kpis}
+    body.innerHTML = `
+      <div class="kpi2-grid">${kpis}</div>
+      <div class="panel"><div class="panel-head"><h3>Investimento e ${escapeHtml(rl.toLowerCase())}</h3></div><div class="dual-chart" id="mChartSpend"></div></div>
+      <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="mChartClicks"></div></div>
       <div class="panel">
-        <div class="panel-head"><h3>Campanhas</h3></div>
-        <table>
-          <thead><tr><th>Campanha</th><th>Objetivo</th><th>Status</th><th>Invest.</th><th title="% de cliques a cada 100 impressões.">CTR</th><th title="Custo médio pago por clique.">CPC</th><th title="Compras, cadastros ou conversas iniciadas, conforme o objetivo da campanha.">Resultados</th><th title="Quanto você pagou, em média, por cada resultado.">Custo/Result.</th></tr></thead>
-          <tbody>${campRows}</tbody>
-        </table>
+        <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">Troque o critério pra reordenar — a faixa colorida mostra a métrica escolhida</div></div></div>
+        <div class="chip-row"><span class="chip-row-label">Ordenar por</span><div class="chips" id="metaCreativeChips"></div></div>
+        <div id="metaCreativeGrid"></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>Anúncios</h3><span class="panel-head-sub">Os 15 que mais investiram no período</span></div>
-        <table>
-          <thead><tr><th>Anúncio</th><th>Campanha · Conjunto</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Resultados</th><th>Custo/Result.</th></tr></thead>
-          <tbody>${adRows || '<tr><td colspan="7" class="footnote" style="border:none;">Sem anúncios com investimento nesse período.</td></tr>'}</tbody>
-        </table>
+        <div class="panel-head"><div><h3>Anúncios com investimento</h3><div class="panel-head-sub">${(r.ads || []).length} anúncios com gasto no período · passe o mouse na imagem pra ampliar · clique num cabeçalho pra reordenar</div></div></div>
+        <div class="table-scroll" id="metaAdsTableWrap"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Campanhas</h3></div>
+        <div class="table-scroll" id="metaCampTableWrap"></div>
       </div>`;
+
+    renderMetaCreatives();
+
+    const adCols = [
+      { key:'name', label:'Anúncio', sortVal:a => a.name, cell:a => `<div class="ad-cell">${adThumbHtml2(a)}<div><div class="cell-main">${escapeHtml(a.name)}</div><div class="cell-sub">${escapeHtml(a.adset || '')}</div></div></div>` },
+      { key:'results', label:'Resultados', num:true, cell:a => a.results ? `<div class="cell-main" style="color:var(--blue)">${intFmt(a.results)}</div><div class="cell-sub">${escapeHtml(a.resultLabel || '')}</div>` : '—' },
+      { key:'costPerResult', label:'Custo/Result.', num:true, sortVal:a => a.results ? a.costPerResult : -1, cell:a => a.results ? brl2(a.costPerResult) : '—' },
+      { key:'spend', label:'Investido', num:true, cell:a => `<b>${brl2(a.spend)}</b>` },
+      { key:'reach', label:'Alcance', num:true, cell:a => compactFmt(a.reach) },
+      { key:'impressions', label:'Impressões', num:true, cell:a => compactFmt(a.impressions) },
+      { key:'ctr', label:'CTR', num:true, cell:a => pct2(a.ctr) },
+      { key:'cpc', label:'CPC', num:true, cell:a => brl2(a.cpc) },
+      { key:'cpm', label:'CPM', num:true, cell:a => brl2(a.cpm) },
+      { key:'frequency', label:'Freq.', num:true, cell:a => dec2(a.frequency) },
+      { key:'engagement', label:'Engaj.', num:true, title:'Engajamento com a publicação (curtidas, comentários, cliques…)', cell:a => compactFmt(a.engagement) },
+      { key:'video25', label:'Vídeo 25%', num:true, title:'Quantas vezes o vídeo foi assistido até 25%', cell:a => a.video25 ? compactFmt(a.video25) : '—' },
+    ];
+    sortRenderers.metaAds = () => {
+      const wrap = document.getElementById('metaAdsTableWrap');
+      if (wrap) wrap.innerHTML = sortTableHtml('metaAds', adCols, r.ads || [], { key:'results', dir:-1 });
+    };
+    sortRenderers.metaAds();
+
+    const campCols = [
+      { key:'name', label:'Campanha', sortVal:c => c.name, cell:c => `<span class="cell-main">${escapeHtml(c.name)}</span>` },
+      { key:'spend', label:'Investido', num:true, cell:c => brl2(c.spend) },
+      { key:'impressions', label:'Impressões', num:true, cell:c => compactFmt(c.impressions) },
+      { key:'clicks', label:'Cliques', num:true, cell:c => intFmt(c.clicks) },
+      { key:'ctr', label:'CTR', num:true, cell:c => pct2(c.ctr) },
+      { key:'cpc', label:'CPC', num:true, cell:c => brl2(c.cpc) },
+      { key:'results', label:'Resultados', num:true, cell:c => intFmt(c.results) },
+      { key:'costPerResult', label:'Custo/Result.', num:true, sortVal:c => c.results ? c.costPerResult : -1, cell:c => c.results ? brl2(c.costPerResult) : '—' },
+    ];
+    sortRenderers.metaCamp = () => {
+      const wrap = document.getElementById('metaCampTableWrap');
+      if (wrap) wrap.innerHTML = sortTableHtml('metaCamp', campCols, r.campaigns || [], { key:'spend', dir:-1 });
+    };
+    sortRenderers.metaCamp();
+    applyPlatformView();
+  }
+
+  function setMetaCreativeSort(id){ metaCreativeSort = id; metaShowAllCreatives = false; renderMetaCreatives(); }
+  function toggleAllCreatives(){ metaShowAllCreatives = !metaShowAllCreatives; renderMetaCreatives(); }
+
+  function renderMetaCreatives(){
+    const r = cdLastMeta;
+    const chipsEl = document.getElementById('metaCreativeChips');
+    const grid = document.getElementById('metaCreativeGrid');
+    if (!r || !chipsEl || !grid) return;
+    chipsEl.innerHTML = META_CREATIVE_SORTS.map(s =>
+      `<button type="button" class="chip${s.id === metaCreativeSort ? ' active' : ''}" onclick="setMetaCreativeSort('${s.id}')">${s.id === metaCreativeSort ? '✓' : `<i style="background:${s.color}"></i>`} ${s.label}</button>`).join('');
+    const sortDef = META_CREATIVE_SORTS.find(s => s.id === metaCreativeSort) || META_CREATIVE_SORTS[0];
+    let ads = (r.ads || []).slice();
+    const by = {
+      results: (a, b) => (b.results - a.results) || (b.spend - a.spend),
+      cpr: (a, b) => (a.costPerResult - b.costPerResult),
+      ctr: (a, b) => b.ctr - a.ctr,
+      cpc: (a, b) => a.cpc - b.cpc,
+      spend: (a, b) => b.spend - a.spend,
+    };
+    if (sortDef.id === 'cpr') ads = ads.filter(a => a.results > 0);
+    if (sortDef.id === 'cpc') ads = ads.filter(a => a.clicks > 0);
+    ads.sort(by[sortDef.id]);
+    const maxSpendId = (r.ads || []).slice().sort((a, b) => b.spend - a.spend)[0]?.id;
+    const band = a => {
+      switch (sortDef.id) {
+        case 'cpr': return ['Custo por resultado', brl2(a.costPerResult)];
+        case 'ctr': return ['CTR', pct2(a.ctr)];
+        case 'cpc': return ['CPC', brl2(a.cpc)];
+        case 'spend': return ['Investido', brl2(a.spend)];
+        default: return [a.resultLabel || r.resultLabel || 'Resultados', intFmt(a.results)];
+      }
+    };
+    const shown = metaShowAllCreatives ? ads : ads.slice(0, 8);
+    if (!ads.length) { grid.innerHTML = '<div class="footnote" style="border:none; padding:6px 0 0;">Nenhum anúncio entra nesse critério no período.</div>'; return; }
+    grid.innerHTML = `<div class="creative-grid">${shown.map((a, i) => {
+      const [bl, bv] = band(a);
+      const on = !a.status || a.status === 'ACTIVE';
+      const img = a.thumbnailUrl ? `<img src="${escapeAttr(a.thumbnailUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+      return `<div class="creative-card" id="cc_${i}">
+        <div class="creative-media">🖼${img}<span class="creative-rank">#${i + 1}</span>${a.id === maxSpendId ? '<span class="creative-tag">Maior investimento</span>' : ''}<span class="creative-status ${on ? 'on' : 'off'}">${on ? 'Ativo' : 'Pausado'}</span></div>
+        <div class="creative-band" style="--band:${sortDef.color}"><div class="creative-band-label">${escapeHtml(bl)}</div><div class="creative-band-value">${bv}</div></div>
+        <div class="creative-body">
+          <div class="creative-name">${escapeHtml(a.name)}</div>
+          <div class="creative-sub">${escapeHtml(a.campaign || '')}${a.adset ? ' · ' + escapeHtml(a.adset) : ''}</div>
+          <div class="creative-metrics">
+            <div><div class="m-label">Investido</div><div class="m-val">${brl2(a.spend)}</div></div>
+            <div><div class="m-label">${escapeHtml(a.resultLabel || 'Resultados')}</div><div class="m-val">${a.results ? intFmt(a.results) : '—'}</div></div>
+            <div><div class="m-label">Custo/result.</div><div class="m-val">${a.results ? brl2(a.costPerResult) : '—'}</div></div>
+            <div><div class="m-label">CTR</div><div class="m-val">${pct2(a.ctr)}</div></div>
+          </div>
+          <div class="creative-metrics creative-more">
+            <div><div class="m-label">CPC</div><div class="m-val">${brl2(a.cpc)}</div></div>
+            <div><div class="m-label">CPM</div><div class="m-val">${brl2(a.cpm)}</div></div>
+            <div><div class="m-label">Alcance</div><div class="m-val">${compactFmt(a.reach)}</div></div>
+            <div><div class="m-label">Impressões</div><div class="m-val">${compactFmt(a.impressions)}</div></div>
+            <div><div class="m-label">Frequência</div><div class="m-val">${dec2(a.frequency)}</div></div>
+            <div><div class="m-label">Engajamento</div><div class="m-val">${compactFmt(a.engagement)}</div></div>
+          </div>
+        </div>
+        <button type="button" class="creative-toggle" onclick="this.closest('.creative-card').classList.toggle('open'); this.textContent = this.closest('.creative-card').classList.contains('open') ? 'menos métricas ▴' : 'mais métricas ▾';">mais métricas ▾</button>
+      </div>`;
+    }).join('')}</div>${ads.length > 8 ? `<button type="button" class="show-all-btn" onclick="toggleAllCreatives()">${metaShowAllCreatives ? 'Mostrar só os 8 primeiros' : `Ver todos os ${ads.length} criativos`}</button>` : ''}`;
+  }
+
+  /* ---------- Modelo do painel (aba Integrações) ---------- */
+  async function saveDashboardModel(model){
+    const status = document.getElementById('cdModelStatus');
+    status.textContent = 'Salvando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ dashboardModel: model }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      rawAccountsById[currentClientId] = data;
+      status.textContent = '✓ Salvo — a aba Anúncios já segue esse modelo.';
+      cdPlatformView = model === 'combined' ? 'all' : cdPlatformView;
+      loadClientDashboard();
+    } catch (err) {
+      status.textContent = `⚠ ${err.message}`;
+    }
   }
 
   // Gráfico "Investimento por dia": SVG com investimento (área/linha, eixo esquerdo)
@@ -3774,7 +4375,7 @@
     const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
     let xLabels = '';
     daily.forEach((d, i) => {
-      if (i % labelEvery === 0 || i === n - 1) {
+      if ((i % labelEvery === 0 && (n - 1 - i >= labelEvery * 0.6 || i === 0)) || i === n - 1) {
         xLabels += `<text x="${xAt(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
       }
     });
@@ -3993,14 +4594,17 @@
     const grid = document.getElementById('cdKpiGrid');
     const cards = visibleDefs.map(m => {
       const val = m.fmt(m.get(totals) || 0);
-      const deltaPct = m.deltaKey ? cdLastDeltas[m.deltaKey] : cdPctDelta(m.get(totals), m.get(cdLastPrevTotals));
+      const prevVal = m.get(cdLastPrevTotals);
+      const deltaPct = m.deltaKey ? cdLastDeltas[m.deltaKey] : cdPctDelta(m.get(totals), prevVal);
+      const invert = ['cpc','cpm','costPerConv'].includes(m.id);
       const isActive = active.includes(m.id);
       const color = cdColorFor(m.id);
       const styleAttr = isActive ? ` style="--kpi-accent:${color};"` : '';
       return `<div class="kpi kpi-clickable${isActive ? ' kpi-active' : ''}"${styleAttr} onclick="toggleChartMetric('${m.id}')" title="${escapeAttr(m.desc || '')}">
         <div class="kpi-label">${m.label}${isActive ? `<span class="kpi-chart-dot" style="background:${color};"></span>` : ''}</div>
         <div class="kpi-value">${val}</div>
-        <div class="kpi-delta">${deltaHtml(deltaPct)}</div>
+        <div class="kpi-prev">Anterior: ${prevVal === undefined || prevVal === null ? '—' : m.fmt(prevVal || 0)}</div>
+        <div class="kpi-delta">${deltaHtml(deltaPct, invert)}</div>
         <div class="kpi-hint">${isActive ? 'No gráfico — clique pra remover' : 'Clique pra ver no gráfico'}</div>
       </div>`;
     });
@@ -4130,14 +4734,21 @@
       ? `${dateBr(cdLastDaily[0].date)} – ${dateBr(cdLastDaily[cdLastDaily.length-1].date)}`
       : '';
 
-    const campEl = document.getElementById('cdCampaignsTable');
-    campEl.innerHTML = '';
-    (data.campaigns || []).forEach(c => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${brl(c.spend)}</td><td>${(c.impressions||0).toLocaleString('pt-BR')}</td><td>${(c.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(c.ctr)}</td><td>${brl(c.cpc)}</td><td>${convFmt(c.conv)}</td><td>${brl(c.costPerConv)}</td>`;
-      campEl.appendChild(tr);
-    });
-    if (!data.campaigns?.length) campEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem campanhas ativas nesse período.</td></tr>';
+    const campCols = [
+      { key:'name', label:'Campanha', sortVal:c => c.name, cell:c => `<div class="cell-main">${escapeHtml(c.name)}</div><div class="cell-sub">${escapeHtml(c.type || '')}</div>` },
+      { key:'clicks', label:'Cliques', num:true, cell:c => intFmt(c.clicks) },
+      { key:'spend', label:'Custo', num:true, cell:c => brl2(c.spend) },
+      { key:'impressions', label:'Impressões', num:true, cell:c => intFmt(c.impressions) },
+      { key:'conv', label:'Conversões', num:true, sortVal:c => c.conv ?? c.conversions, cell:c => convFmt(c.conv ?? c.conversions) },
+      { key:'ctr', label:'CTR', num:true, title:'% de cliques a cada 100 impressões.', cell:c => pct2(c.ctr) },
+      { key:'cpc', label:'CPC médio', num:true, title:'Custo médio pago por clique.', cell:c => brl2(c.cpc) },
+      { key:'costPerConv', label:'Custo / conv.', num:true, sortVal:c => (c.conv ?? c.conversions) ? c.costPerConv : -1, cell:c => (c.conv ?? c.conversions) ? brl2(c.costPerConv) : '—' },
+      { key:'allConversions', label:'Todas as conv.', num:true, cell:c => convFmt(c.allConversions) },
+    ];
+    sortRenderers.gCamp = () => {
+      document.getElementById('cdCampaignsTableWrap').innerHTML = sortTableHtml('gCamp', campCols, data.campaigns || [], { key:'clicks', dir:-1 });
+    };
+    sortRenderers.gCamp();
 
     const qsBadgeLocal = qs => {
       if (qs === null || qs === undefined) return '—';
@@ -4149,10 +4760,20 @@
     kwEl.innerHTML = '';
     (data.keywords || []).forEach(k => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k.keyword}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${(k.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${convFmt(k.conversions)}</td><td>${brl(k.costPerConv)}</td>`;
+      tr.innerHTML = `<td>${escapeHtml(k.keyword)}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${(k.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${convFmt(k.conversions)}</td><td>${brl(k.costPerConv)}</td>`;
       kwEl.appendChild(tr);
     });
     if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
+
+    // Dispositivos: rosca de custo, cliques e conversões.
+    const dev = data.deviceBreakdown || [];
+    const devColors = { Mobile:CH_BLUE, Celular:CH_BLUE, Computador:CH_GREEN, Desktop:CH_GREEN, Tablet:CH_AMBER };
+    const devItems = key => dev.map((d, i) => ({ label:d.label, value:d[key] || 0, color: devColors[d.label] || DONUT_COLORS[i % DONUT_COLORS.length] }));
+    document.getElementById('cdDeviceDonuts').innerHTML = dev.length
+      ? donutCardHtml('Dispositivos — Custo', devItems('spend'), brl) +
+        donutCardHtml('Dispositivos — Cliques', devItems('clicks'), intFmt) +
+        donutCardHtml('Dispositivos — Conversões', devItems('conversions'), convFmt)
+      : '';
 
     const renderBreakdownGrid = (elId, items, emptyMsg) => {
       const el = document.getElementById(elId);
@@ -4165,7 +4786,6 @@
       });
       if (!items?.length) el.innerHTML = `<p class="footnote" style="border:none; padding:0;">${emptyMsg}</p>`;
     };
-    renderBreakdownGrid('cdDeviceGrid', data.deviceBreakdown, 'Sem dados por dispositivo nesse período.');
     renderBreakdownGrid('cdGenderGrid', data.genderBreakdown, 'Sem dados de sexo nesse período.');
     renderBreakdownGrid('cdAgeGrid', data.ageBreakdown, 'Sem dados de faixa etária nesse período.');
   }
@@ -4292,62 +4912,225 @@
     return `<div class="kpi-delta"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span><span class="vs-label">vs período anterior</span></div>`;
   };
 
+  let igLastData = null;
+  let igTypeFilter = 'all';
+  let igPostSort = 'recent';
+  let igSocialSeq = 0;
+
   async function loadSocialPanel(){
     const loading = document.getElementById('cdSocialLoading');
     const content = document.getElementById('cdSocialContent');
+    const seq = ++igSocialSeq;
+    const id = currentClientId;
     loading.style.display = 'block';
     loading.textContent = 'Carregando dados do Instagram…';
     content.style.display = 'none';
     try {
-      const res = await fetch(`${API_BASE_URL}/api/instagram/${currentClientId}/report`, { headers: authHeaders() });
+      const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+      const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
+      const res = await fetch(`${API_BASE_URL}/api/instagram/${id}/report?${qs}`, { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados do Instagram.');
-      renderSocialPanel(data);
+      if (seq !== igSocialSeq || id !== currentClientId) return;
       cdSocialLoaded = true;
       loading.style.display = 'none';
       content.style.display = 'block';
+      renderSocialPanel(data);
     } catch (err) {
+      if (seq !== igSocialSeq) return;
       loading.textContent = `⚠ ${err.message}`;
     }
   }
 
+  const igVal = v => (v === null || v === undefined) ? '—' : igCompact(v);
+
   function renderSocialPanel(data){
+    igLastData = data;
     const p = data.profile || {};
-    document.getElementById('igAvatar').textContent = p.avatarInitials || '—';
+    const av = document.getElementById('igAvatar');
+    if (p.pictureUrl) av.innerHTML = `<img src="${escapeAttr(p.pictureUrl)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.textContent='${escapeAttr(p.avatarInitials || 'IG')}'">`;
+    else av.textContent = p.avatarInitials || '—';
     document.getElementById('igName').textContent = p.displayName || '—';
     document.getElementById('igHandle').textContent = p.username ? `@${p.username}` : '—';
     document.getElementById('igBio').textContent = p.bio || '';
-    const linkEl = document.getElementById('igLink');
-    linkEl.textContent = p.link || '';
+    document.getElementById('igLink').textContent = p.link || '';
     document.getElementById('igPosts').textContent = igCompact(p.postsCount);
     document.getElementById('igFollowers').textContent = igCompact(p.followersCount);
     document.getElementById('igFollowing').textContent = igCompact(p.followingCount);
 
+    const banner = document.getElementById('igMockBanner');
+    if (data.mock) {
+      banner.style.display = 'flex';
+      banner.innerHTML = data.igConfigured
+        ? '⚠ Dados de exemplo — o servidor ainda não tem o token da Meta configurado, então não dá pra ler o Instagram de verdade.'
+        : '⚠ Dados de exemplo — cadastre o ID do Instagram Business (ou só a Página do Facebook, que eu acho o Instagram ligado a ela) na aba <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Integrações</a>.';
+    } else banner.style.display = 'none';
+    const r = data.range || {};
+    document.getElementById('igSourceLine').innerHTML = `<b style="color:#FF5DA2;">Instagram orgânico</b> · ${dateBr(r.from)} – ${dateBr(r.to)}${data.previousRange ? ` · comparado com ${dateBr(data.previousRange.from)} – ${dateBr(data.previousRange.to)}` : ''}`;
+
     const m = data.metrics || {};
+    const deltaOrNA = (v, d) => v === null || v === undefined ? '<div class="kpi-delta"><span class="vs-label" style="margin-left:0;">a Meta não liberou esse dado</span></div>' : (d !== undefined ? igDeltaHtml(d) : '');
     const cards = [
-      { label: 'Seguidores', value: igCompact(m.followers), accent: '' },
-      { label: 'Publicações', value: igCompact(m.posts), accent: '' },
-      { label: 'Novos seguidores', value: `+${igCompact(m.newFollowers)}`, delta: m.newFollowersDeltaPct, accent: 'ig-accent-purple' },
-      { label: 'Contas com engajamento (soma diária)', value: igCompact(m.engagedAccounts), delta: m.engagedAccountsDeltaPct, accent: 'ig-accent-pink' },
-      { label: 'Alcance (soma diária)', value: igCompact(m.reach), delta: m.reachDeltaPct, accent: 'ig-accent-purple' },
-      { label: 'Visitas ao perfil', value: igCompact(m.profileVisits), delta: m.profileVisitsDeltaPct, accent: 'ig-accent-pink' },
-      { label: 'Cliques no link', value: igCompact(m.linkClicks), delta: m.linkClicksDeltaPct, accent: 'ig-accent-purple' },
+      { label: 'Seguidores', value: igVal(m.followers), sub: 'hoje', accent: '' },
+      { label: 'Publicações no período', value: igVal(m.postsInPeriod ?? m.posts), sub: `${igCompact(m.posts)} no total`, accent: '' },
+      { label: 'Novos seguidores', value: m.newFollowers === null || m.newFollowers === undefined ? '—' : `+${igCompact(m.newFollowers)}`, raw: m.newFollowers, delta: m.newFollowersDeltaPct, accent: 'ig-accent-purple', note: 'o Instagram não informa quem deixou de seguir' },
+      { label: 'Contas com engajamento', value: igVal(m.engagedAccounts), raw: m.engagedAccounts, delta: m.engagedAccountsDeltaPct, accent: 'ig-accent-pink' },
+      { label: 'Alcance (soma diária)', value: igVal(m.reach), raw: m.reach, delta: m.reachDeltaPct, accent: 'ig-accent-purple', note: 'a mesma pessoa em dois dias conta duas vezes' },
+      { label: 'Visitas ao perfil', value: igVal(m.profileVisits), raw: m.profileVisits, delta: m.profileVisitsDeltaPct, accent: 'ig-accent-pink' },
+      { label: 'Cliques no link', value: igVal(m.linkClicks), raw: m.linkClicks, delta: m.linkClicksDeltaPct, accent: 'ig-accent-purple' },
     ];
     document.getElementById('igKpiGrid').innerHTML = cards.map(c => `
       <div class="kpi ${c.accent}">
         <div class="kpi-label">${c.label}</div>
         <div class="kpi-value">${c.value}</div>
-        ${c.delta !== undefined ? igDeltaHtml(c.delta) : ''}
-      </div>
-    `).join('');
+        ${'raw' in c ? deltaOrNA(c.raw, c.delta === null ? undefined : c.delta) : `<div class="kpi-prev">${c.sub || ''}</div>`}
+        ${c.note ? `<div class="kpi-prev">${c.note}</div>` : ''}
+      </div>`).join('');
 
     const daily = data.daily || [];
     const sub = daily.length ? `${dateBr(daily[0].date)} – ${dateBr(daily[daily.length-1].date)}` : '';
     document.getElementById('igFollowersChartSub').textContent = sub;
     document.getElementById('igReachChartSub').textContent = sub;
-    renderFollowersChart(daily);
-    renderReachChart(daily);
+    if (daily.length && daily.every(d => d.newFollowers === null)) {
+      document.getElementById('cdFollowersChart').innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">A Meta só libera novos seguidores por dia dos últimos 30 dias.</div>';
+    } else renderFollowersChart(daily.map(d => ({ ...d, newFollowers: d.newFollowers || 0 })));
+    if (daily.length && daily.every(d => d.reach === null)) {
+      document.getElementById('cdReachChart').innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Alcance diário indisponível pra este período.</div>';
+    } else renderReachChart(daily.map(d => ({ ...d, reach: d.reach || 0 })));
+
+    renderIgDemographics(data.demographics || {});
+    renderIgRanking(data.posts || []);
+    renderIgPosts();
+  }
+
+  function renderIgDemographics(demo){
+    // Faixa etária: barras verticais
+    const age = demo.age || [];
+    const ageEl = document.getElementById('igAgeChart');
+    const maxAge = Math.max(0, ...age.map(a => a.value));
+    if (!age.length || maxAge <= 0) ageEl.innerHTML = '<div class="footnote" style="border:none; padding:0;">A Meta só libera esse dado pra perfis com 100+ seguidores.</div>';
+    else {
+      const W = 600, H = 200, padL = 40, padB = 24, padT = 8;
+      const nice = niceAxisStep(maxAge, 4);
+      const plotH = H - padB - padT, plotW = W - padL - 6;
+      const bw = plotW / age.length;
+      let g = '', bars = '';
+      for (let i = 0; i <= nice.count; i++) {
+        const y = padT + plotH - (i * nice.step / nice.max) * plotH;
+        g += `<line x1="${padL}" x2="${W}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-dasharray="${i ? '3,4' : '0'}"/><text x="${padL - 6}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--text-dim)">${igCompact(i * nice.step)}</text>`;
+      }
+      age.forEach((a, i) => {
+        const h = (a.value / nice.max) * plotH;
+        const x = padL + i * bw + bw * 0.14;
+        bars += `<rect x="${x.toFixed(1)}" y="${(padT + plotH - h).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#9B7BFF"><title>${a.label}: ${a.value.toLocaleString('pt-BR')}</title></rect>
+          <text x="${(x + bw * 0.36).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${a.label}</text>`;
+      });
+      ageEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">${g}${bars}</svg>`;
+    }
+
+    const gender = demo.gender || [];
+    const gColors = { Feminino:'#4C7EFF', Masculino:'#22B573', Desconhecido:'#F5A524' };
+    const gTotal = gender.reduce((s, x) => s + x.value, 0);
+    document.getElementById('igGenderDonut').innerHTML = gender.length
+      ? donutCardHtml('', gender.map(x => ({ ...x, color: gColors[x.label] })), igCompact, 'seguidores', igCompact(gTotal), true)
+      : '<div class="footnote" style="border:none; padding:0;">Sem dados de gênero.</div>';
+
+    const table = (rows, labelHead) => {
+      const total = rows.reduce((s, x) => s + x.value, 0);
+      if (!rows.length) return '<div class="footnote" style="border:none; padding:0;">Sem dados.</div>';
+      return { total, html: `<table class="mini-table"><thead><tr><th>${labelHead}</th><th class="num">Seguidores</th><th class="num">%</th></tr></thead><tbody>${rows.map(x => `<tr><td>${escapeHtml(x.label)}</td><td class="num acc">${igCompact(x.value)}</td><td class="num">${total ? (x.value / total * 100).toFixed(1).replace('.', ',') : 0}%</td></tr>`).join('')}</tbody></table>` };
+    };
+    const cities = table(demo.cities || [], 'Cidade');
+    const countries = table(demo.countries || [], 'País');
+    document.getElementById('igCitiesTable').innerHTML = cities.html || cities;
+    document.getElementById('igCountriesTable').innerHTML = countries.html || countries;
+    document.getElementById('igCitiesSub').textContent = cities.total ? `% sobre as ${igCompact(cities.total)} pessoas nas cidades listadas` : '';
+    document.getElementById('igCountriesSub').textContent = countries.total ? `% sobre as ${igCompact(countries.total)} pessoas nos países listados` : '';
+  }
+
+  function igThumbHtml(p){
+    const img = p.thumbnailUrl ? `<img src="${escapeAttr(p.thumbnailUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+    const badge = p.type === 'REEL' ? 'REEL' : p.type === 'CARROSSEL' ? 'CARROSSEL' : '';
+    return `<div class="ig-thumb">${p.type === 'REEL' ? '▶' : '📷'}${img}${badge ? `<span class="ig-type-badge">${badge}</span>` : ''}</div>`;
+  }
+  function igPostLinkAttrs(p){
+    return p.permalink ? `href="${escapeAttr(p.permalink)}" target="_blank" rel="noopener noreferrer"` : '';
+  }
+  const igDateFmt = ts => ts ? new Date(ts).toLocaleDateString('pt-BR', { day:'numeric', month:'short', year:'numeric' }) : '';
+
+  function renderIgRanking(posts){
+    const el = document.getElementById('igRanking');
+    if (!posts.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhuma publicação no período.</div>'; return; }
+    const defs = [
+      { icon:'👁', title:'Maior alcance', key:'reach', unit:'contas alcançadas', color:'#4C7EFF' },
+      { icon:'♥', title:'Campeão de curtidas', key:'likes', unit:'curtidas', color:'#E8514F' },
+      { icon:'🔖', title:'Mais salvo', key:'saved', unit:'salvamentos', color:'#4C7EFF' },
+      { icon:'▶', title:'Rei das visualizações', key:'views', unit:'visualizações', color:'#8A919C' },
+      { icon:'↗', title:'Mais compartilhado', key:'shares', unit:'compartilhamentos', color:'#9B7BFF' },
+      { icon:'💬', title:'Puxou conversa', key:'comments', unit:'comentários', color:'#F5A524' },
+    ];
+    el.innerHTML = defs.map(d => {
+      const withVal = posts.filter(p => p[d.key] !== null && p[d.key] !== undefined && p[d.key] > 0);
+      if (!withVal.length) return '';
+      const best = withVal.sort((a, b) => b[d.key] - a[d.key])[0];
+      const tag = p => p.permalink ? 'a' : 'div';
+      return `<${tag(best)} class="ig-rank-card" ${igPostLinkAttrs(best)}>
+        ${igThumbHtml(best)}
+        <div style="min-width:0;">
+          <div class="ig-rank-title" style="color:${d.color}">${d.icon} ${d.title}</div>
+          <div class="ig-rank-caption">${escapeHtml(best.caption || 'Sem legenda')}</div>
+          <div class="ig-rank-stat"><b style="color:${d.color}">${igCompact(best[d.key])}</b> ${d.unit}${d.key !== 'reach' && best.reach ? ` · ${igCompact(best.reach)} de alcance` : ''} · ${igDateFmt(best.timestamp)}</div>
+        </div>
+      </${tag(best)}>`;
+    }).join('') || '<div class="footnote" style="border:none; padding:0;">Sem métricas suficientes nas publicações do período.</div>';
+  }
+
+  const IG_SORTS = [
+    { id:'recent', label:'Mais recentes', color:'#8A919C' },
+    { id:'reach', label:'Maior alcance', color:'#4C7EFF' },
+    { id:'likes', label:'Mais curtidos', color:'#E8514F' },
+    { id:'comments', label:'Mais comentados', color:'#F5A524' },
+    { id:'shares', label:'Mais compartilhados', color:'#9B7BFF' },
+    { id:'saved', label:'Mais salvos', color:'#22B573' },
+    { id:'views', label:'Mais vistos', color:'#22C3C3' },
+  ];
+  function setIgTypeFilter(t){ igTypeFilter = t; renderIgPosts(); }
+  function setIgPostSort(s){ igPostSort = s; renderIgPosts(); }
+
+  function renderIgPosts(){
+    const posts = (igLastData && igLastData.posts) || [];
+    const count = t => t === 'all' ? posts.length : posts.filter(p => p.type === t || (t === 'REEL' && p.type === 'VIDEO')).length;
+    const types = [['all','Todos'],['IMAGEM','Estático'],['CARROSSEL','Carrossel'],['REEL','Reels']].filter(([t]) => t === 'all' || count(t) > 0);
+    document.getElementById('igTypeChips').innerHTML = types.map(([t, l]) =>
+      `<button type="button" class="chip${igTypeFilter === t ? ' active' : ''}" onclick="setIgTypeFilter('${t}')">${l} (${count(t)})</button>`).join('');
+    document.getElementById('igSortChips').innerHTML = IG_SORTS.map(s =>
+      `<button type="button" class="chip${igPostSort === s.id ? ' active' : ''}" onclick="setIgPostSort('${s.id}')">${igPostSort === s.id ? '✓' : `<i style="background:${s.color}"></i>`} ${s.label}</button>`).join('');
+    let list = posts.filter(p => igTypeFilter === 'all' || p.type === igTypeFilter || (igTypeFilter === 'REEL' && p.type === 'VIDEO'));
+    list = list.slice().sort((a, b) => igPostSort === 'recent'
+      ? String(b.timestamp).localeCompare(String(a.timestamp))
+      : (b[igPostSort] || 0) - (a[igPostSort] || 0));
+    const grid = document.getElementById('igPostsGrid');
+    if (!list.length) { grid.innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhuma publicação no período.</div>'; return; }
+    const hl = k => igPostSort === k ? ' class="hl"' : '';
+    grid.innerHTML = list.map(p => {
+      const tag = p.permalink ? 'a' : 'div';
+      return `<${tag} class="ig-post" ${igPostLinkAttrs(p)}>
+        ${igThumbHtml(p)}
+        <div class="ig-post-body">
+          <div class="ig-post-date">${igDateFmt(p.timestamp)}</div>
+          <div class="ig-post-caption">${escapeHtml(p.caption || 'Sem legenda')}</div>
+          <div class="ig-post-stats">
+            <div${hl('reach')}><b>${igVal(p.reach)}</b>alcance</div>
+            <div${hl('likes')}><b>${igVal(p.likes)}</b>curtidas</div>
+            <div${hl('comments')}><b>${igVal(p.comments)}</b>coment.</div>
+            <div${hl('shares')}><b>${igVal(p.shares)}</b>compart.</div>
+            <div${hl('saved')}><b>${igVal(p.saved)}</b>salvos</div>
+            <div${hl('views')}><b>${igVal(p.views)}</b>views</div>
+          </div>
+        </div>
+      </${tag}>`;
+    }).join('');
   }
 
   // Gráfico de barras simples — novos seguidores por dia (igual ao painel
@@ -4355,7 +5138,7 @@
   function renderFollowersChart(daily){
     const el = document.getElementById('cdFollowersChart');
     if (!daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
-    const W = 1000, H = 190, padL = 30, padR = 10, padT = 10, padB = 24;
+    const W = Math.max(320, el.clientWidth || 1000), H = 190, padL = 30, padR = 10, padT = 10, padB = 24;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const n = daily.length;
     const barGap = 3;
@@ -4369,7 +5152,7 @@
       const x = padL + i * (plotW / n);
       const y = yAt(d.newFollowers || 0);
       bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(padT + plotH - y).toFixed(1)}" rx="2" fill="#B36BFF" opacity="0.85" />`;
-      if (i % labelEvery === 0 || i === n - 1) {
+      if ((i % labelEvery === 0 && (n - 1 - i >= labelEvery * 0.6 || i === 0)) || i === n - 1) {
         xLabels += `<text x="${(x + barW/2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
       }
     });
@@ -4385,7 +5168,7 @@
   function renderReachChart(daily){
     const el = document.getElementById('cdReachChart');
     if (!daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
-    const W = 1000, H = 190, padL = 40, padR = 10, padT = 10, padB = 24;
+    const W = Math.max(320, el.clientWidth || 1000), H = 190, padL = 40, padR = 10, padT = 10, padB = 24;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const n = daily.length;
     const xStep = n > 1 ? plotW / (n - 1) : 0;
@@ -4403,7 +5186,7 @@
     const labelEvery = Math.max(1, Math.ceil(n / maxXLabels));
     let xLabels = '';
     daily.forEach((d, i) => {
-      if (i % labelEvery === 0 || i === n - 1) {
+      if ((i % labelEvery === 0 && (n - 1 - i >= labelEvery * 0.6 || i === 0)) || i === n - 1) {
         xLabels += `<text x="${xAt(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
       }
     });

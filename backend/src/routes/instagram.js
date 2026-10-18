@@ -4,7 +4,7 @@ const instagramService = require('../services/instagramService');
 
 const router = express.Router();
 
-// GET /api/instagram/:clientId/report — perfil, métricas e evolução diária
+// GET /api/instagram/:clientId/report[?from=AAAA-MM-DD&to=AAAA-MM-DD] — perfil, métricas e evolução diária
 // (seguidores, alcance) do Instagram orgânico de um cliente. Não exige a
 // conta estar "conectada" pra sempre devolver algo pra tela: sem
 // credenciais reais do Meta configuradas, cai pros dados de exemplo — o
@@ -15,8 +15,10 @@ router.get('/:clientId/report', async (req, res) => {
 
   try {
     const igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
-    const report = await instagramService.getOrganicReport(igUserId);
-    res.json(report);
+    const report = await instagramService.getOrganicReport(igUserId, {
+      from: req.query.from, to: req.query.to,
+    });
+    res.json({ ...report, igConfigured: Boolean(igUserId) });
   } catch (err) {
     console.error(err); res.status(502).json({ error: err.message });
   }

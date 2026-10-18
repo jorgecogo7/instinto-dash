@@ -25,4 +25,23 @@ router.get('/:clientId/campaigns', async (req, res) => {
   }
 });
 
+// GET /api/meta/:clientId/report?from=AAAA-MM-DD&to=AAAA-MM-DD — relatório
+// completo: totais com período anterior, evolução diária, campanhas e todos
+// os anúncios com investimento (com miniatura do criativo).
+router.get('/:clientId/report', async (req, res) => {
+  const account = (await accountsStore.getAll()).find((a) => a.id === req.params.clientId);
+  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  if (account.meta?.status !== 'connected') {
+    return res.status(409).json({ error: 'Conta Meta ainda não conectada para este cliente.' });
+  }
+  try {
+    const report = await metaService.getAccountReport(account.meta.adAccountId, {
+      from: req.query.from, to: req.query.to,
+    });
+    res.json(report);
+  } catch (err) {
+    console.error(err); res.status(502).json({ error: err.message });
+  }
+});
+
 module.exports = router;
