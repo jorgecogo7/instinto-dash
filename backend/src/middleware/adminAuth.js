@@ -10,6 +10,10 @@ function requireAdminAuth(req, res, next) {
   if (!session) {
     return res.status(401).json({ error: 'Sessão inválida ou expirada. Faça login de novo.' });
   }
+  // Login de cliente nunca acessa rotas da agência.
+  if (session.role === 'client') {
+    return res.status(403).json({ error: 'Acesso restrito à agência.' });
+  }
   req.user = session;
   next();
 }

@@ -7,6 +7,7 @@ const leadsStore = require('../data/leadsStore');
 const instagramService = require('../services/instagramService');
 const formsStore = require('../data/formsStore');
 const formService = require('../services/formService');
+const { visibilityOf } = require('../lib/clientAccess');
 
 const router = express.Router();
 
@@ -153,7 +154,9 @@ function wantedPlatforms(account) {
   const model = account.dashboardModel || 'auto';
   const wanted = model === 'meta' ? ['meta'] : model === 'google' ? ['google']
     : model === 'combined' ? ['meta', 'google'] : [...(mOn ? ['meta'] : []), ...(gOn ? ['google'] : [])];
-  return wanted.filter((p) => (p === 'meta' ? mOn : gOn));
+  const vis = visibilityOf(account);
+  if (!vis.ads) return [];
+  return wanted.filter((p) => (p === 'meta' ? mOn && vis.ads_meta : gOn && vis.ads_google));
 }
 
 // GET /api/public/:token/info — dados básicos pro painel do cliente (link
@@ -166,7 +169,8 @@ router.get('/:token/info', async (req, res) => {
     niche: account.niche,
     platforms: wantedPlatforms(account),
     dashboardModel: account.dashboardModel || 'auto',
-    hasInstagram: Boolean(account.instagramApi?.igUserId || account.meta?.igBusinessId || account.meta?.pageId),
+    hasInstagram: visibilityOf(account).social && Boolean(account.instagramApi?.igUserId || account.meta?.igBusinessId || account.meta?.pageId),
+    visibility: visibilityOf(account),
   });
 });
 
@@ -186,6 +190,7 @@ router.get('/:token/:kind(meta|google|instagram)', async (req, res) => {
       if (!wantedPlatforms(account).includes('google')) return res.status(409).json({ error: 'Google Ads não está ativo neste painel.' });
       return res.json(await googleService.getAccountReport(account.google.customerId, range));
     }
+    if (!visibilityOf(account).social) return res.status(403).json({ error: 'Esta seção não está liberada.' });
     let igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
     if (!igUserId && account.meta?.pageId) {
       const ig = await metaService.findInstagramForPage(account.meta.pageId);

@@ -782,6 +782,7 @@
   .kpi2::before{ content:''; position:absolute; left:0; right:0; top:0; height:3px; background:var(--kpi2-accent, linear-gradient(90deg, var(--flame), var(--amber))); opacity:.9; }
   .kpi2.big{ grid-column: 1 / -1; }
   #cdCombinedKpis{ grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); }
+  #cdCombinedKpis .kpi2-value{ font-size:clamp(17px, 1.6vw, 22px); }
   .kpi2-label{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.6px; }
   .kpi2-value{ font-size:24px; font-weight:800; margin-top:6px; font-variant-numeric:tabular-nums; letter-spacing:-0.4px; }
   .kpi2.big .kpi2-value{ font-size:30px; }
@@ -1067,6 +1068,67 @@
   .leadform-success h2{ font-size:19px; margin-bottom:8px; }
   .leadform-success p{ font-size:13.5px; color:var(--text-dim); }
 
+
+  /* ---- Seletor Agência / Cliente ---- */
+  .ws-switch{ position:relative; }
+  .ws-btn{ width:100%; display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:12px; border:1px solid rgba(255,176,32,.35);
+    background:linear-gradient(90deg, rgba(255,90,30,.16), rgba(255,176,32,.08)); color:var(--text); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; text-align:left; }
+  .ws-btn:hover{ border-color:rgba(255,176,32,.6); }
+  .ws-ico{ width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; background:var(--bg-panel); }
+  .ws-ico.client, .ws-ico.sm{ font-size:10.5px; font-weight:800; color:var(--text-dim); background:var(--bg-panel-3); }
+  .ws-ico.sm{ width:24px; height:24px; border-radius:7px; }
+  .ws-name{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ws-caret{ color:var(--text-dim); font-size:12px; }
+  .ws-menu{ display:none; position:absolute; left:0; right:0; top:calc(100% + 6px); z-index:50; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; box-shadow:0 18px 40px rgba(0,0,0,.35); padding:8px; min-width:240px; }
+  .ws-menu.open{ display:block; }
+  .ws-search{ width:100%; font-family:inherit; font-size:12.5px; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); outline:none; margin-bottom:6px; }
+  .ws-list{ max-height:340px; overflow-y:auto; }
+  .ws-item{ display:flex; align-items:center; gap:9px; padding:7px 8px; border-radius:8px; font-size:13px; cursor:pointer; }
+  .ws-item span:last-child{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ws-item:hover{ background:var(--bg-panel-2); }
+  .ws-item.active{ background:linear-gradient(90deg, rgba(255,90,30,.16), rgba(255,176,32,.08)); font-weight:600; }
+  .ws-sep{ font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); padding:8px 8px 4px; }
+  .ws-empty{ font-size:12.5px; color:var(--text-dim); padding:8px; }
+  /* Dentro de um cliente, o menu lateral faz o papel das abas */
+  body.ws-client:not(.public-mode) .cd-back-link,
+  body.ws-client:not(.public-mode) .client-detail-tabs{ display:none !important; }
+
+  /* ---- Acesso do cliente / visibilidade ---- */
+  .access-new{ border:1px solid rgba(53,196,138,.4); background:rgba(53,196,138,.08); border-radius:12px; padding:14px; margin-bottom:16px; }
+  .access-new-title{ font-weight:700; color:var(--green); font-size:13px; margin-bottom:10px; }
+  .access-cred{ display:flex; align-items:center; gap:12px; margin:6px 0; font-size:13px; }
+  .access-cred span{ width:64px; color:var(--text-dim); font-size:12px; }
+  .access-cred code{ font-size:15px; font-weight:700; letter-spacing:.5px; padding:6px 10px; border-radius:8px; background:var(--bg-panel-2); border:1px solid var(--line); }
+  .btn-cancel.danger:hover{ border-color:var(--red); color:var(--red); }
+  .vis-row{ display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); cursor:pointer; font-size:13.5px; }
+  .vis-row input{ accent-color:var(--flame); width:17px; height:17px; margin-top:1px; }
+  .vis-row small{ display:block; font-size:11.5px; color:var(--text-dim); font-weight:400; margin-top:2px; }
+  .vis-row.child{ padding-left:28px; }
+  .vis-row.child b{ font-weight:500; }
+  .vis-row.disabled{ opacity:.45; cursor:default; }
+  /* Seções escondidas pela visibilidade (cliente logado ou link) */
+  body.vis-off-ads_creatives [data-vis="ads_creatives"],
+  body.vis-off-ads_audience [data-vis="ads_audience"],
+  body.vis-off-ads_campaigns [data-vis="ads_campaigns"]{ display:none !important; }
+  /* Cliente logado: mesmo painel, sem nada interno */
+  body.client-mode .cnav-admin,
+  body.client-mode #navAgency,
+  body.client-mode .ws-caret,
+  body.client-mode .cd-back-link,
+  body.client-mode .btn-edit-client,
+  body.client-mode #view-client-detail > .topbar .topbar-right,
+  body.client-mode #cdMetricsBtn,
+  body.client-mode #cdMetricsPicker,
+  body.client-mode #cdModelWarning,
+  body.client-mode .kpi-hint,
+  body.client-mode #fmListMode .topbar-right,
+  body.client-mode .fm-card-actions button[title="Duplicar"],
+  body.client-mode .fm-card-actions button[title="Excluir"],
+  body.client-mode .fm-head-actions,
+  body.client-mode .fm-empty .btn-add,
+  body.client-mode .client-detail-tabs{ display:none !important; }
+  body.client-mode .ws-btn{ cursor:default; pointer-events:none; }
+  body.client-mode .fm-name-input{ pointer-events:none; }
   /* ===================== Formulários ===================== */
   .fm-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap:14px; }
   .fm-card{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); box-shadow:var(--card-shadow); padding:16px 18px; cursor:pointer; transition:transform .15s, border-color .15s; }
@@ -1170,6 +1232,21 @@
     .fm-card-stats b{ font-size:16px; }
     .fm-name-input{ font-size:19px; }
     .fm-preview-frame-wrap{ width:calc(100vw - 56px); }
+  }
+
+  @media (max-width: 900px){
+    .app{ flex-direction:column; }
+    .sidebar{ display:flex !important; width:100%; height:auto; position:static; padding:12px; gap:8px; border-right:none; border-bottom:1px solid var(--line); }
+    .sidebar .brand{ display:none; }
+    .sidebar .nav-divider, .sidebar .client-list, .sidebar #navAgency > .nav-divider{ display:none; }
+    .sidebar .nav{ flex-direction:row; overflow-x:auto; gap:4px; scrollbar-width:none; }
+    .sidebar .nav::-webkit-scrollbar{ display:none; }
+    .sidebar .nav-item{ flex-shrink:0; white-space:nowrap; border-left:none !important; padding:7px 10px !important; font-size:12.5px; }
+    .sidebar #navAgency, .sidebar #navClient{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+    .sidebar #navAgency[style*="none"], .sidebar #navClient[style*="none"]{ display:none !important; }
+    .sidebar #navAgency .nav, .sidebar #navClient .nav{ flex-shrink:0; }
+    .sidebar-foot{ display:flex; flex-direction:row; justify-content:space-between; gap:8px; margin:0; padding:0; border:none; }
+    .sidebar-foot button{ width:auto; padding:6px 10px; font-size:12px; }
   }
   /* ===================== Celular ===================== */
   @media (max-width: 760px){
@@ -1304,6 +1381,39 @@
       </div>
     </div>
 
+    <div class="ws-switch" id="wsSwitch">
+      <button type="button" class="ws-btn" onclick="toggleWsMenu(event)">
+        <span class="ws-ico" id="wsIco">🏢</span>
+        <span class="ws-name" id="wsName">Instinto Digital (Agência)</span>
+        <span class="ws-caret">⇵</span>
+      </button>
+      <div class="ws-menu" id="wsMenu">
+        <input class="ws-search" id="wsSearch" placeholder="Buscar cliente…" oninput="renderWsMenu(this.value)" autocomplete="off">
+        <div class="ws-list" id="wsList"></div>
+      </div>
+    </div>
+
+    <div id="navClient" style="display:none;">
+      <div class="nav-divider">Resultados</div>
+      <nav class="nav">
+        <div class="nav-item cnav" data-ctab="overview" onclick="wsGo('overview')">▣ Anúncios</div>
+        <div class="nav-item cnav" data-ctab="social" onclick="wsGo('social')">◎ Redes Sociais</div>
+      </nav>
+      <div class="nav-divider">Captação</div>
+      <nav class="nav">
+        <div class="nav-item cnav" data-ctab="forms" onclick="wsGo('forms')">📝 Formulários</div>
+      </nav>
+      <div class="nav-divider cnav-admin">Gestão · só você</div>
+      <nav class="nav">
+        <div class="nav-item cnav cnav-admin" data-ctab="insights" onclick="wsGo('insights')">💡 Observações</div>
+        <div class="nav-item cnav cnav-admin" data-ctab="contract" onclick="wsGo('contract')">📄 Contrato</div>
+        <div class="nav-item cnav cnav-admin" data-ctab="history" onclick="wsGo('history')">🕘 Histórico</div>
+        <div class="nav-item cnav cnav-admin" data-ctab="access" onclick="wsGo('access')">🔐 Acesso do cliente</div>
+        <div class="nav-item cnav cnav-admin" data-ctab="integrations" onclick="wsGo('integrations')">🔌 Integrações</div>
+      </nav>
+    </div>
+
+    <div id="navAgency">
     <nav class="nav">
       <div class="nav-item active" data-view="overview">▣ Visão geral</div>
       <div class="nav-item" data-view="meta">▤ Meta Ads</div>
@@ -1321,6 +1431,7 @@
 
     <div class="nav-divider">Clientes</div>
     <div class="client-list" id="clientList"></div>
+    </div>
 
     <div class="sidebar-foot">
       <button class="btn-theme-toggle" onclick="toggleTheme()" id="themeToggleBtn">
@@ -1924,6 +2035,7 @@
         <button type="button" class="g-tab" id="cdTabBtnContract" onclick="setClientDetailTab('contract')">Contrato</button>
         <button type="button" class="g-tab" id="cdTabBtnHistory" onclick="setClientDetailTab('history')">Histórico</button>
         <button type="button" class="g-tab" id="cdTabBtnIntegrations" onclick="setClientDetailTab('integrations')">Integrações</button>
+        <button type="button" class="g-tab" id="cdTabBtnAccess" onclick="setClientDetailTab('access')">Acesso do cliente</button>
       </div>
 
       <div class="cd-toolbar" id="cdToolbar">
@@ -1990,12 +2102,12 @@
           <div class="panel"><div class="panel-head"><h3>Conversões e taxa de conversão</h3></div><div class="dual-chart" id="gChartConv"></div></div>
           <div class="panel"><div class="panel-head"><h3>Custo e CPC médio</h3></div><div class="dual-chart" id="gChartCost"></div></div>
 
-          <div class="panel">
+          <div class="panel" data-vis="ads_campaigns">
             <div class="panel-head"><div><h3>Todas as campanhas</h3><div class="panel-head-sub">Clique num cabeçalho pra reordenar</div></div></div>
             <div class="table-scroll" id="cdCampaignsTableWrap"></div>
           </div>
 
-          <div class="panel">
+          <div class="panel" data-vis="ads_campaigns">
             <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub">As 10 palavras-chave configuradas na campanha, por relevância</span></div>
             <table>
               <thead><tr><th>Palavra-chave</th><th title="Como o Google casa a busca do usuário com essa palavra-chave: exata, frase ou ampla.">Correspondência</th><th title="Nota de 1 a 10 que o Google dá pra palavra-chave, com base na relevância do anúncio e da página de destino, e no CTR esperado. Quanto maior, mais barato tende a ser o CPC.">Q. Score</th><th>Impr.</th><th>Cliques</th><th title="% de cliques a cada 100 impressões.">CTR</th><th title="Custo médio pago por clique.">CPC</th><th>Conv.</th><th title="Quanto você pagou, em média, por cada conversão.">Custo/Conv.</th></tr></thead>
@@ -2003,14 +2115,14 @@
             </table>
           </div>
 
-          <div class="donut-row" id="cdDeviceDonuts"></div>
+          <div class="donut-row" id="cdDeviceDonuts" data-vis="ads_audience"></div>
 
-          <div class="panel">
+          <div class="panel" data-vis="ads_audience">
             <div class="panel-head"><h3>Sexo</h3></div>
             <div class="device-grid" id="cdGenderGrid"></div>
           </div>
 
-          <div class="panel">
+          <div class="panel" data-vis="ads_audience">
             <div class="panel-head"><h3>Faixa etária</h3></div>
             <div class="device-grid" id="cdAgeGrid"></div>
           </div>
@@ -2121,6 +2233,8 @@
       </div>
 
       <!-- ===== Aba: Integrações ===== -->
+      <div class="cd-pane" id="cdPaneAccess"><div id="cdAccessContent"></div></div>
+
       <div class="cd-pane" id="cdPaneIntegrations">
       <div class="panel cd-model-panel">
         <div class="panel-head"><div><h3>Modelo do painel de anúncios</h3><div class="panel-head-sub">Define quais plataformas aparecem na aba Anúncios deste cliente — nem todo cliente anuncia nas duas.</div></div></div>
@@ -2360,6 +2474,13 @@
   function getToken(){ return localStorage.getItem('instintoDashToken'); }
   function setToken(t){ localStorage.setItem('instintoDashToken', t); }
   function clearToken(){ localStorage.removeItem('instintoDashToken'); }
+  // Lê o papel (agência/cliente) de dentro do token, sem precisar ir ao servidor.
+  function tokenRole(){
+    try {
+      const payload = (getToken() || '').split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(payload)).role || 'admin';
+    } catch (e) { return 'admin'; }
+  }
   function authHeaders(){ return { 'Authorization': 'Bearer ' + getToken() }; }
 
   function logout(){
@@ -2408,7 +2529,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Não foi possível entrar.');
       setToken(data.token);
-      startAdminApp();
+      if (data.role === 'client') startClientApp(); else startAdminApp();
     } catch (err) {
       errEl.textContent = err.message;
       errEl.style.display = 'block';
@@ -2439,13 +2560,14 @@
       return;
     }
     if (getToken()) {
-      startAdminApp();
+      if (tokenRole() === 'client') setTimeout(startClientApp, 0);
+      else startAdminApp();
     }
     // sem token nenhum: fica na tela de login, que já é a visível por padrão
   })();
 
   /* ---------- navigation ---------- */
-  document.querySelectorAll('.nav-item').forEach(item=>{
+  document.querySelectorAll('.nav-item[data-view]').forEach(item=>{
     item.addEventListener('click', ()=>{
       document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
       item.classList.add('active');
@@ -2528,7 +2650,7 @@
 
   function fmTemplate(){
     return {
-      name: 'Novo formulário', status: 'draft', clientId: null,
+      name: 'Novo formulário', status: 'draft', clientId: (typeof WS !== 'undefined' && WS !== 'agency') ? WS : null,
       welcome: { enabled: true, title: 'Responda rapidinho e a gente te chama no WhatsApp', text: 'Leva menos de 1 minuto.', imageUrl: '', buttonText: 'Começar' },
       theme: { mode: 'dark', accent: '#FF5A1E', logoUrl: '' },
       fields: [
@@ -2550,7 +2672,7 @@
   }
 
   async function fmApi(path, opts = {}){
-    const res = await fetch(`${API_BASE_URL}/api/forms${path}`, { ...opts, headers: { ...authHeaders(), 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+    const res = await fetch(`${API_BASE_URL}/api/${CLIENT_MODE ? 'client/forms' : 'forms'}${path}`, { ...opts, headers: { ...authHeaders(), 'Content-Type': 'application/json', ...(opts.headers || {}) } });
     if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
     if (res.status === 204) return null;
     const data = await res.json();
@@ -2576,6 +2698,14 @@
   const fmPct = v => v.toFixed(1).replace('.', ',') + '%';
 
   function renderFormsList(){
+    const inClient = WS !== 'agency' || CLIENT_MODE;
+    const shown = (inClient && !CLIENT_MODE) ? fmForms.filter(f => f.clientId === WS) : fmForms;
+    document.querySelector('#fmListMode .topbar h1').textContent = CLIENT_MODE ? 'Formulários' : inClient ? `Formulários · ${rawAccountsById[WS]?.name || ''}` : 'Formulários';
+    const fmFormsAll = fmForms;
+    fmForms = shown;
+    try { renderFormsListInner(); } finally { fmForms = fmFormsAll; }
+  }
+  function renderFormsListInner(){
     const tot = fmForms.reduce((acc, f) => { const s = f.stats || {}; acc.views += s.views || 0; acc.starts += s.starts || 0; acc.completes += s.completes || 0; acc.qualified += s.qualified || 0; return acc; }, { views:0, starts:0, completes:0, qualified:0 });
     const k = (label, value, sub) => `<div class="kpi2"><div class="kpi2-label">${label}</div><div class="kpi2-value">${value}</div><div class="kpi2-prev">${sub || ''}</div></div>`;
     document.getElementById('fmKpis').innerHTML =
@@ -2644,7 +2774,7 @@
       fmCurrent = f;
       fmResponses = null;
       fmIsDirty = false;
-      fmTab = 'general';
+      fmTab = CLIENT_MODE ? 'responses' : 'general';
       document.getElementById('fmListMode').style.display = 'none';
       document.getElementById('fmEditMode').style.display = 'block';
       document.getElementById('fmName').value = f.name;
@@ -2670,7 +2800,7 @@
     document.getElementById('fmSub').innerHTML = `${f.status === 'published' ? '<b style="color:var(--green)">Publicado</b>' : 'Rascunho'} · <code>/f/${escapeHtml(f.slug)}</code>`;
     document.getElementById('fmStatusToggle').innerHTML =
       `<button type="button" class="${f.status === 'draft' ? 'active' : ''}" onclick="fmSetStatus('draft')">Rascunho</button><button type="button" class="${f.status === 'published' ? 'active' : ''}" onclick="fmSetStatus('published')">Publicado</button>`;
-    const tabs = [['general','⚙ Geral'],['fields','☰ Perguntas'],['scoring','🎯 Qualificação'],['endings','🏁 Telas finais'],['tracking','📡 Pixel e eventos'],['share','🔗 Compartilhar'],['responses','📊 Respostas']];
+    const tabs = CLIENT_MODE ? [['responses','📊 Respostas']] : [['general','⚙ Geral'],['fields','☰ Perguntas'],['scoring','🎯 Qualificação'],['endings','🏁 Telas finais'],['tracking','📡 Pixel e eventos'],['share','🔗 Compartilhar'],['responses','📊 Respostas']];
     document.getElementById('fmTabs').innerHTML = tabs.map(([id, l]) => `<button type="button" class="${fmTab === id ? 'active' : ''}" onclick="fmSetTab('${id}')">${l}</button>`).join('');
     document.getElementById('fmSaveBtn').textContent = fmIsDirty ? 'Salvar *' : 'Salvar';
   }
@@ -3032,7 +3162,7 @@
   }
   async function fmDownloadCsv(){
     try {
-      const res = await fetch(`${API_BASE_URL}/api/forms/${fmCurrent.id}/responses?format=csv`, { headers: authHeaders() });
+      const res = await fetch(`${API_BASE_URL}/api/${CLIENT_MODE ? 'client/forms' : 'forms'}/${fmCurrent.id}/responses?format=csv`, { headers: authHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const a = document.createElement('a');
@@ -3064,6 +3194,258 @@
     frame.contentWindow.postMessage({ type: 'instinto-form-preview', form: JSON.parse(JSON.stringify(fmCurrent)) }, location.origin);
   });
   window.addEventListener('beforeunload', (e) => { if (fmIsDirty) { e.preventDefault(); e.returnValue = ''; } });
+
+
+
+  /* ===================== Área do cliente (login próprio) ===================== */
+  const VIS_GROUPS = [
+    { key:'ads', label:'Anúncios', desc:'Resultados de Meta e Google Ads', children: [
+      { key:'ads_meta', label:'Meta Ads' },
+      { key:'ads_google', label:'Google Ads' },
+      { key:'ads_creatives', label:'Melhores criativos e tabela de anúncios' },
+      { key:'ads_audience', label:'Público, funil, posicionamentos, regiões e dispositivos' },
+      { key:'ads_campaigns', label:'Tabelas de campanhas e palavras-chave' },
+    ] },
+    { key:'social', label:'Redes Sociais', desc:'Instagram orgânico' },
+    { key:'forms', label:'Formulários', desc:'Lista dos formulários do cliente e as respostas (sem poder editar)' },
+  ];
+  const VIS_DEFAULTS = { ads:true, ads_meta:true, ads_google:true, ads_creatives:true, ads_audience:true, ads_campaigns:true, social:true, forms:false };
+  const visOf = a => ({ ...VIS_DEFAULTS, ...((a && a.clientVisibility) || {}) });
+
+  // Esconde o que não está liberado (cliente logado ou link de compartilhamento).
+  function applyVisibilityClasses(vis){
+    Object.keys(VIS_DEFAULTS).forEach(k => document.body.classList.toggle(`vis-off-${k}`, vis[k] === false));
+  }
+
+  async function startClientApp(){
+    CLIENT_MODE = true;
+    document.body.classList.add('client-mode', 'ws-client');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/client/me`, { headers: authHeaders() });
+      if (res.status === 401) { clearToken(); location.reload(); return; }
+      const me = await res.json();
+      if (!res.ok) throw new Error(me.error || 'Erro ao carregar sua conta.');
+      const vis = me.visibility || VIS_DEFAULTS;
+      const on = p => me.platforms.includes(p) ? 'connected' : 'not_connected';
+      rawAccountsById[me.id] = {
+        id: me.id, name: me.name, niche: me.niche, dashboardModel: 'auto', clientVisibility: vis,
+        meta: { status: on('meta'), igBusinessId: me.hasInstagram ? 'sim' : null }, google: { status: on('google') }, instagramApi: {},
+      };
+      WS = me.id;
+      document.getElementById('navAgency').style.display = 'none';
+      document.getElementById('navClient').style.display = '';
+      document.getElementById('wsName').textContent = me.name;
+      document.getElementById('wsIco').textContent = initials(me.name);
+      document.getElementById('wsIco').classList.add('client');
+      applyVisibilityClasses(vis);
+      const showAds = vis.ads && me.platforms.length > 0;
+      const showSocial = vis.social && me.hasInstagram;
+      document.querySelector('.cnav[data-ctab="overview"]').style.display = showAds ? '' : 'none';
+      document.querySelector('.cnav[data-ctab="social"]').style.display = showSocial ? '' : 'none';
+      document.querySelector('.cnav[data-ctab="forms"]').style.display = vis.forms ? '' : 'none';
+      document.getElementById('cdTabBtnSocial').style.display = showSocial ? '' : 'none';
+      document.title = `${me.name} · Instinto Digital`;
+      const first = showAds ? 'overview' : showSocial ? 'social' : vis.forms ? 'forms' : 'overview';
+      if (first === 'forms') { openClientDetail(me.id, 'overview'); wsGo('forms'); }
+      else openClientDetail(me.id, first);
+      document.getElementById('clientDetailSub').textContent = `Relatório de resultados${me.niche ? ' · ' + me.niche : ''}`;
+      if (!showAds && !showSocial && !vis.forms) {
+        document.getElementById('cdPaneOverview').innerHTML = '<div class="panel"><p class="footnote" style="border:none; padding:0;">Seu painel está sendo preparado pela agência. Em breve os resultados aparecem aqui.</p></div>';
+      }
+    } catch (err) {
+      document.getElementById('cdPaneOverview').innerHTML = `<div class="offline-banner" style="display:flex;"></div>`;
+      document.getElementById('cdPaneOverview').firstChild.textContent = `⚠ ${err.message}`;
+    }
+  }
+
+  /* ---------- Aba "Acesso do cliente" (só a agência vê) ---------- */
+  let cdLastCreatedAccess = null;
+
+  function renderClientAccessPane(){
+    const a = rawAccountsById[currentClientId];
+    if (!a) return;
+    const el = document.getElementById('cdAccessContent');
+    const auth = a.clientAuth;
+    const vis = visOf(a);
+    const fmt = iso => iso ? new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const created = cdLastCreatedAccess && cdLastCreatedAccess.id === a.id ? cdLastCreatedAccess : null;
+    const msg = created ? `Olá! Segue seu acesso ao painel de resultados da Instinto Digital:\n\n🔗 ${location.origin}${location.pathname}\n👤 Usuário: ${created.username}\n🔑 Senha: ${created.password}\n\nQualquer dúvida, é só chamar!` : '';
+    const loginCard = `
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Login do cliente</h3><div class="panel-head-sub">O cliente entra em ${escapeHtml(location.host)} com o usuário e a senha abaixo e vê só o que estiver liberado em Visibilidade.</div></div>
+          <span class="fm-status ${auth ? 'published' : ''}">${auth ? 'Acesso ativo' : 'Sem acesso'}</span></div>
+        ${created ? `
+          <div class="access-new">
+            <div class="access-new-title">✓ Acesso ${auth && created.renewed ? 'atualizado' : 'criado'} — copie agora, a senha não aparece de novo</div>
+            <div class="access-cred"><span>Usuário</span><code>${escapeHtml(created.username)}</code></div>
+            <div class="access-cred"><span>Senha</span><code>${escapeHtml(created.password)}</code></div>
+            <div class="fm-link-row" style="margin-top:10px;">
+              <button type="button" class="btn-add" onclick="fmCopy(${escapeAttr(JSON.stringify(msg))}, this)">Copiar mensagem pro cliente</button>
+              <button type="button" class="btn-cancel" onclick="fmCopy('${escapeAttr(created.password)}', this)">Copiar só a senha</button>
+            </div>
+          </div>` : ''}
+        ${auth ? `
+          <div class="access-cred"><span>Usuário</span><code>${escapeHtml(auth.username)}</code></div>
+          <div class="fm-help">Senha definida em ${fmt(auth.passwordSetAt)} · último acesso: ${fmt(auth.lastLoginAt)}</div>
+          <div class="fm-link-row" style="margin-top:12px;">
+            <button type="button" class="btn-cancel" onclick="createClientAccess(true)">🔄 Gerar nova senha</button>
+            <button type="button" class="btn-cancel danger" onclick="revokeClientAccess()">⛔ Bloquear acesso</button>
+          </div>
+          <div class="fm-help">Gerar nova senha desconecta o cliente na hora — use se a senha vazar ou ele esquecer.</div>`
+        : `<p class="fm-help" style="margin-bottom:12px;">Este cliente ainda não tem login. O usuário é criado a partir do nome e a senha é gerada automaticamente (letras e números, diferente pra cada cliente).</p>
+           <button type="button" class="btn-add" onclick="createClientAccess(false)">+ Criar acesso do cliente</button>`}
+      </div>`;
+    const visRow = (it, child) => `<label class="vis-row${child ? ' child' : ''}${child && !vis[it.parent] ? ' disabled' : ''}">
+        <input type="checkbox" ${vis[it.key] ? 'checked' : ''} ${child && !vis[it.parent] ? 'disabled' : ''} onchange="setClientVisibility('${it.key}', this.checked)">
+        <span><b>${it.label}</b>${it.desc ? `<small>${it.desc}</small>` : ''}</span></label>`;
+    const visCard = `
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Visibilidade</h3><div class="panel-head-sub">O que este cliente pode ver — no login dele e no link de compartilhamento. Você (agência) sempre vê tudo.</div></div><span class="cd-model-status" id="visStatus"></span></div>
+        ${VIS_GROUPS.map(g => visRow(g) + (g.children || []).map(c => visRow({ ...c, parent: g.key }, true)).join('')).join('')}
+        <div class="fm-help" style="margin-top:12px;">Contrato, histórico, observações, integrações e o acesso nunca aparecem pro cliente.</div>
+      </div>`;
+    const shareUrl = `${location.origin}${location.pathname}?share=${a.shareToken}`;
+    const shareCard = `
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Link sem login</h3><div class="panel-head-sub">Alternativa ao login: qualquer pessoa com o link vê o painel (respeita a mesma visibilidade).</div></div></div>
+        <div class="fm-link-row"><code>${escapeHtml(shareUrl)}</code><button type="button" class="btn-add" onclick="fmCopy('${escapeAttr(shareUrl)}', this)">Copiar</button></div>
+      </div>`;
+    el.innerHTML = loginCard + visCard + shareCard;
+  }
+
+  async function createClientAccess(renew){
+    if (renew && !confirm('Gerar uma nova senha? A senha antiga para de funcionar na hora.')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/client-access`, { method:'POST', headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível criar o acesso.');
+      cdLastCreatedAccess = { id: currentClientId, username: data.username, password: data.password, renewed: renew };
+      const a = rawAccountsById[currentClientId];
+      a.clientAuth = { ...(a.clientAuth || {}), username: data.username, passwordSetAt: new Date().toISOString() };
+      renderClientAccessPane();
+    } catch (e) { alert(e.message); }
+  }
+
+  async function revokeClientAccess(){
+    if (!confirm('Bloquear o acesso deste cliente? Ele é desconectado na hora e não consegue mais entrar até você criar um acesso novo.')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/client-access`, { method:'DELETE', headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok && res.status !== 204) throw new Error('Não foi possível bloquear.');
+      rawAccountsById[currentClientId].clientAuth = null;
+      cdLastCreatedAccess = null;
+      renderClientAccessPane();
+    } catch (e) { alert(e.message); }
+  }
+
+  async function setClientVisibility(key, value){
+    const a = rawAccountsById[currentClientId];
+    const vis = { ...visOf(a), [key]: value };
+    a.clientVisibility = vis;
+    renderClientAccessPane();
+    const st = document.getElementById('visStatus');
+    st.textContent = 'Salvando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ clientVisibility: vis }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao salvar.');
+      rawAccountsById[currentClientId] = data;
+      document.getElementById('visStatus').textContent = '✓ Salvo';
+    } catch (e) {
+      document.getElementById('visStatus').textContent = `⚠ ${e.message}`;
+    }
+  }
+
+  /* ===================== Espaços de trabalho: Agência x Cliente ===================== */
+  const WS_KEY = 'instintoDashWorkspace';
+  let WS = 'agency';
+
+  function toggleWsMenu(ev){
+    ev && ev.stopPropagation();
+    const m = document.getElementById('wsMenu');
+    m.classList.toggle('open');
+    if (m.classList.contains('open')) {
+      const inp = document.getElementById('wsSearch');
+      inp.value = ''; renderWsMenu('');
+      setTimeout(() => inp.focus(), 30);
+    }
+  }
+  document.addEventListener('click', (ev) => {
+    const sw = document.getElementById('wsSwitch');
+    if (sw && !sw.contains(ev.target)) document.getElementById('wsMenu')?.classList.remove('open');
+  });
+
+  function renderWsMenu(q){
+    const norm = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const list = ovActiveAccounts().filter(a => !q || norm(a.name).includes(norm(q)));
+    document.getElementById('wsList').innerHTML =
+      (!q ? `<div class="ws-item${WS === 'agency' ? ' active' : ''}" onclick="setWorkspace('agency')"><span class="ws-ico sm">🏢</span><span>Instinto Digital (Agência)</span></div><div class="ws-sep">Clientes</div>` : '') +
+      (list.map(a => `<div class="ws-item${WS === a.id ? ' active' : ''}" onclick="setWorkspace('${a.id}')"><span class="ws-ico sm">${escapeHtml(initials(a.name))}</span><span>${escapeHtml(a.name)}</span></div>`).join('')
+        || '<div class="ws-empty">Nenhum cliente encontrado.</div>');
+  }
+
+  // Só a parte visual do menu (usado também quando um cliente é aberto por outro caminho).
+  function wsApplyUi(id){
+    WS = id;
+    try { localStorage.setItem(WS_KEY, id); } catch (e) {}
+    const isClient = id !== 'agency';
+    const acc = isClient ? rawAccountsById[id] : null;
+    document.body.classList.toggle('ws-client', isClient);
+    document.getElementById('navAgency').style.display = isClient ? 'none' : '';
+    document.getElementById('navClient').style.display = isClient ? '' : 'none';
+    document.getElementById('wsName').textContent = isClient ? (acc ? acc.name : 'Cliente') : 'Instinto Digital (Agência)';
+    document.getElementById('wsIco').textContent = isClient ? initials(acc ? acc.name : '?') : '🏢';
+    document.getElementById('wsIco').classList.toggle('client', isClient);
+    document.getElementById('wsMenu').classList.remove('open');
+  }
+
+  function setWorkspace(id){
+    if (id !== 'agency' && !rawAccountsById[id]) id = 'agency';
+    if (typeof fmIsDirty !== 'undefined' && fmIsDirty && !confirm('Você tem alterações não salvas no formulário. Trocar mesmo assim?')) return;
+    if (typeof fmIsDirty !== 'undefined') fmIsDirty = false;
+    wsApplyUi(id);
+    if (id === 'agency') {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.getElementById('view-overview').classList.add('active');
+      document.querySelector('.nav-item[data-view="overview"]')?.classList.add('active');
+      loadOverview();
+    } else {
+      openClientDetail(id, 'overview');
+    }
+    window.scrollTo(0, 0);
+  }
+
+  // Itens do menu do cliente.
+  function wsGo(tab){
+    if (WS === 'agency') return;
+    document.querySelectorAll('.nav-item.cnav').forEach(i => i.classList.toggle('active', i.dataset.ctab === tab));
+    if (tab === 'forms') {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-forms').classList.add('active');
+      document.getElementById('fmEditMode').style.display = 'none';
+      document.getElementById('fmListMode').style.display = 'block';
+      loadForms();
+    } else {
+      if (!document.getElementById('view-client-detail').classList.contains('active') || currentClientId !== WS) {
+        openClientDetail(WS, tab);
+      } else setClientDetailTab(tab);
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function wsRestore(){
+    let saved = 'agency';
+    try { saved = localStorage.getItem(WS_KEY) || 'agency'; } catch (e) {}
+    if (saved !== 'agency' && rawAccountsById[saved] && rawAccountsById[saved].status !== 'inativo') setWorkspace(saved);
+    else wsApplyUi('agency');
+  }
 
   /* ===================== Visão geral (dados reais dos clientes) ===================== */
   const OV_SEL_KEY = 'instintoDashOvClients';
@@ -4213,7 +4595,12 @@
       populateClientSelectors();
       if (banner) banner.style.display = 'none';
       renderOvClientMenu();
-      loadOverview();
+      if (WS === 'agency') {
+        let saved = 'agency';
+        try { saved = localStorage.getItem(WS_KEY) || 'agency'; } catch (e) {}
+        if (saved !== 'agency' && rawAccountsById[saved] && rawAccountsById[saved].status !== 'inativo') setWorkspace(saved);
+        else loadOverview();
+      }
     } catch (err) {
       console.error('Não consegui falar com o backend:', err);
       clientsMgmt = [];
@@ -4462,6 +4849,7 @@
     const account = rawAccountsById[id];
     if (!account) return;
     currentClientId = id;
+    if (!PUBLIC_TOKEN && !CLIENT_MODE && WS !== id) wsApplyUi(id);
 
     document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -4552,6 +4940,7 @@
   }
 
   function backToClients(){
+    wsApplyUi('agency');
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-clients').classList.add('active');
     document.querySelector('.nav-item[data-view="clients"]')?.classList.add('active');
@@ -4651,9 +5040,13 @@
     document.getElementById('cdPaneContract').classList.toggle('active', tab === 'contract');
     document.getElementById('cdPaneHistory').classList.toggle('active', tab === 'history');
     document.getElementById('cdPaneIntegrations').classList.toggle('active', tab === 'integrations');
+    document.getElementById('cdTabBtnAccess').classList.toggle('active', tab === 'access');
+    document.getElementById('cdPaneAccess').classList.toggle('active', tab === 'access');
+    if (tab === 'access') renderClientAccessPane();
     document.getElementById('cdToolbar').style.display = (tab === 'overview' || tab === 'social') ? 'flex' : 'none';
     document.getElementById('cdPlatformTabs').style.visibility = tab === 'overview' ? 'visible' : 'hidden';
     if (tab === 'overview') applyPlatformView();
+    if (!PUBLIC_TOKEN) document.querySelectorAll('.nav-item.cnav').forEach(i => i.classList.toggle('active', i.dataset.ctab === tab));
     if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
     if (tab === 'contract') renderClientContractPane();
     if (tab === 'history') renderClientHistoryPane();
@@ -4715,7 +5108,9 @@
 
   /* ===================== Aba Anúncios: Todos / Meta / Google ===================== */
   let PUBLIC_TOKEN = null;              // preenchido quando a página é o link do cliente
+  let CLIENT_MODE = false;              // login de cliente
   function cdReportUrl(kind, qs){
+    if (CLIENT_MODE) return `${API_BASE_URL}/api/client/${kind}?${qs}`;
     return PUBLIC_TOKEN
       ? `${API_BASE_URL}/api/public/${encodeURIComponent(PUBLIC_TOKEN)}/${kind}?${qs}`
       : `${API_BASE_URL}/api/${kind}/${currentClientId}/report?${qs}`;
@@ -5143,33 +5538,33 @@
       <div class="kpi2-grid">${kpis}</div>
       <div class="panel"><div class="panel-head"><h3>Investimento e ${escapeHtml(rl.toLowerCase())}</h3></div><div class="dual-chart" id="mChartSpend"></div></div>
       <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="mChartClicks"></div></div>
-      <div class="panel"><div class="panel-head"><div><h3>Funil do período</h3><div class="panel-head-sub">De quem viu o anúncio até quem virou ${escapeHtml(rl.toLowerCase())}</div></div></div><div id="mFunnel"></div></div>
-      <div class="cd-social-grid">
+      <div class="panel" data-vis="ads_audience"><div class="panel-head"><div><h3>Funil do período</h3><div class="panel-head-sub">De quem viu o anúncio até quem virou ${escapeHtml(rl.toLowerCase())}</div></div></div><div id="mFunnel"></div></div>
+      <div class="cd-social-grid" data-vis="ads_audience">
         <div class="panel" style="margin-bottom:0;"><div class="panel-head"><div><h3>Público por idade e gênero</h3><div class="panel-head-sub" id="mAgeSub"></div></div></div><div id="mAgeChart"></div></div>
         <div id="mGenderDonut"></div>
       </div>
-      <div class="cd-social-grid" style="margin-top:14px;">
+      <div class="cd-social-grid" style="margin-top:14px;" data-vis="ads_audience">
         <div id="mPlatformDonut"></div>
         <div class="panel" style="margin-bottom:0;"><div class="panel-head"><div><h3>Dia da semana</h3><div class="panel-head-sub">${escapeHtml(rl)} somados por dia da semana no período</div></div></div><div id="mWeekday"></div></div>
       </div>
-      <div class="panel" style="margin-top:14px;">
+      <div class="panel" style="margin-top:14px;" data-vis="ads_audience">
         <div class="panel-head"><div><h3>Posicionamentos</h3><div class="panel-head-sub">Onde os anúncios apareceram · clique num cabeçalho pra reordenar</div></div></div>
         <div class="table-scroll" id="mPlacements"></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-vis="ads_audience">
         <div class="panel-head"><div><h3>Regiões</h3><div class="panel-head-sub">Estados com mais investimento</div></div></div>
         <div class="table-scroll" id="mRegions"></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-vis="ads_creatives">
         <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">Troque o critério pra reordenar — a faixa colorida mostra a métrica escolhida</div></div></div>
         <div class="chip-row"><span class="chip-row-label">Ordenar por</span><div class="chips" id="metaCreativeChips"></div></div>
         <div id="metaCreativeGrid"></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-vis="ads_creatives">
         <div class="panel-head"><div><h3>Anúncios com investimento</h3><div class="panel-head-sub">${(r.ads || []).length} anúncios com gasto no período · passe o mouse na imagem pra ampliar · clique num cabeçalho pra reordenar</div></div></div>
         <div class="table-scroll" id="metaAdsTableWrap"></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-vis="ads_campaigns">
         <div class="panel-head"><h3>Campanhas</h3></div>
         <div class="table-scroll" id="metaCampTableWrap"></div>
       </div>`;
@@ -6451,6 +6846,7 @@
         google: { status: on('google') }, instagramApi: {},
       };
       document.getElementById('mainApp').style.display = 'flex';
+      applyVisibilityClasses({ ...VIS_DEFAULTS, ...(info.visibility || {}) });
       document.getElementById('cdTabBtnSocial').style.display = info.hasInstagram ? '' : 'none';
       const noAds = !info.platforms.length;
       openClientDetail('__public', noAds && info.hasInstagram ? 'social' : 'overview');

@@ -13,6 +13,8 @@ const feedbackRoutes = require('./routes/feedback');
 const leadsRoutes = require('./routes/leads');
 const contractsRoutes = require('./routes/contracts');
 const formsRoutes = require('./routes/forms');
+const clientRoutes = require('./routes/client');
+const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
 
@@ -47,6 +49,8 @@ app.use('/api/feedback', requireAdminAuth, feedbackRoutes);
 app.use('/api/leads', requireAdminAuth, leadsRoutes);
 app.use('/api/contracts', requireAdminAuth, contractsRoutes);
 app.use('/api/forms', requireAdminAuth, formsRoutes);
+// Área do cliente (login próprio de cada cliente).
+app.use('/api/client', requireClientAuth, clientRoutes);
 
 app.post('/api/sync', requireAdminAuth, async (req, res) => {
   try {

@@ -3,18 +3,27 @@ const crypto = require('crypto');
 const accountsStore = require('../data/accountsStore');
 const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
+const { hashPassword } = require('../lib/auth');
+const clientAccess = require('../lib/clientAccess');
 
 const router = express.Router();
 
 const EDITABLE_FIELDS = [
   'name', 'niche', 'contractValue', 'dailyBudget', 'owner',
   'site', 'instagram', 'drive', 'payment', 'pixBalance', 'status',
-  'dashboardModel',
+  'dashboardModel', 'clientVisibility',
 ];
 
 // Modelo do painel de anúncios do cliente: quais plataformas aparecem.
 // 'auto' = mostra o que estiver conectado.
 const DASHBOARD_MODELS = new Set(['auto', 'meta', 'google', 'combined']);
+
+// O hash da senha do cliente nunca sai do servidor; o painel só vê o usuário e datas.
+function stripSecrets(a) {
+  if (!a || !a.clientAuth) return a;
+  const { passwordHash, v, ...rest } = a.clientAuth;
+  return { ...a, clientAuth: rest };
+}
 
 function sanitizeString(value, maxLength) {
   if (typeof value !== 'string') return null;
@@ -32,7 +41,7 @@ function pickEditableFields(body) {
 // GET /api/accounts — lista clientes, status de conexão e dados de gestão.
 router.get('/', async (req, res) => {
   try {
-    res.json(await accountsStore.getAll());
+    res.json((await accountsStore.getAll()).map(stripSecrets));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -86,6 +95,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/accounts/:id — edita campos de gestão (protegido contra mass assignment).
 router.patch('/:id', async (req, res) => {
   const changes = pickEditableFields(req.body);
+  if (changes.clientVisibility !== undefined) changes.clientVisibility = clientAccess.sanitizeVisibility(changes.clientVisibility);
   if (changes.dashboardModel !== undefined && !DASHBOARD_MODELS.has(changes.dashboardModel)) {
     return res.status(400).json({ error: 'Modelo de dashboard inválido.' });
   }
@@ -95,7 +105,7 @@ router.patch('/:id', async (req, res) => {
   try {
     const updated = await accountsStore.update(req.params.id, changes);
     if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
-    res.json(updated);
+    res.json(stripSecrets(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -133,7 +143,7 @@ router.post('/:id/connect-google', async (req, res) => {
     const updated = await accountsStore.update(req.params.id, {
       google: { status: 'connected', customerId, accountName: verified.name },
     });
-    res.json(updated);
+    res.json(stripSecrets(updated));
   } catch (err) {
     console.error(err);
     res.status(400).json({
@@ -187,10 +197,53 @@ router.post('/:id/meta-connection', async (req, res) => {
     }
 
     const updated = await accountsStore.update(req.params.id, { meta });
-    res.json(updated);
+    res.json(stripSecrets(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/accounts/:id/client-access — cria (ou troca) o login do cliente.
+// Devolve a senha UMA vez; no banco fica só o hash. Trocar a senha derruba
+// quem estiver logado com a antiga.
+router.post('/:id/client-access', async (req, res) => {
+  try {
+    const accounts = await accountsStore.getAll();
+    const account = accounts.find((a) => a.id === req.params.id);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    let username = account.clientAuth?.username;
+    if (!username) {
+      const base = clientAccess.slugUser(account.name);
+      username = base;
+      let n = 2;
+      while (accounts.some((a) => a.id !== account.id && a.clientAuth?.username === username)) username = `${base}${n++}`;
+    }
+    const password = clientAccess.generatePassword(account.name);
+    const clientAuth = {
+      username,
+      passwordHash: hashPassword(password),
+      v: crypto.randomBytes(4).toString('hex'),
+      createdAt: account.clientAuth?.createdAt || new Date().toISOString(),
+      passwordSetAt: new Date().toISOString(),
+      lastLoginAt: account.clientAuth?.lastLoginAt || null,
+    };
+    await accountsStore.update(account.id, { clientAuth });
+    res.json({ username, password });
+  } catch (err) {
+    console.error(err); res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/accounts/:id/client-access — bloqueia o login do cliente.
+router.delete('/:id/client-access', async (req, res) => {
+  try {
+    const updated = await accountsStore.update(req.params.id, { clientAuth: null });
+    if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    res.status(204).end();
+  } catch (err) {
+    console.error(err); res.status(500).json({ error: err.message });
   }
 });
 
@@ -214,7 +267,7 @@ router.post('/:id/log', async (req, res) => {
     };
     const activityLog = [...(account.activityLog || []), entry];
     const updated = await accountsStore.update(req.params.id, { activityLog });
-    res.status(201).json(updated);
+    res.status(201).json(stripSecrets(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

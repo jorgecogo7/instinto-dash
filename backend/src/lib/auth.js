@@ -28,9 +28,10 @@ function verifyPassword(password, stored) {
 
 const SESSION_DAYS = 14;
 
-function createSessionToken(username) {
+// extra: { role: 'client', clientId, v } pro login de cliente. Sem extra = dono da agência.
+function createSessionToken(username, extra = {}) {
   const expires = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  const payload = Buffer.from(JSON.stringify({ username, expires })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ username, expires, role: 'admin', ...extra })).toString('base64url');
   const signature = crypto.createHmac('sha256', config.tokenSecret).update(payload).digest('base64url');
   return `${payload}.${signature}`;
 }
