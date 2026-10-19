@@ -102,7 +102,30 @@ previousTotals.roas = previousTotals.spend > 0 ? previousTotals.conversionsValue
 
 const pct = (curr, prev) => (prev ? ((curr - prev) / prev) * 100 : null);
 
+const impressionShare = {
+  share: 61.4, lostBudget: 22.8, lostRank: 15.8,
+  campaigns: [
+    { name: 'Pesquisa · Marca', share: 88.2, lostBudget: 4.1, lostRank: 7.7, impressions: 32000 },
+    { name: 'Pesquisa · Genérica concorrência', share: 41.5, lostBudget: 38.6, lostRank: 19.9, impressions: 26700 },
+  ],
+};
+const searchTerms = [
+  ['clinica odontologica perto de mim', 'Pesquisa · Genérica concorrência', 4200, 310, 520.4, 22],
+  ['implante dentario preço', 'Pesquisa · Genérica concorrência', 3100, 180, 410.2, 6],
+  ['[marca] odonto', 'Pesquisa · Marca', 2800, 360, 290.5, 41],
+  ['dentista 24 horas', 'Pesquisa · Genérica concorrência', 1900, 95, 260.8, 0],
+  ['curso de ortodontia', 'Pesquisa · Genérica concorrência', 1300, 70, 180.3, 0],
+  ['clareamento dental valor', 'Pesquisa · Genérica concorrência', 1100, 64, 150.9, 4],
+  ['aparelho invisivel', 'Pesquisa · Genérica concorrência', 900, 51, 133.0, 2],
+  ['ortodontista salario', 'Pesquisa · Genérica concorrência', 640, 30, 88.4, 0],
+].map(([term, campaign, impressions, clicks, spend, conversions]) => ({
+  term, campaign, impressions, clicks, spend, conversions,
+  ctr: (clicks / impressions) * 100, cpc: spend / clicks, costPerConv: conversions ? spend / conversions : 0,
+}));
+
 module.exports = {
+  impressionShare,
+  searchTerms,
   range: { from: dailySpend[0].date, to: dailySpend[dailySpend.length - 1].date },
   previousRange: null,
   campaigns,

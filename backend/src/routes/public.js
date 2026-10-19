@@ -171,6 +171,7 @@ router.get('/:token/info', async (req, res) => {
     dashboardModel: account.dashboardModel || 'auto',
     hasInstagram: visibilityOf(account).social && Boolean(account.instagramApi?.igUserId || account.meta?.igBusinessId || account.meta?.pageId),
     visibility: visibilityOf(account),
+    goals: visibilityOf(account).ads_goals ? (account.goals || {}) : {},
   });
 });
 

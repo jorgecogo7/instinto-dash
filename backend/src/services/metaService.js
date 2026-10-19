@@ -1,4 +1,5 @@
 const config = require('../config');
+const extras = require('../lib/metaExtras');
 const mockMeta = require('../data/mockMeta');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
@@ -297,6 +298,7 @@ function sumActions(list) {
 function derive(t) {
   return {
     ...t,
+    ...extras.deriveExtras(t),
     ctr: t.impressions > 0 ? (t.clicks / t.impressions) * 100 : 0,
     cpc: t.clicks > 0 ? t.spend / t.clicks : 0,
     cpm: t.impressions > 0 ? (t.spend / t.impressions) * 1000 : 0,
@@ -310,9 +312,9 @@ function derive(t) {
 const AD_FIELDS = [
   'ad_id', 'ad_name', 'adset_name', 'campaign_name', 'campaign_id',
   'spend', 'impressions', 'reach', 'frequency', 'clicks', 'inline_link_clicks',
-  'ctr', 'cpc', 'cpm', 'actions', 'video_p25_watched_actions',
+  'ctr', 'cpc', 'cpm', 'actions', 'action_values', 'video_p25_watched_actions',
 ].join(',');
-const ACCOUNT_FIELDS = 'spend,impressions,reach,frequency,clicks,inline_link_clicks,actions';
+const ACCOUNT_FIELDS = 'spend,impressions,reach,frequency,clicks,inline_link_clicks,actions,action_values';
 
 function insightsParams(range, extra = {}) {
   return {
@@ -348,6 +350,7 @@ function mapAdRow(r) {
     costPerResult: res.value > 0 ? spend / res.value : 0,
     engagement: Math.round(actionValue(r.actions, 'post_engagement')),
     video25: Math.round(sumActions(r.video_p25_watched_actions)),
+    ...(() => { const x = extras.extrasFromActions(r.actions, r.action_values); return { ...x, ...extras.deriveExtras({ ...x, spend }) }; })(),
   };
 }
 
@@ -364,6 +367,7 @@ function totalsFrom(accountRow, adRows) {
     results: adRows.reduce((s, r) => s + r.results, 0),
     engagement: Math.round(actionValue(a.actions, 'post_engagement')),
     video25: adRows.reduce((s, r) => s + (r.video25 || 0), 0),
+    ...extras.extrasFromActions(a.actions, a.action_values),
   });
 }
 
@@ -433,7 +437,7 @@ async function fetchRealReport(accountId, range) {
     graphGetAll(`${accountId}/insights`, insightsParams(range, { fields: ACCOUNT_FIELDS })),
     graphGetAll(`${accountId}/insights`, insightsParams(prev, { fields: ACCOUNT_FIELDS })),
     graphGetAll(`${accountId}/insights`, insightsParams(range, { level: 'ad', fields: AD_FIELDS }), 10),
-    graphGetAll(`${accountId}/insights`, insightsParams(prev, { level: 'ad', fields: 'ad_id,spend,actions' }), 10),
+    graphGetAll(`${accountId}/insights`, insightsParams(prev, { level: 'ad', fields: 'ad_id,spend,actions,action_values' }), 10),
     graphGetAll(`${accountId}/insights`, insightsParams(range, {
       level: 'ad', time_increment: '1', fields: 'ad_id,spend,impressions,clicks,actions',
     }), 20),
@@ -479,6 +483,7 @@ async function fetchRealReport(accountId, range) {
       id: a.campaignId, name: a.campaign, spend: 0, impressions: 0, clicks: 0, results: 0, reach: 0,
     });
     c.spend += a.spend; c.impressions += a.impressions; c.clicks += a.clicks; c.results += a.results;
+    extras.addExtras(c, a);
   });
   const campaigns = Object.values(campMap).map((c) => derive(c)).sort((x, y) => y.spend - x.spend);
 
@@ -488,7 +493,7 @@ async function fetchRealReport(accountId, range) {
 function withDeltas(report) {
   const t = report.totals;
   const p = report.previousTotals;
-  const keys = ['spend', 'impressions', 'reach', 'clicks', 'linkClicks', 'results', 'engagement', 'ctr', 'cpc', 'cpm', 'frequency', 'costPerResult', 'linkCtr', 'costPerLinkClick', 'video25'];
+  const keys = ['spend', 'impressions', 'reach', 'clicks', 'linkClicks', 'results', 'engagement', 'ctr', 'cpc', 'cpm', 'frequency', 'costPerResult', 'linkCtr', 'costPerLinkClick', 'video25', ...extras.DELTA_KEYS];
   const deltas = {};
   keys.forEach((k) => { deltas[k] = period.pctDelta(t[k] || 0, p[k] || 0); });
   return { ...report, deltas };

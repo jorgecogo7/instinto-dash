@@ -30,6 +30,7 @@ router.get('/me', (req, res) => {
     username: a.clientAuth.username,
     visibility: vis,
     platforms: platformsOf(a, vis),
+    goals: vis.ads_goals ? (a.goals || {}) : {},
     hasInstagram: Boolean(a.instagramApi?.igUserId || a.meta?.igBusinessId || a.meta?.pageId),
   });
 });

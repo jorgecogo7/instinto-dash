@@ -379,10 +379,66 @@ async function fetchRealReport(customerId, range) {
     roas: pctDelta(totals.roas, previousTotals.roas),
   };
 
+  // Extras "melhor esforço": se a API recusar, o relatório principal segue normal.
+  const [shareRows, termRows] = await Promise.all([
+    runGAQL(customerId, `
+      SELECT campaign.name, metrics.impressions, metrics.search_impression_share,
+             metrics.search_budget_lost_impression_share, metrics.search_rank_lost_impression_share
+      FROM campaign
+      WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED' AND campaign.advertising_channel_type = 'SEARCH'
+    `, accessToken, 'parcela de impressões').catch((e) => { console.warn(e.message); return null; }),
+    runGAQL(customerId, `
+      SELECT search_term_view.search_term, campaign.name,
+             metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
+      FROM search_term_view
+      WHERE ${dateFilter(range)}
+      ORDER BY metrics.cost_micros DESC
+      LIMIT 60
+    `, accessToken, 'termos de pesquisa').catch((e) => { console.warn(e.message); return null; }),
+  ]);
+
   return {
     range, previousRange: prev,
     campaigns, keywords, deviceBreakdown, dailySpend, genderBreakdown, ageBreakdown,
     totals, previousTotals, deltas,
+    impressionShare: shareRows ? aggregateImpressionShare(shareRows.map((r) => ({
+      name: r.campaign.name,
+      impressions: num(r.metrics.impressions),
+      share: num(r.metrics.searchImpressionShare),
+      lostBudget: num(r.metrics.searchBudgetLostImpressionShare),
+      lostRank: num(r.metrics.searchRankLostImpressionShare),
+    }))) : null,
+    searchTerms: termRows ? termRows.map((r) => {
+      const spend = num(r.metrics.costMicros) / 1_000_000;
+      const conversions = num(r.metrics.conversions);
+      const clicks = num(r.metrics.clicks);
+      const impressions = num(r.metrics.impressions);
+      return {
+        term: r.searchTermView.searchTerm, campaign: r.campaign.name, impressions, clicks, spend, conversions,
+        ctr: impressions ? (clicks / impressions) * 100 : 0, cpc: clicks ? spend / clicks : 0, costPerConv: conversions ? spend / conversions : 0,
+      };
+    }) : null,
+  };
+}
+
+/**
+ * Parcela de impressões da rede de pesquisa. Soma por "impressões possíveis"
+ * (impressões ÷ parcela), que é a forma certa de juntar campanhas diferentes.
+ */
+function aggregateImpressionShare(rows) {
+  const valid = rows.filter((r) => r.share > 0 && r.impressions > 0);
+  if (!valid.length) return null;
+  let impr = 0, eligible = 0, lostBudget = 0, lostRank = 0;
+  const campaigns = valid.map((r) => {
+    const el = r.impressions / r.share;
+    impr += r.impressions; eligible += el; lostBudget += el * r.lostBudget; lostRank += el * r.lostRank;
+    return { name: r.name, share: r.share * 100, lostBudget: r.lostBudget * 100, lostRank: r.lostRank * 100, impressions: r.impressions };
+  }).sort((a, b) => b.impressions - a.impressions);
+  return {
+    share: (impr / eligible) * 100,
+    lostBudget: (lostBudget / eligible) * 100,
+    lostRank: (lostRank / eligible) * 100,
+    campaigns,
   };
 }
 

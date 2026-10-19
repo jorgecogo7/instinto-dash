@@ -9,6 +9,7 @@ const VISIBILITY_DEFAULTS = {
   ads_creatives: true,   //   Melhores criativos e tabela de anúncios
   ads_audience: true,    //   Público, posicionamentos, regiões, dia da semana
   ads_campaigns: true,   //   Tabelas de campanhas e palavras-chave
+  ads_goals: true,       //   Metas do mês (investimento, custo por resultado)
   social: true,          // Redes Sociais (Instagram)
   forms: false,          // Formulários e respostas
 };
@@ -23,6 +24,22 @@ function visibilityOf(account) {
 function sanitizeVisibility(input) {
   const out = {};
   Object.keys(VISIBILITY_DEFAULTS).forEach((k) => { if (typeof (input || {})[k] === 'boolean') out[k] = input[k]; });
+  return out;
+}
+
+// Metas por plataforma: orçamento mensal, custo por resultado alvo,
+// resultados por mês e ROAS alvo. Valores vazios/zero = sem meta.
+function sanitizeGoals(input) {
+  const out = {};
+  ['meta', 'google'].forEach((p) => {
+    const g = (input || {})[p] || {};
+    const o = {};
+    ['monthlyBudget', 'costPerResultTarget', 'resultsTarget', 'roasTarget'].forEach((k) => {
+      const n = Number(String(g[k] ?? '').replace(',', '.'));
+      if (Number.isFinite(n) && n > 0) o[k] = Math.round(n * 100) / 100;
+    });
+    if (Object.keys(o).length) out[p] = o;
+  });
   return out;
 }
 
@@ -45,4 +62,5 @@ function generatePassword(name) {
   return `${initials.padEnd(2, pick(letters))}${digits(4)}-${digits(4)}-${pick(letters)}${pick(letters)}`;
 }
 
-module.exports = { VISIBILITY_DEFAULTS, visibilityOf, sanitizeVisibility, slugUser, generatePassword };
+module.exports = {
+  sanitizeGoals, VISIBILITY_DEFAULTS, visibilityOf, sanitizeVisibility, slugUser, generatePassword };

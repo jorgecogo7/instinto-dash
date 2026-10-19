@@ -5,6 +5,7 @@ const reportsStore = require('../data/reportsStore');
 const metaService = require('./metaService');
 const googleService = require('./googleService');
 const { visibilityOf } = require('../lib/clientAccess');
+const goalsLib = require('../lib/goals');
 
 /**
  * Relatórios automáticos: no dia agendado de cada cliente, monta a mensagem
@@ -126,6 +127,20 @@ function observation(meta, google) {
   return parts.join(' ');
 }
 
+// Linhas de metas (só se o cliente puder ver as metas no painel).
+function goalLines(lines, account, platform, actual, range, one) {
+  if (!visibilityOf(account).ads_goals) return;
+  const ev = goalsLib.evaluate((account.goals || {})[platform], actual, range);
+  if (!ev) return;
+  const icon = (st) => (st === 'good' ? '✅' : st === 'warn' ? '🟡' : '🔴');
+  ev.items.forEach((g) => {
+    if (g.key === 'budget') lines.push(`${icon(g.status)} Meta de investimento: ${brl(g.actual)} de ${brl(g.target)} (${Math.round(g.pct)}%)`);
+    if (g.key === 'cpr') lines.push(`${icon(g.status)} Custo por ${one}: ${brl(g.actual)} (meta até ${brl(g.target)})`);
+    if (g.key === 'results') lines.push(`${icon(g.status)} Meta de resultados: ${int(g.actual)} de ${int(g.target)} (${Math.round(g.pct)}%)`);
+    if (g.key === 'roas') lines.push(`${icon(g.status)} ROAS: ${g.actual.toFixed(2).replace('.', ',')}x (meta ${g.target.toFixed(1).replace('.', ',')}x)`);
+  });
+}
+
 function buildMessage({ account, schedule, range, meta, google }) {
   const wish = { todos: 'Espero que estejam todos bem!', individual: 'Espero que esteja tudo certo por aí!', esperamos: 'Esperamos que estejam todos bem!' }[schedule.wish];
   const lines = [
@@ -142,6 +157,11 @@ function buildMessage({ account, schedule, range, meta, google }) {
     lines.push(`• Alcance: ${int(t.reach)}`);
     lines.push(`• ${label}: ${int(t.results)}`);
     if (t.results) lines.push(`• Custo por ${k.one}: ${brl(t.costPerResult)}`);
+    if (t.purchases > 0) {
+      lines.push(`• Compras: ${int(t.purchases)} · Faturamento: ${brl(t.purchaseValue)}`);
+      if (t.roas) lines.push(`• ROAS: ${t.roas.toFixed(2).replace('.', ',')}x · Ticket médio: ${brl(t.avgTicket)}`);
+    }
+    goalLines(lines, account, 'meta', { spend: t.spend, results: t.results, costPerResult: t.costPerResult, roas: t.roas }, range, k.one);
   }
   if (google && google.totals.spend > 0) {
     const t = google.totals;
@@ -150,6 +170,7 @@ function buildMessage({ account, schedule, range, meta, google }) {
     lines.push(`• Cliques: ${int(t.clicks)}`);
     lines.push(`• Conversões: ${dec(t.conversions)}`);
     if (t.conversions) lines.push(`• Custo por conversão: ${brl(t.costPerConv)}`);
+    goalLines(lines, account, 'google', { spend: t.spend, results: t.conversions, costPerResult: t.costPerConv, roas: t.roas || 0 }, range, 'conversão');
   }
   if (!(meta && meta.totals.spend > 0) && !(google && google.totals.spend > 0)) {
     lines.push('', 'Neste período as campanhas não tiveram investimento.');

@@ -1110,6 +1110,7 @@
   body.vis-off-ads_creatives [data-vis="ads_creatives"],
   body.vis-off-ads_audience [data-vis="ads_audience"],
   body.vis-off-ads_campaigns [data-vis="ads_campaigns"]{ display:none !important; }
+  body.vis-off-ads_goals [data-vis="ads_goals"]{ display:none !important; }
   /* Cliente logado: mesmo painel, sem nada interno */
   body.client-mode .cnav-admin,
   body.client-mode #navAgency,
@@ -1143,6 +1144,14 @@
   .rp-modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; align-items:center; flex-wrap:wrap; }
   .rp-status{ font-size:12.5px; color:var(--text-dim); margin-right:auto; }
   #rpRender{ position:fixed; left:-12000px; top:0; width:794px; z-index:-1; }
+  .rp-goals{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .rp-goal{ border:1px solid #E6E9F2; border-radius:10px; padding:9px 11px; --gc:#16A36A; }
+  .rp-goal.warn{ --gc:#D98E00; } .rp-goal.bad{ --gc:#E5484D; }
+  .rp-goal-v{ font-size:16px; font-weight:800; margin-top:4px; } .rp-goal-v span{ font-size:10px; font-weight:600; color:#8A93A6; }
+  .rp-goal-bar{ height:6px; border-radius:4px; background:#F0F2F7; margin-top:6px; overflow:hidden; } .rp-goal-bar div{ height:100%; background:var(--gc); border-radius:4px; }
+  .rp-goal-n{ font-size:10px; font-weight:700; color:var(--gc); margin-top:4px; }
+  .rp-is{ display:flex; height:26px; border-radius:8px; overflow:hidden; margin-bottom:8px; }
+  .rp-is div{ display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:800; }
 
   .rp-page{ width:794px; height:1123px; background:#fff; color:#151B2E; font-family:'Inter','IBM Plex Sans',-apple-system,'Segoe UI',sans-serif; position:relative; overflow:hidden; display:flex; flex-direction:column; }
   .rp-head{ display:flex; justify-content:space-between; align-items:center; padding:26px 40px 14px; border-bottom:3px solid #FF5A1E; }
@@ -1429,6 +1438,30 @@
     .wd-bar-wrap{ height:100px; }
     .wd-sub{ font-size:9.5px; }
   }
+
+  /* ===================== Metas ===================== */
+  .goal-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:12px; }
+  .goal-card{ border:1px solid var(--line); border-radius:12px; padding:13px 14px; background:var(--bg-panel-2); --gc:var(--green); }
+  .goal-card.warn{ --gc:#E8A317; } .goal-card.bad{ --gc:var(--red); }
+  .goal-l{ font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-dim); }
+  .goal-v{ font-size:20px; font-weight:800; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .goal-v span{ font-size:12px; font-weight:600; color:var(--text-dim); }
+  .goal-bar{ height:7px; border-radius:6px; background:var(--bg-panel-3, rgba(127,127,127,.15)); margin-top:9px; overflow:hidden; }
+  .goal-bar div{ height:100%; border-radius:6px; background:var(--gc); }
+  .goal-n{ font-size:12px; font-weight:700; color:var(--gc); margin-top:6px; }
+  .goals-hint{ font-size:12.5px; color:var(--text-dim); border:1px dashed var(--line); border-radius:12px; padding:10px 14px; margin-bottom:14px; }
+  .goals-hint a{ color:var(--flame); cursor:pointer; font-weight:700; margin-left:4px; }
+  .goal-ed-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .goal-ed-t{ font-weight:700; font-size:13.5px; margin-bottom:8px; display:flex; align-items:center; gap:7px; }
+  .goal-ed-t i{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .goal-ed-f{ display:block; margin-bottom:8px; } .goal-ed-f span{ display:block; font-size:11.5px; color:var(--text-dim); margin-bottom:4px; }
+  .is-bars{ display:flex; height:30px; border-radius:9px; overflow:hidden; margin:4px 0 10px; }
+  .is-bars div{ display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; min-width:0; white-space:nowrap; overflow:hidden; }
+  .is-legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--text-dim); }
+  .is-legend i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .is-legend b{ color:var(--text); }
+  .st-flag{ display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; background:rgba(232,81,79,.14); color:var(--red); margin-left:6px; }
+  @media (max-width: 760px){ .goal-ed-grid{ grid-template-columns:1fr; } .goal-grid{ grid-template-columns:1fr 1fr; gap:8px; } .goal-card{ padding:11px; } .goal-v{ font-size:16px; } .goal-v span{ display:block; font-size:11px; margin-top:2px; } .goal-n{ font-size:11px; } }
 </style>
 </head>
 <body>
@@ -2256,6 +2289,7 @@
         <div id="cdDashboardContent" class="cd-platform-block" style="display:none;">
           <div class="cd-section-title"><span class="cd-section-logos"><span class="pf-logo pf-google">G</span></span><h2>Google Ads</h2></div>
           <div class="cd-section-sub" id="cdGoogleSub"></div>
+          <div id="cdGoogleGoals"></div>
           <div class="panel-head" style="margin-bottom:12px;">
             <h3 style="font-size:15px;">Resumo do período</h3>
             <button type="button" class="btn-customize" id="cdMetricsBtn" onclick="toggleMetricsPanel(event)">⚙ Personalizar métricas</button>
@@ -2278,6 +2312,7 @@
           <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="gChartClicks"></div></div>
           <div class="panel"><div class="panel-head"><h3>Conversões e taxa de conversão</h3></div><div class="dual-chart" id="gChartConv"></div></div>
           <div class="panel"><div class="panel-head"><h3>Custo e CPC médio</h3></div><div class="dual-chart" id="gChartCost"></div></div>
+          <div id="cdImpressionShare" data-vis="ads_campaigns"></div>
 
           <div class="panel" data-vis="ads_campaigns">
             <div class="panel-head"><div><h3>Todas as campanhas</h3><div class="panel-head-sub">Clique num cabeçalho pra reordenar</div></div></div>
@@ -2291,6 +2326,7 @@
               <tbody id="cdKeywordsTable"></tbody>
             </table>
           </div>
+          <div id="cdSearchTerms" data-vis="ads_campaigns"></div>
 
           <div class="donut-row" id="cdDeviceDonuts" data-vis="ads_audience"></div>
 
@@ -2425,6 +2461,10 @@
           </select>
           <span class="cd-model-status" id="cdModelStatus"></span>
         </div>
+      </div>
+      <div class="panel cd-model-panel">
+        <div class="panel-head"><div><h3>🎯 Metas do cliente</h3><div class="panel-head-sub">Metas mensais por plataforma. Deixe em branco o que não quiser acompanhar — o painel calcula proporcional ao período escolhido.</div></div></div>
+        <div id="cdGoalsEditor"></div>
       </div>
       <div class="conn-table-wrap">
         <table class="conn-table">
@@ -3703,6 +3743,19 @@
     </div>`;
   }
 
+  // Metas no resumo do PDF (mesmas regras do painel).
+  function rpGoalsHtml(meta, google, range){
+    const goals = (rawAccountsById[currentClientId] || {}).goals || {};
+    const blocks = [];
+    const add = (pf, label, actual, one) => {
+      const ev = goalsEval(goals[pf], actual, range);
+      if (ev) ev.items.forEach(g => { const t = goalItemText(g, one); blocks.push(`<div class="rp-goal ${g.status}"><div class="rp-kpi-l">${label} · ${t.label}</div><div class="rp-goal-v">${t.value} <span>${t.target}</span></div><div class="rp-goal-bar"><div style="width:${t.bar.toFixed(1)}%"></div></div><div class="rp-goal-n">${t.note}</div></div>`); });
+    };
+    if (meta) add('meta', 'Meta', { spend:meta.totals.spend, results:meta.totals.results, costPerResult:meta.totals.costPerResult, roas:meta.totals.roas || 0 }, 'resultado');
+    if (google) add('google', 'Google', { spend:google.totals.spend, results:google.totals.conversions, costPerResult:google.totals.costPerConv, roas:google.totals.roas || 0 }, 'conversão');
+    return blocks.length ? `<div class="rp-card"><div class="rp-card-t">🎯 Metas do período</div><div class="rp-goals">${blocks.slice(0, 6).join('')}</div></div>` : '';
+  }
+
   function buildClientReport({ client, range, prevRange, meta, google, ig, sections, note, ai }){
     const pages = [];
     const per = `${dateBr(range.from)} a ${dateBr(range.to)}`;
@@ -3746,6 +3799,7 @@
           ${rpKpi('CPC médio', clicks ? spend / clicks : 0, pClicks ? pSpend / pClicks : 0, brl2, true)}
           ${rpKpi('CTR', impr ? clicks / impr * 100 : 0, pImpr ? pClicks / pImpr * 100 : 0, pct2)}
         </div>
+        ${rpGoalsHtml(meta, google, range)}
         ${h.good.length ? `<div class="rp-box good"><div class="rp-box-t">✓ Destaques</div><ul>${h.good.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
         ${h.warn.length ? `<div class="rp-box warn"><div class="rp-box-t">⚑ Pontos de atenção</div><ul>${h.warn.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
       `, client, n++, { section:'Resumo' }));
@@ -3776,6 +3830,32 @@
             { label:'Cliques', value:t.clicks, color:'#8B5CF6' }, { label:'Cliques no link', value:t.linkClicks || 0, color:'#B57BFF' },
             { label:rl, value:t.results, color:RP.green }].filter(x => x.value > 0), intFmt, RP.blue, t.impressions, true)}
         </div>`, client, n++, { section:'Meta Ads' }));
+
+      const hasShop = (t.purchases || 0) > 0, hasMsg = (t.conversations || 0) > 0;
+      if (hasShop || hasMsg) {
+        const shopAds = (meta.ads || []).filter(a => a.purchases > 0).sort((a, b) => b.purchaseValue - a.purchaseValue).slice(0, 8);
+        pages.push(rpPage(`
+          <h1 class="rp-h1"><span class="rp-pf meta">∞</span> ${hasShop && hasMsg ? 'Vendas e mensagens' : hasShop ? 'Vendas (e-commerce)' : 'Mensagens'}</h1>
+          ${hasShop ? `<p class="rp-lead">Compras rastreadas pelo pixel/API de conversões e o valor que elas geraram</p>
+          <div class="rp-kpis k5">
+            ${rpKpi('Valor de conversão', t.purchaseValue, p.purchaseValue, brl2)}
+            ${rpKpi('ROAS', t.roas, p.roas, v => dec2(v) + 'x')}
+            ${rpKpi('Compras', t.purchases, p.purchases, intFmt)}
+            ${rpKpi('Ticket médio', t.avgTicket, p.avgTicket, brl2)}
+            ${rpKpi('Custo por compra', t.costPerPurchase, p.costPerPurchase, brl2, true)}
+          </div>
+          ${shopAds.length && sections.creatives ? `<div class="rp-card"><div class="rp-card-t">Anúncios que mais venderam</div>
+            ${rpTable(['Anúncio', 'Investido', 'Compras', 'Valor', 'ROAS'], shopAds.map(a => [escapeHtml(a.name), brl2(a.spend), intFmt(a.purchases), brl2(a.purchaseValue), dec2(a.roas) + 'x']))}</div>` : ''}` : ''}
+          ${hasMsg ? `<p class="rp-lead" style="margin-top:${hasShop ? 10 : 0}px;">Conversas no WhatsApp, Direct e Messenger vindas dos anúncios</p>
+          <div class="rp-kpis k5">
+            ${rpKpi('Conversas iniciadas', t.conversations, p.conversations, intFmt)}
+            ${rpKpi('Custo por conversa', t.costPerConversation, p.costPerConversation, brl2, true)}
+            ${rpKpi('Primeiras respostas', t.firstReplies, p.firstReplies, intFmt)}
+            ${rpKpi('Taxa de resposta', t.replyRate, p.replyRate, pct2)}
+            ${rpKpi('Bloqueios', t.blocks, p.blocks, intFmt, true)}
+          </div>` : ''}
+        `, client, n++, { section:'Meta Ads' }));
+      }
 
       const ads = (meta.ads || []).slice().sort((a, b) => (b.results - a.results) || (b.spend - a.spend));
       if (sections.creatives && ads.length) {
@@ -3849,6 +3929,21 @@
             <div class="rp-card"><div class="rp-card-t">Conversões por dispositivo</div>${rpBars(dev.map(d => ({ label:d.label, value:d.conversions })), convFmt, RP.blue)}</div>
           </div>` : ''}
         `, client, n++, { section:'Google Ads' }));
+      }
+      const is = google.impressionShare, terms = (google.searchTerms || []).slice().sort((a, b) => b.spend - a.spend).slice(0, 14);
+      if (sections.campaigns && (is || terms.length)) {
+        const waste = (google.searchTerms || []).filter(x => x.spend > 0 && !x.conversions);
+        pages.push(rpPage(`
+          <h1 class="rp-h1">Rede de pesquisa</h1>
+          ${is ? `<div class="rp-card"><div class="rp-card-t">Parcela de impressões</div>
+            <p class="rp-lead" style="margin-bottom:8px;">Das vezes em que o anúncio podia aparecer na pesquisa do Google, quantas ele apareceu</p>
+            <div class="rp-is">${[[is.share, '#22B573'], [is.lostBudget, '#F5A524'], [is.lostRank, '#E5484D']].map(([v, c]) => v > 0.5 ? `<div style="width:${v}%;background:${c}">${v >= 9 ? pct1(v) : ''}</div>` : '').join('')}</div>
+            <div class="rp-legend" style="justify-content:flex-start;"><span><i style="background:#22B573"></i>Ganha ${pct1(is.share)}</span><span><i style="background:#F5A524"></i>Perdida por orçamento ${pct1(is.lostBudget)}</span><span><i style="background:#E5484D"></i>Perdida por classificação ${pct1(is.lostRank)}</span></div>
+          </div>` : ''}
+          ${terms.length ? `<div class="rp-card"><div class="rp-card-t">Termos de pesquisa com mais investimento</div>
+            ${rpTable(['Termo pesquisado', 'Cliques', 'CTR', 'Custo', 'Conv.', 'Custo/conv.'], terms.map(x => [escapeHtml(x.term), intFmt(x.clicks), pct2(x.ctr), brl2(x.spend), convFmt(x.conversions), x.conversions ? brl2(x.costPerConv) : '—']))}</div>
+            ${waste.length ? `<div class="rp-box warn"><div class="rp-box-t">⚑ Termos sem conversão</div>${waste.length} ${waste.length === 1 ? 'termo gastou' : 'termos gastaram'} ${brl2(waste.reduce((s2, x) => s2 + x.spend, 0))} sem converter — são candidatos a palavras-chave negativas.</div>` : ''}` : ''}
+        `, client, n++, { section:'Google Ads · Pesquisa' }));
       }
     }
 
@@ -4024,11 +4119,12 @@
       { key:'ads_creatives', label:'Melhores criativos e tabela de anúncios' },
       { key:'ads_audience', label:'Público, funil, posicionamentos, regiões e dispositivos' },
       { key:'ads_campaigns', label:'Tabelas de campanhas e palavras-chave' },
+      { key:'ads_goals', label:'Metas do mês (investimento, custo por resultado)' },
     ] },
     { key:'social', label:'Redes Sociais', desc:'Instagram orgânico' },
     { key:'forms', label:'Formulários', desc:'Lista dos formulários do cliente e as respostas (sem poder editar)' },
   ];
-  const VIS_DEFAULTS = { ads:true, ads_meta:true, ads_google:true, ads_creatives:true, ads_audience:true, ads_campaigns:true, social:true, forms:false };
+  const VIS_DEFAULTS = { ads:true, ads_meta:true, ads_google:true, ads_creatives:true, ads_audience:true, ads_campaigns:true, ads_goals:true, social:true, forms:false };
   const visOf = a => ({ ...VIS_DEFAULTS, ...((a && a.clientVisibility) || {}) });
 
   // Esconde o que não está liberado (cliente logado ou link de compartilhamento).
@@ -4049,7 +4145,7 @@
       const vis = me.visibility || VIS_DEFAULTS;
       const on = p => me.platforms.includes(p) ? 'connected' : 'not_connected';
       rawAccountsById[me.id] = {
-        id: me.id, name: me.name, niche: me.niche, dashboardModel: 'auto', clientVisibility: vis,
+        id: me.id, name: me.name, niche: me.niche, dashboardModel: 'auto', clientVisibility: vis, goals: me.goals || {},
         meta: { status: on('meta'), igBusinessId: me.hasInstagram ? 'sim' : null }, google: { status: on('google') }, instagramApi: {},
       };
       WS = me.id;
@@ -5750,6 +5846,7 @@
 
     document.getElementById('cdModelSelect').value = account.dashboardModel || 'auto';
     document.getElementById('cdModelStatus').textContent = '';
+    renderGoalsEditor();
     cdPlatformView = 'all';
     cdCurrentRange = { from: isoDaysAgo(29), to: isoDaysAgo(0) };
     igTypeFilter = 'all'; igPostSort = 'recent';
@@ -6316,6 +6413,7 @@
     { id:'ctr', label:'Maior CTR', color:CH_PURPLE, band:'ctr' },
     { id:'cpc', label:'Menor CPC', color:'#E8514F', band:'cpc' },
     { id:'spend', label:'Mais investido', color:CH_AMBER, band:'spend' },
+    { id:'roas', label:'Maior ROAS', color:'#16A36A', band:'roas' },
   ];
 
   function adThumbHtml2(a){
@@ -6356,8 +6454,11 @@
       kpi2Html({ label:'Vídeo assistido 25%', value:t.video25, prev:p.video25, fmt:compactFmt, accent:metaAccent }),
     ].join('');
 
+    const rlOne = ({ 'Conversas iniciadas':'conversa', 'Leads':'lead', 'Leads no site':'lead', 'Leads (formulário)':'lead', 'Compras':'compra', 'Cadastros':'cadastro' })[rl] || 'resultado';
     body.innerHTML = `
+      ${goalsPanelHtml('meta', { spend:t.spend, results:t.results, costPerResult:t.costPerResult, roas:t.roas || 0 }, r.range, rlOne)}
       <div class="kpi2-grid">${kpis}</div>
+      ${metaExtraPanelsHtml(t, p, metaAccent)}
       <div class="panel"><div class="panel-head"><h3>Investimento e ${escapeHtml(rl.toLowerCase())}</h3></div><div class="dual-chart" id="mChartSpend"></div></div>
       <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="mChartClicks"></div></div>
       <div class="panel" data-vis="ads_audience"><div class="panel-head"><div><h3>Funil do período</h3><div class="panel-head-sub">De quem viu o anúncio até quem virou ${escapeHtml(rl.toLowerCase())}</div></div></div><div id="mFunnel"></div></div>
@@ -6408,6 +6509,10 @@
       { key:'engagement', label:'Engaj.', num:true, title:'Engajamento com a publicação (curtidas, comentários, cliques…)', cell:a => compactFmt(a.engagement) },
       { key:'video25', label:'Vídeo 25%', num:true, title:'Quantas vezes o vídeo foi assistido até 25%', cell:a => a.video25 ? compactFmt(a.video25) : '—' },
     ];
+    if ((r.ads || []).some(a => a.purchases > 0)) adCols.splice(3, 0,
+      { key:'purchases', label:'Compras', num:true, cell:a => a.purchases ? intFmt(a.purchases) : '—' },
+      { key:'purchaseValue', label:'Valor conv.', num:true, cell:a => a.purchaseValue ? brl2(a.purchaseValue) : '—' },
+      { key:'roas', label:'ROAS', num:true, cell:a => a.roas ? `<b style="color:${a.roas >= 1 ? 'var(--green)' : 'var(--red)'}">${dec2(a.roas)}x</b>` : '—' });
     sortRenderers.metaAds = () => {
       const wrap = document.getElementById('metaAdsTableWrap');
       if (wrap) wrap.innerHTML = sortTableHtml('metaAds', adCols, r.ads || [], { key:'results', dir:-1 });
@@ -6424,6 +6529,9 @@
       { key:'results', label:'Resultados', num:true, cell:c => intFmt(c.results) },
       { key:'costPerResult', label:'Custo/Result.', num:true, sortVal:c => c.results ? c.costPerResult : -1, cell:c => c.results ? brl2(c.costPerResult) : '—' },
     ];
+    if ((r.campaigns || []).some(c => c.purchases > 0)) campCols.push(
+      { key:'purchaseValue', label:'Valor conv.', num:true, cell:c => c.purchaseValue ? brl2(c.purchaseValue) : '—' },
+      { key:'roas', label:'ROAS', num:true, cell:c => c.roas ? `${dec2(c.roas)}x` : '—' });
     sortRenderers.metaCamp = () => {
       const wrap = document.getElementById('metaCampTableWrap');
       if (wrap) wrap.innerHTML = sortTableHtml('metaCamp', campCols, r.campaigns || [], { key:'spend', dir:-1 });
@@ -6550,7 +6658,7 @@
     const chipsEl = document.getElementById('metaCreativeChips');
     const grid = document.getElementById('metaCreativeGrid');
     if (!r || !chipsEl || !grid) return;
-    chipsEl.innerHTML = META_CREATIVE_SORTS.map(s =>
+    chipsEl.innerHTML = META_CREATIVE_SORTS.filter(s => s.id !== 'roas' || (r.ads || []).some(a => a.purchases > 0)).map(s =>
       `<button type="button" class="chip${s.id === metaCreativeSort ? ' active' : ''}" onclick="setMetaCreativeSort('${s.id}')">${s.id === metaCreativeSort ? '✓' : `<i style="background:${s.color}"></i>`} ${s.label}</button>`).join('');
     const sortDef = META_CREATIVE_SORTS.find(s => s.id === metaCreativeSort) || META_CREATIVE_SORTS[0];
     let ads = (r.ads || []).slice();
@@ -6560,7 +6668,9 @@
       ctr: (a, b) => b.ctr - a.ctr,
       cpc: (a, b) => a.cpc - b.cpc,
       spend: (a, b) => b.spend - a.spend,
+      roas: (a, b) => (b.roas || 0) - (a.roas || 0),
     };
+    if (sortDef.id === 'roas') ads = ads.filter(a => a.purchases > 0);
     if (sortDef.id === 'cpr') ads = ads.filter(a => a.results > 0);
     if (sortDef.id === 'cpc') ads = ads.filter(a => a.clicks > 0);
     ads.sort(by[sortDef.id]);
@@ -6571,6 +6681,7 @@
         case 'ctr': return ['CTR', pct2(a.ctr)];
         case 'cpc': return ['CPC', brl2(a.cpc)];
         case 'spend': return ['Investido', brl2(a.spend)];
+        case 'roas': return ['ROAS', dec2(a.roas || 0) + 'x'];
         default: return [a.resultLabel || r.resultLabel || 'Resultados', intFmt(a.results)];
       }
     };
@@ -6604,6 +6715,126 @@
         <button type="button" class="creative-toggle" onclick="this.closest('.creative-card').classList.toggle('open'); this.textContent = this.closest('.creative-card').classList.contains('open') ? 'menos métricas ▴' : 'mais métricas ▾';">mais métricas ▾</button>
       </div>`;
     }).join('')}</div>${ads.length > 8 ? `<button type="button" class="show-all-btn" onclick="toggleAllCreatives()">${metaShowAllCreatives ? 'Mostrar só os 8 primeiros' : `Ver todos os ${ads.length} criativos`}</button>` : ''}`;
+  }
+
+
+  /* ===================== Metas do cliente ===================== */
+  const GOAL_FIELDS = [
+    { key:'monthlyBudget', label:'Investimento do mês (R$)', ph:'Ex: 3000' },
+    { key:'costPerResultTarget', label:'Custo por resultado máximo (R$)', ph:'Ex: 12,00' },
+    { key:'resultsTarget', label:'Resultados no mês', ph:'Ex: 250' },
+    { key:'roasTarget', label:'ROAS mínimo (e-commerce)', ph:'Ex: 4' },
+  ];
+  function renderGoalsEditor(){
+    const el = document.getElementById('cdGoalsEditor');
+    if (!el) return;
+    const g = (rawAccountsById[currentClientId] || {}).goals || {};
+    const col = (p, title, color) => `<div class="goal-ed-col">
+      <div class="goal-ed-t"><i style="background:${color}"></i>${title}</div>
+      ${GOAL_FIELDS.map(f => `<label class="goal-ed-f"><span>${f.label}</span>
+        <input class="modal-input" inputmode="decimal" data-goal="${p}.${f.key}" placeholder="${f.ph}" value="${(g[p] || {})[f.key] != null ? String(g[p][f.key]).replace('.', ',') : ''}"></label>`).join('')}
+    </div>`;
+    el.innerHTML = `<div class="goal-ed-grid">${col('meta', 'Meta Ads', '#0866FF')}${col('google', 'Google Ads', '#34A853')}</div>
+      <div class="cd-model-row" style="margin-top:12px;"><button type="button" class="btn-add" onclick="saveGoals()">Salvar metas</button><span class="cd-model-status" id="cdGoalsStatus"></span></div>`;
+  }
+  async function saveGoals(){
+    const status = document.getElementById('cdGoalsStatus');
+    const goals = { meta:{}, google:{} };
+    document.querySelectorAll('#cdGoalsEditor [data-goal]').forEach(inp => {
+      const [p, k] = inp.dataset.goal.split('.');
+      const v = inp.value.trim().replace(/\./g, '').replace(',', '.');
+      if (v) goals[p][k] = Number(v);
+    });
+    status.textContent = 'Salvando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ goals }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      rawAccountsById[currentClientId] = data;
+      status.textContent = '✓ Metas salvas — já aparecem na aba Anúncios, no PDF e no relatório automático.';
+      renderGoalsEditor();
+      document.getElementById('cdGoalsStatus').textContent = '✓ Metas salvas — já aparecem na aba Anúncios, no PDF e no relatório automático.';
+      if (cdLastMeta) renderClientMeta(cdLastMeta);
+      if (cdLastGoogle) renderClientDashboard(cdLastGoogle);
+    } catch (err) { status.textContent = `⚠ ${err.message}`; }
+  }
+
+  // Mesma regra do servidor (lib/goals.js): metas mensais, proporcionais ao período.
+  function goalsEval(goal, actual, range){
+    if (!goal || !actual || !range) return null;
+    const d = s => new Date(s + 'T12:00:00');
+    const days = Math.round((d(range.to) - d(range.from)) / 864e5) + 1;
+    const [y, m] = range.from.split('-').map(Number);
+    const factor = Math.min(1, days / new Date(y, m, 0).getDate()) || 1;
+    const items = [];
+    if (goal.monthlyBudget) {
+      const target = goal.monthlyBudget * factor, pct = target ? actual.spend / target * 100 : 0;
+      items.push({ key:'budget', target, actual:actual.spend, pct, status: pct > 110 ? 'bad' : pct >= 85 ? 'good' : 'warn' });
+    }
+    if (goal.costPerResultTarget && actual.results > 0) {
+      const pct = actual.costPerResult / goal.costPerResultTarget * 100;
+      items.push({ key:'cpr', target:goal.costPerResultTarget, actual:actual.costPerResult, pct, status: pct <= 100 ? 'good' : pct <= 120 ? 'warn' : 'bad' });
+    }
+    if (goal.resultsTarget) {
+      const target = goal.resultsTarget * factor, pct = target ? actual.results / target * 100 : 0;
+      items.push({ key:'results', target, actual:actual.results, pct, status: pct >= 100 ? 'good' : pct >= 80 ? 'warn' : 'bad' });
+    }
+    if (goal.roasTarget && actual.roas > 0) {
+      const pct = actual.roas / goal.roasTarget * 100;
+      items.push({ key:'roas', target:goal.roasTarget, actual:actual.roas, pct, status: pct >= 100 ? 'good' : pct >= 80 ? 'warn' : 'bad' });
+    }
+    return items.length ? { factor, days, items } : null;
+  }
+  function goalItemText(g, resultName){
+    const roas = v => v.toFixed(2).replace('.', ',') + 'x';
+    switch (g.key) {
+      case 'budget': return { label:'Investimento', value:brl2(g.actual), target:`de ${brl2(g.target)}`, note: g.status === 'bad' ? 'acima do previsto' : g.status === 'warn' ? 'abaixo do previsto' : 'dentro do previsto', bar: Math.min(100, g.pct) };
+      case 'cpr': return { label:`Custo por ${resultName}`, value:brl2(g.actual), target:`meta até ${brl2(g.target)}`, note: g.status === 'good' ? 'dentro da meta' : `${Math.round(g.pct - 100)}% acima da meta`, bar: Math.min(100, g.target / g.actual * 100) };
+      case 'results': return { label:'Resultados', value:intFmt(g.actual), target:`de ${intFmt(g.target)}`, note: `${Math.round(g.pct)}% da meta`, bar: Math.min(100, g.pct) };
+      case 'roas': return { label:'ROAS', value:roas(g.actual), target:`meta ${roas(g.target)}`, note: g.status === 'good' ? 'acima da meta' : `${Math.round(100 - g.pct)}% abaixo da meta`, bar: Math.min(100, g.pct) };
+    }
+  }
+  function goalsPanelHtml(platform, actual, range, resultName){
+    const account = rawAccountsById[currentClientId] || {};
+    const ev = goalsEval((account.goals || {})[platform], actual, range);
+    if (!ev) {
+      if (CLIENT_MODE || PUBLIC_TOKEN) return '';
+      return `<div class="goals-hint" data-vis="ads_goals">🎯 Defina metas de investimento e custo por resultado para acompanhar aqui. <a onclick="setClientDetailTab('integrations'); setTimeout(()=>document.getElementById('cdGoalsEditor')?.scrollIntoView({behavior:'smooth'}),60)">Definir metas</a></div>`;
+    }
+    const cards = ev.items.map(g => {
+      const t = goalItemText(g, resultName);
+      return `<div class="goal-card ${g.status}"><div class="goal-l">${t.label}</div><div class="goal-v">${t.value} <span>${t.target}</span></div>
+        <div class="goal-bar"><div style="width:${t.bar.toFixed(1)}%"></div></div><div class="goal-n">${t.note}</div></div>`;
+    }).join('');
+    const sub = ev.factor < 1 ? `Metas mensais proporcionais aos ${ev.days} dias do período` : 'Metas do mês';
+    return `<div class="panel" data-vis="ads_goals"><div class="panel-head"><div><h3>🎯 Metas</h3><div class="panel-head-sub">${sub}</div></div></div><div class="goal-grid">${cards}</div></div>`;
+  }
+
+  // E-commerce e Mensagens (Meta) — só aparecem quando há dados.
+  function metaExtraPanelsHtml(t, p, accent){
+    let html = '';
+    if ((t.purchases || 0) > 0 || (p.purchases || 0) > 0) {
+      html += `<div class="panel"><div class="panel-head"><div><h3>🛒 E-commerce</h3><div class="panel-head-sub">Compras rastreadas pelo pixel/API de conversões e o valor gerado</div></div></div><div class="kpi2-grid" style="margin-bottom:0;">
+        ${kpi2Html({ label:'Valor de conversão', value:t.purchaseValue, prev:p.purchaseValue, fmt:brl2, accent, title:'Faturamento das compras atribuídas aos anúncios.' })}
+        ${kpi2Html({ label:'ROAS', value:t.roas, prev:p.roas, fmt:v => dec2(v) + 'x', accent, title:'Retorno sobre o investimento: valor de conversão ÷ investimento.' })}
+        ${kpi2Html({ label:'Compras', value:t.purchases, prev:p.purchases, fmt:intFmt, accent })}
+        ${kpi2Html({ label:'Ticket médio', value:t.avgTicket, prev:p.avgTicket, fmt:brl2, accent })}
+        ${kpi2Html({ label:'Custo por compra', value:t.costPerPurchase, prev:p.costPerPurchase, fmt:brl2, invert:true, accent })}
+      </div></div>`;
+    }
+    if ((t.conversations || 0) > 0 || (p.conversations || 0) > 0) {
+      html += `<div class="panel"><div class="panel-head"><div><h3>💬 Mensagens</h3><div class="panel-head-sub">Conversas no WhatsApp, Direct e Messenger vindas dos anúncios</div></div></div><div class="kpi2-grid" style="margin-bottom:0;">
+        ${kpi2Html({ label:'Conversas iniciadas', value:t.conversations, prev:p.conversations, fmt:intFmt, accent })}
+        ${kpi2Html({ label:'Custo por conversa', value:t.costPerConversation, prev:p.costPerConversation, fmt:brl2, invert:true, accent })}
+        ${kpi2Html({ label:'Primeiras respostas', value:t.firstReplies, prev:p.firstReplies, fmt:intFmt, accent, title:'Conversas em que a pessoa respondeu de novo depois da primeira mensagem.' })}
+        ${kpi2Html({ label:'Taxa de resposta', value:t.replyRate, prev:p.replyRate, fmt:pct2, accent, title:'Primeiras respostas ÷ conversas iniciadas.' })}
+        ${kpi2Html({ label:'Bloqueios', value:t.blocks, prev:p.blocks, fmt:intFmt, invert:true, accent, title:'Pessoas que bloquearam a conta depois de iniciar a conversa.' })}
+      </div></div>`;
+    }
+    return html;
   }
 
   /* ---------- Modelo do painel (aba Integrações) ---------- */
@@ -7173,6 +7404,54 @@
     };
     renderBreakdownGrid('cdGenderGrid', data.genderBreakdown, 'Sem dados de sexo nesse período.');
     renderBreakdownGrid('cdAgeGrid', data.ageBreakdown, 'Sem dados de faixa etária nesse período.');
+
+    document.getElementById('cdGoogleGoals').innerHTML = (data.range || cdCurrentRange) ? goalsPanelHtml('google',
+      { spend:totals.spend, results:totals.conversions, costPerResult:totals.costPerConv, roas:totals.roas || 0 }, data.range || cdCurrentRange, 'conversão') : '';
+    document.getElementById('cdImpressionShare').innerHTML = impressionShareHtml(data.impressionShare);
+    renderSearchTerms(data.searchTerms);
+  }
+
+  // Parcela de impressões (rede de pesquisa): ganha × perdida por orçamento × perdida por classificação.
+  function impressionShareHtml(is){
+    if (!is) return '';
+    const seg = (v, c, label) => v > 0.5 ? `<div style="width:${v}%; background:${c};" title="${label}: ${pct1(v)}">${v >= 9 ? pct1(v) : ''}</div>` : '';
+    const advice = is.lostBudget >= 15
+      ? `💡 ${pct1(is.lostBudget)} das buscas ficaram sem o anúncio por falta de orçamento — aumentar a verba nas campanhas mais eficientes traz mais cliques no mesmo custo.`
+      : is.lostRank >= 25 ? `💡 ${pct1(is.lostRank)} perdido por classificação — melhorar o índice de qualidade (anúncio e página) e ajustar lances ajuda a aparecer mais.`
+      : '✓ O anúncio está aparecendo na maior parte das buscas possíveis.';
+    const rows = (is.campaigns || []).map(c => `<tr><td>${escapeHtml(c.name)}</td><td class="num"><b>${pct1(c.share)}</b></td><td class="num">${pct1(c.lostBudget)}</td><td class="num">${pct1(c.lostRank)}</td></tr>`).join('');
+    return `<div class="panel"><div class="panel-head"><div><h3>Parcela de impressões</h3><div class="panel-head-sub">Das vezes em que o anúncio podia aparecer na pesquisa do Google, quantas ele apareceu</div></div></div>
+      <div class="is-bars">${seg(is.share, CH_GREEN, 'Ganha')}${seg(is.lostBudget, CH_AMBER, 'Perdida (orçamento)')}${seg(is.lostRank, '#E8514F', 'Perdida (classificação)')}</div>
+      <div class="is-legend"><span><i style="background:${CH_GREEN}"></i>Ganha <b>${pct1(is.share)}</b></span><span><i style="background:${CH_AMBER}"></i>Perdida por orçamento <b>${pct1(is.lostBudget)}</b></span><span><i style="background:#E8514F"></i>Perdida por classificação <b>${pct1(is.lostRank)}</b></span></div>
+      <div class="footnote" style="border:none; padding:10px 0 0;">${advice}</div>
+      ${rows && is.campaigns.length > 1 ? `<div class="table-scroll" style="margin-top:10px;"><table><thead><tr><th>Campanha de pesquisa</th><th class="num">Ganha</th><th class="num">Perdida (orçamento)</th><th class="num">Perdida (classif.)</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
+    </div>`;
+  }
+
+  // Termos de pesquisa: o que as pessoas digitaram de fato no Google.
+  function renderSearchTerms(terms){
+    const el = document.getElementById('cdSearchTerms');
+    if (!el) return;
+    if (!terms || !terms.length) { el.innerHTML = ''; return; }
+    const waste = terms.filter(t => t.spend > 0 && !t.conversions);
+    const wasteSpend = waste.reduce((s, t) => s + t.spend, 0);
+    const cols = [
+      { key:'term', label:'Termo pesquisado', sortVal:t => t.term, cell:t => `<div class="cell-main">${escapeHtml(t.term)}${t.spend > 0 && !t.conversions && t.clicks >= 5 ? '<span class="st-flag" title="Gastou e não converteu — candidato a palavra-chave negativa">sem conversão</span>' : ''}</div><div class="cell-sub">${escapeHtml(t.campaign || '')}</div>` },
+      { key:'impressions', label:'Impr.', num:true, cell:t => intFmt(t.impressions) },
+      { key:'clicks', label:'Cliques', num:true, cell:t => intFmt(t.clicks) },
+      { key:'ctr', label:'CTR', num:true, cell:t => pct2(t.ctr) },
+      { key:'spend', label:'Custo', num:true, cell:t => `<b>${brl2(t.spend)}</b>` },
+      { key:'conversions', label:'Conv.', num:true, cell:t => convFmt(t.conversions) },
+      { key:'costPerConv', label:'Custo/conv.', num:true, sortVal:t => t.conversions ? t.costPerConv : 1e12, cell:t => t.conversions ? brl2(t.costPerConv) : '—' },
+    ];
+    el.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Termos de pesquisa</h3><div class="panel-head-sub">O que as pessoas digitaram no Google antes de clicar · clique num cabeçalho pra reordenar</div></div></div>
+      ${waste.length ? `<div class="footnote" style="border:none; padding:0 0 10px;">⚠ ${waste.length} ${waste.length === 1 ? 'termo gastou' : 'termos gastaram'} ${brl2(wasteSpend)} sem nenhuma conversão — bons candidatos a palavras-chave negativas.</div>` : ''}
+      <div class="table-scroll" id="gTermsWrap"></div></div>`;
+    sortRenderers.gTerms = () => {
+      const w = document.getElementById('gTermsWrap');
+      if (w) w.innerHTML = sortTableHtml('gTerms', cols, terms, { key:'spend', dir:-1 });
+    };
+    sortRenderers.gTerms();
   }
 
   async function connectGoogle(){
@@ -7663,7 +7942,7 @@
       document.title = `${info.name} · Resultados · Instinto Digital`;
       const on = p => info.platforms.includes(p) ? 'connected' : 'not_connected';
       rawAccountsById['__public'] = {
-        id: '__public', name: info.name, niche: info.niche, dashboardModel: 'auto',
+        id: '__public', name: info.name, niche: info.niche, dashboardModel: 'auto', goals: info.goals || {},
         meta: { status: on('meta'), igBusinessId: info.hasInstagram ? 'sim' : null },
         google: { status: on('google') }, instagramApi: {},
       };

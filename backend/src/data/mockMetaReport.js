@@ -3,6 +3,7 @@
 // gerados de forma determinística a partir do período, pra tela não
 // "pular" a cada recarga.
 const period = require('../lib/period');
+const extras = require('../lib/metaExtras');
 
 function rng(seed) {
   let s = seed % 2147483647;
@@ -63,6 +64,16 @@ function build(range) {
         engagement: Math.round(clicks * (2 + rand() * 2)),
         video25: Math.round(impressions * 0.06),
         thumbnailUrl: null,
+        ...(() => {
+          const x = {
+            conversations: results,
+            firstReplies: Math.round(results * (0.62 + rand() * 0.2)),
+            blocks: Math.round(results * rand() * 0.04),
+            purchases: idx % 3 === 0 ? Math.max(1, Math.round(clicks * 0.012)) : 0,
+          };
+          x.purchaseValue = x.purchases * (160 + rand() * 140);
+          return { ...x, ...extras.deriveExtras({ ...x, spend }) };
+        })(),
       };
     });
   }
@@ -106,8 +117,11 @@ function build(range) {
       results: acc.results + a.results,
       engagement: acc.engagement + a.engagement,
     }), { spend: 0, impressions: 0, reach: 0, clicks: 0, linkClicks: 0, results: 0, engagement: 0 });
+    const x = ads.reduce((acc, a) => extras.addExtras(acc, a), {});
     return {
       ...t,
+      ...x,
+      ...extras.deriveExtras({ ...x, spend: t.spend }),
       video25: ads.reduce((s, a) => s + a.video25, 0),
       linkCtr: (t.linkClicks / t.impressions) * 100,
       costPerLinkClick: t.spend / t.linkClicks,
@@ -143,9 +157,11 @@ function build(range) {
   ads.forEach((a) => {
     const c = campMap[a.campaignId] || (campMap[a.campaignId] = { id: a.campaignId, name: a.campaign, spend: 0, impressions: 0, clicks: 0, results: 0, reach: 0 });
     c.spend += a.spend; c.impressions += a.impressions; c.clicks += a.clicks; c.results += a.results;
+    extras.addExtras(c, a);
   });
   const campaigns = Object.values(campMap).map((c) => ({
     ...c,
+    ...extras.deriveExtras(c),
     ctr: (c.clicks / c.impressions) * 100,
     cpc: c.spend / c.clicks,
     cpm: (c.spend / c.impressions) * 1000,
