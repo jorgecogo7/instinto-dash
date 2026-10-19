@@ -1,4 +1,22 @@
 const express = require('express');
+
+// Erro dentro de uma rota async (ex.: falha no banco) vira resposta 500 em vez
+// de derrubar o processo inteiro — mesmo efeito do pacote express-async-errors.
+{
+  const Layer = require('express/lib/router/layer');
+  const original = Layer.prototype.handle_request;
+  Layer.prototype.handle_request = function handleRequest(req, res, next) {
+    const fn = this.handle;
+    if (fn.length > 3) return original.call(this, req, res, next);
+    try {
+      const out = fn(req, res, next);
+      if (out && typeof out.catch === 'function') out.catch(next);
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+process.on('unhandledRejection', (err) => console.error('Promessa rejeitada sem tratamento:', err));
 const config = require('./config');
 const { securityHeaders, rateLimit } = require('./middleware/security');
 const { requireAdminAuth } = require('./middleware/adminAuth');

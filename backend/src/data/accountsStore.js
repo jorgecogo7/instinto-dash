@@ -37,7 +37,8 @@ async function remove(id) {
 // Usado pelo link de compartilhamento (visualização do cliente, sem login).
 async function getByShareToken(token) {
   await db.ensureTable();
-  const [rows] = await db.getPool().query("SELECT data FROM accounts WHERE data->>'$.shareToken' = ?", [token]);
+  // JSON_UNQUOTE(JSON_EXTRACT(...)) funciona no MySQL e no MariaDB (o atalho ->> não existe no MariaDB).
+  const [rows] = await db.getPool().query("SELECT data FROM accounts WHERE JSON_UNQUOTE(JSON_EXTRACT(data, '$.shareToken')) = ?", [String(token || '').slice(0, 100)]);
   if (!rows.length) return null;
   return typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
 }
