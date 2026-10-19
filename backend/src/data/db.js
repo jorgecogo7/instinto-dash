@@ -117,4 +117,22 @@ function ensureFormsTables() {
   return formsTablesReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables };
+// Relatórios automáticos (mensagem pronta por cliente e período).
+let reportsTableReady = null;
+function ensureReportsTable() {
+  if (!reportsTableReady) {
+    reportsTableReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS reports (
+        id VARCHAR(191) PRIMARY KEY,
+        client_id VARCHAR(191) NOT NULL,
+        period_key VARCHAR(64) NOT NULL,
+        created_at DATETIME NOT NULL,
+        data JSON NOT NULL,
+        UNIQUE KEY uniq_client_period (client_id, period_key)
+      )
+    `);
+  }
+  return reportsTableReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable };

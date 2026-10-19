@@ -11,7 +11,7 @@ const router = express.Router();
 const EDITABLE_FIELDS = [
   'name', 'niche', 'contractValue', 'dailyBudget', 'owner',
   'site', 'instagram', 'drive', 'payment', 'pixBalance', 'status',
-  'dashboardModel', 'clientVisibility',
+  'dashboardModel', 'clientVisibility', 'reportSchedule',
 ];
 
 // Modelo do painel de anúncios do cliente: quais plataformas aparecem.
@@ -95,6 +95,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/accounts/:id — edita campos de gestão (protegido contra mass assignment).
 router.patch('/:id', async (req, res) => {
   const changes = pickEditableFields(req.body);
+  if (changes.reportSchedule !== undefined) changes.reportSchedule = require('../services/reportService').normalizeSchedule(changes.reportSchedule);
   if (changes.clientVisibility !== undefined) changes.clientVisibility = clientAccess.sanitizeVisibility(changes.clientVisibility);
   if (changes.dashboardModel !== undefined && !DASHBOARD_MODELS.has(changes.dashboardModel)) {
     return res.status(400).json({ error: 'Modelo de dashboard inválido.' });

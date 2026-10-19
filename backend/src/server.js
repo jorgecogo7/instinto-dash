@@ -33,6 +33,8 @@ const contractsRoutes = require('./routes/contracts');
 const formsRoutes = require('./routes/forms');
 const clientRoutes = require('./routes/client');
 const mediaRoutes = require('./routes/media');
+const reportsRoutes = require('./routes/reports');
+const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
@@ -70,6 +72,7 @@ app.use('/api/feedback', requireAdminAuth, feedbackRoutes);
 app.use('/api/leads', requireAdminAuth, leadsRoutes);
 app.use('/api/contracts', requireAdminAuth, contractsRoutes);
 app.use('/api/forms', requireAdminAuth, formsRoutes);
+app.use('/api/reports', requireAdminAuth, reportsRoutes);
 // Área do cliente (login próprio de cada cliente).
 app.use('/api/client', requireClientAuth, clientRoutes);
 
@@ -114,6 +117,15 @@ function runContractAutoRenew() {
     .then((renewed) => { if (renewed) console.log(`Renovação automática de contratos: ${renewed} contrato(s) renovado(s).`); })
     .catch((err) => console.error('Renovação automática de contratos falhou:', err));
 }
+
+// Relatórios automáticos: confere de hora em hora quem tem relatório vencendo hoje.
+function runScheduledReports() {
+  reportService.runDue()
+    .then((made) => { if (made.length) console.log(`Relatórios automáticos: ${made.length} gerado(s).`); })
+    .catch((err) => console.error('Relatórios automáticos falharam:', err));
+}
+setTimeout(runScheduledReports, 2 * 60 * 1000);
+setInterval(runScheduledReports, 60 * 60 * 1000);
 
 app.listen(config.port, () => {
   console.log(`Instinto Dash backend rodando em http://localhost:${config.port}`);

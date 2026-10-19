@@ -1,7 +1,7 @@
 {
   "name": "instinto-dash-backend",
   "version": "0.1.0",
-  "description": "Backend do Instinto Dash — agrega dados de Meta Ads e Google Ads para múltiplas contas de clientes.",
+  "description": "Backend do Instinto Dash \u2014 agrega dados de Meta Ads e Google Ads para m\u00faltiplas contas de clientes.",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
@@ -11,6 +11,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "dotenv": "^16.4.5",
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.11.0",
+    "nodemailer": "^6.9.14"
   }
 }
