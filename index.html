@@ -1462,6 +1462,42 @@
   .is-legend b{ color:var(--text); }
   .st-flag{ display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; background:rgba(232,81,79,.14); color:var(--red); margin-left:6px; }
   @media (max-width: 760px){ .goal-ed-grid{ grid-template-columns:1fr; } .goal-grid{ grid-template-columns:1fr 1fr; gap:8px; } .goal-card{ padding:11px; } .goal-v{ font-size:16px; } .goal-v span{ display:block; font-size:11px; margin-top:2px; } .goal-n{ font-size:11px; } }
+
+  /* ===================== Alertas ===================== */
+  .nav-badge{ margin-left:auto; min-width:19px; height:19px; padding:0 6px; border-radius:999px; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; background:#E8A317; color:#1a0e05; }
+  .nav-badge.crit{ background:var(--red); color:#fff; animation:pulse-alert 1.6s infinite; }
+  .ws-dot{ width:8px; height:8px; border-radius:50%; background:var(--red); margin-left:auto; flex-shrink:0; }
+  .ws-dot.warn{ background:#E8A317; }
+  .al-banner{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:12px 16px; border-radius:12px; margin-bottom:16px; font-size:13px; background:rgba(255,176,32,.1); border:1px solid rgba(255,176,32,.35); color:var(--text); }
+  .al-banner.crit{ background:rgba(232,81,79,.1); border-color:rgba(232,81,79,.4); }
+  .al-banner b{ color:#D98E00; } .al-banner.crit b{ color:var(--red); }
+  .al-client{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); box-shadow:var(--card-shadow); padding:14px 16px; margin-bottom:12px; }
+  .al-client.inline{ padding:8px 12px; margin-bottom:16px; }
+  .al-client-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
+  .al-client-name{ font-weight:800; font-size:15px; cursor:pointer; } .al-client-name span{ font-size:12px; color:var(--flame); font-weight:600; margin-left:4px; }
+  .al-row{ display:flex; gap:12px; align-items:flex-start; padding:11px 0; border-top:1px solid var(--line); --ac:#E8A317; }
+  .al-client.inline .al-row:first-child, .al-client-head + .al-row{ border-top:none; }
+  .al-row.critical{ --ac:var(--red); }
+  .al-row.snoozed{ opacity:.6; }
+  .al-ico{ width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; background:color-mix(in srgb, var(--ac) 16%, transparent); border:1px solid color-mix(in srgb, var(--ac) 45%, transparent); }
+  .al-main{ flex:1; min-width:0; }
+  .al-title{ font-weight:700; font-size:14px; color:var(--ac); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .al-pf{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; color:#fff; letter-spacing:.3px; }
+  .al-pf.meta{ background:#0866FF; } .al-pf.google{ background:#34A853; }
+  .al-new{ font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; background:var(--flame); color:#1a0e05; text-transform:uppercase; }
+  .al-detail{ font-size:13px; color:var(--text); margin-top:3px; line-height:1.5; }
+  .al-since{ font-size:11.5px; color:var(--text-dim); margin-top:4px; }
+  .al-actions{ flex-shrink:0; }
+  .al-btn{ font-family:inherit; font-size:12px; font-weight:600; padding:7px 11px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); cursor:pointer; white-space:nowrap; }
+  .al-btn:hover{ border-color:var(--flame); }
+  .al-empty{ text-align:center; padding:40px 16px; font-size:15px; font-weight:600; color:var(--green); background:var(--bg-panel); border:1px dashed var(--line); border-radius:var(--radius-lg); }
+  .al-ok{ font-size:12.5px; color:var(--green); margin:6px 2px 0; }
+  .al-errs{ font-size:12px; color:var(--text-dim); margin-top:12px; line-height:1.6; }
+  @media (max-width: 760px){
+    .al-row{ flex-wrap:wrap; }
+    .al-actions{ width:100%; padding-left:46px; }
+    .al-client-head{ flex-wrap:wrap; }
+  }
 </style>
 </head>
 <body>
@@ -1578,6 +1614,7 @@
     <div id="navAgency">
     <nav class="nav">
       <div class="nav-item active" data-view="overview">▣ Visão geral</div>
+      <div class="nav-item" data-view="alerts">🔔 Alertas <span class="nav-badge" id="navAlertsBadge" style="display:none;"></span></div>
       <div class="nav-item" data-view="meta">▤ Meta Ads</div>
       <div class="nav-item" data-view="google">◈ Google Ads</div>
       <div class="nav-item" data-view="instagram">◎ Instagram</div>
@@ -1632,6 +1669,7 @@
         </div>
       </div>
 
+      <div id="ovAlertBanner" style="display:none;"></div>
       <div class="status-strip" id="ovStatusStrip"></div>
       <div class="kpi2-grid" id="ovKpis"></div>
       <div id="ovErrors" class="footnote" style="display:none; border:none; padding:0 0 14px;"></div>
@@ -1653,6 +1691,7 @@
           <div class="table-scroll" id="ovTopCamps"></div>
         </div>
       </div>
+      <div id="ovAlertBanner" style="display:none;"></div>
 
       <div class="panel">
         <div class="panel-head"><div><h3>Clientes no período</h3><div class="panel-head-sub">Clique num cliente pra abrir o painel dele · clique num cabeçalho pra reordenar</div></div></div>
@@ -2049,6 +2088,21 @@
     </section>
 
     <!-- ================= RELATÓRIOS AUTOMÁTICOS ================= -->
+    <section class="view" id="view-alerts">
+      <div class="topbar">
+        <div>
+          <h1>Alertas</h1>
+          <p id="alSub">Carregando…</p>
+        </div>
+        <div class="topbar-right">
+          <button type="button" class="btn-add" id="alCheckBtn" onclick="runAlertsCheck(false)">↻ Verificar agora</button>
+        </div>
+      </div>
+      <div class="footnote" style="border:none; padding:0 0 12px;">Saldo Pix acabando (e quanto falta pra cobrir 7 dias), pagamento recusado, conta bloqueada, limite de gastos, anúncios reprovados e contas sem veicular — em todos os clientes ativos.</div>
+      <div class="chip-row"><div class="chips" id="alChips"></div></div>
+      <div id="alList"></div>
+    </section>
+
     <section class="view" id="view-reports">
       <div class="topbar">
         <div>
@@ -2270,6 +2324,7 @@
 
       <!-- ===== Aba: Anúncios (dashboard real do cliente) ===== -->
       <div class="cd-pane active" id="cdPaneOverview">
+        <div id="cdAlertBanner"></div>
         <div id="cdGoogleNotConnected" class="offline-banner" style="display:none;"></div>
         <div id="cdLoading" class="footnote" style="display:none; border:none; padding:0;">Carregando dados do período…</div>
 
@@ -2757,9 +2812,10 @@
   function startAdminApp(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'flex';
-    loadClientsFromBackend();
+    loadClientsFromBackend().then(() => loadAlerts());
     loadLeadsFromBackend();
     loadContractsFromBackend();
+    setInterval(loadAlerts, 15 * 60 * 1000);
   }
 
   /* ---------- Ponto de entrada: decide entre login, visão pública, ou app ---------- */
@@ -2792,6 +2848,7 @@
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById('view-' + item.dataset.view).classList.add('active');
       if (item.dataset.view === 'reports') loadReports();
+      if (item.dataset.view === 'alerts') { renderAlertsView(); loadAlerts(); }
       if (item.dataset.view === 'forms') { document.getElementById('fmEditMode').style.display === 'none' && loadForms(); }
     });
   });
@@ -4301,7 +4358,7 @@
     const list = ovActiveAccounts().filter(a => !q || norm(a.name).includes(norm(q)));
     document.getElementById('wsList').innerHTML =
       (!q ? `<div class="ws-item${WS === 'agency' ? ' active' : ''}" onclick="setWorkspace('agency')"><span class="ws-ico sm">🏢</span><span>Instinto Digital (Agência)</span></div><div class="ws-sep">Clientes</div>` : '') +
-      (list.map(a => `<div class="ws-item${WS === a.id ? ' active' : ''}" onclick="setWorkspace('${a.id}')"><span class="ws-ico sm">${escapeHtml(initials(a.name))}</span><span>${escapeHtml(a.name)}</span></div>`).join('')
+      (list.map(a => { const r = alertsFor(a.id); const op = r ? openAlerts(r) : []; const dot = op.length ? `<span class="ws-dot${op.some(x => x.severity === 'critical') ? '' : ' warn'}" title="${op.length} alerta(s)"></span>` : ''; return `<div class="ws-item${WS === a.id ? ' active' : ''}" onclick="setWorkspace('${a.id}')"><span class="ws-ico sm">${escapeHtml(initials(a.name))}</span><span>${escapeHtml(a.name)}</span>${dot}</div>`; }).join('')
         || '<div class="ws-empty">Nenhum cliente encontrado.</div>');
   }
 
@@ -5455,6 +5512,8 @@
   }
 
   function renderPixAlerts(){
+    // Substituído pela central de Alertas (que usa o saldo real da Meta quando disponível).
+    const _p = document.getElementById('pixAlertPanel'); if (_p) _p.style.display = 'none'; return;
     const panel = document.getElementById('pixAlertPanel');
     const list = document.getElementById('pixAlertList');
     const alerts = clientsMgmt
@@ -5765,6 +5824,7 @@
     if (!account) return;
     currentClientId = id;
     if (!PUBLIC_TOKEN && !CLIENT_MODE && WS !== id) wsApplyUi(id);
+    if (typeof renderClientAlertBanner === 'function') renderClientAlertBanner();
 
     document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -6835,6 +6895,161 @@
       </div></div>`;
     }
     return html;
+  }
+
+
+  /* ===================== Alertas das contas ===================== */
+  // Saldo Pix acabando, pagamento recusado, anúncios reprovados, conta sem veicular.
+  let ALERTS = null;           // { checkedAt, clients:[{ clientId, name, alerts, snoozed, errors }] }
+  let alertsFilter = 'open';   // open | critical | snoozed
+  const ALERT_TYPE_ICON = { balance:'💰', status:'⛔', spendcap:'🧱', rejected:'🚫', nodelivery:'⏸', nocampaign:'💤', billing:'💳' };
+
+  function alertIsSnoozed(rec, a){ const u = (rec.snoozed || {})[a.id]; return u && new Date(u) > new Date(); }
+  function openAlerts(rec){ return (rec.alerts || []).filter(a => !alertIsSnoozed(rec, a)); }
+  function alertsFor(clientId){ return ALERTS ? (ALERTS.clients.find(c => c.clientId === clientId) || null) : null; }
+  function sinceText(iso){
+    if (!iso) return '';
+    const h = Math.floor((Date.now() - new Date(iso)) / 36e5);
+    if (h < 1) return 'agora há pouco';
+    if (h < 24) return `há ${h}h`;
+    const d = Math.floor(h / 24);
+    return `há ${d} ${d === 1 ? 'dia' : 'dias'}`;
+  }
+
+  async function loadAlerts(){
+    if (CLIENT_MODE || PUBLIC_TOKEN) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/alerts`, { headers: authHeaders() });
+      if (!res.ok) return;
+      ALERTS = await res.json();
+      // Ainda não houve verificação (sistema acabou de subir): roda uma agora.
+      if (!ALERTS.checkedAt && Object.keys(rawAccountsById).length) { runAlertsCheck(true); return; }
+      renderAlertsEverywhere();
+    } catch (e) { /* silencioso: alertas são complemento */ }
+  }
+
+  async function runAlertsCheck(silent, clientId){
+    const btn = document.getElementById('alCheckBtn');
+    if (btn && !silent) { btn.disabled = true; btn.textContent = 'Verificando…'; }
+    try {
+      const qs = clientId ? `?clientId=${encodeURIComponent(clientId)}` : '';
+      const res = await fetch(`${API_BASE_URL}/api/alerts/check${qs}`, { method:'POST', headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não consegui verificar.');
+      if (clientId && ALERTS) {
+        const rec = data.clients[0];
+        ALERTS.clients = ALERTS.clients.filter(c => c.clientId !== clientId).concat(rec ? [rec] : []);
+        ALERTS.checkedAt = new Date().toISOString();
+      } else {
+        ALERTS = { checkedAt: new Date().toISOString(), clients: data.clients };
+      }
+      renderAlertsEverywhere();
+    } catch (e) { if (!silent) alert(e.message); }
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Verificar agora'; }
+  }
+
+  async function snoozeAlert(clientId, alertId, hours){
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/alerts/${encodeURIComponent(clientId)}/snooze`, {
+        method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ alertId, hours }),
+      });
+      const rec = await res.json();
+      if (!res.ok) throw new Error(rec.error || 'Não consegui salvar.');
+      ALERTS.clients = ALERTS.clients.map(c => c.clientId === clientId ? rec : c);
+      renderAlertsEverywhere();
+    } catch (e) { alert(e.message); }
+  }
+
+  function renderAlertsEverywhere(){
+    if (!ALERTS) return;
+    const all = ALERTS.clients.flatMap(c => openAlerts(c).map(a => ({ ...a, c })));
+    const crit = all.filter(a => a.severity === 'critical').length;
+    const badge = document.getElementById('navAlertsBadge');
+    if (badge) { badge.textContent = all.length; badge.style.display = all.length ? '' : 'none'; badge.classList.toggle('crit', crit > 0); }
+    const base = document.title.replace(/^\(\d+\)\s*/, '');
+    document.title = crit ? `(${crit}) ${base}` : base;
+    renderOverviewAlertBanner(all, crit);
+    renderClientAlertBanner();
+    renderAlertsView();
+    if (document.getElementById('wsMenu')?.classList.contains('open')) renderWsMenu(document.getElementById('wsSearch')?.value || '');
+  }
+
+  function alertRowHtml(rec, a, opts = {}){
+    const snoozed = alertIsSnoozed(rec, a);
+    const pf = a.platform === 'google' ? '<span class="al-pf google">Google</span>' : '<span class="al-pf meta">Meta</span>';
+    const actions = opts.noActions ? '' : snoozed
+      ? `<button type="button" class="al-btn" onclick="snoozeAlert('${rec.clientId}','${a.id}',0)">Reativar</button>`
+      : `<button type="button" class="al-btn" onclick="snoozeAlert('${rec.clientId}','${a.id}',24)" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi (24h)</button>`;
+    return `<div class="al-row ${a.severity}${snoozed ? ' snoozed' : ''}">
+      <div class="al-ico">${ALERT_TYPE_ICON[a.type] || '⚠'}</div>
+      <div class="al-main">
+        <div class="al-title">${escapeHtml(a.title)} ${pf}${a.isNew && !snoozed ? '<span class="al-new">novo</span>' : ''}</div>
+        <div class="al-detail">${escapeHtml(a.detail)}</div>
+        <div class="al-since">Aberto ${sinceText(a.since)}${snoozed ? ` · silenciado até ${new Date(rec.snoozed[a.id]).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}` : ''}</div>
+      </div>
+      <div class="al-actions">${actions}</div>
+    </div>`;
+  }
+
+  function renderAlertsView(){
+    const list = document.getElementById('alList');
+    if (!list) return;
+    const sub = document.getElementById('alSub');
+    sub.textContent = ALERTS.checkedAt
+      ? `Última verificação ${sinceText(ALERTS.checkedAt)} (${new Date(ALERTS.checkedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}) · o sistema confere todas as contas a cada hora.`
+      : 'Ainda não verificado.';
+    const counts = { open:0, critical:0, snoozed:0 };
+    ALERTS.clients.forEach(rec => (rec.alerts || []).forEach(a => {
+      if (alertIsSnoozed(rec, a)) counts.snoozed++; else { counts.open++; if (a.severity === 'critical') counts.critical++; }
+    }));
+    document.getElementById('alChips').innerHTML = [['open', 'Abertos'], ['critical', 'Críticos'], ['snoozed', 'Silenciados']].map(([id, label]) =>
+      `<button type="button" class="chip${alertsFilter === id ? ' active' : ''}" onclick="alertsFilter='${id}'; renderAlertsView()">${label} <b>${counts[id]}</b></button>`).join('');
+    const pick = (rec) => (rec.alerts || []).filter(a => alertsFilter === 'snoozed' ? alertIsSnoozed(rec, a)
+      : !alertIsSnoozed(rec, a) && (alertsFilter === 'open' || a.severity === 'critical'));
+    const recs = ALERTS.clients.map(rec => ({ rec, items: pick(rec) })).filter(x => x.items.length)
+      .sort((a, b) => (b.items.filter(i => i.severity === 'critical').length - a.items.filter(i => i.severity === 'critical').length) || a.rec.name.localeCompare(b.rec.name, 'pt-BR'));
+    const okCount = ALERTS.clients.filter(rec => !openAlerts(rec).length).length;
+    const errs = ALERTS.clients.filter(rec => (rec.errors || []).length);
+    list.innerHTML = (recs.length ? recs.map(({ rec, items }) => `
+      <div class="al-client">
+        <div class="al-client-head">
+          <div class="al-client-name" onclick="setWorkspace('${rec.clientId}')">${escapeHtml(rec.name)} <span>abrir ›</span></div>
+          <button type="button" class="al-btn" onclick="runAlertsCheck(false,'${rec.clientId}')">↻ Conferir de novo</button>
+        </div>
+        ${items.map(a => alertRowHtml(rec, a)).join('')}
+      </div>`).join('')
+      : `<div class="al-empty">${alertsFilter === 'snoozed' ? 'Nenhum alerta silenciado.' : '✓ Tudo certo — nenhuma conta com problema agora.'}</div>`)
+      + (alertsFilter !== 'snoozed' && okCount ? `<div class="al-ok">✓ ${okCount} ${okCount === 1 ? 'conta sem' : 'contas sem'} problemas</div>` : '')
+      + (errs.length ? `<div class="al-errs">Não consegui conferir: ${errs.map(r => `<b>${escapeHtml(r.name)}</b> (${r.errors.map(e => `${e.platform === 'google' ? 'Google' : 'Meta'}: ${escapeHtml(e.message)}`).join('; ')})`).join(' · ')}</div>` : '');
+  }
+
+  function renderOverviewAlertBanner(all, crit){
+    const el = document.getElementById('ovAlertBanner');
+    if (!el) return;
+    if (!all.length) { el.style.display = 'none'; return; }
+    const clients = [...new Set(all.map(a => a.c.name))];
+    el.className = `al-banner${crit ? ' crit' : ''}`;
+    el.style.display = '';
+    el.innerHTML = `<div><b>${crit ? `⚠ ${crit} ${crit === 1 ? 'alerta crítico' : 'alertas críticos'}` : `${all.length} ${all.length === 1 ? 'alerta' : 'alertas'}`}</b> em ${clients.length} ${clients.length === 1 ? 'cliente' : 'clientes'}: ${all.slice(0, 3).map(a => `${escapeHtml(a.c.name)} — ${escapeHtml(a.title)}`).join(' · ')}${all.length > 3 ? ' …' : ''}</div>
+      <button type="button" class="al-btn" onclick="openAlertsView()">Ver alertas</button>`;
+  }
+
+  function renderClientAlertBanner(){
+    const el = document.getElementById('cdAlertBanner');
+    if (!el) return;
+    const rec = (CLIENT_MODE || PUBLIC_TOKEN) ? null : alertsFor(currentClientId);
+    const items = rec ? openAlerts(rec) : [];
+    if (!items.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="al-client inline">${items.map(a => alertRowHtml(rec, a)).join('')}</div>`;
+  }
+
+  function openAlertsView(){
+    if (WS !== 'agency') wsApplyUi('agency');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('view-alerts').classList.add('active');
+    document.querySelector('.nav-item[data-view="alerts"]')?.classList.add('active');
+    renderAlertsView();
   }
 
   /* ---------- Modelo do painel (aba Integrações) ---------- */

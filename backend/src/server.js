@@ -34,6 +34,8 @@ const formsRoutes = require('./routes/forms');
 const clientRoutes = require('./routes/client');
 const mediaRoutes = require('./routes/media');
 const reportsRoutes = require('./routes/reports');
+const alertsRoutes = require('./routes/alerts');
+const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
@@ -73,6 +75,7 @@ app.use('/api/leads', requireAdminAuth, leadsRoutes);
 app.use('/api/contracts', requireAdminAuth, contractsRoutes);
 app.use('/api/forms', requireAdminAuth, formsRoutes);
 app.use('/api/reports', requireAdminAuth, reportsRoutes);
+app.use('/api/alerts', requireAdminAuth, alertsRoutes);
 // Área do cliente (login próprio de cada cliente).
 app.use('/api/client', requireClientAuth, clientRoutes);
 
@@ -126,6 +129,15 @@ function runScheduledReports() {
 }
 setTimeout(runScheduledReports, 2 * 60 * 1000);
 setInterval(runScheduledReports, 60 * 60 * 1000);
+
+// Alertas das contas (saldo, pagamento, reprovação, sem veicular): a cada hora.
+function runHealthChecks() {
+  healthService.runAll()
+    .then((r) => { const n = r.reduce((s, c) => s + c.alerts.length, 0); if (n) console.log(`Alertas: ${n} aberto(s) em ${r.length} conta(s).`); })
+    .catch((err) => console.error('Verificação de alertas falhou:', err));
+}
+setTimeout(runHealthChecks, 60 * 1000);
+setInterval(runHealthChecks, 60 * 60 * 1000);
 
 app.listen(config.port, () => {
   console.log(`Instinto Dash backend rodando em http://localhost:${config.port}`);

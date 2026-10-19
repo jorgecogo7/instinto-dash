@@ -135,4 +135,19 @@ function ensureReportsTable() {
   return reportsTableReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable };
+let healthTableReady = null;
+// Saúde das contas (alertas de saldo, pagamento, reprovação, sem veicular).
+function ensureHealthTable() {
+  if (!healthTableReady) {
+    healthTableReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS account_health (
+        client_id VARCHAR(191) PRIMARY KEY,
+        checked_at DATETIME NOT NULL,
+        data JSON NOT NULL
+      )
+    `);
+  }
+  return healthTableReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable };

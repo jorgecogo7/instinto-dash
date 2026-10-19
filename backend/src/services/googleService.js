@@ -494,4 +494,4 @@ async function verifyCustomerAccess(customerId) {
   };
 }
 
-module.exports = { getAccountReport, verifyCustomerAccess };
+module.exports = { getAccountReport, verifyCustomerAccess, runGAQL, getAccessToken, hasRealCredentials };
