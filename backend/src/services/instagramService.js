@@ -326,6 +326,9 @@ async function fetchRealReport(igId, range) {
   ]);
 
   const delta = (k) => (cur[k] === null || before[k] === null ? null : period.pctDelta(cur[k], before[k]));
+  // Novos seguidores: só compara se o período anterior inteiro estiver na janela de 30 dias da Meta.
+  const pc = clampFollowerRange(prev);
+  if (!pc || pc.from !== prev.from || pc.to !== prev.to) before.newFollowers = null;
   const daily = period.eachDay(range).map((date) => ({
     date,
     newFollowers: cur.followsDaily ? (cur.followsDaily[date] || 0) : null,
