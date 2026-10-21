@@ -21,7 +21,8 @@ async function syncAllAccounts() {
   for (const account of await accountsStore.getAll()) {
     const entry = { accountId: account.id, meta: null, google: null, errors: [] };
 
-    if (account.meta.status === 'connected') {
+    // Contas com "Ativar sync" (a cada 3h) são tratadas por lib/metaSync.js.
+    if (account.meta.status === 'connected' && !(account.meta.sync && account.meta.sync.enabled)) {
       try {
         entry.meta = await metaService.getCampaignsWithAds(account.meta.adAccountId);
       } catch (err) {

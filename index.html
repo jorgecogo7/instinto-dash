@@ -564,6 +564,19 @@
     background: var(--bg-panel-2); border:1px solid var(--line); color:var(--text-dim); cursor:pointer;
   }
   .btn-cancel:hover{ color: var(--text); }
+
+  .meta-sync-toggle{ display:flex; align-items:center; gap:8px; margin:12px 0 4px; font-size:13px; color:var(--text); cursor:pointer; }
+  .meta-sync-toggle small{ color:var(--text-dim); font-size:11.5px; }
+  .meta-sync-toggle input{ width:16px; height:16px; accent-color: var(--green); }
+  .meta-sync-box{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12.5px; line-height:1.6; margin:8px 0 0; color:var(--text-dim); }
+  .meta-sync-box b{ color:var(--text); }
+  .meta-sync-box.ok{ border-color: rgba(53,196,138,0.4); background: rgba(53,196,138,0.08); }
+  .meta-sync-box.err{ border-color: rgba(232,81,79,0.4); background: rgba(232,81,79,0.1); color:var(--red); }
+  .meta-sync-box.err b{ color:var(--red); }
+  .meta-sync-box.run{ border-color: rgba(100,150,255,0.4); }
+  .meta-sync-box .hint{ color:var(--text-dim); display:block; margin-top:2px; }
+  .meta-sync-box.err .hint{ color:var(--text-dim); }
+  .meta-sync-box.warn-line{ color:#E0A526; }
   .modal-error{
     background: rgba(232,81,79,0.12); border:1px solid rgba(232,81,79,0.35); color: var(--red);
     border-radius:8px; padding:9px 12px; font-size:12px; margin-bottom:8px;
@@ -2556,7 +2569,7 @@
         <div class="integration-head">
           <div>
             <div class="integration-title">Integração Meta</div>
-            <div class="integration-sub">Ads · Facebook · Instagram</div>
+            <div class="integration-sub">Ads · Facebook · Instagram · Sync automático a cada 3h (últimos 7d)</div>
           </div>
           <span class="integration-status" id="metaStatusBadge"></span>
         </div>
@@ -2576,11 +2589,17 @@
             <input class="modal-input" id="metaIgIdInput" placeholder="17841447815614697">
           </div>
         </div>
+        <label class="meta-sync-toggle">
+          <input type="checkbox" id="metaSyncEnabled" onchange="toggleMetaSync(this.checked)">
+          <span>Ativar sync <small>(sincroniza a conta de anúncios sozinho a cada 3 horas)</small></span>
+        </label>
         <div id="metaConnectError" class="modal-error" style="display:none;"></div>
-        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
-          <button class="btn-add" onclick="saveMetaConnection()">Salvar e verificar</button>
+        <div id="metaSyncBox" class="meta-sync-box" style="display:none;"></div>
+        <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px; gap:8px;">
+          <button class="btn-add" id="metaSaveBtn" onclick="saveMetaConnection()">Salvar</button>
+          <button class="btn-cancel" id="metaSyncNowBtn" onclick="syncMetaNow()">Sincronizar agora</button>
         </div>
-        <div class="footnote" style="margin-top:4px;">Confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder. Se o token da Meta ainda não estiver configurado no servidor, salva os IDs e deixa como "pendente".</div>
+        <div class="footnote" style="margin-top:4px;">"Salvar" confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder — e você continua nesta tela. "Sincronizar agora" consulta a Meta na hora; se der erro, o motivo aparece aqui. Se o token da Meta ainda não estiver configurado no servidor, os IDs ficam salvos como "pendente".</div>
       </div>
 
       <div class="integration-card">
@@ -5846,6 +5865,10 @@
     document.getElementById('metaPageIdInput').value = account.meta?.pageId || '';
     document.getElementById('metaIgIdInput').value = account.meta?.igBusinessId || '';
     document.getElementById('metaConnectError').style.display = 'none';
+    document.getElementById('metaSyncEnabled').checked = !!account.meta?.sync?.enabled;
+    renderMetaSync(account.meta?.sync, metaStatus);
+    metaSyncPollStop();
+    if (account.meta?.sync?.lastStatus === 'running') metaSyncPollStart();
 
     const igConnected = account.instagramApi?.status === 'connected';
     const headerPlatforms = [];
@@ -7703,7 +7726,10 @@
       adAccountId: document.getElementById('metaAdAccountInput').value.trim(),
       pageId: document.getElementById('metaPageIdInput').value.trim(),
       igBusinessId: document.getElementById('metaIgIdInput').value.trim(),
+      syncEnabled: document.getElementById('metaSyncEnabled').checked,
     };
+    const btn = document.getElementById('metaSaveBtn');
+    btn.disabled = true; btn.textContent = 'Salvando…';
     try {
       const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/meta-connection`, {
         method: 'POST',
@@ -7713,8 +7739,143 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
       await loadClientsFromBackend();
-      openClientDetail(currentClientId);
+      // Fica na aba Integrações (antes pulava pros resultados).
+      openClientDetail(currentClientId, 'integrations');
     } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Salvar';
+    }
+  }
+
+  /* ---------- Sync da conta de anúncios Meta (a cada 3h + manual) ---------- */
+  let metaSyncPollTimer = null;
+  function metaSyncPollStop(){ if (metaSyncPollTimer){ clearInterval(metaSyncPollTimer); metaSyncPollTimer = null; } }
+  function metaSyncPollStart(){
+    metaSyncPollStop();
+    const id = currentClientId;
+    let tries = 0;
+    metaSyncPollTimer = setInterval(async () => {
+      tries++;
+      if (id !== currentClientId || tries > 40) { metaSyncPollStop(); return; }
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/accounts/${id}/meta-sync`, { headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) return;
+        if (rawAccountsById[id]) {
+          rawAccountsById[id].meta = { ...(rawAccountsById[id].meta || {}), sync: data.sync, status: data.status || rawAccountsById[id].meta?.status };
+        }
+        renderMetaSync(data.sync, data.status);
+        if (data.sync && data.sync.lastStatus !== 'running') {
+          metaSyncPollStop();
+          await loadClientsFromBackend();
+          if (id === currentClientId) openClientDetail(id, 'integrations');
+        }
+      } catch (e) { /* tenta de novo no próximo ciclo */ }
+    }, 3000);
+  }
+
+  function fmtMetaSyncDate(iso){
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function renderMetaSync(sync, metaStatus){
+    const box = document.getElementById('metaSyncBox');
+    const nowBtn = document.getElementById('metaSyncNowBtn');
+    if (!box) return;
+    sync = sync || {};
+    const running = sync.lastStatus === 'running';
+    nowBtn.disabled = running;
+    nowBtn.textContent = running ? 'Sincronizando…' : 'Sincronizar agora';
+    const lines = [];
+    let cls = 'meta-sync-box';
+    if (running) {
+      cls += ' run';
+      lines.push('<b>Sincronizando com a Meta…</b> isso leva alguns segundos.');
+    } else if (sync.lastStatus === 'error') {
+      cls += ' err';
+      lines.push(`<b>Erro na sincronização</b> (${escapeHtml(fmtMetaSyncDate(sync.lastAttemptAt))})`);
+      lines.push(`Motivo: ${escapeHtml(sync.lastError || 'erro desconhecido')}`);
+      if (sync.lastErrorHint) lines.push(`<span class="hint">O que fazer: ${escapeHtml(sync.lastErrorHint)}</span>`);
+      if (sync.consecutiveFailures > 1) lines.push(`<span class="hint">${sync.consecutiveFailures} falhas seguidas.</span>`);
+    } else if (sync.lastStatus === 'ok') {
+      cls += ' ok';
+      lines.push(`<b>Sincronizado</b> em ${escapeHtml(fmtMetaSyncDate(sync.lastSyncAt))}`);
+      const sm = sync.summary;
+      if (sm) {
+        const money = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style:'currency', currency: 'BRL' });
+        lines.push(`${escapeHtml(sm.period || 'últimos 7 dias')}: ${sm.campaigns} campanha(s), ${sm.campaignsWithSpend} com gasto · ${money(sm.spend)} investidos · ${sm.results || 0} resultado(s)`);
+      }
+      if (sync.warning) lines.push(`<span class="hint" style="color:#E0A526;">⚠ ${escapeHtml(sync.warning)}</span>`);
+    } else if (sync.enabled) {
+      lines.push(metaStatus === 'connected' ? 'Sync ativo — a primeira sincronização acontece em instantes.' : 'Sync ativo, mas a conta ainda não está conectada. Clique em Salvar para verificar.');
+    }
+    if (sync.enabled && !running && sync.nextSyncAt) lines.push(`<span class="hint">Próxima sincronização automática: ${escapeHtml(fmtMetaSyncDate(sync.nextSyncAt))}</span>`);
+    if (!sync.enabled && lines.length === 0) { box.style.display = 'none'; return; }
+    if (!sync.enabled && !running) lines.push('<span class="hint">Sync automático desligado.</span>');
+    box.className = cls;
+    box.innerHTML = lines.map(l => l.startsWith('<span class="hint"') ? l : `<div>${l}</div>`).join('');
+    box.style.display = 'block';
+  }
+
+  async function toggleMetaSync(enabled){
+    const errEl = document.getElementById('metaConnectError');
+    errEl.style.display = 'none';
+    const acc = rawAccountsById[currentClientId];
+    // Conta ainda não salva: só marca a opção; ela vai junto quando clicar em Salvar
+    // (e assim não apaga o que você já digitou nos campos).
+    if (!acc?.meta?.adAccountId) {
+      renderMetaSync({ ...(acc?.meta?.sync || {}), enabled }, acc?.meta?.status || 'not_connected');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/meta-sync-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ enabled }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível alterar o sync.');
+      if (acc) acc.meta = data.meta || { ...(acc.meta || {}), sync: { ...(acc.meta?.sync || {}), enabled } };
+      renderMetaSync(acc?.meta?.sync, acc?.meta?.status);
+      if (enabled && acc?.meta?.sync?.lastStatus === 'running') metaSyncPollStart();
+      else if (enabled && !acc?.meta?.sync?.lastSyncAt && acc?.meta?.status === 'connected') metaSyncPollStart();
+    } catch (err) {
+      document.getElementById('metaSyncEnabled').checked = !enabled;
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function syncMetaNow(){
+    const errEl = document.getElementById('metaConnectError');
+    errEl.style.display = 'none';
+    const typed = document.getElementById('metaAdAccountInput').value.trim();
+    const saved = rawAccountsById[currentClientId]?.meta?.adAccountId || '';
+    if (typed && typed !== saved) {
+      errEl.textContent = 'Você alterou o ID da conta de anúncios. Clique em Salvar primeiro e depois em Sincronizar agora.';
+      errEl.style.display = 'block';
+      return;
+    }
+    const btn = document.getElementById('metaSyncNowBtn');
+    btn.disabled = true; btn.textContent = 'Sincronizando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}/meta-sync`, {
+        method: 'POST', headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível sincronizar.');
+      if (rawAccountsById[currentClientId]) {
+        rawAccountsById[currentClientId].meta = { ...(rawAccountsById[currentClientId].meta || {}), sync: data.sync };
+      }
+      renderMetaSync(data.sync, data.status);
+      metaSyncPollStart();
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'Sincronizar agora';
       errEl.textContent = err.message;
       errEl.style.display = 'block';
     }

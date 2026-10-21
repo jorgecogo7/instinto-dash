@@ -5,6 +5,7 @@ const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
 const { hashPassword } = require('../lib/auth');
 const clientAccess = require('../lib/clientAccess');
+const metaSync = require('../lib/metaSync');
 
 const router = express.Router();
 
@@ -168,7 +169,16 @@ router.post('/:id/meta-connection', async (req, res) => {
     const account = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
     if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
-    let meta = { status: 'not_connected', adAccountId, pageId, igBusinessId };
+    // O bloco de sincronização (liga/desliga, última rodada, erro) sobrevive ao "Salvar".
+    // Se a conta de anúncios mudou, o histórico da conta antiga não vale mais.
+    const prevMeta = account.meta || {};
+    const sameAccount = metaService.normalizeAdAccountId(prevMeta.adAccountId) === metaService.normalizeAdAccountId(adAccountId);
+    const prevSync = sameAccount ? (prevMeta.sync || {}) : { enabled: (prevMeta.sync || {}).enabled };
+    const syncEnabled = typeof req.body.syncEnabled === 'boolean' ? req.body.syncEnabled : !!prevSync.enabled;
+    let meta = {
+      status: 'not_connected', adAccountId, pageId, igBusinessId,
+      sync: { ...prevSync, enabled: syncEnabled, intervalHours: 3 },
+    };
 
     if (adAccountId) {
       meta.status = 'pending';
@@ -198,12 +208,66 @@ router.post('/:id/meta-connection', async (req, res) => {
       if (ig) meta.igBusinessId = ig.id;
     }
 
+    if (!syncEnabled || meta.status !== 'connected') meta.sync.nextSyncAt = null;
     const updated = await accountsStore.update(req.params.id, { meta });
+
+    // Conectou (ou trocou) a conta com o sync ligado e ainda não há uma rodada válida
+    // dessa conta? Já dispara a primeira em segundo plano — a tela acompanha pelo status.
+    const needsFirstSync = syncEnabled && meta.status === 'connected' && !(meta.sync && meta.sync.lastSyncAt);
+    if (needsFirstSync) {
+      metaSync.syncAccount(req.params.id, { trigger: 'salvar' }).catch((e) => console.error('Sync inicial falhou:', e));
+      const fresh = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+      return res.json(stripSecrets(fresh || updated));
+    }
     res.json(stripSecrets(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// POST /api/accounts/:id/meta-sync — botão "Sincronizar agora". Responde na hora
+// (a rodada roda em segundo plano); a tela consulta GET .../meta-sync até terminar.
+router.post('/:id/meta-sync', async (req, res) => {
+  const account = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  if (!account.meta || !account.meta.adAccountId) {
+    return res.status(409).json({ error: 'Preencha o ID da conta de anúncios e clique em Salvar antes de sincronizar.' });
+  }
+  if (!metaSync.isRunning((account.meta || {}).sync)) {
+    metaSync.syncAccount(req.params.id, { trigger: 'manual' }).catch((e) => console.error('Sync manual falhou:', e));
+  }
+  // Pequena espera pra a tela já receber "sincronizando" (e não o estado antigo).
+  await new Promise((r) => setTimeout(r, 250));
+  const fresh = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+  res.status(202).json({ sync: (fresh.meta || {}).sync || {}, status: (fresh.meta || {}).status });
+});
+
+// GET /api/accounts/:id/meta-sync — estado atual da sincronização (a tela usa pra acompanhar).
+router.get('/:id/meta-sync', async (req, res) => {
+  const account = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  const meta = account.meta || {};
+  res.json({ sync: meta.sync || {}, status: meta.status, accountName: meta.accountName || null });
+});
+
+// POST /api/accounts/:id/meta-sync-settings — liga/desliga o sync automático (a cada 3h).
+router.post('/:id/meta-sync-settings', async (req, res) => {
+  if (typeof req.body.enabled !== 'boolean') return res.status(400).json({ error: 'Informe enabled: true ou false.' });
+  const account = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  const meta = account.meta || {};
+  const sync = {
+    ...(meta.sync || {}), enabled: req.body.enabled, intervalHours: 3,
+    nextSyncAt: req.body.enabled && meta.status === 'connected'
+      ? new Date(Date.now() + metaSync.INTERVAL_MS).toISOString() : null,
+  };
+  const updated = await accountsStore.update(req.params.id, { meta: { ...meta, sync } });
+  // Ligou e a conta já está conectada, mas nunca sincronizou? Roda a primeira agora.
+  if (req.body.enabled && meta.status === 'connected' && !sync.lastSyncAt) {
+    metaSync.syncAccount(req.params.id, { trigger: 'salvar' }).catch((e) => console.error('Sync inicial falhou:', e));
+  }
+  res.json(stripSecrets(updated));
 });
 
 // POST /api/accounts/:id/client-access — cria (ou troca) o login do cliente.

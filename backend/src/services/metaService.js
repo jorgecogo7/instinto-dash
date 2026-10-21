@@ -199,14 +199,15 @@ function attachThumbs(campaigns, thumbs) {
  * Com token: consulta a Graph API de verdade. `datePreset` aceita
  * today, yesterday, last_7d, last_14d, last_30d (padrão), this_month, last_month.
  * Se `range` ({from, to} em AAAA-MM-DD) vier, ele tem prioridade sobre o período pronto.
+ * `opts.force` ignora o cache (usado pela sincronização, que precisa de dado fresco).
  */
-async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d', range = null) {
+async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d', range = null, opts = {}) {
   const preset = DATE_PRESETS.has(datePreset) ? datePreset : 'last_30d';
   const customRange = validRange(range);
   const periodKey = customRange ? `${customRange.since}_${customRange.until}` : preset;
   const accountId = normalizeAdAccountId(adAccountId);
   const cacheKey = `meta:campaigns:${accountId || 'mock'}:${periodKey}`;
-  const cached = cache.get(cacheKey);
+  const cached = opts.force ? null : cache.get(cacheKey);
   if (cached) return cached;
 
   let result;

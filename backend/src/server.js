@@ -40,6 +40,7 @@ const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
 const { syncAllAccounts } = require('./lib/syncQueue');
+const metaSync = require('./lib/metaSync');
 
 const app = express();
 app.use(express.json({ limit: '100kb' }));
@@ -127,6 +128,17 @@ function runScheduledReports() {
     .then((made) => { if (made.length) console.log(`Relatórios automáticos: ${made.length} gerado(s).`); })
     .catch((err) => console.error('Relatórios automáticos falharam:', err));
 }
+// Sincronização da conta de anúncios da Meta, a cada 3h, para quem ligou "Ativar sync"
+// na aba Integrações. Confere a cada 10 min quem já passou de 3h desde a última tentativa
+// (a data da última tentativa fica no banco, então reiniciar o servidor não dispara tudo de novo).
+function runMetaSyncs() {
+  metaSync.runDue()
+    .then((ids) => { if (ids.length) console.log(`Sync Meta: ${ids.length} conta(s) sincronizada(s).`); })
+    .catch((err) => console.error('Sync Meta falhou:', err));
+}
+setTimeout(runMetaSyncs, 45 * 1000);
+setInterval(runMetaSyncs, 10 * 60 * 1000);
+
 setTimeout(runScheduledReports, 2 * 60 * 1000);
 setInterval(runScheduledReports, 60 * 60 * 1000);
 
