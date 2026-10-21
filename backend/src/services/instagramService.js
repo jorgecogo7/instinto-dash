@@ -55,9 +55,23 @@ function warn(igId, what, e) {
 
 // Série diária (period=day) de uma métrica, em janelas de 30 dias.
 // Devolve { 'AAAA-MM-DD': valor } ou null se a Meta não liberar a métrica.
+// follower_count: a Meta só entrega os últimos 30 dias, sem contar hoje.
+function clampFollowerRange(range) {
+  const today = period.toISODate(new Date(Date.now() - 3 * 3600e3));
+  const d = (iso, n) => { const x = new Date(`${iso}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return period.toISODate(x); };
+  const min = d(today, -30), max = d(today, -1);
+  const from = range.from < min ? min : range.from;
+  const to = range.to > max ? max : range.to;
+  return from > to ? null : { from, to };
+}
+
 async function dailyMetric(igId, metric, range) {
   const out = {};
   let any = false;
+  if (metric === 'follower_count') {
+    range = clampFollowerRange(range);
+    if (!range) return null; // período todo fora da janela que a Meta libera
+  }
   for (const w of period.chunkRange(range, 30)) {
     try {
       const json = await graphGet(`${igId}/insights`, {
