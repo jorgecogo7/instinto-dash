@@ -123,6 +123,17 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
       const verified = await metaService.verifyAdAccount(meta.adAccountId);
       const campaigns = await metaService.getCampaignsWithAds(meta.adAccountId, 'last_7d', null, { force: true });
       const now = new Date().toISOString();
+      // Aproveita a rodada pra reconferir o Instagram (e registrar o motivo se falhar).
+      try {
+        const ig = await metaService.resolveInstagram({ pageId: meta.pageId, igBusinessId: meta.igBusinessId });
+        if (ig.status !== 'not_connected') {
+          const fresh = await readAccount(accountId);
+          await accountsStore.update(accountId, {
+            instagramApi: { ...((fresh && fresh.instagramApi) || {}), status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null, error: ig.error || null, checkedAt: ig.checkedAt },
+            ...(ig.status === 'connected' && ig.igUserId !== meta.igBusinessId ? { meta: { ...((fresh && fresh.meta) || meta), igBusinessId: ig.igUserId } } : {}),
+          });
+        }
+      } catch (e) { console.warn('Sync: conferência do Instagram falhou:', e.message); }
       const extraMeta = verified
         ? { status: 'connected', accountName: verified.name, currency: verified.currency, accountActive: verified.active }
         : {};

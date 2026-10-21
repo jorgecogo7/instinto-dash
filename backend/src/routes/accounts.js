@@ -202,14 +202,17 @@ router.post('/:id/meta-connection', async (req, res) => {
       }
     }
 
-    // Só a Página informada? Tenta achar o Instagram Business vinculado a ela.
-    if (!meta.igBusinessId && pageId) {
-      const ig = await metaService.findInstagramForPage(pageId);
-      if (ig) meta.igBusinessId = ig.id;
-    }
+    // Instagram: confere de verdade (pelo ID ou pela Página) e guarda o motivo se falhar.
+    const ig = await metaService.resolveInstagram({ pageId, igBusinessId });
+    if (ig.status === 'connected') meta.igBusinessId = ig.igUserId;
+    const instagramApi = {
+      ...(account.instagramApi || {}),
+      status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null,
+      error: ig.error || null, checkedAt: ig.checkedAt,
+    };
 
     if (!syncEnabled || meta.status !== 'connected') meta.sync.nextSyncAt = null;
-    const updated = await accountsStore.update(req.params.id, { meta });
+    const updated = await accountsStore.update(req.params.id, { meta, instagramApi });
 
     // Conectou (ou trocou) a conta com o sync ligado e ainda não há uma rodada válida
     // dessa conta? Já dispara a primeira em segundo plano — a tela acompanha pelo status.

@@ -16,19 +16,27 @@ router.get('/:clientId/report', async (req, res) => {
 
   try {
     let igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
+    let igError = account.instagramApi?.status === 'error' ? account.instagramApi.error : null;
     // Só a Página do Facebook cadastrada? Descobre o Instagram ligado a ela
-    // e guarda no cliente, pra não precisar digitar o ID na mão.
-    if (!igUserId && account.meta?.pageId) {
-      const ig = await metaService.findInstagramForPage(account.meta.pageId);
-      if (ig) {
-        igUserId = ig.id;
-        await accountsStore.update(account.id, { meta: { ...account.meta, igBusinessId: ig.id } });
-      }
+    // e guarda no cliente — ou guarda o MOTIVO de não ter achado.
+    if (!igUserId && account.meta?.pageId && metaService.hasRealCredentials()) {
+      const ig = await metaService.resolveInstagram({ pageId: account.meta.pageId });
+      await accountsStore.update(account.id, {
+        instagramApi: { ...(account.instagramApi || {}), status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null, error: ig.error || null, checkedAt: ig.checkedAt },
+        ...(ig.igUserId ? { meta: { ...account.meta, igBusinessId: ig.igUserId } } : {}),
+      });
+      if (ig.igUserId) { igUserId = ig.igUserId; igError = null; } else igError = ig.error || null;
     }
-    const report = await instagramService.getOrganicReport(igUserId, {
-      from: req.query.from, to: req.query.to,
-    });
-    res.json({ ...report, igConfigured: Boolean(igUserId) });
+    try {
+      const report = await instagramService.getOrganicReport(igUserId, {
+        from: req.query.from, to: req.query.to,
+      });
+      res.json({ ...report, igConfigured: Boolean(igUserId), igError });
+    } catch (e) {
+      // Tinha ID mas a Meta recusou a leitura: registra o motivo pra aparecer em Integrações.
+      await accountsStore.update(account.id, { instagramApi: { ...(account.instagramApi || {}), status: 'error', error: `Não consegui ler o Instagram: ${e.message}`, checkedAt: new Date().toISOString() } });
+      throw e;
+    }
   } catch (err) {
     console.error(err); res.status(502).json({ error: err.message });
   }

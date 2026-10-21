@@ -83,7 +83,9 @@ async function graphGet(path, params = {}) {
     const e = json.error || {};
     const err = new Error(e.message || `Erro ${res.status} na Graph API.`);
     err.code = e.code;
-    throw new Error(friendlyError(err));
+    const fe = new Error(friendlyError(err));
+    fe.code = e.code; fe.raw = e.message || '';
+    throw fe;
   }
   return json;
 }
@@ -538,7 +540,54 @@ async function findInstagramForPage(pageId) {
   }
 }
 
+/**
+ * Confere o Instagram do cliente e diz o MOTIVO quando não dá certo.
+ * Usa o ID do Instagram Business se informado; senão, procura o Instagram
+ * vinculado à Página do Facebook. Devolve:
+ *   { status: 'connected', igUserId, username }
+ *   { status: 'error', error: 'motivo em português' }
+ *   { status: 'pending' }  (sem token no servidor)
+ *   { status: 'not_connected' } (nada preenchido)
+ */
+async function resolveInstagram({ pageId, igBusinessId } = {}) {
+  const now = new Date().toISOString();
+  pageId = String(pageId || '').trim();
+  igBusinessId = String(igBusinessId || '').trim();
+  if (!pageId && !igBusinessId) return { status: 'not_connected', checkedAt: now };
+  if (!hasRealCredentials()) return { status: 'pending', checkedAt: now, error: 'O token da Meta não está configurado no servidor, então não dá para conferir o Instagram ainda.' };
+
+  const why = (e, what) => {
+    if (e.code === 190) return e.message;
+    if ([10, 200, 294].includes(e.code) || /permission|permiss/i.test(e.raw || '')) {
+      return `O usuário do sistema não tem acesso ${what}. No Gerenciador de Negócios, atribua a Página do Facebook${what.includes('Instagram') ? ' e a conta do Instagram' : ''} a ele (Usuários do sistema → Atribuir ativos) e confira se o token tem as permissões instagram_basic, instagram_manage_insights e pages_read_engagement.`;
+    }
+    if (e.code === 100) return `A Meta não encontrou ${what} — confira se o ID está certo.`;
+    return `${e.message}`;
+  };
+
+  if (igBusinessId) {
+    try {
+      const ig = await graphGet(igBusinessId, { fields: 'id,username' });
+      if (ig && ig.username) return { status: 'connected', igUserId: ig.id, username: ig.username, source: 'id', checkedAt: now };
+      return { status: 'error', checkedAt: now, error: `O ID ${igBusinessId} não é de uma conta do Instagram profissional. Use o ID do Instagram Business (começa com 1784…) ou deixe em branco e preencha só a Página do Facebook.` };
+    } catch (e) {
+      if (!pageId) return { status: 'error', checkedAt: now, error: `Não consegui ler o Instagram ${igBusinessId}: ${why(e, 'a esse Instagram')}` };
+      // tem Página: tenta descobrir por ela antes de desistir
+    }
+  }
+
+  try {
+    const page = await graphGet(pageId, { fields: 'name,instagram_business_account{id,username}' });
+    const ig = page.instagram_business_account;
+    if (ig && ig.id) return { status: 'connected', igUserId: ig.id, username: ig.username || null, source: 'page', checkedAt: now };
+    return { status: 'error', checkedAt: now, error: `A Página "${page.name || pageId}" não tem um Instagram profissional vinculado. No app do Instagram: Configurações → Tipo de conta e ferramentas → mudar para conta Profissional (Empresa ou Criador de conteúdo) e vincular a essa Página. Ou na Página do Facebook: Configurações → Contas vinculadas → Instagram.` };
+  } catch (e) {
+    return { status: 'error', checkedAt: now, error: `Não consegui ler a Página do Facebook ${pageId}: ${why(e, 'a essa Página')}` };
+  }
+}
+
 module.exports = {
+  resolveInstagram,
   getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
   hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll,
 };

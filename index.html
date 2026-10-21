@@ -2595,6 +2595,7 @@
         </label>
         <div id="metaConnectError" class="modal-error" style="display:none;"></div>
         <div id="metaSyncBox" class="meta-sync-box" style="display:none;"></div>
+        <div id="igStatusBox" class="meta-sync-box" style="display:none;"></div>
         <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px; gap:8px;">
           <button class="btn-add" id="metaSaveBtn" onclick="saveMetaConnection()">Salvar</button>
           <button class="btn-cancel" id="metaSyncNowBtn" onclick="syncMetaNow()">Sincronizar agora</button>
@@ -5870,7 +5871,9 @@
     metaSyncPollStop();
     if (account.meta?.sync?.lastStatus === 'running') metaSyncPollStart();
 
-    const igConnected = account.instagramApi?.status === 'connected';
+    const igApi = account.instagramApi || {};
+    const igConnected = igApi.status === 'connected' || (igApi.status !== 'error' && !!account.meta?.igBusinessId);
+    renderIgStatus(account);
     const headerPlatforms = [];
     if (googleConnected) headerPlatforms.push('google');
     if (metaStatus === 'connected') headerPlatforms.push('meta');
@@ -5882,7 +5885,8 @@
     const connRows = [];
     if (googleConnected) connRows.push({ p:'google', name:'Google Ads', sub: account.google?.customerId || '—', status:'ativo' });
     if (metaStatus === 'connected' || metaStatus === 'pending') connRows.push({ p:'meta', name:'Meta Ads', sub: account.meta?.adAccountId || '—', status: metaStatus === 'connected' ? 'ativo' : 'onboarding' });
-    if (igConnected) connRows.push({ p:'ig', name:'Instagram', sub: account.meta?.igBusinessId || '—', status:'ativo' });
+    if (igConnected) connRows.push({ p:'ig', name:'Instagram', sub: igApi.username ? '@' + igApi.username : (account.meta?.igBusinessId || '—'), status:'ativo' });
+    else if (igApi.status === 'error') connRows.push({ p:'ig', name:'Instagram', sub: 'não conectado — veja o motivo no card da Meta', status:'pausado' });
     const connTbody = document.getElementById('cdConnAccountsTable');
     connTbody.innerHTML = connRows.length
       ? connRows.map(r => `
@@ -7749,6 +7753,28 @@
     }
   }
 
+  // Status do Instagram no card da Meta — com o motivo quando não conecta.
+  function renderIgStatus(account){
+    const box = document.getElementById('igStatusBox');
+    if (!box) return;
+    const ig = account.instagramApi || {};
+    const when = ig.checkedAt ? ` · conferido em ${new Date(ig.checkedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}` : '';
+    if (ig.status === 'connected') {
+      box.className = 'meta-sync-box ok';
+      box.innerHTML = `<div><b>Instagram conectado</b>${ig.username ? ` — @${escapeHtml(ig.username)}` : ''}${escapeHtml(when)}</div>`;
+    } else if (ig.status === 'error') {
+      box.className = 'meta-sync-box err';
+      box.innerHTML = `<div><b>Instagram não conectado</b>${escapeHtml(when)}</div><div>Motivo: ${escapeHtml(ig.error || 'a Meta não informou o motivo.')}</div><span class="hint">Depois de corrigir, clique em Salvar (ou Sincronizar agora) pra conferir de novo.</span>`;
+    } else if (ig.status === 'pending') {
+      box.className = 'meta-sync-box';
+      box.innerHTML = `<div><b>Instagram pendente</b> — ${escapeHtml(ig.error || 'ainda não conferido.')}</div>`;
+    } else if (account.meta?.pageId || account.meta?.igBusinessId) {
+      box.className = 'meta-sync-box';
+      box.innerHTML = '<div><b>Instagram ainda não conferido</b> — clique em Salvar pra o sistema verificar e mostrar o motivo se não conectar.</div>';
+    } else { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+  }
+
   /* ---------- Sync da conta de anúncios Meta (a cada 3h + manual) ---------- */
   let metaSyncPollTimer = null;
   function metaSyncPollStop(){ if (metaSyncPollTimer){ clearInterval(metaSyncPollTimer); metaSyncPollTimer = null; } }
@@ -8005,7 +8031,9 @@
       banner.textContent = 'Os dados do Instagram ainda estão sendo conectados pela agência — por enquanto, esta é uma prévia com dados de exemplo.';
     } else if (data.mock) {
       banner.style.display = 'flex';
-      banner.innerHTML = data.igConfigured
+      banner.innerHTML = data.igError
+        ? `⚠ Dados de exemplo — o Instagram não conectou. Motivo: ${escapeHtml(data.igError)} <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab('integrations')">Abrir Integrações</a>`
+        : data.igConfigured
         ? '⚠ Dados de exemplo — o servidor ainda não tem o token da Meta configurado, então não dá pra ler o Instagram de verdade.'
         : '⚠ Dados de exemplo — cadastre o ID do Instagram Business (ou só a Página do Facebook, que eu acho o Instagram ligado a ela) na aba <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Integrações</a>.';
     } else banner.style.display = 'none';
