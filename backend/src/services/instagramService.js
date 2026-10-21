@@ -42,6 +42,15 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
+// Motivos de falha de cada consulta (por conta), pra mostrar na tela em vez de engolir.
+const WARN = new Map();
+function warn(igId, what, e) {
+  const msg = `${what}: ${(e && (e.raw || e.message)) || e}`;
+  console.warn(`Instagram ${igId} — ${msg}`);
+  const list = WARN.get(igId);
+  if (list && !list.includes(msg)) list.push(msg);
+}
+
 /* ---------- Métricas da conta ---------- */
 
 // Série diária (period=day) de uma métrica, em janelas de 30 dias.
@@ -66,7 +75,7 @@ async function dailyMetric(igId, metric, range) {
       });
       any = true;
     } catch (e) {
-      console.warn(`Instagram: métrica diária ${metric} indisponível (${w.from}–${w.to}):`, e.message);
+      warn(igId, `métrica diária ${metric}`, e);
     }
   }
   return any ? out : null;
@@ -86,7 +95,7 @@ async function totalMetric(igId, metric, range) {
       total += num(row && row.total_value && row.total_value.value);
       any = true;
     } catch (e) {
-      console.warn(`Instagram: total de ${metric} indisponível (${w.from}–${w.to}):`, e.message);
+      warn(igId, `total de ${metric}`, e);
     }
   }
   return any ? total : null;
@@ -128,7 +137,7 @@ async function demographic(igId, breakdown) {
         .map((r) => ({ label: (r.dimension_values || [])[0], value: num(r.value) }))
         .filter((r) => r.label);
     } catch (e) {
-      console.warn(`Instagram: perfil dos seguidores por ${breakdown} indisponível:`, e.message);
+      if (params.timeframe) warn(igId, `perfil dos seguidores (${breakdown})`, e);
     }
   }
   return [];
@@ -159,7 +168,8 @@ const MEDIA_INSIGHT_ATTEMPTS = [
   'reach',
 ];
 
-async function mediaInsights(mediaId) {
+async function mediaInsights(mediaId, igId) {
+  let last = null;
   for (const metric of MEDIA_INSIGHT_ATTEMPTS) {
     try {
       const json = await graphGet(`${mediaId}/insights`, { metric });
@@ -169,22 +179,34 @@ async function mediaInsights(mediaId) {
       });
       return out;
     } catch (e) {
-      // tenta com menos métricas (algumas não existem pra todo tipo de post)
+      last = e; // tenta com menos métricas (algumas não existem pra todo tipo de post)
     }
   }
+  if (last && igId) warn(igId, 'métricas das publicações', last);
   return {};
 }
 
 async function postsInRange(igId, range) {
-  const since = Math.floor(new Date(`${range.from}T00:00:00Z`).getTime() / 1000);
-  const until = Math.floor(new Date(`${nextDay(range.to)}T03:00:00Z`).getTime() / 1000);
-  const media = await graphGetAll(`${igId}/media`, {
+  // A lista de mídias não filtra por data de forma confiável: busca as mais
+  // recentes (vêm da mais nova pra mais antiga) e filtra pelo período aqui.
+  const fromTs = new Date(`${range.from}T03:00:00Z`).getTime();
+  const toTs = new Date(`${nextDay(range.to)}T03:00:00Z`).getTime();
+  const media = [];
+  let json = await graphGet(`${igId}/media`, {
     fields: 'id,caption,media_type,media_product_type,thumbnail_url,media_url,permalink,timestamp,like_count,comments_count',
-    since: String(since), until: String(until), limit: '50',
-  }, 4);
+    limit: '50',
+  });
+  for (let page = 0; page < 6; page++) {
+    const items = json.data || [];
+    media.push(...items);
+    const oldest = items.length ? new Date(items[items.length - 1].timestamp).getTime() : 0;
+    if (!json.paging || !json.paging.next || oldest < fromTs) break;
+    json = await graphGet(json.paging.next);
+  }
+  const inRange = media.filter((m) => { const t = new Date(m.timestamp).getTime(); return t >= fromTs && t < toTs; });
 
-  const recent = media.slice(0, MAX_POSTS_WITH_INSIGHTS);
-  const insights = await mapLimit(recent, 5, (m) => mediaInsights(m.id));
+  const recent = inRange.slice(0, MAX_POSTS_WITH_INSIGHTS);
+  const insights = await mapLimit(recent, 5, (m) => mediaInsights(m.id, igId));
   return recent.map((m, i) => {
     const ins = insights[i] || {};
     const isReel = m.media_product_type === 'REELS';
@@ -210,12 +232,13 @@ async function postsInRange(igId, range) {
 
 async function fetchRealReport(igId, range) {
   const prev = period.previousRange(range);
+  WARN.set(igId, []);
   const [profile, cur, before, demo, posts] = await Promise.all([
     graphGet(igId, { fields: 'username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count' }),
     accountTotals(igId, range),
     accountTotals(igId, prev),
     demographics(igId),
-    postsInRange(igId, range).catch((e) => { console.warn('Instagram: posts indisponíveis:', e.message); return []; }),
+    postsInRange(igId, range).catch((e) => { warn(igId, 'publicações', e); return []; }),
   ]);
 
   const delta = (k) => (cur[k] === null || before[k] === null ? null : period.pctDelta(cur[k], before[k]));
@@ -258,6 +281,7 @@ async function fetchRealReport(igId, range) {
     daily,
     demographics: demo,
     posts,
+    warnings: (WARN.get(igId) || []).slice(0, 8),
   };
 }
 
@@ -277,7 +301,8 @@ async function getOrganicReport(igUserId, options = {}) {
   if (cached) return cached;
 
   const result = real ? await fetchRealReport(igUserId, range) : mockInstagram.build(range);
-  cache.set(cacheKey, result, REPORT_CACHE_TTL_SECONDS);
+  // Se alguma métrica falhou, guarda por pouco tempo — pra refletir logo uma permissão corrigida.
+  cache.set(cacheKey, result, (result.warnings || []).length ? 120 : REPORT_CACHE_TTL_SECONDS);
   return result;
 }
 

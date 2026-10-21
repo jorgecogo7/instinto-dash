@@ -8036,6 +8036,10 @@
         : data.igConfigured
         ? '⚠ Dados de exemplo — o servidor ainda não tem o token da Meta configurado, então não dá pra ler o Instagram de verdade.'
         : '⚠ Dados de exemplo — cadastre o ID do Instagram Business (ou só a Página do Facebook, que eu acho o Instagram ligado a ela) na aba <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Integrações</a>.';
+    } else if ((data.warnings || []).length && !CLIENT_MODE && !PUBLIC_TOKEN) {
+      banner.style.display = 'block';
+      const perm = data.warnings.some(w => /permission|permiss|#10|#200/i.test(w));
+      banner.innerHTML = `⚠ Algumas métricas não vieram da Meta${perm ? ' — falta permissão de insights do Instagram (instagram_manage_insights) no token do usuário do sistema, ou o Instagram não foi atribuído a ele com acesso total' : ''}.<div style="font-size:11.5px; opacity:.85; margin-top:4px;">${data.warnings.map(w => escapeHtml(w)).join('<br>')}</div>`;
     } else banner.style.display = 'none';
     const r = data.range || {};
     document.getElementById('igSourceLine').innerHTML = `<b style="color:#FF5DA2;">Instagram orgânico</b> · ${dateBr(r.from)} – ${dateBr(r.to)}${data.previousRange ? ` · comparado com ${dateBr(data.previousRange.from)} – ${dateBr(data.previousRange.to)}` : ''}`;
