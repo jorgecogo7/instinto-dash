@@ -26,4 +26,19 @@ router.post('/:clientId/snooze', async (req, res) => {
   res.json(rec);
 });
 
+// GET /api/alerts/meta-token — quais permissões o token do usuário do sistema tem
+// (diagnóstico: Instagram sem métricas costuma ser falta de instagram_manage_insights).
+router.get('/meta-token', async (req, res) => {
+  const metaService = require('../services/metaService');
+  if (!metaService.hasRealCredentials()) return res.json({ configured: false });
+  try {
+    const perms = await metaService.graphGet('me/permissions');
+    const granted = (perms.data || []).filter((p) => p.status === 'granted').map((p) => p.permission);
+    const needed = ['ads_read', 'business_management', 'pages_show_list', 'pages_read_engagement', 'instagram_basic', 'instagram_manage_insights'];
+    res.json({ configured: true, granted, missing: needed.filter((p) => !granted.includes(p)) });
+  } catch (e) {
+    res.json({ configured: true, error: e.message });
+  }
+});
+
 module.exports = router;
