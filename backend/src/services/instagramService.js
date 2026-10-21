@@ -115,13 +115,65 @@ async function totalMetric(igId, metric, range) {
   return any ? total : null;
 }
 
-async function accountTotals(igId, range) {
-  const [reachDaily, followsDaily, profileViews, websiteClicks, engaged] = await Promise.all([
+// Total com quebra (ex.: alcance por seguidores × não seguidores, por formato).
+async function breakdownMetric(igId, metric, breakdown, range) {
+  const out = {};
+  let any = false;
+  for (const w of period.chunkRange(range, 30)) {
+    try {
+      const json = await graphGet(`${igId}/insights`, {
+        metric, period: 'day', metric_type: 'total_value', breakdown, since: w.from, until: nextDay(w.to),
+      });
+      const row = json.data && json.data[0];
+      const results = (row && row.total_value && row.total_value.breakdowns && row.total_value.breakdowns[0]
+        && row.total_value.breakdowns[0].results) || [];
+      results.forEach((r) => { const k = (r.dimension_values || [])[0]; if (k) out[k] = (out[k] || 0) + num(r.value); });
+      any = true;
+    } catch (e) {
+      warn(igId, `${metric} por ${breakdown}`, e);
+    }
+  }
+  return any ? out : null;
+}
+
+// Melhores horários: seguidores online por hora (média dos últimos dias que a Meta liberar).
+async function onlineFollowers(igId) {
+  try {
+    const today = period.toISODate(new Date(Date.now() - 3 * 3600e3));
+    const d = (n) => { const x = new Date(`${today}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return period.toISODate(x); };
+    const json = await graphGet(`${igId}/insights`, { metric: 'online_followers', period: 'lifetime', since: d(-7), until: today });
+    const values = (json.data && json.data[0] && json.data[0].values) || [];
+    const sum = Array(24).fill(0); let days = 0;
+    values.forEach((v) => {
+      const m = v.value || {};
+      if (!Object.keys(m).length) return;
+      days++;
+      // horas vêm no fuso do Pacífico (UTC-7/-8): converte pra Brasília (UTC-3) ≈ +4/+5h; usa +4.
+      Object.entries(m).forEach(([h, c]) => { sum[(Number(h) + 4) % 24] += num(c); });
+    });
+    return days ? sum.map((v) => Math.round(v / days)) : null;
+  } catch (e) {
+    warn(igId, 'seguidores online por hora', e);
+    return null;
+  }
+}
+
+async function accountTotals(igId, range, full = true) {
+  const [reachDaily, followsDaily, profileViews, websiteClicks, engaged, views, interactions, likes, comments, shares, saves, reachUnique, reachByFollow, reachByType] = await Promise.all([
     dailyMetric(igId, 'reach', range),
     dailyMetric(igId, 'follower_count', range),
     totalMetric(igId, 'profile_views', range),
     totalMetric(igId, 'website_clicks', range),
     totalMetric(igId, 'accounts_engaged', range),
+    totalMetric(igId, 'views', range),
+    totalMetric(igId, 'total_interactions', range),
+    totalMetric(igId, 'likes', range),
+    totalMetric(igId, 'comments', range),
+    totalMetric(igId, 'shares', range),
+    totalMetric(igId, 'saves', range),
+    totalMetric(igId, 'reach', range),
+    full ? breakdownMetric(igId, 'reach', 'follow_type', range) : null,
+    full ? breakdownMetric(igId, 'reach', 'media_product_type', range) : null,
   ]);
   const sum = (m) => (m ? Object.values(m).reduce((s, v) => s + v, 0) : null);
   return {
@@ -131,40 +183,57 @@ async function accountTotals(igId, range) {
     profileVisits: profileViews,
     linkClicks: websiteClicks,
     engagedAccounts: engaged,
+    views, interactions, likes, comments, shares, saves, reachUnique,
+    reachByFollow, reachByType,
   };
 }
 
 /* ---------- Perfil dos seguidores ---------- */
 
+// Perfil dos seguidores. A Meta mudou os parâmetros várias vezes; tenta as
+// combinações conhecidas e fica com a primeira que vier COM dados. Se só vier
+// o público engajado (quem interagiu), usa ele e marca a fonte.
 async function demographic(igId, breakdown) {
+  const base = { period: 'lifetime', metric_type: 'total_value', breakdown };
   const attempts = [
-    { metric: 'follower_demographics', period: 'lifetime', metric_type: 'total_value', breakdown },
-    { metric: 'follower_demographics', period: 'lifetime', metric_type: 'total_value', breakdown, timeframe: 'this_month' },
+    { ...base, metric: 'follower_demographics', timeframe: 'this_month', _src: 'followers' },
+    { ...base, metric: 'follower_demographics', _src: 'followers' },
+    { ...base, metric: 'follower_demographics', timeframe: 'this_week', _src: 'followers' },
+    { ...base, metric: 'engaged_audience_demographics', timeframe: 'this_month', _src: 'engaged' },
+    { ...base, metric: 'reached_audience_demographics', timeframe: 'this_month', _src: 'reached' },
   ];
-  for (const params of attempts) {
+  let lastErr = null, emptyRaw = null;
+  for (const { _src, ...params } of attempts) {
     try {
       const json = await graphGet(`${igId}/insights`, params);
       const row = json.data && json.data[0];
       const results = (row && row.total_value && row.total_value.breakdowns
         && row.total_value.breakdowns[0] && row.total_value.breakdowns[0].results) || [];
-      return results
+      const rows = results
         .map((r) => ({ label: (r.dimension_values || [])[0], value: num(r.value) }))
         .filter((r) => r.label);
+      if (rows.length) return { rows, source: _src };
+      emptyRaw = emptyRaw || JSON.stringify(json).slice(0, 160);
     } catch (e) {
-      if (params.timeframe) warn(igId, `perfil dos seguidores (${breakdown})`, e);
+      lastErr = e;
     }
   }
-  return [];
+  if (lastErr) warn(igId, `perfil do público (${breakdown})`, lastErr);
+  else if (emptyRaw) warn(igId, `perfil do público (${breakdown}) veio vazio`, emptyRaw);
+  return { rows: [], source: null };
 }
 
 const GENDER_LABELS = { F: 'Feminino', M: 'Masculino', U: 'Desconhecido' };
 const AGE_ORDER = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
 
 async function demographics(igId) {
-  const [age, gender, city, country] = await Promise.all(
+  const res = await Promise.all(
     ['age', 'gender', 'city', 'country'].map((b) => demographic(igId, b)),
   );
+  const [age, gender, city, country] = res.map((r) => r.rows);
+  const sources = [...new Set(res.map((r) => r.source).filter(Boolean))];
   return {
+    source: sources.includes('followers') ? 'followers' : (sources[0] || null),
     age: AGE_ORDER.map((label) => ({ label, value: (age.find((a) => a.label === label) || {}).value || 0 })),
     gender: gender.map((g) => ({ label: GENDER_LABELS[g.label] || g.label, value: g.value }))
       .sort((a, b) => b.value - a.value),
@@ -247,12 +316,13 @@ async function postsInRange(igId, range) {
 async function fetchRealReport(igId, range) {
   const prev = period.previousRange(range);
   WARN.set(igId, []);
-  const [profile, cur, before, demo, posts] = await Promise.all([
+  const [profile, cur, before, demo, posts, online] = await Promise.all([
     graphGet(igId, { fields: 'username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count' }),
     accountTotals(igId, range),
-    accountTotals(igId, prev),
+    accountTotals(igId, prev, false),
     demographics(igId),
     postsInRange(igId, range).catch((e) => { warn(igId, 'publicações', e); return []; }),
+    onlineFollowers(igId),
   ]);
 
   const delta = (k) => (cur[k] === null || before[k] === null ? null : period.pctDelta(cur[k], before[k]));
@@ -291,7 +361,18 @@ async function fetchRealReport(igId, range) {
       profileVisitsDeltaPct: delta('profileVisits'),
       linkClicks: cur.linkClicks,
       linkClicksDeltaPct: delta('linkClicks'),
+      reachUnique: cur.reachUnique, reachUniqueDeltaPct: delta('reachUnique'),
+      views: cur.views, viewsDeltaPct: delta('views'),
+      interactions: cur.interactions, interactionsDeltaPct: delta('interactions'),
+      likes: cur.likes, likesDeltaPct: delta('likes'),
+      comments: cur.comments, commentsDeltaPct: delta('comments'),
+      shares: cur.shares, sharesDeltaPct: delta('shares'),
+      saves: cur.saves, savesDeltaPct: delta('saves'),
+      engagementRate: cur.interactions != null && cur.reachUnique ? (cur.interactions / cur.reachUnique) * 100 : null,
     },
+    reachByFollow: cur.reachByFollow,
+    reachByType: cur.reachByType,
+    onlineByHour: online,
     daily,
     demographics: demo,
     posts,

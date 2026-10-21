@@ -906,7 +906,7 @@
     .ig-ranking-grid{ grid-template-columns:1fr; }
     .cd-section-title h2{ font-size:18px; }
   }
-  #cdFollowersChart, #cdReachChart{ height:190px; display:block; position:relative; }
+  #cdFollowersChart, #cdReachChart{ min-height:190px; display:block; position:relative; }
   #cdFollowersChart svg, #cdReachChart svg{ display:block; overflow:visible; }
   .cd-social-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
   @media (max-width: 900px){ .cd-social-grid{ grid-template-columns: 1fr; } }
@@ -2445,6 +2445,8 @@
               <div id="cdReachChart"></div>
             </div>
           </div>
+
+          <div id="igExtra"></div>
 
           <div class="ig-note" id="igDemoNote">Perfil dos seguidores <b>hoje</b> — não muda com o período selecionado.</div>
           <div class="cd-social-grid">
@@ -8051,9 +8053,18 @@
       { label: 'Publicações no período', value: igVal(m.postsInPeriod ?? m.posts), sub: `${igCompact(m.posts)} no total`, accent: '' },
       { label: 'Novos seguidores', value: m.newFollowers === null || m.newFollowers === undefined ? '—' : `+${igCompact(m.newFollowers)}`, raw: m.newFollowers, delta: m.newFollowersDeltaPct, accent: 'ig-accent-purple', note: 'o Instagram não informa quem deixou de seguir' },
       { label: 'Contas com engajamento', value: igVal(m.engagedAccounts), raw: m.engagedAccounts, delta: m.engagedAccountsDeltaPct, accent: 'ig-accent-pink' },
-      { label: 'Alcance (soma diária)', value: igVal(m.reach), raw: m.reach, delta: m.reachDeltaPct, accent: 'ig-accent-purple', note: 'a mesma pessoa em dois dias conta duas vezes' },
+      m.reachUnique != null
+        ? { label: 'Contas alcançadas', value: igVal(m.reachUnique), raw: m.reachUnique, delta: m.reachUniqueDeltaPct, accent: 'ig-accent-purple', note: 'pessoas diferentes que viram o perfil' }
+        : { label: 'Alcance (soma diária)', value: igVal(m.reach), raw: m.reach, delta: m.reachDeltaPct, accent: 'ig-accent-purple', note: 'a mesma pessoa em dois dias conta duas vezes' },
+      ...(m.views != null ? [{ label: 'Visualizações', value: igVal(m.views), raw: m.views, delta: m.viewsDeltaPct, accent: 'ig-accent-pink', note: 'vezes que o conteúdo foi exibido' }] : []),
+      ...(m.interactions != null ? [{ label: 'Interações', value: igVal(m.interactions), raw: m.interactions, delta: m.interactionsDeltaPct, accent: 'ig-accent-purple', note: 'curtidas, comentários, compartilhamentos, salvamentos' }] : []),
+      ...(m.engagementRate != null ? [{ label: 'Taxa de engajamento', value: m.engagementRate.toFixed(2).replace('.', ',') + '%', sub: 'interações ÷ contas alcançadas', accent: 'ig-accent-pink' }] : []),
       { label: 'Visitas ao perfil', value: igVal(m.profileVisits), raw: m.profileVisits, delta: m.profileVisitsDeltaPct, accent: 'ig-accent-pink' },
       { label: 'Cliques no link', value: igVal(m.linkClicks), raw: m.linkClicks, delta: m.linkClicksDeltaPct, accent: 'ig-accent-purple' },
+      ...(m.likes != null ? [{ label: 'Curtidas', value: igVal(m.likes), raw: m.likes, delta: m.likesDeltaPct, accent: 'ig-accent-pink' }] : []),
+      ...(m.comments != null ? [{ label: 'Comentários', value: igVal(m.comments), raw: m.comments, delta: m.commentsDeltaPct, accent: 'ig-accent-purple' }] : []),
+      ...(m.shares != null ? [{ label: 'Compartilhamentos', value: igVal(m.shares), raw: m.shares, delta: m.sharesDeltaPct, accent: 'ig-accent-pink' }] : []),
+      ...(m.saves != null ? [{ label: 'Salvamentos', value: igVal(m.saves), raw: m.saves, delta: m.savesDeltaPct, accent: 'ig-accent-purple' }] : []),
     ];
     document.getElementById('igKpiGrid').innerHTML = cards.map(c => `
       <div class="kpi ${c.accent}">
@@ -8074,12 +8085,18 @@
       document.getElementById('cdReachChart').innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Alcance diário indisponível pra este período.</div>';
     } else renderReachChart(daily.map(d => ({ ...d, reach: d.reach || 0 })));
 
+    renderIgExtra(data);
     renderIgDemographics(data.demographics || {});
     renderIgRanking(data.posts || []);
     renderIgPosts();
   }
 
   function renderIgDemographics(demo){
+    const note = document.getElementById('igDemoNote');
+    if (note) note.innerHTML = demo.source === 'engaged'
+      ? 'Perfil do <b>público que interagiu</b> neste mês (a Meta não liberou o perfil completo dos seguidores pra esta conta).'
+      : demo.source === 'reached' ? 'Perfil do <b>público alcançado</b> neste mês (a Meta não liberou o perfil completo dos seguidores pra esta conta).'
+      : 'Perfil dos seguidores <b>hoje</b> — não muda com o período selecionado.';
     // Faixa etária: barras verticais
     const age = demo.age || [];
     const ageEl = document.getElementById('igAgeChart');
@@ -8213,10 +8230,11 @@
   function renderFollowersChart(daily){
     const el = document.getElementById('cdFollowersChart');
     if (!daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
-    const W = Math.max(320, el.clientWidth || 1000), H = 190, padL = 30, padR = 10, padT = 10, padB = 24;
+    const W = Math.max(320, el.clientWidth || 1000), H = 190, padL = 34, padR = 10, padT = 10, padB = 24;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const n = daily.length;
     const barGap = 3;
+    const dmax = Math.max(0, ...daily.map(d => d.newFollowers || 0));
     const barW = Math.max(2, plotW / n - barGap);
     const max = Math.max(1, ...daily.map(d => d.newFollowers || 0)) * 1.15;
     const yAt = v => padT + plotH - (v / max) * plotH;
@@ -8226,16 +8244,98 @@
     daily.forEach((d, i) => {
       const x = padL + i * (plotW / n);
       const y = yAt(d.newFollowers || 0);
-      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(padT + plotH - y).toFixed(1)}" rx="2" fill="#B36BFF" opacity="0.85" />`;
+      bars += `<rect class="igf-bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(padT + plotH - y).toFixed(1)}" rx="2" fill="#B36BFF" opacity="0.85" />`;
       if ((i % labelEvery === 0 && (n - 1 - i >= labelEvery * 0.6 || i === 0)) || i === n - 1) {
         xLabels += `<text x="${(x + barW/2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
       }
     });
+    let yl = '';
+    [0, 0.5, 1].forEach(f => { const v = dmax * f; const y = yAt(v); yl += `<text x="4" y="${(y + 4).toFixed(1)}" font-size="11" fill="var(--text-dim)">${igCompact(Math.round(v))}</text>${f ? `<line x1="${padL}" x2="${W - padR}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-dasharray="2,3"/>` : ''}`; });
+    const total = daily.reduce((t, d) => t + (d.newFollowers || 0), 0);
+    el.style.position = 'relative';
     el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      ${yl}
       <line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--line)" stroke-width="1" />
       ${bars}
       ${xLabels}
-    </svg>`;
+      <rect class="hv" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"/>
+    </svg><div class="chart-tooltip" style="display:none;"></div>
+    <div class="footnote" style="border:none; padding:6px 0 0;">Total no período: <b>+${igCompact(total)}</b> · média de ${(total / n).toFixed(1).replace('.', ',')} por dia</div>`;
+    const today = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+    bindIgHover(el, W, n, mx => Math.floor((mx - padL) / (plotW / n)), i => {
+      el.querySelectorAll('.igf-bar').forEach((b, j) => b.setAttribute('opacity', j === i ? '1' : '0.45'));
+      const d = daily[i];
+      return `<div class="ctt-date">${dateBr(d.date)}${d.date === today ? ' · hoje (parcial)' : ''}</div><div style="color:#B36BFF">● Novos seguidores: <b>+${(d.newFollowers || 0).toLocaleString('pt-BR')}</b></div>`;
+    }, () => el.querySelectorAll('.igf-bar').forEach(b => b.setAttribute('opacity', '0.85')));
+  }
+
+  // Alcance por seguidores × não seguidores, por formato, e melhores horários.
+  function renderIgExtra(data){
+    const el = document.getElementById('igExtra');
+    if (!el) return;
+    const fol = data.reachByFollow || null, typ = data.reachByType || null, hours = data.onlineByHour || null;
+    const parts = [];
+    if (fol && Object.values(fol).some(v => v > 0)) {
+      const items = [
+        { label:'Seguidores', value: fol.FOLLOWER || 0, color:'#9B7BFF' },
+        { label:'Não seguidores', value: fol.NON_FOLLOWER || 0, color:'#FF5DA2' },
+      ];
+      parts.push(donutCardHtml('Quem foi alcançado', items, igCompact, 'contas', igCompact(items[0].value + items[1].value)));
+    }
+    if (typ && Object.values(typ).some(v => v > 0)) {
+      const L = { REEL:'Reels', POST:'Posts (feed)', CAROUSEL_CONTAINER:'Carrossel', STORY:'Stories', AD:'Anúncios', IGTV:'Vídeos', LIVE:'Lives' };
+      const C = { REEL:'#FF5DA2', POST:'#9B7BFF', CAROUSEL_CONTAINER:'#4C7EFF', STORY:'#F5A524', AD:'#22B573' };
+      const items = Object.entries(typ).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v], i) => ({ label: L[k] || k, value: v, color: C[k] || DONUT_COLORS[i % DONUT_COLORS.length] }));
+      parts.push(donutCardHtml('Alcance por formato', items, igCompact, 'contas', igCompact(items.reduce((t, x) => t + x.value, 0))));
+    }
+    let html = parts.length ? `<div class="cd-social-grid" style="margin-top:14px;">${parts.join('')}</div>` : '';
+    if (hours && hours.some(v => v > 0)) {
+      html += `<div class="panel" style="margin-top:14px;"><div class="panel-head"><div><h3>Melhores horários para postar</h3><div class="panel-head-sub">Média de seguidores online por hora (horário de Brasília), últimos 7 dias · passe o mouse nas barras</div></div></div><div id="igHoursChart"></div></div>`;
+    }
+    el.innerHTML = html;
+    if (hours && hours.some(v => v > 0)) renderIgHours(hours);
+  }
+
+  function renderIgHours(hours){
+    const el = document.getElementById('igHoursChart');
+    const W = Math.max(320, el.clientWidth || 1000), H = 170, padL = 34, padR = 8, padT = 10, padB = 22;
+    const plotW = W - padL - padR, plotH = H - padT - padB, n = 24, bw = plotW / n;
+    const max = Math.max(1, ...hours) * 1.1;
+    const top = hours.map((v, h) => ({ v, h })).sort((a, b) => b.v - a.v).slice(0, 3).map(x => x.h);
+    let bars = '', xl = '';
+    hours.forEach((v, h) => {
+      const bh = (v / max) * plotH, x = padL + h * bw + bw * 0.15;
+      bars += `<rect class="igh-bar" x="${x.toFixed(1)}" y="${(padT + plotH - bh).toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${top.includes(h) ? '#FF5DA2' : '#9B7BFF'}" opacity="${top.includes(h) ? 1 : 0.6}"/>`;
+      if (h % (W < 560 ? 4 : 2) === 0) xl += `<text x="${(x + bw * 0.35).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${h}h</text>`;
+    });
+    el.style.position = 'relative';
+    el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${bars}${xl}
+      <line x1="${padL}" x2="${W - padR}" y1="${padT + plotH}" y2="${padT + plotH}" stroke="var(--line)"/>
+      <rect class="hv" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"/></svg>
+      <div class="chart-tooltip" style="display:none;"></div>
+      <div class="footnote" style="border:none; padding:6px 0 0;">🔥 Picos: <b>${top.slice().sort((a, b) => a - b).map(h => `${h}h`).join(', ')}</b> — publicar perto desses horários tende a alcançar mais seguidores.</div>`;
+    bindIgHover(el, W, n, mx => Math.floor((mx - padL) / bw), h => `<div class="ctt-date">${h}h – ${(h + 1) % 24}h</div><div style="color:#9B7BFF">● ${hours[h].toLocaleString('pt-BR')} seguidores online (média)</div>`);
+  }
+
+  // Tooltip ao passar o mouse (ou tocar) nos gráficos do Instagram.
+  function bindIgHover(el, W, n, indexAt, htmlAt, onLeave){
+    const svg = el.querySelector('svg'), rect = el.querySelector('rect.hv'), tip = el.querySelector('.chart-tooltip');
+    if (!svg || !rect || !tip) return;
+    const move = (clientX) => {
+      const r = svg.getBoundingClientRect();
+      const mx = (clientX - r.left) * (W / r.width);
+      const i = Math.max(0, Math.min(n - 1, indexAt(mx)));
+      tip.innerHTML = htmlAt(i);
+      tip.style.display = 'block';
+      const cr = el.getBoundingClientRect();
+      let left = clientX - cr.left + 14;
+      if (left + 220 > cr.width) left = Math.max(4, clientX - cr.left - 230);
+      tip.style.left = Math.max(4, left) + 'px'; tip.style.top = '4px';
+    };
+    rect.addEventListener('mousemove', e => move(e.clientX));
+    rect.addEventListener('touchstart', e => move(e.touches[0].clientX), { passive:true });
+    rect.addEventListener('touchmove', e => move(e.touches[0].clientX), { passive:true });
+    rect.addEventListener('mouseleave', () => { tip.style.display = 'none'; onLeave && onLeave(); });
   }
 
   // Gráfico de área — alcance orgânico diário (mesma curva suave do
@@ -8277,7 +8377,21 @@
       <path d="${path}" fill="none" stroke="#FF5DA2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
       ${leftLabels}
       ${xLabels}
-    </svg>`;
+      <line class="hv-line" x1="0" x2="0" y1="${padT}" y2="${padT + plotH}" stroke="var(--text-dim)" stroke-dasharray="3,3" opacity="0"/>
+      <circle class="hv-dot" r="4.5" fill="#FF5DA2" stroke="var(--bg-panel)" stroke-width="2" opacity="0"/>
+      <rect class="hv" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"/>
+    </svg><div class="chart-tooltip" style="display:none;"></div>`;
+    el.style.position = 'relative';
+    const line = el.querySelector('.hv-line'), dot = el.querySelector('.hv-dot');
+    const today = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+    const avg = daily.reduce((t, d) => t + (d.reach || 0), 0) / n;
+    bindIgHover(el, W, n, mx => n > 1 ? Math.round((mx - padL) / xStep) : 0, i => {
+      const x = xAt(i).toFixed(1), d = daily[i];
+      line.setAttribute('x1', x); line.setAttribute('x2', x); line.setAttribute('opacity', '1');
+      dot.setAttribute('cx', x); dot.setAttribute('cy', yAt(d.reach || 0).toFixed(1)); dot.setAttribute('opacity', '1');
+      const vs = avg ? ((d.reach || 0) / avg - 1) * 100 : 0;
+      return `<div class="ctt-date">${dateBr(d.date)}${d.date === today ? ' · hoje (parcial)' : ''}</div><div style="color:#FF5DA2">● Alcance: <b>${(d.reach || 0).toLocaleString('pt-BR')}</b> contas</div><div style="color:var(--text-dim)">${vs >= 0 ? '+' : ''}${vs.toFixed(0)}% vs média do período</div>`;
+    }, () => { line.setAttribute('opacity', '0'); dot.setAttribute('opacity', '0'); });
   }
 
   /* ---------- Aba "Observações" (sugestões de melhoria por IA, só no seu painel) ---------- */
