@@ -826,6 +826,21 @@
     .hj-val{ font-size:13.5px; }
   }
   .hj-c-name .hj-tag{ display:none; }
+  .hj-al-box{ border:1px solid var(--line); background:var(--bg-panel); border-radius:12px; padding:12px 14px; margin-bottom:16px; }
+  .hj-al-box.crit{ border-color:rgba(232,81,79,.45); }
+  .hj-al-box.ok{ color:var(--green); font-size:13px; font-weight:600; }
+  .hj-al-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13.5px; margin-bottom:6px; flex-wrap:wrap; }
+  .hj-al-when{ color:var(--text-dim); font-weight:500; font-size:12px; }
+  .hj-al-item{ display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
+  .hj-al-item .al-btn{ flex-shrink:0; }
+  .hj-al-ico{ font-size:16px; line-height:20px; width:20px; text-align:center; flex-shrink:0; }
+  .hj-al-main{ flex:1; min-width:0; cursor:pointer; }
+  .hj-al-t{ font-size:13px; line-height:1.35; }
+  .hj-al-item.critical .hj-al-t b{ color:var(--red); }
+  .hj-al-pf{ font-size:10px; font-weight:700; color:var(--text-dim); border:1px solid var(--line); border-radius:999px; padding:1px 6px; margin-left:4px; white-space:nowrap; }
+  .hj-al-d{ font-size:12px; color:var(--text-dim); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hj-al-more{ background:none; border:none; color:var(--flame); font-weight:600; font-size:12.5px; padding:8px 0 0; cursor:pointer; }
+  @media (max-width: 760px){ .hj-al-d{ white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; } }
   /* ===================== Painel do cliente — Anúncios v2 ===================== */
   .cd-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:4px 0 18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
   .cd-subtabs{ display:flex; gap:22px; }
@@ -1918,7 +1933,7 @@
   .al-main{ flex:1; min-width:0; }
   .al-title{ font-weight:700; font-size:14px; color:var(--ac); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .al-pf{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; color:#fff; letter-spacing:.3px; }
-  .al-pf.meta{ background:#0866FF; } .al-pf.google{ background:#34A853; }
+  .al-pf.meta{ background:#0866FF; } .al-pf.google{ background:#34A853; } .al-pf.instagram{ background:#C13584; }
   .al-new{ font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; background:var(--flame); color:#1a0e05; text-transform:uppercase; }
   .al-detail{ font-size:13px; color:var(--text); margin-top:3px; line-height:1.5; }
   .al-since{ font-size:11.5px; color:var(--text-dim); margin-top:4px; }
@@ -5865,7 +5880,40 @@
     renderToday();
   }
 
+  // Alertas abertos no topo da tela Hoje (críticos primeiro). Só a agência vê.
+  const HJ_ALERTS_MAX = 6;
+  let hjAlertsAll = false;
+  function renderTodayAlerts(){
+    const el = document.getElementById('hjAlerts');
+    if (!el) return;
+    if (CLIENT_MODE || PUBLIC_TOKEN || typeof ALERTS === 'undefined' || !ALERTS) { el.innerHTML = ''; return; }
+    const sevOrder = { critical:0, warning:1, info:2 };
+    const items = ALERTS.clients.flatMap(rec => openAlerts(rec).map(a => ({ rec, a })))
+      .sort((x, y) => (sevOrder[x.a.severity] - sevOrder[y.a.severity]) || (new Date(y.a.since) - new Date(x.a.since)));
+    if (!items.length) {
+      el.innerHTML = `<div class="hj-al-box ok">✓ Nenhum alerta aberto nas contas${ALERTS.checkedAt ? ` · conferido ${sinceText(ALERTS.checkedAt)}` : ''}</div>`;
+      return;
+    }
+    const crit = items.filter(x => x.a.severity === 'critical').length;
+    const shown = hjAlertsAll ? items : items.slice(0, HJ_ALERTS_MAX);
+    const pfName = p => p === 'google' ? 'Google' : p === 'instagram' ? 'Instagram' : 'Meta';
+    el.innerHTML = `<div class="hj-al-box${crit ? ' crit' : ''}">
+      <div class="hj-al-head"><div><b>${items.length} ${items.length === 1 ? 'alerta aberto' : 'alertas abertos'}</b>${crit ? ` · ${crit} ${crit === 1 ? 'crítico' : 'críticos'}` : ''}<span class="hj-al-when">${ALERTS.checkedAt ? ` · conferido ${sinceText(ALERTS.checkedAt)}` : ''}</span></div>
+        <button type="button" class="al-btn" onclick="openAlertsView()">Ver todos ›</button></div>
+      ${shown.map(({ rec, a }) => `<div class="hj-al-item ${a.severity}">
+        <div class="hj-al-ico">${ALERT_TYPE_ICON[a.type] || '⚠'}</div>
+        <div class="hj-al-main" onclick="openClientDetail('${rec.clientId}')" title="${escapeHtml(a.detail)}">
+          <div class="hj-al-t"><b>${escapeHtml(rec.name)}</b> · ${escapeHtml(a.title)} <span class="hj-al-pf">${pfName(a.platform)}</span>${a.isNew ? '<span class="al-new">novo</span>' : ''}</div>
+          <div class="hj-al-d">${escapeHtml(a.detail)}</div>
+        </div>
+        <button type="button" class="al-btn" onclick="event.stopPropagation(); snoozeAlert('${rec.clientId}','${a.id}',24)" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi</button>
+      </div>`).join('')}
+      ${items.length > HJ_ALERTS_MAX ? `<button type="button" class="hj-al-more" onclick="hjAlertsAll=!hjAlertsAll; renderTodayAlerts()">${hjAlertsAll ? 'Mostrar menos' : `Mostrar mais ${items.length - HJ_ALERTS_MAX}`}</button>` : ''}
+    </div>`;
+  }
+
   function renderToday(){
+    renderTodayAlerts();
     const list = document.getElementById('hjList');
     if (!list || !hjLast) return;
     const { rows } = hjLast;
@@ -9160,7 +9208,7 @@
   // Saldo Pix acabando, pagamento recusado, anúncios reprovados, conta sem veicular.
   let ALERTS = null;           // { checkedAt, clients:[{ clientId, name, alerts, snoozed, errors }] }
   let alertsFilter = 'open';   // open | critical | snoozed
-  const ALERT_TYPE_ICON = { balance:'💰', status:'⛔', spendcap:'🧱', rejected:'🚫', nodelivery:'⏸', nocampaign:'💤', billing:'💳' };
+  const ALERT_TYPE_ICON = { balance:'💰', status:'⛔', spendcap:'🧱', rejected:'🚫', nodelivery:'⏸', nocampaign:'💤', billing:'💳', cpa:'📈', integration:'🔌' };
 
   function alertIsSnoozed(rec, a){ const u = (rec.snoozed || {})[a.id]; return u && new Date(u) > new Date(); }
   function openAlerts(rec){ return (rec.alerts || []).filter(a => !alertIsSnoozed(rec, a)); }
@@ -9235,7 +9283,7 @@
 
   function alertRowHtml(rec, a, opts = {}){
     const snoozed = alertIsSnoozed(rec, a);
-    const pf = a.platform === 'google' ? '<span class="al-pf google">Google</span>' : '<span class="al-pf meta">Meta</span>';
+    const pf = a.platform === 'google' ? '<span class="al-pf google">Google</span>' : a.platform === 'instagram' ? '<span class="al-pf instagram">Instagram</span>' : '<span class="al-pf meta">Meta</span>';
     const actions = opts.noActions ? '' : snoozed
       ? `<button type="button" class="al-btn" onclick="snoozeAlert('${rec.clientId}','${a.id}',0)">Reativar</button>`
       : `<button type="button" class="al-btn" onclick="snoozeAlert('${rec.clientId}','${a.id}',24)" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi (24h)</button>`;

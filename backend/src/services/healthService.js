@@ -3,7 +3,9 @@
  *  - saldo pré-pago (Pix) acabando — e quanto falta pra cobrir 7 dias;
  *  - conta bloqueada / pagamento recusado (cartão) / limite de gastos atingido;
  *  - anúncios reprovados ou com problema em campanhas ativas;
- *  - conta sem veicular há dias.
+ *  - conta sem veicular há dias;
+ *  - custo por resultado bem acima da média recente;
+ *  - integração desconectada ou com erro (Meta, Google, Instagram).
  * Roda sozinho de tempos em tempos (server.js) e também sob demanda.
  */
 const accountsStore = require('../data/accountsStore');
@@ -59,6 +61,63 @@ function alert(platform, type, severity, title, detail, extra = {}) {
   return { id: `${platform}:${type}`, platform, type, severity, title, detail, ...extra };
 }
 
+/* ---------- Custo por resultado disparou ----------
+ * Compara os últimos 3 dias completos (ontem, anteontem, ...) com a média dos
+ * 11 dias antes deles. Só avisa com base suficiente (>= 10 resultados) e gasto
+ * relevante no período recente, pra não alarmar por ruído.
+ */
+const CPA_RECENT_DAYS = 3, CPA_BASE_DAYS = 11, CPA_MIN_BASE_RESULTS = 10;
+const CPA_WARN = 1.5, CPA_CRIT = 2.5;
+function cpaSpikeAlert(platform, spendByDate, resultsByDate, unit = 'resultado') {
+  const sum = (from, to, m) => { let t = 0; for (let i = from; i <= to; i++) t += num(m[spDate(i)]); return t; };
+  const rSpend = sum(1, CPA_RECENT_DAYS, spendByDate), rRes = sum(1, CPA_RECENT_DAYS, resultsByDate);
+  const bSpend = sum(CPA_RECENT_DAYS + 1, CPA_RECENT_DAYS + CPA_BASE_DAYS, spendByDate);
+  const bRes = sum(CPA_RECENT_DAYS + 1, CPA_RECENT_DAYS + CPA_BASE_DAYS, resultsByDate);
+  if (bRes < CPA_MIN_BASE_RESULTS || bSpend <= 0 || rSpend <= 0) return [];
+  const baseCpa = bSpend / bRes;
+  // gasto recente precisa ser relevante: pelo menos 2 resultados "na média" ou 25% do ritmo normal
+  const normalRecentSpend = bSpend / CPA_BASE_DAYS * CPA_RECENT_DAYS;
+  if (rSpend < Math.max(baseCpa * 2, normalRecentSpend * 0.25)) return [];
+  const from = spDate(CPA_RECENT_DAYS).split('-').reverse().join('/'), to = spDate(1).split('-').reverse().join('/');
+  const extra = { recentSpend: rSpend, recentResults: rRes, baseCpa, unit };
+  if (!rRes) {
+    return [alert(platform, 'cpa', rSpend >= baseCpa * 4 ? 'critical' : 'warning', `Gastou ${brl(rSpend)} sem nenhum ${unit} em 3 dias`,
+      `De ${from} a ${to} não veio nenhum ${unit}, e o custo médio antes disso era ${brl(baseCpa)}. Confira formulário, pixel/conversão, WhatsApp e os anúncios que mais gastaram.`, { ...extra, ratio: null })];
+  }
+  const cpa = rSpend / rRes, ratio = cpa / baseCpa;
+  if (ratio < CPA_WARN) return [];
+  const pct = Math.round((ratio - 1) * 100);
+  return [alert(platform, 'cpa', ratio >= CPA_CRIT ? 'critical' : 'warning', `Custo por ${unit} ${pct}% acima da média`,
+    `De ${from} a ${to}: ${brl(cpa)} por ${unit} (${Number(rRes.toFixed(1)).toLocaleString('pt-BR')} no total), contra ${brl(baseCpa)} nos ${CPA_BASE_DAYS} dias anteriores. Vale olhar criativos cansados, público e lances.`, { ...extra, cpa, ratio })];
+}
+
+/* ---------- Integrações desconectadas ----------
+ * Usa só o que está salvo no cadastro (e os erros da verificação desta rodada).
+ */
+function integrationAlerts(account, errors = [], realMeta = false) {
+  if (account.status === 'pausado' || account.status === 'inativo') return [];
+  const out = [];
+  const meta = account.meta || {}, google = account.google || {}, ig = account.instagramApi || {};
+  const metaErr = errors.find((e) => e.platform === 'meta');
+  const googleErr = errors.find((e) => e.platform === 'google');
+  if (meta.adAccountId && meta.status !== 'connected') {
+    out.push(alert('meta', 'integration', 'warning', 'Meta Ads desconectada', `A conta de anúncios ${meta.adAccountId} está cadastrada, mas não está conectada (status: ${meta.status || 'sem status'}). Abra Conexões do cliente e clique em Salvar para reconectar.`));
+  } else if (metaErr) {
+    out.push(alert('meta', 'integration', 'warning', 'Não consegui ler a conta da Meta', `A verificação falhou: ${metaErr.message}. Pode ser token vencido ou acesso removido da conta.`));
+  } else if (realMeta && meta.status === 'connected' && meta.sync?.enabled && meta.sync.lastStatus === 'error' && (meta.sync.consecutiveFailures || 0) >= 2) {
+    out.push(alert('meta', 'integration', 'warning', 'Sincronização da Meta falhando', `${meta.sync.consecutiveFailures} tentativas seguidas com erro: ${meta.sync.lastError || 'sem detalhe'}${meta.sync.lastErrorHint ? ` ${meta.sync.lastErrorHint}` : ''}`));
+  }
+  if (google.customerId && google.status !== 'connected') {
+    out.push(alert('google', 'integration', 'warning', 'Google Ads desconectado', `A conta ${google.customerId} está cadastrada, mas não está conectada (status: ${google.status || 'sem status'}). Abra Conexões do cliente e reconecte.`));
+  } else if (googleErr) {
+    out.push(alert('google', 'integration', 'warning', 'Não consegui ler a conta do Google Ads', `A verificação falhou: ${googleErr.message}. Pode ser acesso removido ou credencial vencida.`));
+  }
+  if (ig.status === 'error') {
+    out.push(alert('instagram', 'integration', 'warning', 'Instagram com erro', ig.error || 'Não consegui ler o Instagram do cliente.'));
+  }
+  return out;
+}
+
 /* ---------- Saldo pré-pago ---------- */
 function balanceAlerts(platform, balance, daily, manual) {
   if (balance == null) return [];
@@ -78,6 +137,13 @@ function balanceAlerts(platform, balance, daily, manual) {
 }
 
 /* ---------- Meta ---------- */
+function resultUnit(type) {
+  if (/purchase/.test(type)) return 'compra';
+  if (/lead/.test(type)) return 'lead';
+  if (/messaging/.test(type)) return 'conversa';
+  if (/registration/.test(type)) return 'cadastro';
+  return 'resultado';
+}
 const META_STATUS = {
   2: ['critical', 'Conta de anúncios desativada', 'A Meta desativou a conta — nenhum anúncio está rodando.'],
   3: ['critical', 'Pagamento recusado — conta parada', 'A Meta não conseguiu cobrar (cartão recusado ou saldo pendente). Os anúncios estão parados até o pagamento ser regularizado em Configurações de pagamento.'],
@@ -103,7 +169,7 @@ async function checkMeta(account) {
 
   const [daily, campaigns, badAds] = await Promise.all([
     metaService.graphGetAll(`${act}/insights`, {
-      time_range: JSON.stringify({ since: spDate(14), until: spDate(0) }), time_increment: '1', fields: 'spend', limit: '50',
+      time_range: JSON.stringify({ since: spDate(14), until: spDate(0) }), time_increment: '1', fields: 'spend,actions', limit: '50',
     }).catch(() => []),
     metaService.graphGetAll(`${act}/campaigns`, { fields: 'id', effective_status: '["ACTIVE"]', limit: '100' }, 2).catch(() => null),
     metaService.graphGetAll(`${act}/ads`, {
@@ -114,6 +180,10 @@ async function checkMeta(account) {
 
   const byDate = {};
   daily.forEach((r) => { byDate[r.date_start] = num(r.spend); });
+  // Resultado principal da conta: o primeiro tipo (mesma prioridade do relatório) que aparece nos 14 dias.
+  const resType = metaService.RESULT_ACTIONS.find((t) => daily.some((r) => (r.actions || []).some((a) => a.action_type === t && num(a.value) > 0)));
+  const resByDate = {};
+  if (resType) daily.forEach((r) => { const f = (r.actions || []).find((a) => a.action_type === resType); resByDate[r.date_start] = f ? num(f.value) : 0; });
   const avg = avgDaily(byDate, account.dailyBudget);
   const streak = zeroStreak(byDate);
   out.info = { daily: avg, lastSpend: streak.lastSpend, activeCampaigns: campaigns ? campaigns.length : null, accountStatus: acc.account_status };
@@ -161,6 +231,9 @@ async function checkMeta(account) {
       { count: live.length, ads: live.slice(0, 10).map((a) => ({ name: a.name, status: a.effective_status })) }));
   }
 
+  // Custo por resultado disparou
+  if (resType) out.alerts.push(...cpaSpikeAlert('meta', byDate, resByDate, resultUnit(resType)));
+
   // Sem veicular
   out.alerts.push(...deliveryAlerts('meta', account, streak, campaigns ? campaigns.length : null, out.alerts));
   return out;
@@ -192,7 +265,7 @@ async function checkGoogle(account) {
   const q = (query, label) => googleService.runGAQL(cid, query, token, label);
   const [cust, days, camps, bad] = await Promise.all([
     q('SELECT customer.status, customer.descriptive_name FROM customer', 'status').catch(() => []),
-    q('SELECT segments.date, metrics.cost_micros FROM customer WHERE segments.date DURING LAST_14_DAYS', 'gasto diário').catch(() => []),
+    q('SELECT segments.date, metrics.cost_micros, metrics.conversions FROM customer WHERE segments.date DURING LAST_14_DAYS', 'gasto diário').catch(() => []),
     q("SELECT campaign.id FROM campaign WHERE campaign.status = 'ENABLED' AND campaign.serving_status != 'ENDED'", 'campanhas').catch(() => null),
     q(`SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, campaign.name, ad_group_ad.policy_summary.approval_status
        FROM ad_group_ad
@@ -207,7 +280,8 @@ async function checkGoogle(account) {
       status === 'SUSPENDED' ? 'O Google suspendeu a conta (política ou pagamento). Veja o aviso no topo do Google Ads.' : `Status da conta: ${status}.`));
   }
   const byDate = {};
-  days.forEach((r) => { byDate[r.segments.date] = num(r.metrics.costMicros) / 1e6; });
+  const convByDate = {};
+  days.forEach((r) => { byDate[r.segments.date] = num(r.metrics.costMicros) / 1e6; convByDate[r.segments.date] = num(r.metrics.conversions); });
   const avg = avgDaily(byDate, null);
   const streak = zeroStreak(byDate);
   out.info = { daily: avg, lastSpend: streak.lastSpend, activeCampaigns: camps ? camps.length : null };
@@ -217,6 +291,7 @@ async function checkGoogle(account) {
       `${bad.length} ${bad.length === 1 ? 'anúncio reprovado' : 'anúncios reprovados'}`,
       `Em campanhas ativas: ${names}${bad.length > 3 ? ` e mais ${bad.length - 3}` : ''}. Veja o motivo em Anúncios → Status e corrija ou recorra.`, { count: bad.length }));
   }
+  out.alerts.push(...cpaSpikeAlert('google', byDate, convByDate, 'conversão'));
   const dl = deliveryAlerts('google', account, streak, camps ? camps.length : null, out.alerts);
   dl.forEach((a) => { if (a.type === 'nodelivery' && !a.detail.includes('Provável')) a.detail = a.detail.replace('Confira entrega, orçamento e pagamento.', 'Confira o faturamento (cartão recusado costuma ser o motivo) e o status das campanhas.'); });
   out.alerts.push(...dl);
@@ -236,6 +311,13 @@ function mockCheck(account, idx) {
   }
   if (account.google?.status === 'connected' && idx % 3 === 2) {
     out.alerts.push(alert('google', 'nodelivery', 'critical', 'Sem veicular há 3 dias', `Nenhum gasto desde ${spDate(4).split('-').reverse().join('/')}, mesmo com campanhas ativas. Confira o faturamento (cartão recusado costuma ser o motivo) e o status das campanhas.`, { days: 3 }));
+  }
+  if (account.meta?.status === 'connected' && idx % 3 === 2) {
+    // custo por resultado disparou (dados de exemplo: base R$ 12/lead, últimos 3 dias R$ 31/lead)
+    const sp = {}, rs = {};
+    for (let i = 1; i <= 14; i++) { sp[spDate(i)] = 120; rs[spDate(i)] = i <= 3 ? 4 : 10; }
+    sp[spDate(1)] = sp[spDate(2)] = sp[spDate(3)] = 125;
+    out.alerts.push(...cpaSpikeAlert('meta', sp, rs, 'lead'));
   }
   if (account.meta?.status === 'connected' && idx % 3 === 1) {
     out.alerts.push(alert('meta', 'status', 'critical', 'Pagamento recusado — conta parada', META_STATUS[3][2]));
@@ -263,6 +345,10 @@ async function checkAccount(account, idx = 0, previous = null) {
       catch (e) { record.errors.push({ platform: 'google', message: e.message }); }
     }
   }
+  // Integração desconectada / com erro: vira alerta (e sai da lista de "não consegui conferir").
+  const integ = integrationAlerts(account, record.errors, realMeta);
+  record.alerts.push(...integ);
+  record.errors = record.errors.filter((e) => !integ.some((a) => a.platform === e.platform));
   // "desde quando" cada alerta está aberto
   const prevById = {};
   (previous?.alerts || []).forEach((a) => { prevById[a.id] = a; });
@@ -275,9 +361,13 @@ async function checkAccount(account, idx = 0, previous = null) {
   return record;
 }
 
+function wantsIntegration(account) {
+  if (account.status === 'pausado' || account.status === 'inativo') return false;
+  return !!(account.meta?.adAccountId || account.google?.customerId || account.instagramApi?.status === 'error');
+}
 function shouldCheck(account) {
   if (account.status === 'inativo') return false;
-  return account.meta?.status === 'connected' || account.google?.status === 'connected';
+  return account.meta?.status === 'connected' || account.google?.status === 'connected' || wantsIntegration(account);
 }
 
 let running = null;
@@ -299,6 +389,7 @@ async function runAll({ clientId } = {}) {
     if (fresh.length) {
       console.log(`Alertas novos: ${fresh.map((a) => `${a.client} — ${a.title}`).join(' | ')}`);
       notifyEmail(fresh).catch(() => {});
+      notifyWhatsApp(fresh).catch(() => {});
     }
     return results;
   })();
@@ -332,4 +423,18 @@ async function notifyEmail(fresh) {
   await t.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject: `⚠ ${fresh.length} alerta(s) nas contas · Sistema Instinto Digital`, text: `${text}\n\nVer tudo: https://dash.instintodigital.com.br/` });
 }
 
-module.exports = { runAll, list, snooze, checkAccount, parseMoney, balanceAlerts };
+/* ---------- Gancho pro WhatsApp (DESLIGADO) ----------
+ * Ponto único pra, no futuro, avisar a agência por WhatsApp. Hoje NÃO envia
+ * nada pra ninguém: só monta o texto. Quando for ligar, decidir com o Jorge
+ * o número de destino (variável de ambiente, nunca no código) e chamar o
+ * envio daqui. Nunca mandar alerta pra cliente.
+ */
+function whatsappAlertText(fresh) {
+  return `Alertas novos nas contas (${fresh.length}):\n${fresh.map((a) => `- ${a.client}: ${a.title}`).join('\n')}\nVer tudo: https://dash.instintodigital.com.br/#v=today`;
+}
+async function notifyWhatsApp(fresh) {
+  const text = whatsappAlertText(fresh);
+  return { sent: false, reason: 'gancho desligado', text };
+}
+
+module.exports = { runAll, list, snooze, checkAccount, parseMoney, balanceAlerts, cpaSpikeAlert, integrationAlerts, whatsappAlertText, notifyWhatsApp };
