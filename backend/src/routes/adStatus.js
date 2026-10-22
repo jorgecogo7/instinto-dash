@@ -6,12 +6,14 @@
  *   GET  /?platform=meta|google[&from&to]  árvore campanha > conjunto > anúncio, com métricas do período
  *   POST /:platform/:level/:id/status     { status: 'PAUSED'|'ACTIVE', confirm: true, parent? }
  *   GET  /log                              últimas alterações (só agência)
+ *   GET  /markers?from&to                  marcas do gráfico: pausas/ativações e campanhas publicadas
  *
  * Pausar e ativar: só o admin (Jorge). Toda alteração vai para o histórico.
  */
 const express = require('express');
 const accountsStore = require('../data/accountsStore');
 const logStore = require('../data/adStatusLogStore');
+const campaignsStore = require('../data/campaignsStore');
 const service = require('../services/adStatusService');
 
 const router = express.Router({ mergeParams: true });
@@ -50,6 +52,35 @@ router.get('/log', async (req, res) => {
   const account = await loadClient(req, res);
   if (!account) return;
   res.json({ log: await logStore.list(account.id, req.query.limit) });
+});
+
+// GET /markers?from&to : marcas pro gráfico do painel (só agência). Pausas/ativações
+// feitas pelo sistema (resultado ok) e campanhas publicadas pela aba Campanhas.
+const spDay = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+router.get('/markers', async (req, res) => {
+  const account = await loadClient(req, res);
+  if (!account) return;
+  const from = /^\d{4}-\d{2}-\d{2}$/.test(req.query.from || '') ? req.query.from : '0000-00-00';
+  const to = /^\d{4}-\d{2}-\d{2}$/.test(req.query.to || '') ? req.query.to : '9999-12-31';
+  const inRange = (d) => d >= from && d <= to;
+  const markers = [];
+  try {
+    for (const e of await logStore.list(account.id, 200)) {
+      if (e.result !== 'ok' || !['PAUSED', 'ACTIVE'].includes(e.requested) || !e.at) continue;
+      const date = spDay(e.at);
+      if (!inRange(date)) continue;
+      markers.push({ kind: e.requested === 'PAUSED' ? 'pause' : 'activate', date, at: e.at, platform: e.platform, level: e.level, levelLabel: LEVEL_LABEL[e.level] || e.level, name: e.name || null, by: e.by || null, mock: !!e.mock });
+    }
+    const drafts = await campaignsStore.list(account.id);
+    for (const d of drafts) {
+      if (d.status !== 'published' || !d.publish || !d.publish.at) continue;
+      const date = spDay(d.publish.at);
+      if (!inRange(date)) continue;
+      markers.push({ kind: 'campaign', date, at: d.publish.at, platform: d.platform, level: 'campaign', levelLabel: 'campanha', name: d.name || null, by: d.publish.by || null, mock: !!d.publish.mock });
+    }
+  } catch (err) { return sendError(res, err); }
+  markers.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  res.json({ markers });
 });
 
 router.post('/:platform/:level/:id/status', async (req, res) => {

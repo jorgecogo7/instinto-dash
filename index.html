@@ -321,6 +321,12 @@
   #cdDailyChart{ height:230px; display:block; position:relative; }
   #cdDailyChart svg{ display:block; overflow:visible; }
   #cdDailyChart .chart-pt{ cursor:crosshair; }
+  #cdDailyChart .cd-mk{ cursor:pointer; }
+  #cdDailyChart .cd-mk:hover circle{ stroke-width:2.4; }
+  .cd-mk-line{ margin-top:6px; line-height:1.35; max-width:240px; white-space:normal; }
+  .cd-mk-meta{ font-size:11px; color:var(--text-dim); margin-left:16px; }
+  .cd-mk-dot{ width:9px; height:9px; border-radius:50%; border:1.6px solid var(--amber); display:inline-block; }
+  .dual-legend .cd-mk-legend{ color:var(--text-dim); display:inline-flex; align-items:center; gap:6px; }
   .chart-tooltip{
     position:absolute; background: var(--bg-panel-3); border:1px solid var(--line);
     border-radius:8px; padding:8px 11px; font-size:11.5px; color:var(--text);
@@ -877,7 +883,7 @@
 
   .dual-chart{ position:relative; height:240px; }
   .dual-chart svg{ display:block; overflow:visible; }
-  .dual-legend{ display:flex; justify-content:center; gap:18px; font-size:12px; margin-top:4px; }
+  .dual-legend{ display:flex; justify-content:center; gap:18px; row-gap:4px; flex-wrap:wrap; font-size:12px; margin-top:4px; }
   .dual-legend span{ display:flex; align-items:center; gap:6px; }
   .dual-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
 
@@ -7724,6 +7730,7 @@
     document.getElementById('mgModalStatus').textContent = 'Aguarde…';
     try {
       const r = await mgApi(`/${MG.platform}/${p.level}/${encodeURIComponent(p.id)}/status`, { method:'POST', body: JSON.stringify({ status:p.status, confirm:true, parent:p.parent }) });
+      cdMarkers.key = '';   // o gráfico busca as marcas de novo
       const hit = mgFind(p.level, p.id);
       if (hit) { hit.node.status = r.item.status; hit.node.effectiveStatus = r.item.effectiveStatus || r.item.status; }
       const word = mgOn(r.item.status) ? 'ativ' : 'pausad';
@@ -8115,6 +8122,7 @@
     cpSetBusy(true);
     try {
       const out = await cpApi(`/drafts/${encodeURIComponent(d.id)}/publish`, { method:'POST', body:JSON.stringify({}) });
+      cdMarkers.key = '';   // o gráfico busca as marcas de novo
       await cpAfter(out, { kind:'ok', text:mock ? 'Simulação concluída. Veja abaixo o que seria criado.' : 'Publicada pausada. Os IDs estão abaixo.' });
     } catch (err) {
       const draft = err.body && err.body.id ? err.body : await cpApi(`/drafts/${encodeURIComponent(d.id)}`).catch(() => d);
@@ -8769,7 +8777,7 @@
 
   /* ---------- Gráfico de linha com dois eixos ---------- */
   // A = série da esquerda (área + linha), B = série da direita (linha).
-  function renderDualChart(el, daily, A, B){
+  function renderDualChart(el, daily, A, B, opts = {}){
     if (!el) return;
     if (!daily || !daily.length) { el.innerHTML = '<div class="footnote" style="border:none; padding:8px 0 0;">Sem dados nesse período.</div>'; return; }
     const W = Math.max(300, el.clientWidth || 1000);
@@ -8803,6 +8811,7 @@
     const pb = smoothPathD(daily.map((d, i) => ({ x: xAt(i), y: yB(b.vals[i]) }))).trim();
     const area = pa + ` L${xAt(n - 1).toFixed(1)},${(padT + plotH).toFixed(1)} L${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} Z`;
     const gid = `dg_${el.id}`;
+    const mk = opts.markers ? cdMarkersSvg(daily, xAt, padT, plotH, opts.markers, () => renderDualChart(el, daily, A, B, opts)) : { svg: '', byIdx: {}, count: 0 };
     el.innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
         <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${A.color}" stop-opacity="0.22"/><stop offset="100%" stop-color="${A.color}" stop-opacity="0"/></linearGradient></defs>
@@ -8815,8 +8824,9 @@
         <circle class="dc-a" r="4" fill="${A.color}" stroke="var(--bg-panel)" stroke-width="2" opacity="0"/>
         <circle class="dc-b" r="4" fill="${B.color}" stroke="var(--bg-panel)" stroke-width="2" opacity="0"/>
         <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent" class="dc-rect"/>
+        ${mk.svg}
       </svg>
-      <div class="dual-legend"><span style="color:${A.color}"><i style="background:${A.color}"></i>${A.label}</span><span style="color:${B.color}"><i style="background:${B.color}"></i>${B.label}</span></div>
+      <div class="dual-legend"><span style="color:${A.color}"><i style="background:${A.color}"></i>${A.label}</span><span style="color:${B.color}"><i style="background:${B.color}"></i>${B.label}</span>${cdMarkersLegend(mk.count)}</div>
       <div class="chart-tooltip" style="display:none;"></div>`;
     const svg = el.querySelector('svg'), line = el.querySelector('.dc-line'), ca = el.querySelector('.dc-a'), cb = el.querySelector('.dc-b');
     const tip = el.querySelector('.chart-tooltip'), rect = el.querySelector('.dc-rect');
@@ -8838,6 +8848,7 @@
     rect.addEventListener('mouseleave', () => { [line, ca, cb].forEach(x => x.setAttribute('opacity', '0')); tip.style.display = 'none'; });
     rect.addEventListener('touchstart', e => { const t0 = e.touches[0]; rect.dispatchEvent(new MouseEvent('mousemove', { clientX: t0.clientX, clientY: t0.clientY })); }, { passive:true });
     rect.addEventListener('touchmove', e => { const t0 = e.touches[0]; rect.dispatchEvent(new MouseEvent('mousemove', { clientX: t0.clientX, clientY: t0.clientY })); }, { passive:true });
+    if (mk.count) cdBindMarkers(el, daily, mk.byIdx, tip, () => [line, ca, cb].forEach(x => x.setAttribute('opacity', '0')));
   }
 
   const CH_BLUE = '#4C7EFF', CH_GREEN = '#22B573', CH_AMBER = '#F5A524', CH_PINK = '#FF5DA2', CH_PURPLE = '#9B7BFF';
@@ -8862,7 +8873,7 @@
     const daily = r.daily || [];
     renderDualChart(document.getElementById('mChartSpend'), daily,
       { label:'Investimento (R$)', color:CH_BLUE, get:d => d.spend, fmt:brl2, axisFmt:axisBrl },
-      { label:r.resultLabel || 'Resultados', color:CH_GREEN, get:d => d.results, fmt:intFmt, axisFmt:axisNum });
+      { label:r.resultLabel || 'Resultados', color:CH_GREEN, get:d => d.results, fmt:intFmt, axisFmt:axisNum }, { markers: 'meta' });
     renderDualChart(document.getElementById('mChartClicks'), daily,
       { label:'Cliques', color:CH_BLUE, get:d => d.clicks, fmt:intFmt, axisFmt:axisNum },
       { label:'CTR (%)', color:CH_GREEN, get:d => d.ctr, fmt:pct2, axisFmt:axisPct });
@@ -9550,6 +9561,94 @@
   // rico). Com 2+: cada série é normalizada pro seu próprio máximo (0–100%
   // da altura), assim métricas de unidades diferentes (R$, %, cliques) ficam
   // comparáveis na mesma área — igual ao seletor de métricas do Google Ads.
+  // Marcas no gráfico (só agência): pausas/ativações feitas pelo sistema e
+  // campanhas publicadas pela aba Campanhas. Cliente logado e link público
+  // nunca buscam nem desenham isso.
+  let cdMarkers = { key: '', list: [], loadingKey: null, waiters: [] };
+  const CD_MARK_STYLE = {
+    pause:    { color: 'var(--amber)', icon: '⏸', label: 'Pausou' },
+    activate: { color: 'var(--green)', icon: '▶', label: 'Ativou' },
+    campaign: { color: 'var(--blue)',  icon: '🚀', label: 'Campanha publicada (pausada)' },
+  };
+  function cdMarkersAllowed(){ return !CLIENT_MODE && !PUBLIC_TOKEN && !!currentClientId; }
+  function cdEnsureMarkers(from, to, rerender){
+    if (!cdMarkersAllowed()) return [];
+    const key = `${currentClientId}|${from}|${to}`;
+    if (cdMarkers.key === key) return cdMarkers.list;
+    if (cdMarkers.loadingKey !== key) {
+      cdMarkers.loadingKey = key; cdMarkers.waiters = [];
+      fetch(`${API_BASE_URL}/api/ad-status/${encodeURIComponent(currentClientId)}/markers?from=${from}&to=${to}`, { headers: authHeaders() })
+        .then(r => r.ok ? r.json() : { markers: [] })
+        .catch(() => ({ markers: [] }))
+        .then(d => {
+          if (cdMarkers.loadingKey !== key) return;
+          const waiters = cdMarkers.waiters || [];
+          cdMarkers = { key, list: d.markers || [], loadingKey: null, waiters: [] };
+          if (cdMarkers.list.length) waiters.forEach(fn => { try { fn(); } catch (_) {} });
+        });
+    }
+    cdMarkers.waiters.push(rerender);
+    return [];
+  }
+  function cdMarkerLine(m){
+    const st = CD_MARK_STYLE[m.kind] || CD_MARK_STYLE.campaign;
+    const when = new Date(m.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+    const what = m.kind === 'campaign' ? 'Campanha publicada (pausada)' : `${st.label} ${m.levelLabel || ''}`.trim();
+    const pf = m.platform === 'google' ? 'Google' : 'Meta';
+    return `<div class="cd-mk-line"><span style="color:${st.color}">${st.icon}</span> ${escapeHtml(what)}${m.name ? `: <b>${escapeHtml(m.name)}</b>` : ''}<div class="cd-mk-meta">${pf} · ${when}${m.by ? ' · ' + escapeHtml(m.by) : ''}${m.mock ? ' · simulação' : ''}</div></div>`;
+  }
+
+  // Desenha as marcas num gráfico de linha (mesmo eixo X dos dias). Devolve o
+  // SVG e os eventos por índice do dia; vazio pra cliente e link público.
+  function cdMarkersSvg(daily, xAt, padT, plotH, platform, rerender){
+    const byIdx = {};
+    let svg = '', count = 0;
+    if (!cdMarkersAllowed() || !daily.length) return { svg, byIdx, count };
+    cdEnsureMarkers(daily[0].date, daily[daily.length - 1].date, rerender)
+      .filter(m => !platform || m.platform === platform)
+      .forEach(m => { const i = daily.findIndex(d => d.date === m.date); if (i >= 0) { (byIdx[i] = byIdx[i] || []).push(m); count++; } });
+    Object.entries(byIdx).forEach(([i, ms]) => {
+      const x = xAt(Number(i)).toFixed(1);
+      const kinds = [...new Set(ms.map(m => m.kind))];
+      const color = kinds.length === 1 ? (CD_MARK_STYLE[kinds[0]] || CD_MARK_STYLE.campaign).color : 'var(--text-dim)';
+      const glyph = ms.length > 1 ? String(ms.length) : ({ pause: 'II', activate: '▶', campaign: '★' })[kinds[0]] || '•';
+      svg += `<g class="cd-mk" data-i="${i}">
+        <line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}" stroke="${color}" stroke-width="1.2" stroke-dasharray="2,3" opacity="0.8" />
+        <circle cx="${x}" cy="${padT + 8}" r="7.5" fill="var(--bg-panel)" stroke="${color}" stroke-width="1.6" />
+        <text x="${x}" y="${padT + 11.3}" text-anchor="middle" font-size="9" font-weight="700" fill="${color}">${glyph}</text>
+        <rect x="${(Number(x) - 11).toFixed(1)}" y="${padT}" width="22" height="${plotH}" fill="transparent" class="cd-mk-hit" />
+      </g>`;
+    });
+    return { svg, byIdx, count };
+  }
+  function cdMarkersLegend(count){
+    return count ? `<span class="chart-legend-item cd-mk-legend" title="Só você vê (o cliente não). Passe o mouse ou toque na marca pra ver o que mudou."><span class="cd-mk-dot"></span>${count} ${count === 1 ? 'alteração' : 'alterações'} · só você vê</span>` : '';
+  }
+  function cdBindMarkers(el, daily, byIdx, tooltip, hideHover){
+    el.querySelectorAll('.cd-mk').forEach(g => {
+      const show = (clientX) => {
+        const ms = byIdx[g.dataset.i] || [];
+        const d = daily[Number(g.dataset.i)];
+        if (hideHover) hideHover();
+        tooltip.style.display = 'block';
+        tooltip.innerHTML = `<div class="ctt-date">${dateBr(d.date)} · ${ms.length === 1 ? '1 alteração' : ms.length + ' alterações'}</div>` + ms.map(cdMarkerLine).join('');
+        const cr = el.getBoundingClientRect();
+        const relX = clientX - cr.left;
+        const tw = Math.min(262, cr.width - 8);
+        let left = relX + 14;
+        if (left + tw > cr.width) left = relX - tw - 10;
+        if (left < 4) left = 4;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = '26px';
+      };
+      g.addEventListener('mouseenter', (e) => show(e.clientX));
+      g.addEventListener('mousemove', (e) => { e.stopPropagation(); show(e.clientX); });
+      g.addEventListener('click', (e) => { e.stopPropagation(); show(e.clientX); });
+      g.addEventListener('touchstart', (e) => { e.stopPropagation(); show(e.touches[0].clientX); }, { passive: true });
+      g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    });
+  }
+
   function renderDailyChart(daily, activeMetrics){
     const chartEl = document.getElementById('cdDailyChart');
     const legendEl = document.getElementById('cdChartLegend');
@@ -9619,7 +9718,13 @@
       }
     });
 
-    legendEl.innerHTML = seriesMeta.map(m => `<span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${m.color};"></span>${m.label}</span>`).join('');
+    // Marcas (só agência): este gráfico é o do Google Ads.
+    const mk = cdMarkersSvg(daily, xAt, padT, plotH, 'google', () => renderDailyChart(daily, activeMetrics));
+    const markersSvg = mk.svg, mkByIdx = mk.byIdx;
+    const mkCount = mk.count;
+
+    legendEl.innerHTML = seriesMeta.map(m => `<span class="chart-legend-item"><span class="chart-legend-swatch" style="background:${m.color};"></span>${m.label}</span>`).join('')
+      + cdMarkersLegend(mkCount);
 
     chartEl.innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="overflow:visible;">
@@ -9636,6 +9741,7 @@
         ${xLabels}
         <line class="cd-hover-line" x1="0" y1="${padT}" x2="0" y2="${padT + plotH}" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3,3" opacity="0" />
         <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent" class="cd-hover-rect" />
+        ${markersSvg}
       </svg>
       <div class="chart-tooltip" style="display:none;"></div>
     `;
@@ -9672,6 +9778,7 @@
       hoverLine.setAttribute('opacity', '0');
       tooltip.style.display = 'none';
     });
+    cdBindMarkers(chartEl, daily, mkByIdx, tooltip, () => hoverLine.setAttribute('opacity', '0'));
   }
 
 
