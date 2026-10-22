@@ -39,6 +39,7 @@ const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
+const crmRoutes = require('./routes/crm');
 const { syncAllAccounts } = require('./lib/syncQueue');
 const metaSync = require('./lib/metaSync');
 
@@ -77,7 +78,9 @@ app.use('/api/contracts', requireAdminAuth, contractsRoutes);
 app.use('/api/forms', requireAdminAuth, formsRoutes);
 app.use('/api/reports', requireAdminAuth, reportsRoutes);
 app.use('/api/alerts', requireAdminAuth, alertsRoutes);
+app.use('/api/crm/:clientId', requireAdminAuth, crmRoutes.adminRouter);
 // Área do cliente (login próprio de cada cliente).
+app.use('/api/client/crm', requireClientAuth, crmRoutes.clientRouter);
 app.use('/api/client', requireClientAuth, clientRoutes);
 
 app.post('/api/sync', requireAdminAuth, async (req, res) => {

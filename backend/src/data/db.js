@@ -150,4 +150,32 @@ function ensureHealthTable() {
   return healthTableReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable };
+// CRM de cada cliente: funil (etapas) por cliente e os negócios/leads.
+// Tudo indexado por client_id: toda consulta filtra pelo cliente, então um
+// cliente nunca enxerga o CRM de outro.
+let crmTablesReady = null;
+function ensureCrmTables() {
+  if (!crmTablesReady) {
+    const pool = getPool();
+    crmTablesReady = Promise.all([
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_pipelines (
+          client_id VARCHAR(191) PRIMARY KEY,
+          data JSON NOT NULL
+        )
+      `),
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_deals (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          created_at DATETIME NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_crm_client (client_id, created_at)
+        )
+      `),
+    ]);
+  }
+  return crmTablesReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables };

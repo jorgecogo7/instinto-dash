@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "seed:crm-demo": "node scripts/seed-crm-demo.js"
   },
   "dependencies": {
     "express": "^4.19.2",
