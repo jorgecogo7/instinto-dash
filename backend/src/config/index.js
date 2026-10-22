@@ -35,6 +35,16 @@ module.exports = {
     loginCustomerId: process.env.GOOGLE_LOGIN_CUSTOMER_ID || '',
   },
 
+  // Google Tag Manager por cliente (docs/TAG_MANAGER.md). GOOGLE_GTM_CLIENT_ID/SECRET
+  // só são necessários se o cliente OAuth do GOOGLE_CLIENT_ID for do tipo Desktop.
+  gtm: {
+    clientId: process.env.GOOGLE_GTM_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_GTM_CLIENT_SECRET || '',
+    refreshToken: process.env.GOOGLE_GTM_REFRESH_TOKEN || '',
+    redirectUri: process.env.GTM_OAUTH_REDIRECT_URI || 'https://api.instintodigital.com.br/api/gtm-oauth/callback',
+    agencyEmail: process.env.GTM_AGENCY_EMAIL || '',
+  },
+
   // WhatsApp Cloud API (oficial da Meta). Os valores ficam só nas variáveis
   // de ambiente do hPanel, nunca no código.
   whatsapp: {

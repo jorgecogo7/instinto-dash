@@ -284,4 +284,21 @@ function ensureAdStatusLogTable() {
   return adStatusLogReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable };
+// Histórico do Google Tag Manager (criar tag, criar versão, publicar). Só a agência lê.
+let gtmLogReady = null;
+function ensureGtmLogTable() {
+  if (!gtmLogReady) {
+    gtmLogReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS gtm_log (
+        id VARCHAR(191) PRIMARY KEY,
+        client_id VARCHAR(191) NOT NULL,
+        created_at DATETIME(3) NOT NULL,
+        data JSON NOT NULL,
+        INDEX idx_gtm_client (client_id, created_at)
+      )
+    `);
+  }
+  return gtmLogReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable, ensureGtmLogTable };
