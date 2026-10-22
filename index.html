@@ -1061,6 +1061,65 @@
   .crm-card-source{ font-size:10px; color:var(--text-dim); }
   .crm-empty-col{ font-size:11.5px; color:var(--text-dim); text-align:center; padding:14px 6px; }
 
+  /* ---- CRM do cliente (funil próprio de cada cliente) ---- */
+  .cc-kpis{ display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+  .cc-toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .cc-toolbar .modal-input{ width:auto; padding:8px 10px; font-size:12.5px; }
+  .cc-toolbar .cc-search{ flex:1 1 220px; min-width:180px; }
+  .cc-viewtoggle{ display:flex; gap:4px; margin-left:auto; }
+  .cc-viewtoggle .g-tab{ padding:7px 12px; }
+  .cc-col-value{ font-size:11px; color:var(--text-dim); font-weight:600; margin-left:6px; }
+  .cc-col-head-l{ display:flex; align-items:center; gap:6px; min-width:0; }
+  .cc-dot{ width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
+  .cc-dot.won{ background:var(--green); } .cc-dot.lost{ background:var(--red); } .cc-dot.open{ background:var(--amber); }
+  .cc-card-top{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+  .cc-value{ font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; }
+  .cc-tags{ display:flex; flex-wrap:wrap; gap:4px; margin:6px 0; }
+  .cc-tag{ font-size:10.5px; padding:1px 7px; border-radius:20px; background:var(--bg-panel-3); color:var(--text-dim); border:1px solid var(--line); }
+  #ccBoard .crm-card-foot{ flex-wrap:wrap; gap:4px 8px; }
+  .cc-wa{ white-space:nowrap; display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--green); text-decoration:none; font-weight:600; }
+  .cc-wa:hover{ text-decoration:underline; }
+  .cc-owner{ font-size:10px; font-weight:700; background:var(--bg-panel-3); color:var(--text-dim); border-radius:20px; padding:1px 7px; }
+  .cc-list{ display:flex; flex-direction:column; gap:8px; }
+  .cc-row{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:12px; padding:12px 14px; display:grid; grid-template-columns: minmax(0,1fr) auto; gap:6px 12px; cursor:pointer; }
+  .cc-row-name{ font-size:14px; font-weight:600; color:var(--text); overflow-wrap:anywhere; }
+  .cc-row-sub{ font-size:11.5px; color:var(--text-dim); display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .cc-row select{ font-size:12px; padding:6px 8px; width:auto; max-width:160px; }
+  .cc-row-right{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .cc-empty{ text-align:center; color:var(--text-dim); font-size:13px; padding:36px 12px; background:var(--bg-panel); border:1px dashed var(--line); border-radius:12px; }
+  .cc-timeline{ margin-top:8px; display:flex; flex-direction:column; gap:0; }
+  .cc-ev{ position:relative; padding:0 0 12px 18px; font-size:12.5px; }
+  .cc-ev::before{ content:''; position:absolute; left:4px; top:5px; width:7px; height:7px; border-radius:50%; background:var(--text-dim); }
+  .cc-ev::after{ content:''; position:absolute; left:7px; top:14px; bottom:0; width:1px; background:var(--line); }
+  .cc-ev:last-child::after{ display:none; }
+  .cc-ev.comment::before{ background:var(--blue); } .cc-ev.stage::before{ background:var(--amber); } .cc-ev.created::before{ background:var(--green); }
+  .cc-ev-meta{ font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+  .cc-ev-text{ color:var(--text); white-space:pre-wrap; overflow-wrap:anywhere; }
+  .cc-ev.comment .cc-ev-text{ background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px; padding:7px 9px; }
+  .cc-answers{ background:var(--bg-panel-2); border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; font-size:12.5px; }
+  .cc-answers div{ padding:4px 0; border-bottom:1px solid var(--line); } .cc-answers div:last-child{ border-bottom:none; }
+  .cc-answers span{ color:var(--text-dim); display:block; font-size:11px; }
+  .cc-quick{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+  .cc-quick a{ font-size:12.5px; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); text-decoration:none; }
+  .cc-stage-row{ display:grid; grid-template-columns: minmax(0,1fr) 118px auto; gap:6px; align-items:center; margin-bottom:8px; }
+  .cc-stage-row .modal-input{ padding:8px 9px; font-size:12.5px; }
+  .cc-stage-btns{ display:flex; gap:3px; }
+  .cc-stage-btns button{ width:28px; height:30px; border-radius:7px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text-dim); cursor:pointer; font-size:12px; }
+  .cc-stage-btns button:disabled{ opacity:.35; cursor:default; }
+  .cc-admin-note{ font-size:12px; color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:9px 12px; margin-bottom:12px; }
+  @media (max-width: 760px){
+    .cc-kpis{ grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px; }
+    .cc-toolbar .modal-input{ flex:1 1 calc(50% - 8px); min-width:0; }
+    .cc-toolbar .cc-search{ flex:1 1 100%; }
+    .cc-viewtoggle{ margin-left:0; width:100%; }
+    .cc-viewtoggle .g-tab{ flex:1; }
+    #view-ccrm .topbar{ flex-direction:column; align-items:stretch; gap:10px; }
+    #view-ccrm .topbar-right{ display:flex; }
+    #view-ccrm .topbar-right button{ flex:1; }
+    .cc-stage-row{ grid-template-columns: minmax(0,1fr) 100px; }
+    .cc-stage-btns{ grid-column: 1 / -1; justify-content:flex-end; }
+  }
+
   .lead-score{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
   .lead-score.quente{ background: rgba(255,90,30,0.14); color: var(--flame); }
   .lead-score.morno{ background: rgba(255,176,32,0.14); color: var(--amber); }
@@ -1612,6 +1671,7 @@
       <div class="nav-divider">Captação</div>
       <nav class="nav">
         <div class="nav-item cnav" data-ctab="forms" onclick="wsGo('forms')">📝 Formulários</div>
+        <div class="nav-item cnav" data-ctab="crm" onclick="wsGo('crm')">🤝 CRM</div>
       </nav>
       <div class="nav-divider cnav-admin">Gestão · só você</div>
       <nav class="nav">
@@ -2101,6 +2161,119 @@
     </section>
 
     <!-- ================= RELATÓRIOS AUTOMÁTICOS ================= -->
+    <!-- ================= CRM DO CLIENTE ================= -->
+    <section class="view" id="view-ccrm">
+      <div class="topbar">
+        <div>
+          <h1 id="ccTitle">CRM</h1>
+          <p>Seus leads em um só lugar, do primeiro contato até a venda.</p>
+        </div>
+        <div class="topbar-right" style="gap:8px;">
+          <button type="button" class="btn-cancel" onclick="ccOpenStages()">⚙ Etapas</button>
+          <button type="button" class="btn-add" onclick="ccOpenDeal(null)">+ Novo lead</button>
+        </div>
+      </div>
+      <div id="ccAdminNote" class="cc-admin-note" style="display:none;"></div>
+      <div id="ccError" class="offline-banner" style="display:none;"></div>
+      <div class="cc-kpis">
+        <div class="kpi"><div class="kpi-label">Leads em aberto</div><div class="kpi-value" id="ccKpiOpen">–</div></div>
+        <div class="kpi"><div class="kpi-label">Valor em aberto</div><div class="kpi-value" id="ccKpiOpenValue">–</div></div>
+        <div class="kpi"><div class="kpi-label">Ganhos</div><div class="kpi-value" id="ccKpiWon">–</div></div>
+        <div class="kpi"><div class="kpi-label">Taxa de ganho</div><div class="kpi-value" id="ccKpiRate">–</div></div>
+      </div>
+      <div class="cc-toolbar">
+        <input class="modal-input cc-search" id="ccSearch" type="search" placeholder="Buscar por nome, telefone, e-mail ou tag" oninput="ccRender()">
+        <select class="modal-input" id="ccFilterSource" onchange="ccRender()">
+          <option value="">Todas as origens</option>
+          <option value="form">Formulário</option>
+          <option value="campaign">Campanha</option>
+          <option value="manual">Manual</option>
+        </select>
+        <select class="modal-input" id="ccFilterStage" onchange="ccRender()"><option value="">Todas as etapas</option></select>
+        <select class="modal-input" id="ccFilterOwner" onchange="ccRender()"><option value="">Todos os responsáveis</option></select>
+        <select class="modal-input" id="ccFilterTag" onchange="ccRender()"><option value="">Todas as tags</option></select>
+        <div class="cc-viewtoggle">
+          <button type="button" class="g-tab" id="ccViewBoard" onclick="ccSetView('board')">▦ Quadro</button>
+          <button type="button" class="g-tab" id="ccViewList" onclick="ccSetView('list')">☰ Lista</button>
+        </div>
+      </div>
+      <div class="crm-board" id="ccBoard"></div>
+      <div class="cc-list" id="ccList" style="display:none;"></div>
+    </section>
+
+    <!-- Lead do CRM do cliente (novo / editar) -->
+    <div class="drawer-overlay" id="ccDealModal" onclick="if(event.target===this) ccCloseModal('ccDealModal')">
+      <div class="modal-box" style="width:460px;">
+        <div class="modal-head">
+          <h3 id="ccDealTitle">Novo lead</h3>
+          <button type="button" class="modal-close" onclick="ccCloseModal('ccDealModal')">✕</button>
+        </div>
+        <div id="ccDealError" class="modal-error" style="display:none;"></div>
+        <div class="cc-quick" id="ccDealQuick"></div>
+        <form id="ccDealForm" onsubmit="ccSaveDeal(event)">
+          <label class="modal-label">Nome *</label>
+          <input class="modal-input" id="ccdName" required maxlength="120" placeholder="Nome do lead">
+          <div class="modal-row">
+            <div><label class="modal-label">Telefone / WhatsApp</label><input class="modal-input" id="ccdPhone" type="tel" maxlength="40" placeholder="(11) 90000-0000"></div>
+            <div><label class="modal-label">E-mail</label><input class="modal-input" id="ccdEmail" type="email" maxlength="160" placeholder="nome@exemplo.com"></div>
+          </div>
+          <div class="modal-row">
+            <div><label class="modal-label">Etapa</label><select class="modal-input" id="ccdStage"></select></div>
+            <div><label class="modal-label">Valor (R$)</label><input class="modal-input" id="ccdValue" inputmode="decimal" placeholder="Ex: 1.500,00"></div>
+          </div>
+          <div class="modal-row">
+            <div><label class="modal-label">Origem</label>
+              <select class="modal-input" id="ccdSource"><option value="manual">Manual</option><option value="form">Formulário</option><option value="campaign">Campanha</option></select></div>
+            <div><label class="modal-label">Detalhe da origem</label><input class="modal-input" id="ccdSourceDetail" maxlength="160" placeholder="Ex: nome da campanha"></div>
+          </div>
+          <div class="modal-row">
+            <div><label class="modal-label">Responsável</label><input class="modal-input" id="ccdOwner" maxlength="80" list="ccOwnerList" placeholder="Quem cuida do lead"></div>
+            <div><label class="modal-label">Tags</label><input class="modal-input" id="ccdTags" maxlength="320" placeholder="Separe por vírgula"></div>
+          </div>
+          <datalist id="ccOwnerList"></datalist>
+          <label class="modal-label">Notas</label>
+          <textarea class="modal-input" id="ccdNotes" rows="3" maxlength="5000" placeholder="Anotações sobre esse lead"></textarea>
+          <div class="modal-actions" style="justify-content:space-between;">
+            <button type="button" class="btn-cancel" id="ccdDelete" style="color:#e05a5a; border-color:rgba(224,90,90,0.3);" onclick="ccDeleteDeal()">Excluir</button>
+            <div style="display:flex; gap:10px;">
+              <button type="button" class="btn-cancel" onclick="ccCloseModal('ccDealModal')">Cancelar</button>
+              <button type="submit" class="btn-add" id="ccdSave">Salvar</button>
+            </div>
+          </div>
+        </form>
+        <div id="ccDealExtra" style="display:none;">
+          <div id="ccDealAnswersWrap" style="display:none;">
+            <label class="modal-label">Respostas do formulário</label>
+            <div class="cc-answers" id="ccDealAnswers"></div>
+          </div>
+          <label class="modal-label">Histórico</label>
+          <form onsubmit="ccAddComment(event)" style="display:flex; gap:8px; margin-bottom:12px;">
+            <input class="modal-input" id="ccComment" maxlength="2000" placeholder="Escreva um comentário">
+            <button type="submit" class="btn-add" style="flex-shrink:0;">Comentar</button>
+          </form>
+          <div class="cc-timeline" id="ccTimeline"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Etapas do funil do cliente -->
+    <div class="drawer-overlay" id="ccStagesModal" onclick="if(event.target===this) ccCloseModal('ccStagesModal')">
+      <div class="modal-box" style="width:460px;">
+        <div class="modal-head">
+          <h3>Etapas do funil</h3>
+          <button type="button" class="modal-close" onclick="ccCloseModal('ccStagesModal')">✕</button>
+        </div>
+        <div id="ccStagesError" class="modal-error" style="display:none;"></div>
+        <p class="footnote" style="border:none; padding:0; margin:0 0 12px;">Renomeie, reordene, crie ou remova etapas. Leads de uma etapa removida vão para a primeira etapa. Marque quais etapas contam como venda ganha ou perdida.</p>
+        <div id="ccStagesList"></div>
+        <button type="button" class="btn-cancel" onclick="ccStageAdd()">+ Adicionar etapa</button>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="ccCloseModal('ccStagesModal')">Cancelar</button>
+          <button type="button" class="btn-add" id="ccStagesSave" onclick="ccSaveStages()">Salvar etapas</button>
+        </div>
+      </div>
+    </div>
+
     <section class="view" id="view-alerts">
       <div class="topbar">
         <div>
@@ -3251,7 +3424,7 @@
         </div>
         <div class="panel fm-panel">
           <div class="panel-head"><h3>Pra onde vão as respostas</h3></div>
-          ${fmInput('integrations.createCrmLead', { type:'checkbox', label:'Criar um lead no <b>Captação & CRM</b> a cada resposta (com pontuação e temperatura)' })}
+          ${fmInput('integrations.createCrmLead', { type:'checkbox', label:'Também criar um lead no funil da agência (<b>Captação & CRM</b>) a cada resposta, com pontuação e temperatura. Formulário de cliente sempre manda o lead para o CRM do cliente.' })}
           ${fmRow('Webhook (opcional)', fmInput('integrations.webhookUrl', { placeholder:'https://hooks.zapier.com/…' }), 'Manda cada resposta pra Zapier, Make, n8n ou o CRM do cliente (só https).')}
         </div>`;
     } else if (fmTab === 'responses') {
@@ -4202,8 +4375,9 @@
     ] },
     { key:'social', label:'Redes Sociais', desc:'Instagram orgânico' },
     { key:'forms', label:'Formulários', desc:'Lista dos formulários do cliente e as respostas (sem poder editar)' },
+    { key:'crm', label:'CRM', desc:'Funil de leads do cliente: ele vê, cria, edita e move os próprios leads' },
   ];
-  const VIS_DEFAULTS = { ads:true, ads_meta:true, ads_google:true, ads_creatives:true, ads_audience:true, ads_campaigns:true, ads_goals:true, social:true, forms:false };
+  const VIS_DEFAULTS = { ads:true, ads_meta:true, ads_google:true, ads_creatives:true, ads_audience:true, ads_campaigns:true, ads_goals:true, social:true, forms:false, crm:false };
   const visOf = a => ({ ...VIS_DEFAULTS, ...((a && a.clientVisibility) || {}) });
 
   // Esconde o que não está liberado (cliente logado ou link de compartilhamento).
@@ -4239,13 +4413,14 @@
       document.querySelector('.cnav[data-ctab="overview"]').style.display = showAds ? '' : 'none';
       document.querySelector('.cnav[data-ctab="social"]').style.display = showSocial ? '' : 'none';
       document.querySelector('.cnav[data-ctab="forms"]').style.display = vis.forms ? '' : 'none';
+      document.querySelector('.cnav[data-ctab="crm"]').style.display = vis.crm ? '' : 'none';
       document.getElementById('cdTabBtnSocial').style.display = showSocial ? '' : 'none';
       document.title = `${me.name} · Instinto Digital`;
-      const first = showAds ? 'overview' : showSocial ? 'social' : vis.forms ? 'forms' : 'overview';
-      if (first === 'forms') { openClientDetail(me.id, 'overview'); wsGo('forms'); }
+      const first = showAds ? 'overview' : showSocial ? 'social' : vis.forms ? 'forms' : vis.crm ? 'crm' : 'overview';
+      if (first === 'forms' || first === 'crm') { openClientDetail(me.id, 'overview'); wsGo(first); }
       else openClientDetail(me.id, first);
       document.getElementById('clientDetailSub').textContent = `Relatório de resultados${me.niche ? ' · ' + me.niche : ''}`;
-      if (!showAds && !showSocial && !vis.forms) {
+      if (!showAds && !showSocial && !vis.forms && !vis.crm) {
         document.getElementById('cdPaneOverview').innerHTML = '<div class="panel"><p class="footnote" style="border:none; padding:0;">Seu painel está sendo preparado pela agência. Em breve os resultados aparecem aqui.</p></div>';
       }
     } catch (err) {
@@ -4426,6 +4601,8 @@
       document.getElementById('fmEditMode').style.display = 'none';
       document.getElementById('fmListMode').style.display = 'block';
       loadForms();
+    } else if (tab === 'crm') {
+      ccShowView();
     } else {
       if (!document.getElementById('view-client-detail').classList.contains('active') || currentClientId !== WS) {
         openClientDetail(WS, tab);
@@ -8537,6 +8714,362 @@
       errEl.textContent = `Não consegui salvar: ${err.message}. Confira se o backend está rodando (npm start) em ${API_BASE_URL}.`;
       errEl.style.display = 'block';
     }
+  }
+
+  /* ---------- CRM do cliente (cada cliente tem o seu funil) ---------- */
+  // Admin usa /api/crm/:clientId; o cliente logado usa /api/client/crm
+  // (o servidor sempre usa o id da sessão, o cliente não escolhe de quem é o CRM).
+  const CC_VIEW_KEY = 'instintoDashCrmView';
+  let ccState = { clientId: null, stages: [], deals: [] };
+  let ccCurrentId = null;
+  let ccStagesDraft = [];
+  let ccSeq = 0;
+  let ccDragId = null;
+
+  function ccUrl(path){
+    return CLIENT_MODE ? `${API_BASE_URL}/api/client/crm${path}` : `${API_BASE_URL}/api/crm/${encodeURIComponent(WS)}${path}`;
+  }
+  async function ccApi(path, opts = {}){
+    const res = await fetch(ccUrl(path), { ...opts, headers: { ...authHeaders(), 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+    if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
+    if (res.status === 204) return null;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+    return data;
+  }
+  function ccError(msg){
+    const el = document.getElementById('ccError');
+    el.style.display = msg ? 'flex' : 'none';
+    el.textContent = msg ? `⚠ ${msg}` : '';
+  }
+  function ccShowView(){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-ccrm').classList.add('active');
+    const name = rawAccountsById[WS]?.name || '';
+    document.getElementById('ccTitle').textContent = CLIENT_MODE ? 'CRM' : `CRM · ${name}`;
+    const note = document.getElementById('ccAdminNote');
+    if (!CLIENT_MODE && !visOf(rawAccountsById[WS]).crm) {
+      note.style.display = 'block';
+      note.textContent = 'Só você vê este CRM por enquanto. Para o cliente usar, libere "CRM" em Acesso do cliente.';
+    } else note.style.display = 'none';
+    ccSetView(ccPreferredView(), true);
+    ccLoad();
+  }
+  async function ccLoad(){
+    const seq = ++ccSeq;
+    const clientId = WS;
+    if (ccState.clientId !== clientId) { ccState = { clientId, stages: [], deals: [] }; ccResetFilters(); ccRender(); }
+    try {
+      const data = await ccApi('');
+      if (seq !== ccSeq) return;
+      ccState = { clientId, stages: data.pipeline.stages, deals: data.deals };
+      ccError('');
+    } catch (e) {
+      if (seq !== ccSeq) return;
+      ccError(`Não consegui carregar o CRM: ${e.message}`);
+    }
+    ccRender();
+  }
+  function ccResetFilters(){
+    ['ccSearch','ccFilterSource','ccFilterStage','ccFilterOwner','ccFilterTag'].forEach(id => { document.getElementById(id).value = ''; });
+  }
+  function ccPreferredView(){
+    let v = null;
+    try { v = localStorage.getItem(CC_VIEW_KEY); } catch (e) {}
+    if (v === 'board' || v === 'list') return v;
+    return window.matchMedia('(max-width: 760px)').matches ? 'list' : 'board';
+  }
+  function ccSetView(v, silent){
+    if (!silent) { try { localStorage.setItem(CC_VIEW_KEY, v); } catch (e) {} }
+    document.getElementById('ccViewBoard').classList.toggle('active', v === 'board');
+    document.getElementById('ccViewList').classList.toggle('active', v === 'list');
+    document.getElementById('ccBoard').style.display = v === 'board' ? '' : 'none';
+    document.getElementById('ccList').style.display = v === 'list' ? '' : 'none';
+    document.getElementById('ccBoard').dataset.on = v === 'board' ? '1' : '';
+    if (!silent) ccRender();
+  }
+  const ccStage = id => ccState.stages.find(s => s.id === id);
+  const ccSourceLabel = d => d.source === 'form' ? '📝 Formulário' : d.source === 'campaign' ? '📣 Campanha' : '✍️ Manual';
+  const ccMoney = v => v == null ? '' : v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  function ccWaLink(phone){
+    let d = String(phone || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.length === 10 || d.length === 11) d = '55' + d;
+    return `https://wa.me/${d}`;
+  }
+  function ccFillSelect(id, values, allLabel){
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = `<option value="">${allLabel}</option>` + values.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join('');
+    el.value = values.some(([v]) => v === cur) ? cur : '';
+  }
+  function ccFiltered(){
+    const q = document.getElementById('ccSearch').value.trim().toLowerCase();
+    const src = document.getElementById('ccFilterSource').value;
+    const stage = document.getElementById('ccFilterStage').value;
+    const owner = document.getElementById('ccFilterOwner').value;
+    const tag = document.getElementById('ccFilterTag').value;
+    const qDigits = q.replace(/\D/g, '');
+    return ccState.deals.filter(d => {
+      if (src && d.source !== src) return false;
+      if (stage && d.stageId !== stage) return false;
+      if (owner && (d.owner || '') !== owner) return false;
+      if (tag && !(d.tags || []).includes(tag)) return false;
+      if (!q) return true;
+      const hay = [d.name, d.email, d.company, d.phone, d.owner, d.sourceDetail, d.campaign, d.notes, ...(d.tags || [])].join(' ').toLowerCase();
+      return hay.includes(q) || (qDigits.length >= 3 && String(d.phone || '').replace(/\D/g, '').includes(qDigits));
+    });
+  }
+  function ccRender(){
+    const deals = ccState.deals;
+    // KPIs (sobre todos os leads, sem filtro)
+    const kind = d => (ccStage(d.stageId) || {}).kind || 'open';
+    const open = deals.filter(d => kind(d) === 'open');
+    const won = deals.filter(d => kind(d) === 'won');
+    const lost = deals.filter(d => kind(d) === 'lost');
+    const sum = arr => arr.reduce((s, d) => s + (d.value || 0), 0);
+    document.getElementById('ccKpiOpen').textContent = open.length;
+    document.getElementById('ccKpiOpenValue').textContent = ccMoney(sum(open)) || 'R$ 0';
+    document.getElementById('ccKpiWon').textContent = won.length ? `${won.length} · ${ccMoney(sum(won)) || 'R$ 0'}` : '0';
+    document.getElementById('ccKpiRate').textContent = (won.length + lost.length) ? `${Math.round(won.length / (won.length + lost.length) * 100)}%` : '–';
+    // Filtros
+    ccFillSelect('ccFilterStage', ccState.stages.map(s => [s.id, s.name]), 'Todas as etapas');
+    const owners = [...new Set(deals.map(d => d.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    ccFillSelect('ccFilterOwner', owners.map(o => [o, o]), 'Todos os responsáveis');
+    const tags = [...new Set(deals.flatMap(d => d.tags || []))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    ccFillSelect('ccFilterTag', tags.map(t => [t, t]), 'Todas as tags');
+    document.getElementById('ccOwnerList').innerHTML = owners.map(o => `<option value="${escapeAttr(o)}">`).join('');
+
+    const shown = ccFiltered();
+    const filtering = shown.length !== deals.length;
+    const waHtml = d => d.phone ? `<a class="cc-wa" href="${escapeAttr(ccWaLink(d.phone))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">💬 WhatsApp</a>` : '';
+    const tagsHtml = d => (d.tags || []).length ? `<div class="cc-tags">${d.tags.map(t => `<span class="cc-tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
+
+    // Quadro
+    const board = document.getElementById('ccBoard');
+    board.innerHTML = '';
+    ccState.stages.forEach(stage => {
+      const inStage = shown.filter(d => d.stageId === stage.id);
+      const total = sum(inStage);
+      const col = document.createElement('div');
+      col.className = 'crm-col';
+      col.ondragover = ev => { ev.preventDefault(); col.classList.add('drag-over'); };
+      col.ondragleave = () => col.classList.remove('drag-over');
+      col.ondrop = ev => { ev.preventDefault(); col.classList.remove('drag-over'); ccMove(ccDragId || ev.dataTransfer.getData('text/plain'), stage.id); };
+      col.innerHTML = `
+        <div class="crm-col-head"><span class="cc-col-head-l"><span class="cc-dot ${escapeAttr(stage.kind)}"></span><span>${escapeHtml(stage.name)}</span>${total ? `<span class="cc-col-value">${escapeHtml(ccMoney(total))}</span>` : ''}</span><span class="crm-col-count">${inStage.length}</span></div>
+        <div class="crm-col-cards">${inStage.length ? inStage.map(d => `
+          <div class="crm-card" draggable="true" data-id="${escapeAttr(d.id)}" onclick="ccOpenDeal('${escapeAttr(d.id)}')">
+            <div class="cc-card-top"><div class="crm-card-name">${escapeHtml(d.name)}</div>${d.value != null ? `<span class="cc-value">${escapeHtml(ccMoney(d.value))}</span>` : ''}</div>
+            <div class="crm-card-sub">${escapeHtml(d.company || d.email || d.phone || '')}</div>
+            ${tagsHtml(d)}
+            <div class="crm-card-foot">${waHtml(d) || '<span></span>'}<span class="crm-card-source">${d.owner ? `<span class="cc-owner">${escapeHtml(d.owner)}</span> ` : ''}${ccSourceLabel(d)} · ${timeAgo(d.createdAt)}</span></div>
+          </div>`).join('') : '<div class="crm-empty-col">Nenhum lead aqui</div>'}</div>`;
+      col.querySelectorAll('.crm-card').forEach(card => {
+        card.addEventListener('dragstart', ev => { ccDragId = card.dataset.id; ev.dataTransfer.setData('text/plain', card.dataset.id); card.classList.add('dragging'); });
+        card.addEventListener('dragend', () => { ccDragId = null; card.classList.remove('dragging'); });
+      });
+      board.appendChild(col);
+    });
+
+    // Lista (padrão no celular)
+    const list = document.getElementById('ccList');
+    if (!shown.length) {
+      list.innerHTML = `<div class="cc-empty">${filtering ? 'Nenhum lead encontrado com esses filtros.' : 'Nenhum lead ainda. Os leads dos formulários aparecem aqui automaticamente, ou toque em "+ Novo lead".'}</div>`;
+    } else {
+      const order = new Map(ccState.stages.map((s, i) => [s.id, i]));
+      const sorted = [...shown].sort((a, b) => (order.get(a.stageId) ?? 99) - (order.get(b.stageId) ?? 99) || String(b.createdAt).localeCompare(String(a.createdAt)));
+      list.innerHTML = sorted.map(d => `
+        <div class="cc-row" onclick="ccOpenDeal('${escapeAttr(d.id)}')">
+          <div style="min-width:0;">
+            <div class="cc-row-name">${escapeHtml(d.name)}</div>
+            <div class="cc-row-sub"><span>${ccSourceLabel(d)} · ${timeAgo(d.createdAt)}</span>${d.owner ? `<span class="cc-owner">${escapeHtml(d.owner)}</span>` : ''}${waHtml(d)}</div>
+            ${tagsHtml(d)}
+          </div>
+          <div class="cc-row-right">
+            <select class="modal-input" onclick="event.stopPropagation()" onchange="ccMove('${escapeAttr(d.id)}', this.value)" aria-label="Etapa">
+              ${ccState.stages.map(s => `<option value="${escapeAttr(s.id)}"${s.id === d.stageId ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+            </select>
+            ${d.value != null ? `<span class="cc-value">${escapeHtml(ccMoney(d.value))}</span>` : ''}
+          </div>
+        </div>`).join('');
+    }
+  }
+  async function ccMove(id, stageId){
+    const deal = ccState.deals.find(d => d.id === id);
+    if (!deal || !stageId || deal.stageId === stageId) return;
+    const prev = deal.stageId;
+    deal.stageId = stageId; // otimista
+    ccRender();
+    try {
+      const updated = await ccApi(`/deals/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ stageId }) });
+      Object.assign(deal, updated);
+      if (ccCurrentId === id) ccRenderTimeline(deal);
+    } catch (e) {
+      deal.stageId = prev;
+      ccRender();
+      ccError(`Não consegui mover o lead: ${e.message}`);
+    }
+  }
+
+  function ccOpenModal(id){
+    const o = document.getElementById(id);
+    o.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => o.classList.add('open')));
+  }
+  function ccCloseModal(id){
+    const o = document.getElementById(id);
+    o.classList.remove('open');
+    setTimeout(() => { if (!o.classList.contains('open')) o.style.display = 'none'; }, 260);
+    if (id === 'ccDealModal') ccCurrentId = null;
+  }
+  function ccDealError(msg){
+    const el = document.getElementById('ccDealError');
+    el.style.display = msg ? 'block' : 'none';
+    el.textContent = msg || '';
+  }
+  function ccOpenDeal(id){
+    const d = id ? ccState.deals.find(x => x.id === id) : null;
+    if (id && !d) return;
+    ccCurrentId = d ? d.id : null;
+    ccDealError('');
+    document.getElementById('ccDealTitle').textContent = d ? d.name : 'Novo lead';
+    document.getElementById('ccdStage').innerHTML = ccState.stages.map(s => `<option value="${escapeAttr(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+    const set = (k, v) => { document.getElementById(k).value = v == null ? '' : v; };
+    set('ccdName', d?.name); set('ccdPhone', d?.phone); set('ccdEmail', d?.email);
+    set('ccdStage', d ? d.stageId : ccState.stages[0]?.id);
+    set('ccdValue', d?.value != null ? d.value.toLocaleString('pt-BR', { minimumFractionDigits: d.value % 1 ? 2 : 0 }) : '');
+    set('ccdSource', d?.source || 'manual'); set('ccdSourceDetail', d?.sourceDetail);
+    set('ccdOwner', d?.owner); set('ccdTags', (d?.tags || []).join(', ')); set('ccdNotes', d?.notes);
+    document.getElementById('ccdDelete').style.visibility = d ? 'visible' : 'hidden';
+    const quick = document.getElementById('ccDealQuick');
+    quick.innerHTML = d ? [
+      d.phone ? `<a href="${escapeAttr(ccWaLink(d.phone))}" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>` : '',
+      d.phone ? `<a href="tel:${escapeAttr(String(d.phone).replace(/[^\d+]/g, ''))}">📞 Ligar</a>` : '',
+      d.email ? `<a href="mailto:${escapeAttr(d.email)}">✉️ E-mail</a>` : '',
+    ].join('') : '';
+    document.getElementById('ccDealExtra').style.display = d ? 'block' : 'none';
+    if (d) {
+      const answers = d.formAnswers || [];
+      document.getElementById('ccDealAnswersWrap').style.display = answers.length ? 'block' : 'none';
+      document.getElementById('ccDealAnswers').innerHTML = answers.map(a => `<div><span>${escapeHtml(a.question || 'Pergunta')}</span>${escapeHtml(a.answer)}</div>`).join('');
+      document.getElementById('ccComment').value = '';
+      ccRenderTimeline(d);
+    }
+    ccOpenModal('ccDealModal');
+    if (!d) setTimeout(() => document.getElementById('ccdName').focus(), 300);
+  }
+  function ccRenderTimeline(d){
+    const items = [...(d.history || [])].reverse();
+    document.getElementById('ccTimeline').innerHTML = items.length ? items.map(h => `
+      <div class="cc-ev ${escapeAttr(h.type)}">
+        <div class="cc-ev-text">${escapeHtml(h.text || '')}</div>
+        <div class="cc-ev-meta">${escapeHtml(h.by?.name || '')}${h.by?.name ? ' · ' : ''}${h.at ? escapeHtml(new Date(h.at).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' })) : ''}</div>
+      </div>`).join('') : '<div class="footnote" style="border:none; padding:0;">Sem histórico ainda.</div>';
+  }
+  async function ccSaveDeal(ev){
+    ev.preventDefault();
+    const g = id => document.getElementById(id).value.trim();
+    const body = {
+      name: g('ccdName'), phone: g('ccdPhone'), email: g('ccdEmail'), stageId: g('ccdStage'),
+      value: g('ccdValue'), source: g('ccdSource'), sourceDetail: g('ccdSourceDetail'), owner: g('ccdOwner'),
+      tags: g('ccdTags').split(',').map(t => t.trim()).filter(Boolean), notes: document.getElementById('ccdNotes').value.trim(),
+    };
+    const btn = document.getElementById('ccdSave');
+    btn.disabled = true;
+    try {
+      if (ccCurrentId) {
+        const updated = await ccApi(`/deals/${encodeURIComponent(ccCurrentId)}`, { method: 'PATCH', body: JSON.stringify(body) });
+        const i = ccState.deals.findIndex(d => d.id === ccCurrentId);
+        if (i >= 0) ccState.deals[i] = updated;
+      } else {
+        const created = await ccApi('/deals', { method: 'POST', body: JSON.stringify(body) });
+        ccState.deals.unshift(created);
+      }
+      ccRender();
+      ccCloseModal('ccDealModal');
+    } catch (e) {
+      ccDealError(e.message);
+    } finally { btn.disabled = false; }
+  }
+  async function ccDeleteDeal(){
+    const d = ccState.deals.find(x => x.id === ccCurrentId);
+    if (!d || !confirm(`Excluir o lead "${d.name}"? Isso não pode ser desfeito.`)) return;
+    try {
+      await ccApi(`/deals/${encodeURIComponent(d.id)}`, { method: 'DELETE' });
+      ccState.deals = ccState.deals.filter(x => x.id !== d.id);
+      ccRender();
+      ccCloseModal('ccDealModal');
+    } catch (e) { ccDealError(e.message); }
+  }
+  async function ccAddComment(ev){
+    ev.preventDefault();
+    const input = document.getElementById('ccComment');
+    const text = input.value.trim();
+    if (!text || !ccCurrentId) return;
+    try {
+      const updated = await ccApi(`/deals/${encodeURIComponent(ccCurrentId)}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
+      const i = ccState.deals.findIndex(d => d.id === updated.id);
+      if (i >= 0) ccState.deals[i] = updated;
+      input.value = '';
+      ccRenderTimeline(updated);
+      ccDealError('');
+    } catch (e) { ccDealError(e.message); }
+  }
+
+  /* Etapas */
+  function ccOpenStages(){
+    ccStagesDraft = ccState.stages.map(s => ({ ...s }));
+    if (!ccStagesDraft.length) return;
+    document.getElementById('ccStagesError').style.display = 'none';
+    ccRenderStages();
+    ccOpenModal('ccStagesModal');
+  }
+  function ccRenderStages(){
+    const n = ccStagesDraft.length;
+    document.getElementById('ccStagesList').innerHTML = ccStagesDraft.map((s, i) => `
+      <div class="cc-stage-row">
+        <input class="modal-input" maxlength="40" value="${escapeAttr(s.name)}" oninput="ccStagesDraft[${i}].name = this.value" aria-label="Nome da etapa">
+        <select class="modal-input" onchange="ccStagesDraft[${i}].kind = this.value" aria-label="Tipo">
+          <option value="open"${s.kind === 'open' ? ' selected' : ''}>Em andamento</option>
+          <option value="won"${s.kind === 'won' ? ' selected' : ''}>Ganho</option>
+          <option value="lost"${s.kind === 'lost' ? ' selected' : ''}>Perdido</option>
+        </select>
+        <div class="cc-stage-btns">
+          <button type="button" title="Subir" onclick="ccStageMove(${i}, -1)"${i === 0 ? ' disabled' : ''}>↑</button>
+          <button type="button" title="Descer" onclick="ccStageMove(${i}, 1)"${i === n - 1 ? ' disabled' : ''}>↓</button>
+          <button type="button" title="Remover" onclick="ccStageRemove(${i})"${n <= 1 ? ' disabled' : ''}>✕</button>
+        </div>
+      </div>`).join('');
+  }
+  function ccStageMove(i, dir){
+    const j = i + dir;
+    if (j < 0 || j >= ccStagesDraft.length) return;
+    [ccStagesDraft[i], ccStagesDraft[j]] = [ccStagesDraft[j], ccStagesDraft[i]];
+    ccRenderStages();
+  }
+  function ccStageRemove(i){ ccStagesDraft.splice(i, 1); ccRenderStages(); }
+  function ccStageAdd(){
+    if (ccStagesDraft.length >= 12) return;
+    ccStagesDraft.push({ name: 'Nova etapa', kind: 'open' });
+    ccRenderStages();
+  }
+  async function ccSaveStages(){
+    const errEl = document.getElementById('ccStagesError');
+    const keep = new Set(ccStagesDraft.filter(s => s.id).map(s => s.id));
+    const orphans = ccState.deals.filter(d => !keep.has(d.stageId)).length;
+    const firstName = (ccStagesDraft[0] || {}).name || '';
+    if (orphans && !confirm(`${orphans} lead(s) estão em etapas que você removeu e vão para "${firstName}". Continuar?`)) return;
+    const btn = document.getElementById('ccStagesSave');
+    btn.disabled = true;
+    try {
+      await ccApi('/pipeline', { method: 'PUT', body: JSON.stringify({ stages: ccStagesDraft.map(s => ({ id: s.id, name: String(s.name || '').trim(), kind: s.kind })) }) });
+      ccCloseModal('ccStagesModal');
+      await ccLoad();
+    } catch (e) {
+      errEl.style.display = 'block';
+      errEl.textContent = e.message;
+    } finally { btn.disabled = false; }
   }
 
   /* ---------- Captação & CRM ---------- */
