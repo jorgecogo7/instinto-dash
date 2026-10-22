@@ -151,6 +151,24 @@
   .client-dots span{ width:5px; height:5px; border-radius:50%; }
 
   .sidebar-foot{ margin-top:auto; font-size:11px; color:var(--text-dim); line-height:1.5; padding: 0 4px;}
+  /* Menu lateral com rolagem própria (telas baixas): logo, seletor de cliente e
+     rodapé (tema/sair) ficam fixos; só a lista do meio rola. Só no computador:
+     abaixo de 900px o menu vira a barra horizontal do celular. */
+  @media (min-width: 901px){
+    .sidebar #navAgency, .sidebar #navClient{
+      flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
+      overscroll-behavior:contain;
+      margin-right:-10px; padding-right:4px;  /* barra de rolagem fica no respiro da sidebar */
+      scrollbar-width:thin; scrollbar-color: color-mix(in srgb, var(--text-dim) 40%, transparent) transparent;
+    }
+    .sidebar #navAgency::-webkit-scrollbar, .sidebar #navClient::-webkit-scrollbar{ width:6px; }
+    .sidebar #navAgency::-webkit-scrollbar-track, .sidebar #navClient::-webkit-scrollbar-track{ background:transparent; }
+    .sidebar #navAgency::-webkit-scrollbar-thumb, .sidebar #navClient::-webkit-scrollbar-thumb{ background:color-mix(in srgb, var(--text-dim) 40%, transparent); border-radius:6px; }
+    .sidebar #navAgency:hover::-webkit-scrollbar-thumb, .sidebar #navClient:hover::-webkit-scrollbar-thumb{ background:var(--text-dim); }
+    /* a lista de clientes deixa de ter rolagem própria: rola junto com o menu, sem rolagem dentro de rolagem */
+    .sidebar #navAgency .client-list{ max-height:none; overflow:visible; }
+    .sidebar-foot{ flex-shrink:0; }
+  }
   .btn-logout{
     display:flex; align-items:center; gap:8px; width:100%;
     background:transparent; border:1px solid transparent; color:var(--text-dim);
