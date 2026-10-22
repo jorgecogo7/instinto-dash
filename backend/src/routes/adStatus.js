@@ -3,7 +3,7 @@
  * Montado em /api/ad-status/:clientId com requireAdminAuth: login de cliente
  * recebe 403 no middleware e nunca chega aqui.
  *
- *   GET  /?platform=meta|google           árvore campanha > conjunto > anúncio
+ *   GET  /?platform=meta|google[&from&to]  árvore campanha > conjunto > anúncio, com métricas do período
  *   POST /:platform/:level/:id/status     { status: 'PAUSED'|'ACTIVE', confirm: true, parent? }
  *   GET  /log                              últimas alterações (só agência)
  *
@@ -40,8 +40,9 @@ router.get('/', async (req, res) => {
     return res.json({ meta: service.capabilities(account, 'meta'), google: service.capabilities(account, 'google'), canChange: req.user.role === 'admin' });
   }
   try {
-    const tree = await service.getTree(account, platform);
-    res.json({ ...tree, canChange: req.user.role === 'admin', currency: (account.meta && account.meta.currency) || 'BRL' });
+    const tree = await service.getTree(account, platform, { from: req.query.from, to: req.query.to });
+    const currency = tree.currency || (platform === 'meta' && account.meta && account.meta.currency) || 'BRL';
+    res.json({ ...tree, canChange: req.user.role === 'admin', currency });
   } catch (err) { sendError(res, err); }
 });
 

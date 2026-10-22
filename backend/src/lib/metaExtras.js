@@ -50,4 +50,4 @@ function addExtras(target, src) {
 
 const DELTA_KEYS = [...SUM_KEYS, 'roas', 'avgTicket', 'costPerPurchase', 'costPerConversation', 'replyRate'];
 
-module.exports = { extrasFromActions, deriveExtras, addExtras, SUM_KEYS, DELTA_KEYS };
+module.exports = { extrasFromActions, deriveExtras, addExtras, SUM_KEYS, DELTA_KEYS, PURCHASE_TYPES };

@@ -4,6 +4,7 @@ const mockMeta = require('../data/mockMeta');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
 const mockMetaReport = require('../data/mockMetaReport');
+const { CREATIVE_FIELDS, pickCreativeMedia } = require('../lib/metaCreative');
 
 // META_GRAPH_BASE existe só pra testes locais (servidor falso da Graph API).
 // Em produção fica vazio e usa o endereço oficial da Meta.
@@ -158,7 +159,10 @@ async function fetchCreativeThumbs(accountId) {
   if (cached) return cached;
 
   const statuses = JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'ARCHIVED']);
+  // Primeiro tenta o criativo completo: thumbnail_url sozinho costuma vir
+  // pequeno ou preto em vídeo, criativo dinâmico e anúncio de publicação.
   const attempts = [
+    `effective_status,creative.thumbnail_width(480).thumbnail_height(480){${CREATIVE_FIELDS}}`,
     'effective_status,creative.thumbnail_width(480).thumbnail_height(480){thumbnail_url,image_url}',
     'effective_status,creative{thumbnail_url,image_url}',
   ];
@@ -175,7 +179,8 @@ async function fetchCreativeThumbs(accountId) {
   const statusMap = {};
   (ads || []).forEach((a) => {
     const c = a.creative || {};
-    const url = c.image_url || c.thumbnail_url;
+    const picked = pickCreativeMedia(c);
+    const url = (picked && picked.imageUrl) || c.image_url || c.thumbnail_url;
     if (a.id && url) map[a.id] = url;
     if (a.id && a.effective_status) statusMap[a.id] = a.effective_status;
   });
@@ -590,5 +595,6 @@ module.exports = {
   resolveInstagram,
   getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
   hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll, friendlyError,
+  pickResult, RESULT_LABELS,
 };
 
