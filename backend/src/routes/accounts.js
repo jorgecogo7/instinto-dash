@@ -122,6 +122,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const removed = await accountsStore.remove(req.params.id);
     if (!removed) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    // Não deixa rascunho de campanha órfão para um cliente novo com o mesmo id.
+    await require('../data/campaignsStore').removeAllForClient(req.params.id)
+      .catch((e) => console.error('Limpeza de campanhas do cliente falhou:', e));
     res.status(204).end();
   } catch (err) {
     console.error(err);
