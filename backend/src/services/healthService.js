@@ -329,7 +329,7 @@ async function notifyEmail(fresh) {
   const port = Number(process.env.SMTP_PORT) || 465;
   const t = nodemailer.createTransport({ host: process.env.SMTP_HOST, port, secure: port === 465, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
   const text = fresh.map((a) => `• ${a.client} (${a.platform === 'meta' ? 'Meta' : 'Google'}): ${a.title}\n  ${a.detail}`).join('\n\n');
-  await t.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject: `⚠ ${fresh.length} alerta(s) nas contas — Instinto Dash`, text: `${text}\n\nVer tudo: https://dash.instintodigital.com.br/` });
+  await t.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject: `⚠ ${fresh.length} alerta(s) nas contas · Sistema Instinto Digital`, text: `${text}\n\nVer tudo: https://dash.instintodigital.com.br/` });
 }
 
 module.exports = { runAll, list, snooze, checkAccount, parseMoney, balanceAlerts };

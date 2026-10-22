@@ -152,7 +152,7 @@ setTimeout(runHealthChecks, 60 * 1000);
 setInterval(runHealthChecks, 60 * 60 * 1000);
 
 app.listen(config.port, () => {
-  console.log(`Instinto Dash backend rodando em http://localhost:${config.port}`);
+  console.log(`Sistema Instinto Digital (API) rodando em http://localhost:${config.port}`);
   console.log(`Modo mock: ${config.useMockData ? 'ativado (dados de exemplo)' : 'desativado'}`);
   console.log(`Login configurado: ${config.auth.username ? 'sim' : 'não (defina ADMIN_USERNAME/ADMIN_PASSWORD_HASH)'}`);
   setTimeout(runBackgroundSync, 10 * 1000);
