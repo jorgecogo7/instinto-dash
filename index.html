@@ -792,6 +792,40 @@
   .ov-pf-badge.g{ background:rgba(255,176,32,.16); color:#D98E00; }
   .ov-delta{ font-size:11px; font-weight:600; display:block; }
   .ov-delta.good{ color:var(--green); } .ov-delta.bad{ color:var(--red); }
+
+  /* ---- Hoje: a carteira toda num quadro só (pioraram primeiro) ---- */
+  .hj-summary{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .hj-chip{ font-size:12.5px; font-weight:600; padding:7px 12px; border-radius:999px; border:1px solid var(--line); background:var(--bg-panel); color:var(--text); }
+  .hj-chip b{ font-weight:800; }
+  .hj-chip.bad{ border-color:rgba(232,81,79,.45); color:var(--red); } .hj-chip.good{ border-color:rgba(53,196,138,.45); color:var(--green); }
+  .hj-list{ display:flex; flex-direction:column; }
+  .hj-row{ display:grid; grid-template-columns: minmax(170px,1.5fr) repeat(3, minmax(110px,1fr)) 128px; gap:12px; align-items:center; padding:12px 6px; border-top:1px solid var(--line); cursor:pointer; border-radius:8px; }
+  .hj-row:first-child{ border-top:none; }
+  .hj-row:hover{ background:var(--bg-panel-2); }
+  .hj-row.hj-head{ cursor:default; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); padding-top:4px; padding-bottom:6px; }
+  .hj-row.hj-head:hover{ background:none; }
+  .hj-name{ font-weight:700; font-size:14px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .hj-pfs{ display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+  .hj-al{ font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:999px; background:rgba(255,176,32,.16); color:#D98E00; }
+  .hj-al.crit{ background:rgba(232,81,79,.15); color:var(--red); }
+  .hj-val{ font-size:14px; font-weight:700; font-variant-numeric: tabular-nums; }
+  .hj-val small{ display:block; font-size:11px; font-weight:500; color:var(--text-dim); }
+  .hj-lbl{ display:none; font-size:10.5px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:.3px; }
+  .hj-sub{ grid-column: 1 / -1; display:flex; flex-direction:column; gap:3px; margin-top:-4px; font-size:11.5px; color:var(--text-dim); }
+  .hj-tag{ justify-self:start; font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:999px; white-space:nowrap; background:var(--bg-panel-2); color:var(--text-dim); border:1px solid var(--line); }
+  .hj-tag.bad{ background:rgba(232,81,79,.13); color:var(--red); border-color:rgba(232,81,79,.35); }
+  .hj-tag.good{ background:rgba(53,196,138,.13); color:var(--green); border-color:rgba(53,196,138,.35); }
+  .hj-tag.stop{ background:var(--red); color:#fff; border-color:var(--red); }
+  @media (max-width: 760px){
+    .hj-row{ grid-template-columns: 1fr 1fr 1fr; gap:8px 10px; padding:14px 4px; }
+    .hj-row.hj-head{ display:none; }
+    .hj-row > .hj-c-name{ grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+    .hj-row > .hj-c-tag{ display:none; }
+    .hj-c-name .hj-tag{ display:inline-block !important; }
+    .hj-lbl{ display:block; }
+    .hj-val{ font-size:13.5px; }
+  }
+  .hj-c-name .hj-tag{ display:none; }
   /* ===================== Painel do cliente — Anúncios v2 ===================== */
   .cd-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:4px 0 18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
   .cd-subtabs{ display:flex; gap:22px; }
@@ -2023,6 +2057,7 @@
 
     <div id="navAgency">
     <nav class="nav">
+      <div class="nav-item" data-view="today">☀ Hoje</div>
       <div class="nav-item active" data-view="overview">▣ Visão geral</div>
       <div class="nav-item" data-view="alerts">🔔 Alertas <span class="nav-badge" id="navAlertsBadge" style="display:none;"></span></div>
       <div class="nav-item" data-view="meta">▤ Meta Ads</div>
@@ -2123,6 +2158,31 @@
           <tbody id="clientTable"></tbody>
         </table>
         <div class="footnote">Cada cliente aprova o acesso individualmente: no Meta, via solicitação de acesso à conta de anúncios; no Google, aceitando o vínculo com sua conta MCC.</div>
+      </div>
+    </section>
+
+    <!-- ================= HOJE (carteira toda) ================= -->
+    <section class="view" id="view-today">
+      <div class="topbar">
+        <div>
+          <h1>Hoje</h1>
+          <p id="hjSub">Carregando a carteira…</p>
+        </div>
+        <div class="topbar-right">
+          <select class="client-select-real" id="hjRange" onchange="loadToday()">
+            <option value="7" selected>7 dias vs 7 anteriores</option>
+            <option value="14">14 dias vs 14 anteriores</option>
+            <option value="30">30 dias vs 30 anteriores</option>
+          </select>
+          <button type="button" class="btn-add" id="hjRefreshBtn" onclick="loadToday(true)">↻ Atualizar</button>
+        </div>
+      </div>
+      <div class="hj-summary" id="hjSummary"></div>
+      <div id="hjAlerts"></div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Carteira</h3><div class="panel-head-sub">Quem piorou aparece primeiro · clique num cliente pra abrir o painel dele</div></div></div>
+        <div class="hj-list" id="hjList"></div>
+        <div class="footnote" id="hjFoot">Compara dias completos (até ontem) com o mesmo número de dias logo antes. Resultados = resultados da Meta (conversas, leads, compras…) + conversões do Google Ads. "Piorou" = custo por resultado subiu ou resultados caíram 15% ou mais.</div>
       </div>
     </section>
 
@@ -3666,6 +3726,7 @@
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById('view-' + item.dataset.view).classList.add('active');
       if (item.dataset.view === 'reports') loadReports();
+      if (item.dataset.view === 'today') loadToday();
       if (item.dataset.view === 'alerts') { renderAlertsView(); loadAlerts(); }
       if (item.dataset.view === 'forms') { document.getElementById('fmEditMode').style.display === 'none' && loadForms(); }
     });
@@ -5253,7 +5314,7 @@
   // Segurança: o hash só escolhe entre telas que o login atual já pode ver. Cliente e link
   // público (?share=) nunca usam "c" e só aceitam as abas liberadas para eles.
   const NAV_PERIOD_KEY = 'instintoDashPeriodo';
-  const NAV_AGENCY_VIEWS = ['overview', 'alerts', 'meta', 'google', 'instagram', 'connections', 'clients', 'crm', 'forms', 'reports'];
+  const NAV_AGENCY_VIEWS = ['today', 'overview', 'alerts', 'meta', 'google', 'instagram', 'connections', 'clients', 'crm', 'forms', 'reports'];
   const NAV_CLIENT_TABS = ['overview', 'social', 'insights', 'contract', 'history', 'integrations', 'access', 'reports', 'campaigns',
     'forms', 'crm', 'crm-conversas', 'crm-contatos', 'crm-etiquetas', 'crm-relatorios'];
   const NAV_PRESETS = [7, 14, 30, 90];
@@ -5311,6 +5372,8 @@
       st.v = v;
       const ov = document.getElementById('ovRange');
       if (ov && ov.value && ov.value !== '30') st.op = ov.value;
+      const hj = document.getElementById('hjRange');
+      if (v === 'today' && hj && hj.value && hj.value !== '7') st.hp = hj.value;
       if (v === 'meta') {
         const mc = document.getElementById('metaClientSelect');
         if (mc && mc.value) st.mc = mc.value;
@@ -5395,6 +5458,8 @@
     const wasAgency = WS === 'agency';
     wsApplyUi('agency');
     if (!boot && (!wasAgency || opChanged)) loadOverview();
+    const hj = document.getElementById('hjRange');
+    if (hj) hj.value = ['7', '14', '30'].includes(st.hp) ? st.hp : '7';
     const item = document.querySelector(`.nav-item[data-view="${st.v}"]`);
     if (item) item.click();
     if (st.v === 'meta') navApplyMetaView(st);
@@ -5484,7 +5549,7 @@
     const f = document.getElementById('metaRangeFrom'), t = document.getElementById('metaRangeTo');
     if (f && t && metaRange.from === f.value && metaRange.to === t.value) NAV.metaPeriod = { de: f.value, ate: t.value };
   });
-  ['wsGo', 'ccShowView', 'setWorkspace', 'backToClients', 'setPlatformView', 'cpSetView', 'mgSetPlatform', 'onMetaClientChange', 'loadOverview']
+  ['wsGo', 'ccShowView', 'setWorkspace', 'backToClients', 'setPlatformView', 'cpSetView', 'mgSetPlatform', 'onMetaClientChange', 'loadOverview', 'loadToday']
     .forEach(n => navWrap(n));
   document.querySelectorAll('.nav-item[data-view]').forEach(i => i.addEventListener('click', navSchedule));
 
@@ -5683,6 +5748,162 @@
         { rowAttr: r => `class="ov-row-link" onclick="openClientDetail('${r.id}')"` });
     };
     sortRenderers.ovClients();
+  }
+
+
+  /* ===================== Hoje: a carteira toda (só a agência) ===================== */
+  // Reaproveita os mesmos relatórios da Visão geral (/api/meta|google/:id/report, que o
+  // servidor já guarda em cache por 20 min). Aqui no navegador guarda mais 5 min por
+  // período e busca no máximo 4 contas ao mesmo tempo, pra não martelar a Meta/Google.
+  const HJ_CACHE = {};
+  const HJ_TTL = 5 * 60 * 1000;
+  const HJ_THRESHOLD = 15;   // % de piora/melhora que muda o selo
+  let hjSeq = 0;
+  let hjLast = null;
+  // Data local (fuso do aparelho) N dias atrás, em AAAA-MM-DD.
+  function hjDay(n){ const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA'); }
+
+  async function hjFetchReports(jobs, range, force){
+    const key = `${range.from}|${range.to}`;
+    const bucket = HJ_CACHE[key] || (HJ_CACHE[key] = {});
+    const qs = new URLSearchParams(range).toString();
+    const out = [];
+    const todo = [];
+    jobs.forEach(j => {
+      const k = `${j.a.id}:${j.p}`;
+      const hit = bucket[k];
+      if (!force && hit && Date.now() - hit.at < HJ_TTL) out.push({ ...j, data: hit.data });
+      else todo.push(j);
+    });
+    let next = 0;
+    async function worker(){
+      while (next < todo.length) {
+        const job = todo[next++];
+        const url = job.p === 'meta' ? `${API_BASE_URL}/api/meta/${job.a.id}/report?${qs}` : `${API_BASE_URL}/api/google/${job.a.id}/report?${qs}`;
+        try { const data = await ovFetchJson(url); bucket[`${job.a.id}:${job.p}`] = { at: Date.now(), data }; out.push({ ...job, data }); }
+        catch (err) { out.push({ ...job, error: err.message }); }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(4, todo.length) }, worker));
+    return out;
+  }
+
+  function hjPct(cur, prev){ return prev > 0 ? (cur - prev) / prev * 100 : null; }
+  function hjDeltaHtml(cur, prev, invert){
+    const pct = hjPct(cur, prev);
+    if (pct === null) return '<small>sem comparação</small>';
+    const up = pct >= 0, good = invert ? !up : up;
+    const cls = Math.abs(pct) < 0.5 ? '' : good ? 'good' : 'bad';
+    return `<span class="ov-delta ${cls}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(1).replace('.', ',')}%</span>`;
+  }
+
+  // Classifica o cliente: score > 0 = piorou (quanto maior, pior).
+  function hjClassify(cur, prev){
+    if (cur.spend <= 0 && prev.spend > 0) return { score: 1000, tag: 'stop', label: 'Parou de gastar' };
+    if (cur.spend <= 0 && prev.spend <= 0) return { score: -2000, tag: '', label: 'Sem investimento' };
+    if (cur.conv <= 0 && prev.conv > 0) return { score: 500, tag: 'bad', label: 'Zerou resultados' };
+    if (cur.conv <= 0 && prev.conv <= 0) return { score: -1000, tag: '', label: 'Sem resultados' };
+    const cpaPct = cur.cpa > 0 && prev.cpa > 0 ? hjPct(cur.cpa, prev.cpa) : null;
+    const convPct = hjPct(cur.conv, prev.conv);
+    const parts = [cpaPct, convPct === null ? null : -convPct].filter(v => v !== null);
+    if (!parts.length) return { score: 0, tag: '', label: 'Novo no período' };
+    const score = Math.max(...parts);
+    if (score >= HJ_THRESHOLD) return { score, tag: 'bad', label: 'Piorou' };
+    if (Math.max(...parts.map(v => -v)) >= HJ_THRESHOLD && score <= 0) return { score, tag: 'good', label: 'Melhorou' };
+    return { score, tag: '', label: 'Estável' };
+  }
+
+  async function loadToday(force){
+    const list = document.getElementById('hjList');
+    if (!list || CLIENT_MODE || PUBLIC_TOKEN) return;
+    const seq = ++hjSeq;
+    const days = Number(document.getElementById('hjRange').value) || 7;
+    // Dias completos: termina ontem (hoje ainda está em andamento e distorceria a comparação).
+    const range = { from: hjDay(days), to: hjDay(1) };
+    const prevRange = { from: hjDay(days * 2), to: hjDay(days + 1) };
+    const accounts = ovActiveAccounts();
+    const sub = document.getElementById('hjSub');
+    sub.textContent = `${dateBr(range.from)} a ${dateBr(range.to)} vs ${dateBr(prevRange.from)} a ${dateBr(prevRange.to)} · carregando ${accounts.length} cliente${accounts.length === 1 ? '' : 's'}…`;
+    if (!hjLast || force) list.innerHTML = '<div class="footnote" style="border:none; padding:8px 0;">Carregando dados dos clientes…</div>';
+    const btn = document.getElementById('hjRefreshBtn');
+    if (btn) btn.disabled = true;
+
+    const jobs = [];
+    accounts.forEach(a => ovPlatformsOf(a).forEach(p => jobs.push({ a, p })));
+    const results = await hjFetchReports(jobs, range, !!force);
+    if (btn) btn.disabled = false;
+    if (seq !== hjSeq) return;
+
+    const empty = () => ({ spend:0, conv:0 });
+    const add = (acc, t, p) => { acc.spend += t.spend || 0; acc.conv += p === 'meta' ? (t.results || 0) : (t.conversions || 0); };
+    const withCpa = t => ({ ...t, cpa: t.conv > 0 ? t.spend / t.conv : 0 });
+    const per = {};
+    let anyMock = false;
+    results.forEach(r => {
+      const c = per[r.a.id] || (per[r.a.id] = { cur: empty(), prev: empty(), pf: [], errors: [] });
+      if (r.error) { c.errors.push(`${r.p === 'meta' ? 'Meta' : 'Google'}: ${r.error}`); return; }
+      if (r.data.mock) anyMock = true;
+      const cur = empty(), prev = empty();
+      add(cur, r.data.totals || {}, r.p); add(prev, r.data.previousTotals || {}, r.p);
+      add(c.cur, r.data.totals || {}, r.p); add(c.prev, r.data.previousTotals || {}, r.p);
+      c.pf.push({ p: r.p, cur: withCpa(cur), prev: withCpa(prev), label: r.p === 'meta' ? (r.data.resultLabel || 'Resultados') : 'Conversões' });
+    });
+
+    Object.values(per).forEach(c => c.pf.sort((x, y) => (x.p === 'meta' ? 0 : 1) - (y.p === 'meta' ? 0 : 1)));
+    const rows = accounts.map(a => {
+      const c = per[a.id];
+      const pfs = ovPlatformsOf(a);
+      if (!pfs.length) return { a, kind: 'none', score: -5000, cls: { tag: '', label: 'Sem anúncios conectados' } };
+      if (!c || !c.pf.length) return { a, kind: 'error', score: 800, errors: c ? c.errors : [], cls: { tag: 'bad', label: 'Não carregou' } };
+      const cur = withCpa(c.cur), prev = withCpa(c.prev);
+      const cls = hjClassify(cur, prev);
+      return { a, kind: 'ok', cur, prev, pf: c.pf, errors: c.errors, cls, score: cls.score };
+    }).sort((x, y) => (y.score - x.score) || x.a.name.localeCompare(y.a.name, 'pt-BR'));
+    hjLast = { range, prevRange, rows, anyMock };
+
+    sub.textContent = `${dateBr(range.from)} a ${dateBr(range.to)} vs ${dateBr(prevRange.from)} a ${dateBr(prevRange.to)} · ${accounts.length} cliente${accounts.length === 1 ? '' : 's'} ativo${accounts.length === 1 ? '' : 's'}${anyMock ? ' · dados de exemplo' : ''}`;
+    renderToday();
+  }
+
+  function renderToday(){
+    const list = document.getElementById('hjList');
+    if (!list || !hjLast) return;
+    const { rows } = hjLast;
+    const n = k => rows.filter(r => r.cls.tag === k).length;
+    const worse = rows.filter(r => r.cls.tag === 'bad' || r.cls.tag === 'stop').length;
+    const recs = (typeof ALERTS !== 'undefined' && ALERTS) ? ALERTS.clients : [];
+    const openOf = id => { const rec = recs.find(c => c.clientId === id); return rec ? openAlerts(rec) : []; };
+    const totalAlerts = rows.reduce((s, r) => s + openOf(r.a.id).length, 0);
+    document.getElementById('hjSummary').innerHTML =
+      `<span class="hj-chip${worse ? ' bad' : ''}"><b>${worse}</b> ${worse === 1 ? 'piorou' : 'pioraram'}</span>` +
+      `<span class="hj-chip"><b>${rows.filter(r => r.kind === 'ok' && !r.cls.tag).length}</b> estáve${rows.filter(r => r.kind === 'ok' && !r.cls.tag).length === 1 ? 'l' : 'is'}</span>` +
+      `<span class="hj-chip${n('good') ? ' good' : ''}"><b>${n('good')}</b> ${n('good') === 1 ? 'melhorou' : 'melhoraram'}</span>` +
+      (totalAlerts ? `<span class="hj-chip bad" style="cursor:pointer;" onclick="openAlertsView()"><b>${totalAlerts}</b> ${totalAlerts === 1 ? 'alerta aberto' : 'alertas abertos'} ›</span>` : '');
+
+    if (!rows.length) { list.innerHTML = '<div class="footnote" style="border:none; padding:8px 0;">Nenhum cliente ativo cadastrado.</div>'; return; }
+    const pfBadge = p => p === 'meta' ? '<span class="ov-pf-badge m">Meta</span>' : '<span class="ov-pf-badge g">Google</span>';
+    const head = `<div class="hj-row hj-head"><div>Cliente</div><div>Investimento</div><div>Resultados</div><div>Custo/resultado</div><div>Situação</div></div>`;
+    list.innerHTML = head + rows.map(r => {
+      const al = openOf(r.a.id);
+      const crit = al.some(x => x.severity === 'critical');
+      const alTag = al.length ? `<span class="hj-al${crit ? ' crit' : ''}" title="${escapeHtml(al.map(x => x.title).join(' · '))}">⚠ ${al.length} alerta${al.length === 1 ? '' : 's'}</span>` : '';
+      const tag = `<span class="hj-tag ${r.cls.tag}">${escapeHtml(r.cls.label)}</span>`;
+      const pfs = r.kind === 'ok' ? r.pf.map(x => pfBadge(x.p)).join('') : ovPlatformsOf(r.a).map(pfBadge).join('');
+      const nameCell = `<div class="hj-c-name"><div><div class="hj-name">${escapeHtml(r.a.name)} ${alTag}</div><div class="hj-pfs">${pfs}</div></div>${tag}</div>`;
+      if (r.kind !== 'ok') {
+        const msg = r.kind === 'none' ? 'Conecte a Meta ou o Google na aba Integrações do cliente.' : `Não consegui buscar os dados agora${r.errors.length ? ` (${escapeHtml(r.errors.join('; '))})` : ''}.`;
+        return `<div class="hj-row" onclick="openClientDetail('${r.a.id}')">${nameCell}<div class="hj-sub" style="grid-column: 2 / 5; margin:0;">${msg}</div><div class="hj-c-tag">${tag}</div></div>`;
+      }
+      const cell = (lbl, val, delta) => `<div><div class="hj-lbl">${lbl}</div><div class="hj-val">${val}${delta}</div></div>`;
+      const subLines = r.pf.length > 1 || r.errors.length
+        ? `<div class="hj-sub">${r.pf.map(x => `<span>${x.p === 'meta' ? 'Meta' : 'Google'}: ${brl2(x.cur.spend)} · ${convFmt(x.cur.conv)} ${escapeHtml(x.label.toLowerCase())} · ${x.cur.conv ? brl2(x.cur.cpa) + ' cada' : 'sem resultado'}</span>`).join('')}${r.errors.map(e => `<span>⚠ ${escapeHtml(e)}</span>`).join('')}</div>`
+        : '';
+      return `<div class="hj-row" onclick="openClientDetail('${r.a.id}')">${nameCell}` +
+        cell('Investimento', brl2(r.cur.spend), hjDeltaHtml(r.cur.spend, r.prev.spend)) +
+        cell('Resultados', convFmt(r.cur.conv), hjDeltaHtml(r.cur.conv, r.prev.conv)) +
+        cell('Custo/result.', r.cur.conv ? brl2(r.cur.cpa) : '—', r.cur.conv ? hjDeltaHtml(r.cur.cpa, r.prev.cpa, true) : '') +
+        `<div class="hj-c-tag">${tag}</div>${subLines}</div>`;
+    }).join('');
   }
 
   // Barras empilhadas: investimento diário Meta (azul) + Google (âmbar).
@@ -9006,6 +9227,7 @@
     const base = document.title.replace(/^\(\d+\)\s*/, '');
     document.title = crit ? `(${crit}) ${base}` : base;
     renderOverviewAlertBanner(all, crit);
+    if (typeof renderToday === 'function') renderToday();
     renderClientAlertBanner();
     renderAlertsView();
     if (document.getElementById('wsMenu')?.classList.contains('open')) renderWsMenu(document.getElementById('wsSearch')?.value || '');
