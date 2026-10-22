@@ -3281,10 +3281,6 @@
           <span class="cd-model-status" id="cdModelStatus"></span>
         </div>
       </div>
-      <div class="panel cd-model-panel">
-        <div class="panel-head"><div><h3>🎯 Metas do cliente</h3><div class="panel-head-sub">Metas mensais por plataforma. Deixe em branco o que não quiser acompanhar — o painel calcula proporcional ao período escolhido.</div></div></div>
-        <div id="cdGoalsEditor"></div>
-      </div>
       <div class="conn-table-wrap">
         <table class="conn-table">
           <thead><tr><th>Conta</th><th>Status</th><th>Identificador</th><th></th></tr></thead>
@@ -6993,7 +6989,6 @@
 
     document.getElementById('cdModelSelect').value = account.dashboardModel || 'auto';
     document.getElementById('cdModelStatus').textContent = '';
-    renderGoalsEditor();
     cdPlatformView = 'all';
     cdCurrentRange = navRangeOf(navStoredPeriod());
     igTypeFilter = 'all'; igPostSort = 'recent';
@@ -8867,49 +8862,6 @@
 
 
   /* ===================== Metas do cliente ===================== */
-  const GOAL_FIELDS = [
-    { key:'monthlyBudget', label:'Investimento do mês (R$)', ph:'Ex: 3000' },
-    { key:'costPerResultTarget', label:'Custo por resultado máximo (R$)', ph:'Ex: 12,00' },
-    { key:'resultsTarget', label:'Resultados no mês', ph:'Ex: 250' },
-    { key:'roasTarget', label:'ROAS mínimo (e-commerce)', ph:'Ex: 4' },
-  ];
-  function renderGoalsEditor(){
-    const el = document.getElementById('cdGoalsEditor');
-    if (!el) return;
-    const g = (rawAccountsById[currentClientId] || {}).goals || {};
-    const col = (p, title, color) => `<div class="goal-ed-col">
-      <div class="goal-ed-t"><i style="background:${color}"></i>${title}</div>
-      ${GOAL_FIELDS.map(f => `<label class="goal-ed-f"><span>${f.label}</span>
-        <input class="modal-input" inputmode="decimal" data-goal="${p}.${f.key}" placeholder="${f.ph}" value="${(g[p] || {})[f.key] != null ? String(g[p][f.key]).replace('.', ',') : ''}"></label>`).join('')}
-    </div>`;
-    el.innerHTML = `<div class="goal-ed-grid">${col('meta', 'Meta Ads', '#0866FF')}${col('google', 'Google Ads', '#34A853')}</div>
-      <div class="cd-model-row" style="margin-top:12px;"><button type="button" class="btn-add" onclick="saveGoals()">Salvar metas</button><span class="cd-model-status" id="cdGoalsStatus"></span></div>`;
-  }
-  async function saveGoals(){
-    const status = document.getElementById('cdGoalsStatus');
-    const goals = { meta:{}, google:{} };
-    document.querySelectorAll('#cdGoalsEditor [data-goal]').forEach(inp => {
-      const [p, k] = inp.dataset.goal.split('.');
-      const v = inp.value.trim().replace(/\./g, '').replace(',', '.');
-      if (v) goals[p][k] = Number(v);
-    });
-    status.textContent = 'Salvando…';
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
-        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ goals }),
-      });
-      if (res.status === 401) { logout(); return; }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
-      rawAccountsById[currentClientId] = data;
-      status.textContent = '✓ Metas salvas — já aparecem na aba Anúncios, no PDF e no relatório automático.';
-      renderGoalsEditor();
-      document.getElementById('cdGoalsStatus').textContent = '✓ Metas salvas — já aparecem na aba Anúncios, no PDF e no relatório automático.';
-      if (cdLastMeta) renderClientMeta(cdLastMeta);
-      if (cdLastGoogle) renderClientDashboard(cdLastGoogle);
-    } catch (err) { status.textContent = `⚠ ${err.message}`; }
-  }
-
   // Mesma regra do servidor (lib/goals.js): metas mensais, proporcionais ao período.
   function goalsEval(goal, actual, range){
     if (!goal || !actual || !range) return null;
@@ -8948,10 +8900,7 @@
   function goalsPanelHtml(platform, actual, range, resultName){
     const account = rawAccountsById[currentClientId] || {};
     const ev = goalsEval((account.goals || {})[platform], actual, range);
-    if (!ev) {
-      if (CLIENT_MODE || PUBLIC_TOKEN) return '';
-      return `<div class="goals-hint" data-vis="ads_goals">🎯 Defina metas de investimento e custo por resultado para acompanhar aqui. <a onclick="setClientDetailTab('integrations'); setTimeout(()=>document.getElementById('cdGoalsEditor')?.scrollIntoView({behavior:'smooth'}),60)">Definir metas</a></div>`;
-    }
+    if (!ev) return '';
     const cards = ev.items.map(g => {
       const t = goalItemText(g, resultName);
       return `<div class="goal-card ${g.status}"><div class="goal-l">${t.label}</div><div class="goal-v">${t.value} <span>${t.target}</span></div>
