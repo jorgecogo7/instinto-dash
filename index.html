@@ -1485,6 +1485,35 @@
     .mg-toolbar .mg-period{ flex:1; min-width:140px; max-width:none; }
   }
 
+  /* ===================== Google Tag Manager (Integrações, só agência) ===================== */
+  body.public-mode #gtmCard, body.client-mode #gtmCard, body.client-mode #gtmModal{ display:none !important; }
+  .gtm-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .gtm-row .modal-input{ flex:1 1 200px; min-width:0; text-transform:uppercase; }
+  .gtm-linked{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg-panel-2); margin-bottom:12px; }
+  .gtm-id{ font-family:ui-monospace, Menlo, monospace; font-weight:700; font-size:13.5px; }
+  .gtm-actions{ display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
+  .gtm-actions .btn-add, .gtm-actions .btn-cancel{ font-size:12.5px; padding:8px 13px; }
+  .gtm-check{ display:flex; flex-direction:column; gap:6px; margin:8px 0 12px; }
+  .gtm-item{ display:grid; grid-template-columns:26px 1fr; gap:8px; padding:9px 11px; border:1px solid var(--line); border-radius:10px; font-size:12.5px; line-height:1.5; }
+  .gtm-item b{ font-weight:700; font-size:13px; }
+  .gtm-item.ok{ border-color:rgba(53,196,138,.45); }
+  .gtm-item.warn{ border-color:rgba(255,176,32,.5); }
+  .gtm-item.missing{ border-color:rgba(232,81,79,.45); }
+  .gtm-ico{ font-size:15px; line-height:1.3; }
+  .gtm-dim{ color:var(--text-dim); font-size:12px; }
+  .gtm-sec{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); margin:14px 0 6px; }
+  .gtm-list{ font-size:12px; color:var(--text-dim); display:flex; flex-direction:column; gap:4px; }
+  .gtm-list b{ color:var(--text); font-weight:600; }
+  .gtm-kinds{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px; }
+  .gtm-kind{ font-family:inherit; text-align:left; font-size:12.5px; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
+  .gtm-kind.sel{ border-color:var(--flame); background:rgba(255,90,30,.08); font-weight:700; }
+  .gtm-changes{ margin:8px 0 0 18px; padding:0; font-size:12.5px; line-height:1.6; }
+  details.gtm-more summary{ cursor:pointer; font-size:12.5px; color:var(--text-dim); margin-top:6px; }
+  @media (max-width: 760px){
+    .gtm-kinds{ grid-template-columns:1fr; }
+    .gtm-actions .btn-add, .gtm-actions .btn-cancel{ flex:1 1 calc(50% - 8px); }
+  }
+
   /* ===================== Relatório PDF ===================== */
   .btn-report{ display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:8px; border:none; cursor:pointer;
     background:linear-gradient(90deg, var(--flame), var(--amber)); color:#1a0e05; white-space:nowrap; }
@@ -3305,6 +3334,30 @@
           <button class="btn-cancel" id="metaSyncNowBtn" onclick="syncMetaNow()">Sincronizar agora</button>
         </div>
         <div class="footnote" style="margin-top:4px;">"Salvar" confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder — e você continua nesta tela. "Sincronizar agora" consulta a Meta na hora; se der erro, o motivo aparece aqui. Se o token da Meta ainda não estiver configurado no servidor, os IDs ficam salvos como "pendente".</div>
+      </div>
+
+      <div class="integration-card cnav-admin" id="gtmCard">
+        <div class="integration-head">
+          <div>
+            <div class="integration-title">Google Tag Manager</div>
+            <div class="integration-sub">Confere e cria tags no GTM do cliente. Nada vai ao ar sem você clicar em Publicar.</div>
+          </div>
+          <span class="integration-status" id="gtmStatusBadge"></span>
+        </div>
+        <div id="gtmBody"></div>
+      </div>
+
+      <div class="rp-modal" id="gtmModal" onclick="if (event.target === this) gtmCloseModal()">
+        <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="gtmModalTitle">
+          <h3 id="gtmModalTitle"></h3>
+          <div class="rp-modal-sub" id="gtmModalBody"></div>
+          <div id="gtmModalExtra"></div>
+          <div class="rp-modal-actions">
+            <span class="rp-status" id="gtmModalStatus"></span>
+            <button type="button" class="btn-cancel" id="gtmModalCancel" onclick="gtmCloseModal()">Cancelar</button>
+            <button type="button" class="btn-add" id="gtmModalOk" onclick="gtmModalConfirm()">Confirmar</button>
+          </div>
+        </div>
       </div>
 
       <div class="integration-card">
@@ -7743,6 +7796,278 @@
     if (el) { el.src = CP.imgUrl; el.style.display = 'block'; }
   }
 
+  /* ===================== Google Tag Manager (Integrações, só agência) =====================
+     Conectar pelo GTM-XXXXXXX, conferir, criar tags no rascunho "Instinto Digital" e publicar
+     só com confirmação. O cliente nunca vê este cartão (a API também responde 403). */
+  const GT = { clientId:null, status:null, linked:null, audit:null, auditErr:null, view:'live', log:null, msg:null, busy:false, modal:null, form:null };
+  async function gtApi(path, opts = {}){
+    const res = await fetch(`${API_BASE_URL}/api/gtm${path}`, { ...opts, headers:{ ...authHeaders(), ...(opts.body ? { 'Content-Type':'application/json' } : {}) } });
+    if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) { const e = new Error(json.error || `Erro ${res.status}`); e.status = res.status; e.body = json; throw e; }
+    return json;
+  }
+  const gtC = (p) => `/${encodeURIComponent(GT.clientId)}${p || ''}`;
+
+  async function loadGtm(){
+    if (!cpCanUse() || !document.getElementById('gtmBody')) return;
+    if (GT.clientId !== currentClientId) Object.assign(GT, { clientId:currentClientId, linked:null, audit:null, auditErr:null, view:'live', log:null, msg:null, loaded:false });
+    const id = GT.clientId;
+    renderGtm();
+    try {
+      const [status, info] = await Promise.all([GT.status ? Promise.resolve(GT.status) : gtApi('/status'), gtApi(gtC(''))]);
+      if (id !== GT.clientId) return;
+      GT.status = status; GT.linked = info.linked; GT.loaded = true; GT.loadErr = null;
+    } catch (err) { if (id === GT.clientId) { GT.loadErr = err.message; GT.loaded = true; } }
+    renderGtm();
+  }
+
+  function gtmBanner(){
+    const s = GT.status;
+    if (!s) return '';
+    const auth = `<button type="button" class="btn-cancel" onclick="gtmAuthorize()">Autorizar Tag Manager</button>`;
+    if (s.mode === 'mock') return `<div class="cp-banner mock"><b>Modo de teste.</b> Contêineres simulados (ex.: GTM-TESTE01). Nada é enviado ao Google.<div class="gtm-row" style="margin-top:8px;">${auth}</div></div>`;
+    if (!s.ready) return `<div class="cp-banner off"><b>Acesso do sistema ao Tag Manager ainda não configurado.</b> Falta: ${escapeHtml(s.missing.join(', '))}. Clique em Autorizar Tag Manager, entre com a conta Google da agência e cole o token no hPanel.<div class="gtm-row" style="margin-top:8px;">${auth}</div></div>`;
+    const sc = s.scopes;
+    const scTxt = !sc ? '' : sc.ok ? ' Permissões do Tag Manager conferidas.' : sc.error ? ` ${escapeHtml(sc.error)}` : sc.ok === false ? ` Faltam permissões: ${escapeHtml(sc.missingScopes.join(', '))}. Autorize de novo.` : '';
+    return `<div class="cp-banner ${sc && sc.ok === false ? 'off' : 'on'}">Acesso configurado (${escapeHtml(s.tokenSource || '')}).${scTxt}<div class="gtm-row" style="margin-top:8px;"><button type="button" class="btn-cancel" onclick="gtmCheckScopes()">Conferir permissões</button>${auth}</div></div>`;
+  }
+
+  function gtmHelp(){
+    const who = GT.status && GT.status.agencyEmail ? `<b>${escapeHtml(GT.status.agencyEmail)}</b>` : 'o e-mail Google da agência';
+    return `<div class="fm-help">Onde achar: no topo do Tag Manager do cliente aparece o código GTM-XXXXXXX. Antes, peça ao cliente para adicionar ${who} como usuário do contêiner (Tag Manager &gt; Administrador &gt; Gerenciamento de usuários). Para conferir basta <b>Ler</b>, para criar tags <b>Editar</b> e para publicar pelo sistema <b>Publicar</b>.</div>`;
+  }
+
+  function renderGtm(){
+    const body = document.getElementById('gtmBody'); if (!body) return;
+    const badge = document.getElementById('gtmStatusBadge');
+    badge.textContent = GT.linked ? 'Conectado' : 'Não conectado';
+    badge.className = 'integration-status ' + (GT.linked ? 'status-ativo' : 'status-pausado');
+    if (!GT.loaded) { body.innerHTML = '<div class="gtm-dim">Carregando...</div>'; return; }
+    if (GT.loadErr) { body.innerHTML = `<div class="cp-problems cp-err">${escapeHtml(GT.loadErr)}</div><button type="button" class="btn-cancel" onclick="loadGtm()">Tentar de novo</button>`; return; }
+    const msg = GT.msg ? `<div class="cp-problems ${GT.msg.ok ? 'cp-ok' : 'cp-err'}">${escapeHtml(GT.msg.text)}</div>` : '';
+    let html = gtmBanner();
+    if (!GT.linked) {
+      html += `<label class="modal-label" for="gtmIdInput" style="margin-top:0;">Código do contêiner (GTM-XXXXXXX)</label>
+        <div class="gtm-row"><input class="modal-input" id="gtmIdInput" placeholder="GTM-XXXXXXX" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') gtmConnect()">
+        <button type="button" class="btn-add" id="gtmConnectBtn" onclick="gtmConnect()" ${GT.busy ? 'disabled' : ''}>${GT.busy ? 'Procurando...' : 'Conectar'}</button></div>
+        ${gtmHelp()}${msg}`;
+      body.innerHTML = html; return;
+    }
+    const L = GT.linked;
+    html += `<div class="gtm-linked"><span class="gtm-id">${escapeHtml(L.publicId)}</span><span class="gtm-dim">${escapeHtml(L.containerName || '')}${L.gtmAccountName ? ' · conta ' + escapeHtml(L.gtmAccountName) : ''} · conectado em ${escapeHtml(cpWhen(L.linkedAt))}</span></div>
+      <div class="gtm-actions">
+        <button type="button" class="btn-add" id="gtmAuditBtn" onclick="gtmLoadAudit()" ${GT.busy ? 'disabled' : ''}>${GT.busy === 'audit' ? 'Conferindo...' : 'Conferir'}</button>
+        <button type="button" class="btn-cancel" id="gtmCreateBtn" onclick="gtmOpenCreate()">Criar tag</button>
+        <button type="button" class="btn-cancel" id="gtmPublishBtn" onclick="gtmOpenPublish()">Publicar</button>
+        <button type="button" class="btn-cancel" onclick="gtmToggleLog()">Histórico</button>
+        <button type="button" class="btn-danger-soft" onclick="gtmOpenDisconnect()">Desvincular</button>
+      </div>${msg}`;
+    if (GT.auditErr) html += `<div class="cp-problems cp-err">${escapeHtml(GT.auditErr)}</div>`;
+    if (GT.audit) html += gtmAuditHtml(GT.audit);
+    if (GT.log) html += gtmLogHtml(GT.log);
+    body.innerHTML = html;
+  }
+
+  function gtmAuditHtml(a){
+    const live = a.live
+      ? `Versão no ar: <b>${escapeHtml(a.live.versionId)}</b>${a.live.name ? ' (' + escapeHtml(a.live.name) + ')' : ''}${a.live.date ? ', data da versão ' + escapeHtml(cpWhen(a.live.date)) : ''}. ${a.live.tags} tag(s), ${a.live.triggers} acionador(es), ${a.live.variables} variável(is).`
+      : 'Este contêiner ainda não tem nenhuma versão publicada.';
+    const n = a.workspace ? a.workspace.changes.length : 0;
+    const ws = a.workspace
+      ? (n ? `Rascunho "${escapeHtml(a.workspace.name)}": <b>${n} alteração(ões) esperando publicação</b>.` : `Rascunho "${escapeHtml(a.workspace.name)}" sem alterações pendentes.`) + (a.workspace.conflicts ? ' <b>Há conflito com a versão publicada: resolva no Tag Manager.</b>' : '')
+      : 'Nenhuma alteração do sistema esperando publicação.';
+    const other = a.otherWorkspaces && a.otherWorkspaces.length ? `<div class="gtm-dim">Outros espaços de trabalho no contêiner: ${a.otherWorkspaces.map(escapeHtml).join(', ')}.</div>` : '';
+    const useDraft = GT.view === 'draft' && a.auditDraft;
+    const au = useDraft ? a.auditDraft : a.auditLive;
+    const toggle = a.auditDraft ? `<div class="g-tabs" style="margin:10px 0 0;"><button type="button" class="g-tab ${!useDraft ? 'active' : ''}" onclick="GT.view='live';renderGtm()">No ar</button><button type="button" class="g-tab ${useDraft ? 'active' : ''}" onclick="GT.view='draft';renderGtm()">Rascunho (com o que falta publicar)</button></div>` : '';
+    const ico = { ok:'✅', warn:'⚠️', missing:'❌', info:'ℹ️' };
+    const items = au.items.map((i) => `<div class="gtm-item ${i.status}"><span class="gtm-ico">${ico[i.status] || '•'}</span><div><b>${escapeHtml(i.label)}</b><div class="gtm-dim">${escapeHtml(i.detail || '')}</div></div></div>`).join('');
+    const notes = au.notes.length ? `<div class="cp-problems"><b>Vale olhar:</b><ul>${au.notes.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : '';
+    const tags = au.tags.length ? au.tags.map((t) => `<div><b>${escapeHtml(t.name)}</b> · ${escapeHtml(t.typeLabel)}${t.paused ? ' · pausada' : ''}${t.triggers && t.triggers.length ? ' · dispara em: ' + t.triggers.map(escapeHtml).join(', ') : ' · sem acionador'}</div>`).join('') : '<div>Nenhuma tag.</div>';
+    const trig = au.triggers.length ? au.triggers.map((t) => `<div><b>${escapeHtml(t.name)}</b> · ${escapeHtml(t.typeLabel)}</div>`).join('') : '<div>Nenhum acionador personalizado.</div>';
+    const vars = au.variables.length ? au.variables.map((v) => `<div><b>${escapeHtml(v.name)}</b>${v.typeLabel || v.type ? ' · ' + escapeHtml(v.typeLabel || v.type) : ''}</div>`).join('') : '<div>Nenhuma variável personalizada.</div>';
+    return `<div class="gtm-sec">Conferência</div><div class="gtm-list"><div>${live}</div><div>${ws}</div>${other}</div>${toggle}
+      <div class="gtm-check">${items}</div>${notes}
+      <details class="gtm-more"><summary>Ver tags (${au.tags.length}), acionadores (${au.triggers.length}) e variáveis (${au.variables.length})</summary>
+        <div class="gtm-sec">Tags</div><div class="gtm-list">${tags}</div>
+        <div class="gtm-sec">Acionadores</div><div class="gtm-list">${trig}</div>
+        <div class="gtm-sec">Variáveis</div><div class="gtm-list">${vars}</div></details>`;
+  }
+
+  function gtmLogHtml(entries){
+    const label = { connect:'Conectou', disconnect:'Desvinculou', create_workspace:'Criou espaço de trabalho', create_tag:'Criou tag', create_trigger:'Criou acionador', create_version:'Criou versão', publish:'Publicou' };
+    const rows = entries.length ? entries.map((e) => `<div>${escapeHtml(cpWhen(e.at))} · <b>${escapeHtml(e.by || '')}</b> · ${escapeHtml(label[e.action] || e.action)}${e.result && e.result !== 'ok' ? ' (' + escapeHtml(e.result) + ')' : ''}${e.mock ? ' (teste)' : ''}: ${escapeHtml(e.detail || '')}</div>`).join('') : '<div>Nada registrado ainda.</div>';
+    return `<div class="gtm-sec">Histórico</div><div class="gtm-list">${rows}</div>`;
+  }
+
+  async function gtmConnect(){
+    const input = document.getElementById('gtmIdInput');
+    const publicId = (input.value || '').trim().toUpperCase();
+    if (!/^GTM-[A-Z0-9]{4,12}$/.test(publicId)) { GT.msg = { ok:false, text:'Digite o código no formato GTM-XXXXXXX.' }; renderGtm(); document.getElementById('gtmIdInput').value = publicId; return; }
+    GT.busy = true; GT.msg = null; renderGtm(); document.getElementById('gtmIdInput').value = publicId;
+    const id = GT.clientId;
+    try {
+      const r = await gtApi(gtC('/connect'), { method:'POST', body: JSON.stringify({ publicId }) });
+      if (id !== GT.clientId) return;
+      GT.linked = r.linked; GT.audit = null; GT.log = null;
+      GT.msg = { ok: !r.warning, text: r.warning || `Contêiner ${r.linked.publicId} conectado. Clique em Conferir para ver as tags.` };
+    } catch (err) { if (id === GT.clientId) GT.msg = { ok:false, text: err.message }; }
+    GT.busy = false; renderGtm();
+    if (!GT.linked) { const el = document.getElementById('gtmIdInput'); if (el) el.value = publicId; }
+  }
+
+  async function gtmLoadAudit(){
+    const id = GT.clientId;
+    GT.busy = 'audit'; GT.auditErr = null; GT.msg = null; renderGtm();
+    try { const a = await gtApi(gtC('/audit')); if (id !== GT.clientId) return; GT.audit = a; if (!a.auditDraft) GT.view = 'live'; }
+    catch (err) { if (id === GT.clientId) GT.auditErr = err.message; }
+    GT.busy = false; renderGtm();
+  }
+
+  async function gtmToggleLog(){
+    if (GT.log) { GT.log = null; renderGtm(); return; }
+    try { GT.log = (await gtApi(gtC('/log'))).entries; } catch (err) { GT.msg = { ok:false, text: err.message }; }
+    renderGtm();
+  }
+
+  async function gtmCheckScopes(){
+    try { GT.status = await gtApi('/status?check=1'); } catch (err) { GT.msg = { ok:false, text: err.message }; }
+    renderGtm();
+  }
+
+  /* ---- modal ---- */
+  function gtmShowModal(m){
+    GT.modal = m;
+    document.getElementById('gtmModalTitle').textContent = m.title;
+    document.getElementById('gtmModalBody').innerHTML = m.body || '';
+    document.getElementById('gtmModalExtra').innerHTML = m.extra || '';
+    document.getElementById('gtmModalStatus').textContent = '';
+    const ok = document.getElementById('gtmModalOk');
+    ok.style.display = m.onOk ? '' : 'none'; ok.disabled = false; ok.textContent = m.okText || 'Confirmar';
+    document.getElementById('gtmModalCancel').textContent = m.onOk ? 'Cancelar' : 'Fechar';
+    document.getElementById('gtmModal').classList.add('open');
+  }
+  function gtmCloseModal(){ document.getElementById('gtmModal').classList.remove('open'); GT.modal = null; }
+  async function gtmModalConfirm(){
+    const m = GT.modal; if (!m || !m.onOk) return;
+    const ok = document.getElementById('gtmModalOk'), st = document.getElementById('gtmModalStatus');
+    ok.disabled = true; st.textContent = m.busyText || 'Enviando...';
+    try { await m.onOk(); }
+    catch (err) { st.textContent = ''; ok.disabled = false; gtmModalError(err.message); }
+  }
+  function gtmModalError(text){
+    let box = document.getElementById('gtmModalErr');
+    if (!box) { box = document.createElement('div'); box.id = 'gtmModalErr'; box.className = 'cp-problems cp-err'; document.getElementById('gtmModalExtra').appendChild(box); }
+    box.textContent = text;
+  }
+
+  async function gtmAuthorize(){
+    gtmShowModal({ title:'Autorizar Tag Manager', body:'Gerando o link seguro...' });
+    try {
+      const r = await gtApi('/oauth/start', { method:'POST' });
+      if (!GT.modal) return;
+      document.getElementById('gtmModalBody').innerHTML = `${r.mock ? '<b>Modo de teste:</b> abre uma página de simulação, sem ir ao Google.<br><br>' : ''}Você vai para o Google em outra aba. Entre com a <b>conta Google da agência</b> (a que foi adicionada nos contêineres dos clientes) e aceite as permissões do Tag Manager.<br><br>No final aparece um token <b>uma única vez</b>. Copie e cole no hPanel na variável <b>GOOGLE_GTM_REFRESH_TOKEN</b>, depois reinicie o app. O token não fica salvo no sistema. O link vale 10 minutos.`;
+      document.getElementById('gtmModalExtra').innerHTML = `<a class="btn-add" id="gtmAuthLink" href="${escapeAttr(r.url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin-top:12px;" onclick="setTimeout(gtmCloseModal, 300)">Continuar no Google</a>`;
+    } catch (err) { gtmModalError(err.message); }
+  }
+
+  function gtmOpenDisconnect(){
+    gtmShowModal({ title:'Desvincular Tag Manager', body:`Desvincula o <b>${escapeHtml(GT.linked.publicId)}</b> deste cliente só aqui no sistema. Nada é apagado nem alterado no Tag Manager.`, okText:'Desvincular',
+      onOk: async () => { await gtApi(gtC('/disconnect'), { method:'POST' }); GT.linked = null; GT.audit = null; GT.log = null; GT.msg = { ok:true, text:'Desvinculado. O contêiner continua igual no Tag Manager.' }; gtmCloseModal(); renderGtm(); } });
+  }
+
+  /* ---- criar tag ---- */
+  const GTM_KINDS = [
+    ['meta_pixel', 'Pixel da Meta (base)'], ['ga4', 'GA4 (Google tag)'],
+    ['ads_conversion', 'Conversão do Google Ads'], ['conversion_linker', 'Vinculador de conversões'],
+  ];
+  async function gtmOpenCreate(){
+    if (!GT.audit) { await gtmLoadAudit(); if (!GT.audit) return; }
+    GT.form = GT.form && GT.form.clientId === GT.clientId ? GT.form : { clientId:GT.clientId, kind:'meta_pixel', trigMode:'new', trigType:'pageview_contains' };
+    gtmShowModal({ title:'Criar tag', body:'A tag é criada no rascunho <b>"Instinto Digital"</b> do Tag Manager. Ela só vai ao ar quando você clicar em Publicar.', okText:'Criar no rascunho', busyText:'Criando...', onOk: gtmSubmitCreate });
+    gtmRenderForm();
+  }
+  function gtmField(id, label, ph, help, val){ return `<label class="modal-label" for="${id}">${label}</label><input class="modal-input" id="${id}" placeholder="${escapeAttr(ph)}" value="${escapeAttr(val || '')}" autocomplete="off" spellcheck="false">${help ? `<div class="fm-help">${help}</div>` : ''}`; }
+  function gtmReadForm(){
+    const f = GT.form, v = (id) => { const el = document.getElementById(id); return el ? el.value : undefined; };
+    ['pixelId','measurementId','conversionId','conversionLabel','convName','convValue','trigValue','trigExisting'].forEach((k) => { const x = v('gtmF_' + k); if (x !== undefined) f[k] = x; });
+  }
+  function gtmSetKind(k){ gtmReadForm(); GT.form.kind = k; gtmRenderForm(); }
+  function gtmSetTrig(mode, type){ gtmReadForm(); if (mode) GT.form.trigMode = mode; if (type) GT.form.trigType = type; gtmRenderForm(); }
+  function gtmRenderForm(){
+    const f = GT.form;
+    let h = `<div class="gtm-kinds">${GTM_KINDS.map(([k, l]) => `<button type="button" class="gtm-kind ${f.kind === k ? 'sel' : ''}" onclick="gtmSetKind('${k}')">${l}</button>`).join('')}</div>`;
+    if (f.kind === 'meta_pixel') h += gtmField('gtmF_pixelId', 'ID do pixel', '1234567890123456', 'Gerenciador de Eventos da Meta &gt; Fontes de dados &gt; o número do pixel. Cria o código base com PageView em todas as páginas.', f.pixelId);
+    if (f.kind === 'ga4') h += gtmField('gtmF_measurementId', 'ID de medição do GA4', 'G-XXXXXXXXXX', 'GA4 &gt; Administrador &gt; Fluxos de dados &gt; o fluxo do site. Dispara em todas as páginas.', f.measurementId);
+    if (f.kind === 'conversion_linker') h += '<div class="fm-help" style="margin-top:12px;">Guarda o clique do anúncio (gclid) para o Google Ads atribuir as conversões. Dispara em todas as páginas. Use sempre que houver conversão do Google Ads.</div>';
+    if (f.kind === 'ads_conversion') {
+      h += gtmField('gtmF_conversionId', 'ID de conversão', 'AW-123456789', 'Google Ads &gt; Metas &gt; Conversões &gt; a ação &gt; Configuração da tag &gt; Usar o Gerenciador de tags.', f.conversionId);
+      h += gtmField('gtmF_conversionLabel', 'Rótulo de conversão', 'AbCdEfGh123', '', f.conversionLabel);
+      h += gtmField('gtmF_convName', 'Nome (opcional)', 'Lead formulário', '', f.convName);
+      h += gtmField('gtmF_convValue', 'Valor fixo em R$ (opcional)', '0', '', f.convValue);
+      const trig = (GT.audit && GT.audit.triggers) || [];
+      h += `<label class="modal-label">Quando a conversão acontece</label><div class="g-tabs" style="margin-bottom:8px;"><button type="button" class="g-tab ${f.trigMode === 'new' ? 'active' : ''}" onclick="gtmSetTrig('new')">Criar acionador</button><button type="button" class="g-tab ${f.trigMode === 'existing' ? 'active' : ''}" onclick="gtmSetTrig('existing')">Usar um que já existe</button></div>`;
+      if (f.trigMode === 'existing') {
+        h += `<select class="modal-input" id="gtmF_trigExisting">${trig.map((t) => `<option value="${escapeAttr(t.id)}" ${String(f.trigExisting) === String(t.id) ? 'selected' : ''}>${escapeHtml(t.name)} (${escapeHtml(t.typeLabel)})</option>`).join('')}</select>`;
+      } else {
+        const types = [['pageview_contains', 'Página de obrigado'], ['form_submit', 'Envio de formulário'], ['link_click_contains', 'Clique em link']];
+        h += `<select class="modal-input" id="gtmF_trigType" onchange="gtmSetTrig(null, this.value)">${types.map(([k, l]) => `<option value="${k}" ${f.trigType === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+        const help = { pageview_contains:['Trecho da URL da página', 'obrigado', 'Dispara quando a URL da página contém esse trecho.'], form_submit:['Só nas páginas com (opcional)', 'contato', 'Vazio: qualquer formulário do site. Preenchido: só formulários em páginas cuja URL contém o trecho. Formulários feitos em iframe ou só com JavaScript podem não disparar.'], link_click_contains:['Trecho do link', 'wa.me', 'Dispara no clique em links que contêm o trecho (ex.: wa.me para WhatsApp, tel: para ligação).'] }[f.trigType];
+        h += gtmField('gtmF_trigValue', help[0], help[1], help[2], f.trigValue);
+      }
+    }
+    document.getElementById('gtmModalExtra').innerHTML = h;
+  }
+  async function gtmSubmitCreate(){
+    gtmReadForm();
+    const f = GT.form, body = { kind:f.kind };
+    if (f.kind === 'meta_pixel') body.pixelId = (f.pixelId || '').trim();
+    if (f.kind === 'ga4') body.measurementId = (f.measurementId || '').trim();
+    if (f.kind === 'ads_conversion') Object.assign(body, { conversionId:(f.conversionId || '').trim(), conversionLabel:(f.conversionLabel || '').trim(), name:f.convName || '', value:(f.convValue || '').trim(), currency:'BRL',
+      trigger: f.trigMode === 'existing' ? { mode:'existing', triggerId:f.trigExisting || (document.getElementById('gtmF_trigExisting') || {}).value } : { mode:'new', type:f.trigType, value:(f.trigValue || '').trim() } });
+    const r = await gtApi(gtC('/tags'), { method:'POST', body: JSON.stringify(body) });
+    GT.form = { clientId:GT.clientId, kind:f.kind, trigMode:'new', trigType:'pageview_contains' };
+    gtmCloseModal();
+    await gtmLoadAudit();
+    GT.view = 'draft';
+    GT.msg = { ok:true, text:`Tag "${r.tag.name}" criada no rascunho${r.trigger ? ` com o acionador "${r.trigger.name}"` : ''}. Ainda não está no ar: clique em Publicar quando quiser.` };
+    renderGtm();
+  }
+
+  /* ---- publicar ---- */
+  async function gtmOpenPublish(){
+    gtmShowModal({ title:'Publicar no Tag Manager', body:'Buscando as alterações pendentes...' });
+    try {
+      const p = await gtApi(gtC('/pending'));
+      if (!GT.modal) return;
+      gtmShowPublish(p.changes, p.conflicts);
+    } catch (err) { gtmModalError(err.message); }
+  }
+  function gtmShowPublish(changes, conflicts){
+    if (!changes.length) { gtmShowModal({ title:'Publicar no Tag Manager', body:'Não há alterações do sistema esperando publicação neste contêiner.' }); return; }
+    const list = `<ul class="gtm-changes">${changes.map((c) => `<li><b>${escapeHtml(c.kindLabel)} ${escapeHtml(c.statusLabel)}:</b> ${escapeHtml(c.name)}${c.typeLabel ? ' <span class="gtm-dim">(' + escapeHtml(c.typeLabel) + ')</span>' : ''}</li>`).join('')}</ul>`;
+    gtmShowModal({ title:'Publicar no Tag Manager',
+      body:`Isso cria uma versão nova do <b>${escapeHtml(GT.linked.publicId)}</b> e coloca no ar no site do cliente agora. Confira o que vai junto:`,
+      extra: list + (conflicts ? '<div class="cp-problems cp-err">Há conflito com a versão publicada. Resolva no Tag Manager antes.</div>' : '') + '<div class="mg-modal-warn">Depois de publicar, o Tag Manager fecha o rascunho "Instinto Digital". Para desfazer, publique a versão anterior pelo próprio Tag Manager (Versões).</div>',
+      okText:'Publicar agora', busyText:'Publicando...',
+      onOk: async () => {
+        try {
+          const r = await gtApi(gtC('/publish'), { method:'POST', body: JSON.stringify({ confirm:true, expected: changes.map((c) => c.key) }) });
+          gtmCloseModal();
+          GT.log = null;
+          await gtmLoadAudit();
+          GT.view = 'live';
+          GT.msg = { ok:true, text:`Publicado: versão ${r.versionId} no ar com ${r.changes.length} alteração(ões).` };
+          renderGtm();
+        } catch (err) {
+          if (err.body && err.body.code === 'changed' && err.body.changes) { gtmShowPublish(err.body.changes, 0); gtmModalError(err.message); return; }
+          throw err;
+        }
+      } });
+    if (conflicts) document.getElementById('gtmModalOk').disabled = true;
+  }
+
   function setClientDetailTab(tab){
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
     document.getElementById('cdTabBtnSocial').classList.toggle('active', tab === 'social');
@@ -7773,6 +8098,7 @@
     if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
     if (tab === 'contract') renderClientContractPane();
     if (tab === 'history') renderClientHistoryPane();
+    if (tab === 'integrations' && !CLIENT_MODE && !PUBLIC_TOKEN) loadGtm();
   }
 
   function toggleRangeMenu(){

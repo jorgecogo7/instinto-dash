@@ -37,6 +37,7 @@ const reportsRoutes = require('./routes/reports');
 const alertsRoutes = require('./routes/alerts');
 const campaignsRoutes = require('./routes/campaigns');
 const adStatusRoutes = require('./routes/adStatus');
+const gtmRoutes = require('./routes/gtm');
 const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
@@ -87,6 +88,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/public', publicRoutes);
 // Imagens da Meta com CORS (pro PDF). Sem login: só repassa imagens públicas dos CDNs da Meta.
 app.use('/api/media', mediaRoutes);
+// Volta do Google no "Autorizar Tag Manager" (sem login; protegido pelo state assinado e de uso único).
+app.use('/api/gtm-oauth', gtmRoutes.callbackRouter);
 
 // Tudo abaixo daqui exige o dono estar logado (token de sessão válido).
 app.use('/api/accounts', requireAdminAuth, accountsRoutes);
@@ -104,6 +107,8 @@ app.use('/api/crm/:clientId', requireAdminAuth, crmRoutes.adminRouter);
 app.use('/api/campaigns/:clientId', requireAdminAuth, campaignsRoutes);
 // Pausar/ativar campanhas, conjuntos e anúncios que já existem (só a agência).
 app.use('/api/ad-status/:clientId', requireAdminAuth, adStatusRoutes);
+// Google Tag Manager por cliente: só a agência (cliente recebe 403).
+app.use('/api/gtm', requireAdminAuth, gtmRoutes.adminRouter);
 // Área do cliente (login próprio de cada cliente).
 app.use('/api/client/crm', requireClientAuth, crmRoutes.clientRouter);
 app.use('/api/client', requireClientAuth, clientRoutes);
