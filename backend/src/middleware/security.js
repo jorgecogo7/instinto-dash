@@ -26,20 +26,46 @@ function securityHeaders(req, res, next) {
 }
 
 // Limite simples em memória: X requisições por IP a cada minuto.
-// Reseta ao reiniciar o servidor — para um volume de uso maior no
+// Reseta ao reiniciar o servidor. Para um volume de uso maior no
 // futuro, trocar por um Redis, mas isso já barra abuso básico agora.
+//
+// O limite antigo (60/min) era baixo demais: com 18 clientes, só abrir a
+// visão geral já dispara dezenas de relatórios (Meta + Google de cada um),
+// e cada um ainda vinha com um preflight OPTIONS que também contava. Aí a
+// API respondia 429 e o navegador mostrava "Failed to fetch".
 const requestLog = new Map();
-const RATE_LIMIT = 60; // por minuto
+const RATE_LIMIT = Number(process.env.RATE_LIMIT_PER_MIN) || 600; // por minuto
+const WINDOW_MS = 60_000;
+
+// Atrás do CDN da Hostinger o X-Forwarded-For pode vir como "cliente, proxy1, proxy2".
+// O primeiro endereço é o do visitante; usar a string inteira separaria a mesma
+// pessoa em várias chaves (ou juntaria pessoas diferentes atrás do mesmo proxy).
+function clientIp(req) {
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) return String(xff).split(',')[0].trim();
+  return req.socket.remoteAddress || 'unknown';
+}
+
+// Limpa IPs que não aparecem há mais de um minuto, para o mapa não crescer para sempre.
+setInterval(() => {
+  const windowStart = Date.now() - WINDOW_MS;
+  for (const [ip, entries] of requestLog) {
+    if (!entries.length || entries[entries.length - 1] <= windowStart) requestLog.delete(ip);
+  }
+}, 5 * 60_000).unref();
+
 function rateLimit(req, res, next) {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  if (req.method === 'OPTIONS') return next(); // preflight do navegador não é uso de verdade
+  const ip = clientIp(req);
   const now = Date.now();
-  const windowStart = now - 60_000;
+  const windowStart = now - WINDOW_MS;
 
   const entries = (requestLog.get(ip) || []).filter((t) => t > windowStart);
   entries.push(now);
   requestLog.set(ip, entries);
 
   if (entries.length > RATE_LIMIT) {
+    res.setHeader('Retry-After', '30');
     return res.status(429).json({ error: 'Muitas requisições. Aguarde um pouco e tente de novo.' });
   }
   next();

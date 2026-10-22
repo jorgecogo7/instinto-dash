@@ -46,15 +46,23 @@ const app = express();
 app.use(express.json({ limit: '100kb' }));
 
 app.use(securityHeaders);
-app.use(rateLimit);
 
+// CORS vem ANTES do limite de requisições: se o limite responder 429 sem esses
+// cabeçalhos, o navegador esconde a resposta e o painel só vê "Failed to fetch".
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', config.allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  res.setHeader('Vary', 'Origin');
+  if (req.method === 'OPTIONS') {
+    // Guarda o preflight no navegador por 10 min: bem menos idas ao servidor
+    // (e ao CDN, que às vezes devolve 307 e derruba o preflight).
+    res.setHeader('Access-Control-Max-Age', '600');
+    return res.sendStatus(204);
+  }
   next();
 });
+app.use(rateLimit);
 
 // Login — a única rota administrativa que NÃO exige estar logado (óbvio, é ela que gera o login).
 app.use('/api/auth', authRoutes);
