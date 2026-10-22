@@ -1120,6 +1120,188 @@
     .cc-stage-btns{ grid-column: 1 / -1; justify-content:flex-end; }
   }
 
+  /* ---- CRM v2: abas, funil colorido, conversas, contatos, etiquetas, relatórios ---- */
+  .cc-top-actions{ gap:8px; flex-wrap:wrap; }
+  .cc-tabs{ display:flex; gap:4px; border-bottom:1px solid var(--line); margin:0 0 14px; overflow-x:auto; scrollbar-width:none; }
+  .cc-tabs::-webkit-scrollbar{ display:none; }
+  .cc-tab{ flex-shrink:0; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-dim); font:inherit; font-size:13px; font-weight:600; padding:9px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .cc-tab:hover{ color:var(--text); }
+  .cc-tab.active{ color:var(--text); border-bottom-color:var(--amber); }
+  .cc-badge{ background:var(--flame); color:#fff; font-size:10.5px; font-weight:700; border-radius:20px; padding:1px 7px; min-width:18px; text-align:center; }
+  .cc-pane{ display:none; }
+  .cc-pane.active{ display:block; }
+  .cc-funnel-sel{ max-width:220px; font-weight:600; }
+  .cc-more{ display:flex; }
+  .cc-more-btn{ display:none; }
+  .cc-period{ display:flex; gap:4px; flex-wrap:wrap; }
+  .cc-period .g-tab{ padding:7px 11px; }
+  .cc-period .g-tab.active, .cc-viewtoggle .g-tab.active{ color:var(--text); border-color:rgba(255,176,32,0.5); background:rgba(255,176,32,0.08); }
+  .cc-date{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim); }
+  .cc-date .modal-input{ width:auto; }
+  .cc-btns{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+  .cc-danger{ color:#e05a5a !important; border-color:rgba(224,90,90,0.3) !important; }
+  .cc-help{ font-size:12.5px; color:var(--text-dim); margin:0; flex:1 1 320px; }
+  .cc-count{ font-size:12px; color:var(--text-dim); margin:-4px 0 8px; }
+
+  /* Quadro com cabeçalho colorido */
+  .cc-board{ scroll-snap-type:x proximity; }
+  .cc-board .crm-col{ min-width:272px; max-width:272px; scroll-snap-align:start; border-top:3px solid var(--cc-c, var(--text-dim)); }
+  .cc-col-title{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .cc-col-title b{ font-size:12.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cc-col-title small{ font-size:11px; color:var(--text-dim); font-weight:600; }
+  .cc-board .crm-col-head{ background:color-mix(in srgb, var(--cc-c, transparent) 9%, transparent); border-radius:13px 13px 0 0; }
+  .cc-board .crm-col-count{ background:var(--cc-c, var(--bg-panel-2)); color:#fff; }
+  .cc-board .crm-card{ padding:9px 11px; }
+  .cc-card-line{ display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:var(--text-dim); margin-top:3px; }
+  .cc-card-line .cc-value{ color:var(--green); }
+  .cc-unread{ background:var(--flame); color:#fff; font-size:10px; font-weight:700; border-radius:20px; padding:1px 6px; }
+  .cc-tag{ display:inline-flex; align-items:center; gap:4px; }
+  .cc-tag.c{ background:color-mix(in srgb, var(--cc-c) 16%, transparent); color:var(--cc-c); border-color:color-mix(in srgb, var(--cc-c) 35%, transparent); font-weight:600; }
+  .cc-stage-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; background:color-mix(in srgb, var(--cc-c) 15%, transparent); color:var(--cc-c); white-space:nowrap; }
+  .cc-stage-chip::before{ content:''; width:6px; height:6px; border-radius:50%; background:var(--cc-c); }
+  .cc-sw{ width:12px; height:12px; border-radius:50%; background:var(--cc-c); display:inline-block; flex-shrink:0; }
+
+  /* Seletor de etiquetas nos formulários */
+  .cc-tagpick{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cc-tagpick button{ font:inherit; font-size:12px; padding:4px 10px; border-radius:20px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text-dim); cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .cc-tagpick button.on{ background:color-mix(in srgb, var(--cc-c) 18%, transparent); color:var(--text); border-color:var(--cc-c); }
+  .cc-tagpick input{ flex:1 1 140px; min-width:120px; padding:5px 10px; font-size:12px; border-radius:20px; }
+  .cc-swatches{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cc-swatches button{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; background:var(--cc-c); cursor:pointer; }
+  .cc-swatches button.on{ border-color:var(--text); box-shadow:0 0 0 2px var(--bg-panel) inset; }
+  .cc-stage-row{ grid-template-columns: minmax(0,1fr) 92px 118px auto; }
+  .cc-stage-row select.cc-color-sel{ padding-left:26px; background-image:radial-gradient(circle at 13px 50%, var(--cc-c) 5px, transparent 6px); }
+
+  /* Tabelas (contatos e etiquetas) */
+  .cc-table-wrap{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:14px; overflow:auto; }
+  .cc-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .cc-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:600; padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .cc-table td{ padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:middle; color:var(--text); }
+  .cc-table tr:last-child td{ border-bottom:none; }
+  .cc-table tbody tr:hover td{ background:var(--bg-panel-2); }
+  .cc-th-act{ text-align:right !important; }
+  .cc-acts{ display:flex; gap:6px; justify-content:flex-end; }
+  .cc-acts button{ width:32px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text-dim); cursor:pointer; font-size:13px; }
+  .cc-acts button:hover{ color:var(--text); }
+  .cc-acts button.del:hover{ color:#e05a5a; border-color:rgba(224,90,90,0.4); }
+  .cc-cname{ display:flex; align-items:center; gap:10px; font-weight:600; }
+  .cc-av{ width:32px; height:32px; border-radius:50%; background:var(--bg-panel-3); color:var(--text); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .cc-dim{ color:var(--text-dim); font-size:11.5px; }
+  .cc-meaning{ width:auto; padding:6px 8px; font-size:12px; }
+
+  /* Conversas */
+  .cc-inbox{ display:grid; grid-template-columns: 340px minmax(0,1fr); background:var(--bg-panel); border:1px solid var(--card-border); border-radius:14px; height:calc(100vh - 230px); min-height:480px; overflow:hidden; }
+  .cc-inbox-list{ border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  .cc-inbox-tabs{ display:flex; border-bottom:1px solid var(--line); }
+  .cc-itab{ flex:1; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-dim); font:inherit; font-size:12.5px; font-weight:600; padding:11px 6px; cursor:pointer; }
+  .cc-itab.active{ color:var(--text); border-bottom-color:var(--amber); }
+  .cc-inbox-filters{ display:flex; flex-wrap:wrap; gap:6px; padding:10px; border-bottom:1px solid var(--line); }
+  .cc-inbox-filters .modal-input{ padding:7px 9px; font-size:12px; flex:1 1 120px; width:auto; }
+  .cc-inbox-filters #ccConvSearch{ flex-basis:100%; }
+  .cc-check{ font-size:12px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .cc-conv-items{ overflow-y:auto; flex:1; min-height:0; }
+  .cc-conv{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 10px; padding:11px 12px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .cc-conv:hover{ background:var(--bg-panel-2); }
+  .cc-conv.active{ background:color-mix(in srgb, var(--amber) 8%, transparent); box-shadow:inset 3px 0 0 var(--amber); }
+  .cc-conv .cc-av{ grid-row:span 2; width:38px; height:38px; }
+  .cc-conv-name{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cc-conv-time{ font-size:10.5px; color:var(--text-dim); text-align:right; white-space:nowrap; }
+  .cc-conv-last{ font-size:12px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cc-conv.unread .cc-conv-last{ color:var(--text); font-weight:600; }
+  .cc-conv-meta{ grid-column:2 / 4; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .cc-chat{ display:flex; flex-direction:column; min-height:0; min-width:0; }
+  .cc-chat-empty{ margin:auto; color:var(--text-dim); font-size:13px; padding:20px; text-align:center; }
+  .cc-chat-head{ display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .cc-chat-head .cc-back{ display:none; }
+  .cc-chat-who{ min-width:0; flex:1; }
+  .cc-chat-who b{ display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cc-chat-who span{ font-size:11.5px; color:var(--text-dim); }
+  .cc-chat-actions{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .cc-chat-actions .modal-input{ width:auto; padding:6px 8px; font-size:12px; max-width:170px; }
+  .cc-chat-actions .btn-cancel{ padding:6px 10px; font-size:12px; }
+  .cc-msgs{ flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:6px; background:var(--bg); min-height:0; }
+  .cc-day{ align-self:center; font-size:10.5px; color:var(--text-dim); background:var(--bg-panel-2); border-radius:20px; padding:2px 10px; margin:8px 0 4px; }
+  .cc-msg{ max-width:min(78%, 520px); padding:7px 10px 5px; border-radius:12px; font-size:13px; line-height:1.4; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .cc-msg.in{ align-self:flex-start; background:var(--bg-panel-2); border:1px solid var(--line); border-top-left-radius:4px; }
+  .cc-msg.out{ align-self:flex-end; background:color-mix(in srgb, var(--amber) 16%, var(--bg-panel)); border:1px solid color-mix(in srgb, var(--amber) 30%, transparent); border-top-right-radius:4px; }
+  .cc-msg-meta{ font-size:10px; color:var(--text-dim); text-align:right; margin-top:2px; }
+  .cc-msg-meta .read{ color:var(--skyblue); }
+  .cc-msg-meta .failed{ color:var(--red); }
+  .cc-compose{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--line); align-items:flex-end; }
+  .cc-compose textarea{ resize:none; max-height:120px; min-height:40px; }
+  .cc-compose .btn-add{ flex-shrink:0; height:40px; }
+  .cc-window{ font-size:11.5px; color:var(--text-dim); padding:8px 14px; border-top:1px solid var(--line); background:var(--bg-panel-2); }
+
+  /* Relatórios */
+  .cc-rep-kpis{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+  .cc-delta{ font-size:11.5px; font-weight:600; margin-top:6px; }
+  .cc-delta.up{ color:var(--green); } .cc-delta.down{ color:var(--red); } .cc-delta.flat{ color:var(--text-dim); }
+  .cc-rep-grid{ display:grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap:14px; }
+  .cc-rep-grid .panel{ margin:0; }
+  .cc-rep-h{ font-size:14px; font-weight:700; margin:0 0 4px; }
+  .cc-rep-sub{ font-size:11.5px; color:var(--text-dim); margin:0 0 14px; }
+  .cc-funnel-step{ display:grid; grid-template-columns: 130px minmax(0,1fr) 70px; gap:10px; align-items:center; margin-bottom:6px; font-size:12.5px; }
+  .cc-funnel-step .nm{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cc-bar{ height:26px; background:var(--bg-panel-2); border-radius:6px; overflow:hidden; }
+  .cc-bar > div{ height:100%; background:var(--cc-c); border-radius:6px; display:flex; align-items:center; padding:0 8px; font-size:11.5px; font-weight:700; color:#fff; min-width:26px; }
+  .cc-conv-rate{ font-size:10.5px; color:var(--text-dim); text-align:center; margin:-2px 0 6px 140px; }
+  .cc-funnel-step .pct{ text-align:right; color:var(--text-dim); font-size:11.5px; }
+  .cc-qual{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .cc-qual div{ background:var(--bg-panel-2); border-radius:10px; padding:10px; text-align:center; }
+  .cc-qual b{ display:block; font-size:20px; }
+  .cc-qual span{ font-size:11px; color:var(--text-dim); }
+  .cc-stack{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:var(--bg-panel-2); }
+  .cc-stack div{ height:100%; }
+
+  @media (max-width: 900px){
+    .cc-rep-grid{ grid-template-columns:1fr; }
+    .cc-inbox{ grid-template-columns: 280px minmax(0,1fr); }
+  }
+  @media (max-width: 760px){
+    #view-ccrm .topbar-right.cc-top-actions{ display:flex; }
+    .cc-top-actions button{ flex:1; }
+    .cc-tabs{ margin:0 -12px 12px; padding:0 12px; }
+    .cc-funnel-sel{ max-width:none; flex:1 1 100% !important; }
+    .cc-more-btn{ display:inline-block; flex:0 0 auto; }
+    .cc-more{ display:none; }
+    .cc-more.open{ display:flex; }
+    .cc-toolbar .cc-search{ flex:1 1 0 !important; }
+    .cc-viewtoggle{ order:5; }
+    .cc-period{ width:100%; }
+    .cc-period .g-tab{ flex:1; padding:7px 4px; }
+    .cc-date{ flex:1 1 calc(50% - 8px); }
+    .cc-date .modal-input{ flex:1; min-width:0; }
+    .cc-btns{ width:100%; margin-left:0; }
+    .cc-btns button{ flex:1; }
+    .cc-board .crm-col{ min-width:calc(100vw - 48px); max-width:calc(100vw - 48px); max-height:none; }
+    .cc-stage-row{ grid-template-columns: minmax(0,1fr) 110px; }
+    .cc-stage-row .cc-stage-btns{ grid-column:auto; }
+    /* Tabela vira cartões no celular */
+    .cc-table thead{ display:none; }
+    .cc-table, .cc-table tbody, .cc-table tr, .cc-table td{ display:block; width:100%; }
+    .cc-table tr{ border-bottom:1px solid var(--line); padding:10px 12px; position:relative; }
+    .cc-table tr:last-child{ border-bottom:none; }
+    .cc-table td{ border:none; padding:3px 0; }
+    .cc-table td[data-l]::before{ content:attr(data-l); display:inline-block; min-width:96px; color:var(--text-dim); font-size:11px; }
+    .cc-table td.cc-td-act{ position:absolute; top:8px; right:10px; width:auto; }
+    .cc-table td.cc-td-name{ padding-right:84px; }
+    .cc-table td.cc-td-empty:empty{ display:none; }
+    /* Conversas: lista ocupa a tela; ao abrir, só o chat */
+    .cc-inbox{ grid-template-columns:1fr; height:calc(100vh - 190px); height:calc(100dvh - 190px); min-height:420px; }
+    .cc-inbox .cc-chat{ display:none; }
+    .cc-inbox.chat-open .cc-inbox-list{ display:none; }
+    .cc-inbox.chat-open .cc-chat{ display:flex; }
+    .cc-inbox-list{ border-right:none; }
+    .cc-chat-head .cc-back{ display:inline-flex; }
+    .cc-chat-actions{ width:100%; }
+    .cc-chat-actions .modal-input{ flex:1; max-width:none; }
+    .cc-msg{ max-width:86%; }
+    .cc-rep-kpis{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+    .cc-funnel-step{ grid-template-columns: 92px minmax(0,1fr) 52px; gap:8px; }
+    .cc-conv-rate{ margin-left:100px; }
+    #ccDealModal .modal-box, #ccContactModal .modal-box, #ccTagModal .modal-box, #ccStagesModal .modal-box, #ccWaModal .modal-box{ width:100vw !important; max-width:100vw; padding:18px 16px; }
+  }
+
   .lead-score{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
   .lead-score.quente{ background: rgba(255,90,30,0.14); color: var(--flame); }
   .lead-score.morno{ background: rgba(255,176,32,0.14); color: var(--amber); }
@@ -1663,15 +1845,22 @@
     </div>
 
     <div id="navClient" style="display:none;">
-      <div class="nav-divider">Resultados</div>
+      <div class="nav-divider" id="cnavDivResults">Resultados</div>
       <nav class="nav">
         <div class="nav-item cnav" data-ctab="overview" onclick="wsGo('overview')">▣ Anúncios</div>
         <div class="nav-item cnav" data-ctab="social" onclick="wsGo('social')">◎ Redes Sociais</div>
       </nav>
-      <div class="nav-divider">Captação</div>
+      <div class="nav-divider" id="cnavDivCapture">Captação</div>
       <nav class="nav">
         <div class="nav-item cnav" data-ctab="forms" onclick="wsGo('forms')">📝 Formulários</div>
-        <div class="nav-item cnav" data-ctab="crm" onclick="wsGo('crm')">🤝 CRM</div>
+      </nav>
+      <div class="nav-divider cnav-crm">CRM</div>
+      <nav class="nav">
+        <div class="nav-item cnav cnav-crm" data-ctab="crm" onclick="wsGo('crm')">🤝 Funil de vendas</div>
+        <div class="nav-item cnav cnav-crm" data-ctab="crm-conversas" onclick="wsGo('crm-conversas')">💬 Conversas <span class="cc-badge" data-unread style="display:none;"></span></div>
+        <div class="nav-item cnav cnav-crm" data-ctab="crm-contatos" onclick="wsGo('crm-contatos')">👤 Contatos</div>
+        <div class="nav-item cnav cnav-crm" data-ctab="crm-etiquetas" onclick="wsGo('crm-etiquetas')">🏷️ Etiquetas</div>
+        <div class="nav-item cnav cnav-crm" data-ctab="crm-relatorios" onclick="wsGo('crm-relatorios')">📊 Relatórios</div>
       </nav>
       <div class="nav-divider cnav-admin">Gestão · só você</div>
       <nav class="nav">
@@ -2166,75 +2355,188 @@
       <div class="topbar">
         <div>
           <h1 id="ccTitle">CRM</h1>
-          <p>Seus leads em um só lugar, do primeiro contato até a venda.</p>
+          <p id="ccSub">Seus leads em um só lugar, do primeiro contato até a venda.</p>
         </div>
-        <div class="topbar-right" style="gap:8px;">
-          <button type="button" class="btn-cancel" onclick="ccOpenStages()">⚙ Etapas</button>
-          <button type="button" class="btn-add" onclick="ccOpenDeal(null)">+ Novo lead</button>
-        </div>
+        <div class="topbar-right cc-top-actions" id="ccTopActions"></div>
+      </div>
+      <div class="cc-tabs" id="ccTabs" role="tablist">
+        <button type="button" class="cc-tab" data-pane="funil" onclick="wsGo('crm')">🤝 Funil de vendas</button>
+        <button type="button" class="cc-tab" data-pane="conversas" onclick="wsGo('crm-conversas')">💬 Conversas <span class="cc-badge" data-unread style="display:none;"></span></button>
+        <button type="button" class="cc-tab" data-pane="contatos" onclick="wsGo('crm-contatos')">👤 Contatos</button>
+        <button type="button" class="cc-tab" data-pane="etiquetas" onclick="wsGo('crm-etiquetas')">🏷️ Etiquetas</button>
+        <button type="button" class="cc-tab" data-pane="relatorios" onclick="wsGo('crm-relatorios')">📊 Relatórios</button>
       </div>
       <div id="ccAdminNote" class="cc-admin-note" style="display:none;"></div>
       <div id="ccError" class="offline-banner" style="display:none;"></div>
-      <div class="cc-kpis">
-        <div class="kpi"><div class="kpi-label">Leads em aberto</div><div class="kpi-value" id="ccKpiOpen">–</div></div>
-        <div class="kpi"><div class="kpi-label">Valor em aberto</div><div class="kpi-value" id="ccKpiOpenValue">–</div></div>
-        <div class="kpi"><div class="kpi-label">Ganhos</div><div class="kpi-value" id="ccKpiWon">–</div></div>
-        <div class="kpi"><div class="kpi-label">Taxa de ganho</div><div class="kpi-value" id="ccKpiRate">–</div></div>
+
+      <!-- Funil de vendas -->
+      <div class="cc-pane" id="ccPaneFunil">
+        <div class="cc-kpis">
+          <div class="kpi"><div class="kpi-label">Negócios em aberto</div><div class="kpi-value" id="ccKpiOpen">–</div></div>
+          <div class="kpi"><div class="kpi-label">Valor em aberto</div><div class="kpi-value" id="ccKpiOpenValue">–</div></div>
+          <div class="kpi"><div class="kpi-label">Ganhos</div><div class="kpi-value" id="ccKpiWon">–</div></div>
+          <div class="kpi"><div class="kpi-label">Taxa de ganho</div><div class="kpi-value" id="ccKpiRate">–</div></div>
+        </div>
+        <div class="cc-toolbar">
+          <select class="modal-input cc-funnel-sel" id="ccFunnel" onchange="ccPickFunnel(this.value)" aria-label="Funil"></select>
+          <input class="modal-input cc-search" id="ccSearch" type="search" placeholder="Buscar por nome, telefone, e-mail ou etiqueta" oninput="ccRender()">
+          <button type="button" class="g-tab cc-more-btn" id="ccMoreBtn" onclick="document.getElementById('ccMore').classList.toggle('open')">⚙ Filtros</button>
+          <div class="cc-viewtoggle">
+            <button type="button" class="g-tab" id="ccViewBoard" onclick="ccSetView('board')">▦ Quadro</button>
+            <button type="button" class="g-tab" id="ccViewList" onclick="ccSetView('list')">☰ Lista</button>
+          </div>
+        </div>
+        <div class="cc-toolbar cc-more" id="ccMore">
+          <div class="cc-period" id="ccPeriod">
+            <button type="button" class="g-tab active" data-p="" onclick="ccSetPeriod('')">Tudo</button>
+            <button type="button" class="g-tab" data-p="today" onclick="ccSetPeriod('today')">Hoje</button>
+            <button type="button" class="g-tab" data-p="7" onclick="ccSetPeriod('7')">7 dias</button>
+            <button type="button" class="g-tab" data-p="30" onclick="ccSetPeriod('30')">30 dias</button>
+            <button type="button" class="g-tab" data-p="month" onclick="ccSetPeriod('month')">Este mês</button>
+          </div>
+          <label class="cc-date"><span>De</span><input class="modal-input" type="date" id="ccFrom" onchange="ccSetPeriod('custom')"></label>
+          <label class="cc-date"><span>Até</span><input class="modal-input" type="date" id="ccTo" onchange="ccSetPeriod('custom')"></label>
+          <select class="modal-input" id="ccFilterOwner" onchange="ccRender()"><option value="">Todos os responsáveis</option></select>
+          <select class="modal-input" id="ccFilterTag" onchange="ccRender()"><option value="">Todas as etiquetas</option></select>
+          <select class="modal-input" id="ccFilterSource" onchange="ccRender()">
+            <option value="">Todas as origens</option>
+            <option value="form">Formulário</option>
+            <option value="campaign">Campanha</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="manual">Manual</option>
+            <option value="import">Importação</option>
+          </select>
+        </div>
+        <div class="crm-board cc-board" id="ccBoard"></div>
+        <div class="cc-list" id="ccList" style="display:none;"></div>
       </div>
-      <div class="cc-toolbar">
-        <input class="modal-input cc-search" id="ccSearch" type="search" placeholder="Buscar por nome, telefone, e-mail ou tag" oninput="ccRender()">
-        <select class="modal-input" id="ccFilterSource" onchange="ccRender()">
-          <option value="">Todas as origens</option>
-          <option value="form">Formulário</option>
-          <option value="campaign">Campanha</option>
-          <option value="manual">Manual</option>
-        </select>
-        <select class="modal-input" id="ccFilterStage" onchange="ccRender()"><option value="">Todas as etapas</option></select>
-        <select class="modal-input" id="ccFilterOwner" onchange="ccRender()"><option value="">Todos os responsáveis</option></select>
-        <select class="modal-input" id="ccFilterTag" onchange="ccRender()"><option value="">Todas as tags</option></select>
-        <div class="cc-viewtoggle">
-          <button type="button" class="g-tab" id="ccViewBoard" onclick="ccSetView('board')">▦ Quadro</button>
-          <button type="button" class="g-tab" id="ccViewList" onclick="ccSetView('list')">☰ Lista</button>
+
+      <!-- Conversas -->
+      <div class="cc-pane" id="ccPaneConversas">
+        <div id="ccWaNote" class="cc-admin-note" style="display:none;"></div>
+        <div class="cc-inbox" id="ccInbox">
+          <div class="cc-inbox-list">
+            <div class="cc-inbox-tabs">
+              <button type="button" class="cc-itab active" data-t="all" onclick="ccConvTab('all')">Todas</button>
+              <button type="button" class="cc-itab" data-t="mine" onclick="ccConvTab('mine')">Minhas</button>
+              <button type="button" class="cc-itab" data-t="none" onclick="ccConvTab('none')">Não atribuídas</button>
+            </div>
+            <div class="cc-inbox-filters">
+              <input class="modal-input" id="ccConvSearch" type="search" placeholder="Buscar conversa" oninput="ccRenderConvList()">
+              <select class="modal-input" id="ccConvStatus" onchange="ccRenderConvList()" aria-label="Situação">
+                <option value="open">Abertas</option>
+                <option value="closed">Encerradas</option>
+                <option value="">Todas</option>
+              </select>
+              <select class="modal-input" id="ccConvStage" onchange="ccRenderConvList()" aria-label="Etapa"><option value="">Todas as etapas</option></select>
+              <label class="cc-check"><input type="checkbox" id="ccConvUnread" onchange="ccRenderConvList()"> Só não lidas</label>
+            </div>
+            <div class="cc-conv-items" id="ccConvItems"></div>
+          </div>
+          <div class="cc-chat" id="ccChat">
+            <div class="cc-chat-empty">Escolha uma conversa para ver as mensagens.</div>
+          </div>
         </div>
       </div>
-      <div class="crm-board" id="ccBoard"></div>
-      <div class="cc-list" id="ccList" style="display:none;"></div>
+
+      <!-- Contatos -->
+      <div class="cc-pane" id="ccPaneContatos">
+        <div class="cc-toolbar">
+          <input class="modal-input cc-search" id="ccContSearch" type="search" placeholder="Buscar por nome, telefone, e-mail ou etiqueta" oninput="ccRenderContacts()">
+          <select class="modal-input" id="ccContTag" onchange="ccRenderContacts()"><option value="">Todas as etiquetas</option></select>
+          <div class="cc-btns">
+            <button type="button" class="btn-cancel" onclick="ccExportCsv()">⬇ Baixar CSV</button>
+            <button type="button" class="btn-cancel" onclick="document.getElementById('ccImportFile').click()">⬆ Importar</button>
+            <input type="file" id="ccImportFile" accept=".csv,text/csv" style="display:none;" onchange="ccImportCsv(this)">
+            <button type="button" class="btn-add" onclick="ccOpenContact(null)">+ Novo contato</button>
+          </div>
+        </div>
+        <div class="cc-count" id="ccContCount"></div>
+        <div class="cc-table-wrap">
+          <table class="cc-table" id="ccContTable">
+            <thead><tr><th>Nome</th><th>Etiquetas</th><th>Última conversa</th><th>Telefone</th><th>Negócio / etapa</th><th class="cc-th-act">Ações</th></tr></thead>
+            <tbody id="ccContBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Etiquetas -->
+      <div class="cc-pane" id="ccPaneEtiquetas">
+        <div class="cc-toolbar">
+          <p class="cc-help">Use etiquetas para organizar contatos e negócios. As marcadas como <b>Qualificado</b> ou <b>Desqualificado</b> entram no bloco de qualificação dos Relatórios.</p>
+          <div class="cc-btns"><button type="button" class="btn-add" onclick="ccOpenTag(null)">+ Nova etiqueta</button></div>
+        </div>
+        <div class="cc-table-wrap">
+          <table class="cc-table cc-tags-table">
+            <thead><tr><th>Etiqueta</th><th>Significado no funil</th><th>Em uso</th><th class="cc-th-act">Ações</th></tr></thead>
+            <tbody id="ccTagBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Relatórios -->
+      <div class="cc-pane" id="ccPaneRelatorios">
+        <div class="cc-toolbar">
+          <div class="cc-period" id="ccRepPeriod">
+            <button type="button" class="g-tab" data-p="7" onclick="ccRepPeriod('7')">7 dias</button>
+            <button type="button" class="g-tab active" data-p="30" onclick="ccRepPeriod('30')">30 dias</button>
+            <button type="button" class="g-tab" data-p="month" onclick="ccRepPeriod('month')">Este mês</button>
+            <button type="button" class="g-tab" data-p="lastmonth" onclick="ccRepPeriod('lastmonth')">Mês passado</button>
+            <button type="button" class="g-tab" data-p="90" onclick="ccRepPeriod('90')">90 dias</button>
+          </div>
+          <label class="cc-date"><span>De</span><input class="modal-input" type="date" id="ccRepFrom" onchange="ccRepPeriod('custom')"></label>
+          <label class="cc-date"><span>Até</span><input class="modal-input" type="date" id="ccRepTo" onchange="ccRepPeriod('custom')"></label>
+          <select class="modal-input" id="ccRepFunnel" onchange="ccLoadReport()" aria-label="Funil"></select>
+          <select class="modal-input" id="ccRepOwner" onchange="ccLoadReport()"><option value="">Todos os responsáveis</option></select>
+          <select class="modal-input" id="ccRepSource" onchange="ccLoadReport()">
+            <option value="">Todas as origens</option>
+            <option value="form">Formulário</option>
+            <option value="campaign">Campanha</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="manual">Manual</option>
+            <option value="import">Importação</option>
+          </select>
+        </div>
+        <div id="ccReport"></div>
+      </div>
     </section>
 
-    <!-- Lead do CRM do cliente (novo / editar) -->
+    <!-- Negócio do CRM do cliente (novo / editar) -->
     <div class="drawer-overlay" id="ccDealModal" onclick="if(event.target===this) ccCloseModal('ccDealModal')">
-      <div class="modal-box" style="width:460px;">
+      <div class="modal-box" style="width:480px;">
         <div class="modal-head">
-          <h3 id="ccDealTitle">Novo lead</h3>
+          <h3 id="ccDealTitle">Novo negócio</h3>
           <button type="button" class="modal-close" onclick="ccCloseModal('ccDealModal')">✕</button>
         </div>
         <div id="ccDealError" class="modal-error" style="display:none;"></div>
         <div class="cc-quick" id="ccDealQuick"></div>
         <form id="ccDealForm" onsubmit="ccSaveDeal(event)">
           <label class="modal-label">Nome *</label>
-          <input class="modal-input" id="ccdName" required maxlength="120" placeholder="Nome do lead">
+          <input class="modal-input" id="ccdName" required maxlength="120" placeholder="Nome do contato ou do negócio">
           <div class="modal-row">
             <div><label class="modal-label">Telefone / WhatsApp</label><input class="modal-input" id="ccdPhone" type="tel" maxlength="40" placeholder="(11) 90000-0000"></div>
             <div><label class="modal-label">E-mail</label><input class="modal-input" id="ccdEmail" type="email" maxlength="160" placeholder="nome@exemplo.com"></div>
           </div>
-          <div class="modal-row">
+          <div class="modal-row" id="ccdFunnelRow">
+            <div><label class="modal-label">Funil</label><select class="modal-input" id="ccdFunnel" onchange="ccFillDealStages(this.value)"></select></div>
             <div><label class="modal-label">Etapa</label><select class="modal-input" id="ccdStage"></select></div>
+          </div>
+          <div class="modal-row">
             <div><label class="modal-label">Valor (R$)</label><input class="modal-input" id="ccdValue" inputmode="decimal" placeholder="Ex: 1.500,00"></div>
+            <div><label class="modal-label">Responsável</label><input class="modal-input" id="ccdOwner" maxlength="80" list="ccOwnerList" placeholder="Quem cuida do negócio"></div>
           </div>
           <div class="modal-row">
             <div><label class="modal-label">Origem</label>
-              <select class="modal-input" id="ccdSource"><option value="manual">Manual</option><option value="form">Formulário</option><option value="campaign">Campanha</option></select></div>
+              <select class="modal-input" id="ccdSource"><option value="manual">Manual</option><option value="form">Formulário</option><option value="campaign">Campanha</option><option value="whatsapp">WhatsApp</option><option value="import">Importação</option></select></div>
             <div><label class="modal-label">Detalhe da origem</label><input class="modal-input" id="ccdSourceDetail" maxlength="160" placeholder="Ex: nome da campanha"></div>
           </div>
-          <div class="modal-row">
-            <div><label class="modal-label">Responsável</label><input class="modal-input" id="ccdOwner" maxlength="80" list="ccOwnerList" placeholder="Quem cuida do lead"></div>
-            <div><label class="modal-label">Tags</label><input class="modal-input" id="ccdTags" maxlength="320" placeholder="Separe por vírgula"></div>
-          </div>
           <datalist id="ccOwnerList"></datalist>
+          <label class="modal-label">Etiquetas</label>
+          <div class="cc-tagpick" id="ccdTags"></div>
           <label class="modal-label">Notas</label>
-          <textarea class="modal-input" id="ccdNotes" rows="3" maxlength="5000" placeholder="Anotações sobre esse lead"></textarea>
+          <textarea class="modal-input" id="ccdNotes" rows="3" maxlength="5000" placeholder="Anotações sobre esse negócio"></textarea>
           <div class="modal-actions" style="justify-content:space-between;">
-            <button type="button" class="btn-cancel" id="ccdDelete" style="color:#e05a5a; border-color:rgba(224,90,90,0.3);" onclick="ccDeleteDeal()">Excluir</button>
+            <button type="button" class="btn-cancel cc-danger" id="ccdDelete" onclick="ccDeleteDeal()">Excluir</button>
             <div style="display:flex; gap:10px;">
               <button type="button" class="btn-cancel" onclick="ccCloseModal('ccDealModal')">Cancelar</button>
               <button type="submit" class="btn-add" id="ccdSave">Salvar</button>
@@ -2256,21 +2558,114 @@
       </div>
     </div>
 
-    <!-- Etapas do funil do cliente -->
+    <!-- Funil: nome, etapas e cores -->
     <div class="drawer-overlay" id="ccStagesModal" onclick="if(event.target===this) ccCloseModal('ccStagesModal')">
-      <div class="modal-box" style="width:460px;">
+      <div class="modal-box" style="width:520px;">
         <div class="modal-head">
-          <h3>Etapas do funil</h3>
+          <h3>Editar funil</h3>
           <button type="button" class="modal-close" onclick="ccCloseModal('ccStagesModal')">✕</button>
         </div>
         <div id="ccStagesError" class="modal-error" style="display:none;"></div>
-        <p class="footnote" style="border:none; padding:0; margin:0 0 12px;">Renomeie, reordene, crie ou remova etapas. Leads de uma etapa removida vão para a primeira etapa. Marque quais etapas contam como venda ganha ou perdida.</p>
+        <label class="modal-label">Nome do funil</label>
+        <input class="modal-input" id="ccFunnelName" maxlength="40">
+        <p class="footnote" style="border:none; padding:0; margin:10px 0 12px;">Renomeie, reordene, crie ou remova etapas e escolha a cor de cada uma. Negócios de uma etapa removida vão para a primeira etapa. Marque quais etapas contam como venda ganha ou perdida.</p>
         <div id="ccStagesList"></div>
         <button type="button" class="btn-cancel" onclick="ccStageAdd()">+ Adicionar etapa</button>
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" onclick="ccCloseModal('ccStagesModal')">Cancelar</button>
-          <button type="button" class="btn-add" id="ccStagesSave" onclick="ccSaveStages()">Salvar etapas</button>
+        <div class="modal-actions" style="justify-content:space-between;">
+          <button type="button" class="btn-cancel cc-danger" id="ccFunnelDelete" onclick="ccDeleteFunnel()">Excluir funil</button>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-cancel" onclick="ccCloseModal('ccStagesModal')">Cancelar</button>
+            <button type="button" class="btn-add" id="ccStagesSave" onclick="ccSaveStages()">Salvar</button>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Contato -->
+    <div class="drawer-overlay" id="ccContactModal" onclick="if(event.target===this) ccCloseModal('ccContactModal')">
+      <div class="modal-box" style="width:460px;">
+        <div class="modal-head">
+          <h3 id="ccContactTitle">Novo contato</h3>
+          <button type="button" class="modal-close" onclick="ccCloseModal('ccContactModal')">✕</button>
+        </div>
+        <div id="ccContactError" class="modal-error" style="display:none;"></div>
+        <form onsubmit="ccSaveContact(event)">
+          <label class="modal-label">Nome *</label>
+          <input class="modal-input" id="cctName" maxlength="120" required placeholder="Nome do contato">
+          <div class="modal-row">
+            <div><label class="modal-label">Telefone / WhatsApp</label><input class="modal-input" id="cctPhone" type="tel" maxlength="40" placeholder="(11) 90000-0000"></div>
+            <div><label class="modal-label">E-mail</label><input class="modal-input" id="cctEmail" type="email" maxlength="160" placeholder="nome@exemplo.com"></div>
+          </div>
+          <label class="modal-label">Empresa</label>
+          <input class="modal-input" id="cctCompany" maxlength="120">
+          <label class="modal-label">Etiquetas</label>
+          <div class="cc-tagpick" id="cctTags"></div>
+          <label class="modal-label">Notas</label>
+          <textarea class="modal-input" id="cctNotes" rows="3" maxlength="2000"></textarea>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="ccCloseModal('ccContactModal')">Cancelar</button>
+            <button type="submit" class="btn-add" id="cctSave">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Etiqueta -->
+    <div class="drawer-overlay" id="ccTagModal" onclick="if(event.target===this) ccCloseModal('ccTagModal')">
+      <div class="modal-box" style="width:420px;">
+        <div class="modal-head">
+          <h3 id="ccTagTitle">Nova etiqueta</h3>
+          <button type="button" class="modal-close" onclick="ccCloseModal('ccTagModal')">✕</button>
+        </div>
+        <div id="ccTagError" class="modal-error" style="display:none;"></div>
+        <form onsubmit="ccSaveTag(event)">
+          <label class="modal-label">Nome *</label>
+          <input class="modal-input" id="cgName" maxlength="30" required placeholder="Ex: Retornar ligação">
+          <label class="modal-label">Cor</label>
+          <div class="cc-swatches" id="cgColors"></div>
+          <label class="modal-label">Significado no funil</label>
+          <select class="modal-input" id="cgMeaning">
+            <option value="common">Comum (só organiza)</option>
+            <option value="qualified">Qualificado</option>
+            <option value="disqualified">Desqualificado</option>
+          </select>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="ccCloseModal('ccTagModal')">Cancelar</button>
+            <button type="submit" class="btn-add" id="cgSave">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- WhatsApp do cliente (só a agência) -->
+    <div class="drawer-overlay" id="ccWaModal" onclick="if(event.target===this) ccCloseModal('ccWaModal')">
+      <div class="modal-box" style="width:480px;">
+        <div class="modal-head">
+          <h3>WhatsApp deste cliente</h3>
+          <button type="button" class="modal-close" onclick="ccCloseModal('ccWaModal')">✕</button>
+        </div>
+        <div id="ccWaError" class="modal-error" style="display:none;"></div>
+        <p class="footnote" style="border:none; padding:0; margin:0 0 12px;">API oficial da Meta (WhatsApp Cloud API). Copie os IDs do número no WhatsApp Manager. O token fica só no servidor (variável WHATSAPP_TOKEN no hPanel), nunca aqui. O cliente vê só se está conectado e o número.</p>
+        <form onsubmit="ccSaveWa(event)">
+          <div class="modal-row">
+            <div><label class="modal-label">ID do número (phone_number_id)</label><input class="modal-input" id="cwPhoneId" inputmode="numeric" maxlength="40"></div>
+            <div><label class="modal-label">ID da conta (WABA)</label><input class="modal-input" id="cwWaba" inputmode="numeric" maxlength="40"></div>
+          </div>
+          <label class="modal-label">Número exibido</label>
+          <input class="modal-input" id="cwDisplay" maxlength="40" placeholder="+55 11 90000-0000">
+          <div class="cc-answers" style="margin-top:12px;">
+            <div><span>URL do webhook (no app da Meta)</span><code id="cwHook"></code></div>
+            <div><span>Token de verificação</span>o valor de WHATSAPP_VERIFY_TOKEN</div>
+            <div><span>Campo assinado</span>messages</div>
+          </div>
+          <div class="modal-actions" style="justify-content:space-between;">
+            <button type="button" class="btn-cancel cc-danger" onclick="ccDisconnectWa()">Desconectar</button>
+            <div style="display:flex; gap:10px;">
+              <button type="button" class="btn-cancel" onclick="ccCloseModal('ccWaModal')">Cancelar</button>
+              <button type="submit" class="btn-add">Salvar</button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -3050,6 +3445,7 @@
 
   document.querySelectorAll('.g-tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
+      if (!tab.dataset.pane) return; // botões que só usam o visual de aba (ex.: filtros do CRM) cuidam do próprio estado
       const scope = tab.closest('.view'); // escopa por seção (Meta ou Google), não pela página inteira
       scope.querySelectorAll('.g-tab').forEach(t=>t.classList.remove('active'));
       tab.classList.add('active');
@@ -4413,7 +4809,9 @@
       document.querySelector('.cnav[data-ctab="overview"]').style.display = showAds ? '' : 'none';
       document.querySelector('.cnav[data-ctab="social"]').style.display = showSocial ? '' : 'none';
       document.querySelector('.cnav[data-ctab="forms"]').style.display = vis.forms ? '' : 'none';
-      document.querySelector('.cnav[data-ctab="crm"]').style.display = vis.crm ? '' : 'none';
+      document.querySelectorAll('.cnav-crm').forEach(el => { el.style.display = vis.crm ? '' : 'none'; });
+      document.getElementById('cnavDivResults').style.display = showAds || showSocial ? '' : 'none';
+      document.getElementById('cnavDivCapture').style.display = vis.forms ? '' : 'none';
       document.getElementById('cdTabBtnSocial').style.display = showSocial ? '' : 'none';
       document.title = `${me.name} · Instinto Digital`;
       const first = showAds ? 'overview' : showSocial ? 'social' : vis.forms ? 'forms' : vis.crm ? 'crm' : 'overview';
@@ -4601,8 +4999,8 @@
       document.getElementById('fmEditMode').style.display = 'none';
       document.getElementById('fmListMode').style.display = 'block';
       loadForms();
-    } else if (tab === 'crm') {
-      ccShowView();
+    } else if (tab === 'crm' || tab.startsWith('crm-')) {
+      ccShowView(tab);
     } else {
       if (!document.getElementById('view-client-detail').classList.contains('active') || currentClientId !== WS) {
         openClientDetail(WS, tab);
@@ -8716,15 +9114,41 @@
     }
   }
 
-  /* ---------- CRM do cliente (cada cliente tem o seu funil) ---------- */
+  /* ---------- CRM do cliente (cada cliente tem o seu CRM isolado) ---------- */
   // Admin usa /api/crm/:clientId; o cliente logado usa /api/client/crm
   // (o servidor sempre usa o id da sessão, o cliente não escolhe de quem é o CRM).
+  // Páginas: Funil de vendas, Conversas (WhatsApp), Contatos, Etiquetas e Relatórios.
   const CC_VIEW_KEY = 'instintoDashCrmView';
-  let ccState = { clientId: null, stages: [], deals: [] };
+  const CC_FUNNEL_KEY = 'instintoDashCrmFunnel';
+  const CC_COLOR_VAR = { gray:'var(--text-dim)', red:'var(--red)', orange:'var(--flame)', amber:'var(--amber)', green:'var(--green)', teal:'var(--teal)', blue:'var(--blue)', purple:'var(--purple)', pink:'var(--pink)' };
+  const CC_COLOR_NAME = { gray:'Cinza', red:'Vermelho', orange:'Laranja', amber:'Âmbar', green:'Verde', teal:'Turquesa', blue:'Azul', purple:'Roxo', pink:'Rosa' };
+  const CC_SOURCES = { form:'📝 Formulário', campaign:'📣 Campanha', whatsapp:'💬 WhatsApp', manual:'✍️ Manual', import:'⬆ Importação' };
+  const CC_PANES = { 'crm':'funil', 'crm-conversas':'conversas', 'crm-contatos':'contatos', 'crm-etiquetas':'etiquetas', 'crm-relatorios':'relatorios' };
+  const CC_SUB = {
+    funil: 'Seus negócios em um só lugar, do primeiro contato até a venda.',
+    conversas: 'Atenda o WhatsApp sem sair do CRM.',
+    contatos: 'Todas as pessoas que já entraram no seu CRM.',
+    etiquetas: 'Organize contatos e negócios com etiquetas.',
+    relatorios: 'Como o seu funil está indo no período.',
+  };
+  const ccC = c => CC_COLOR_VAR[c] || CC_COLOR_VAR.gray;
+  const ccNewState = clientId => ({ clientId, funnels: [], stages: [], funnelId: null, deals: [], tags: [], me: '', role: '', whatsapp: null, mock: false, loaded: false });
+  let ccState = ccNewState(null);
+  let ccPane = 'funil';
+  let ccPeriod = '';
   let ccCurrentId = null;
   let ccStagesDraft = [];
+  let ccStagesFunnel = null;
   let ccSeq = 0;
   let ccDragId = null;
+  let ccContacts = [];
+  let ccContactsLoaded = false;
+  let ccTagsFull = [];
+  let ccEditContactId = null;
+  let ccEditTagId = null;
+  let ccConv = { list: [], tab: 'all', activeId: null, detail: null, pendingOpen: null, loaded: false };
+  let ccPollTimer = null;
+  let ccRepPreset = '30';
 
   function ccUrl(path){
     return CLIENT_MODE ? `${API_BASE_URL}/api/client/crm${path}` : `${API_BASE_URL}/api/crm/${encodeURIComponent(WS)}${path}`;
@@ -8734,6 +9158,7 @@
     if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
     if (res.status === 204) return null;
     const data = await res.json().catch(() => ({}));
+    if (res.status === 429) throw new Error('Muitas ações seguidas. Espere um minuto e tente de novo.');
     if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
     return data;
   }
@@ -8742,36 +9167,128 @@
     el.style.display = msg ? 'flex' : 'none';
     el.textContent = msg ? `⚠ ${msg}` : '';
   }
-  function ccShowView(){
+  function ccMsgEl(id, msg){
+    const el = document.getElementById(id);
+    el.style.display = msg ? 'block' : 'none';
+    el.textContent = msg || '';
+  }
+  const ccMoney = v => v == null ? '' : Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  const ccLower = s => String(s || '').toLowerCase();
+  const ccInitials = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase() || '?';
+  function ccAgo(iso){
+    if (!iso) return '';
+    const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 1) return 'agora';
+    if (m < 60) return `há ${m} min`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `há ${h} h`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? 'ontem' : d < 30 ? `há ${d} dias` : new Date(iso).toLocaleDateString('pt-BR');
+  }
+  function ccWaLink(phone){
+    let d = String(phone || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.length === 10 || d.length === 11) d = '55' + d;
+    return `https://wa.me/${d}`;
+  }
+  function ccFillSelect(id, values, allLabel){
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = (allLabel != null ? `<option value="">${allLabel}</option>` : '') + values.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join('');
+    if (values.some(([v]) => v === cur)) el.value = cur;
+    else if (allLabel != null) el.value = '';
+  }
+  const ccTagObj = name => ccState.tags.find(t => ccLower(t.name) === ccLower(name));
+  const ccTagColor = name => ccC((ccTagObj(name) || {}).color);
+  const ccTagChip = name => `<span class="cc-tag c" style="--cc-c:${ccTagColor(name)}">${escapeHtml(name)}</span>`;
+  const ccTagsHtml = tags => (tags || []).length ? `<div class="cc-tags">${tags.map(ccTagChip).join('')}</div>` : '';
+  const ccFunnel = id => ccState.funnels.find(f => f.id === id) || ccState.funnels[0];
+  const ccAllStages = () => ccState.funnels.flatMap(f => f.stages.map(s => ({ ...s, funnelId: f.id, funnelName: f.name })));
+  const ccStage = id => ccAllStages().find(s => s.id === id);
+  const ccStageChip = s => s ? `<span class="cc-stage-chip" style="--cc-c:${ccC(s.color)}">${escapeHtml(s.name)}</span>` : '';
+
+  /* Navegação entre as 5 páginas */
+  function ccShowView(tab){
+    const pane = CC_PANES[tab] || 'funil';
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-ccrm').classList.add('active');
+    if (ccState.clientId !== WS) {
+      ccState = ccNewState(WS);
+      ccContacts = []; ccContactsLoaded = false; ccTagsFull = [];
+      ccConv = { list: [], tab: 'all', activeId: null, detail: null, pendingOpen: ccConv.pendingOpen, loaded: false };
+      document.getElementById('ccChat').innerHTML = '<div class="cc-chat-empty">Escolha uma conversa para ver as mensagens.</div>';
+      document.getElementById('ccChat').dataset.id = '';
+      ccResetFilters();
+      ccRender();
+    }
+    ccPane = pane;
     const name = rawAccountsById[WS]?.name || '';
     document.getElementById('ccTitle').textContent = CLIENT_MODE ? 'CRM' : `CRM · ${name}`;
+    document.getElementById('ccSub').textContent = CC_SUB[pane];
+    document.querySelectorAll('#ccTabs .cc-tab').forEach(b => b.classList.toggle('active', b.dataset.pane === pane));
+    const paneIds = { funil:'ccPaneFunil', conversas:'ccPaneConversas', contatos:'ccPaneContatos', etiquetas:'ccPaneEtiquetas', relatorios:'ccPaneRelatorios' };
+    Object.entries(paneIds).forEach(([k, id]) => document.getElementById(id).classList.toggle('active', k === pane));
     const note = document.getElementById('ccAdminNote');
     if (!CLIENT_MODE && !visOf(rawAccountsById[WS]).crm) {
       note.style.display = 'block';
       note.textContent = 'Só você vê este CRM por enquanto. Para o cliente usar, libere "CRM" em Acesso do cliente.';
     } else note.style.display = 'none';
+    const activeTab = document.querySelector('#ccTabs .cc-tab.active');
+    if (activeTab) activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     ccSetView(ccPreferredView(), true);
-    ccLoad();
+    ccTopActions();
+    ccLoadPane();
+  }
+  async function ccLoadPane(){
+    const pane = ccPane;
+    await ccLoad();
+    if (pane !== ccPane) return;
+    if (pane === 'conversas') { await ccLoadConvs(); ccStartPoll(); }
+    else if (pane === 'contatos') ccLoadContacts();
+    else if (pane === 'etiquetas') ccLoadTags();
+    else if (pane === 'relatorios') ccLoadReport();
+  }
+  function ccTopActions(){
+    const el = document.getElementById('ccTopActions');
+    let h = '';
+    if (ccPane === 'funil') h = `<button type="button" class="btn-cancel" onclick="ccOpenStages()">⚙ Editar funil</button><button type="button" class="btn-add" onclick="ccOpenDeal(null)">+ Novo negócio</button>`;
+    else if (ccPane === 'conversas' && !CLIENT_MODE) h = `${ccState.mock ? '<button type="button" class="btn-cancel" onclick="ccSimulate()">🧪 Simular mensagem</button>' : ''}<button type="button" class="btn-cancel" onclick="ccOpenWa()">⚙ WhatsApp</button>`;
+    el.innerHTML = h;
+    el.style.display = h ? '' : 'none';
   }
   async function ccLoad(){
     const seq = ++ccSeq;
     const clientId = WS;
-    if (ccState.clientId !== clientId) { ccState = { clientId, stages: [], deals: [] }; ccResetFilters(); ccRender(); }
     try {
       const data = await ccApi('');
-      if (seq !== ccSeq) return;
-      ccState = { clientId, stages: data.pipeline.stages, deals: data.deals };
+      if (seq !== ccSeq || clientId !== WS) return;
+      const funnels = data.pipeline.funnels || [{ id: 'principal', name: 'Funil principal', stages: data.pipeline.stages }];
+      let fid = ccState.funnelId;
+      if (!fid) { try { fid = localStorage.getItem(`${CC_FUNNEL_KEY}:${clientId}`); } catch (e) {} }
+      if (!funnels.some(f => f.id === fid)) fid = funnels[0].id;
+      Object.assign(ccState, {
+        clientId, funnels, funnelId: fid, stages: funnels.find(f => f.id === fid).stages, deals: data.deals, tags: data.tags || [],
+        me: data.me || '', role: data.role || '', whatsapp: data.whatsapp || null, mock: !!data.mock, loaded: true,
+      });
       ccError('');
+      ccSetUnread(data.deals.reduce((s, d) => s + (d.unread || 0), 0), true);
     } catch (e) {
       if (seq !== ccSeq) return;
       ccError(`Não consegui carregar o CRM: ${e.message}`);
     }
     ccRender();
+    ccTopActions();
+  }
+  function ccSetUnread(n, fromBoard){
+    if (fromBoard && ccConv.loaded) return;
+    document.querySelectorAll('[data-unread]').forEach(el => { el.textContent = n > 99 ? '99+' : String(n); el.style.display = n ? '' : 'none'; });
   }
   function ccResetFilters(){
-    ['ccSearch','ccFilterSource','ccFilterStage','ccFilterOwner','ccFilterTag'].forEach(id => { document.getElementById(id).value = ''; });
+    ['ccSearch','ccFilterSource','ccFilterOwner','ccFilterTag','ccFrom','ccTo','ccContSearch','ccContTag','ccConvSearch','ccConvStage'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('ccConvStatus').value = 'open';
+    document.getElementById('ccConvUnread').checked = false;
+    ccPeriod = '';
+    ccMarkPeriod();
   }
   function ccPreferredView(){
     let v = null;
@@ -8785,86 +9302,122 @@
     document.getElementById('ccViewList').classList.toggle('active', v === 'list');
     document.getElementById('ccBoard').style.display = v === 'board' ? '' : 'none';
     document.getElementById('ccList').style.display = v === 'list' ? '' : 'none';
-    document.getElementById('ccBoard').dataset.on = v === 'board' ? '1' : '';
     if (!silent) ccRender();
   }
-  const ccStage = id => ccState.stages.find(s => s.id === id);
-  const ccSourceLabel = d => d.source === 'form' ? '📝 Formulário' : d.source === 'campaign' ? '📣 Campanha' : '✍️ Manual';
-  const ccMoney = v => v == null ? '' : v.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
-  function ccWaLink(phone){
-    let d = String(phone || '').replace(/\D/g, '');
-    if (!d) return '';
-    if (d.length === 10 || d.length === 11) d = '55' + d;
-    return `https://wa.me/${d}`;
+
+  /* ---- Funil de vendas ---- */
+  async function ccPickFunnel(v){
+    const sel = document.getElementById('ccFunnel');
+    if (v === '__new') {
+      sel.value = ccState.funnelId;
+      const name = (prompt('Nome do novo funil (ex: Pós-venda, Revenda):') || '').trim();
+      if (!name) return;
+      try {
+        const f = await ccApi('/funnels', { method: 'POST', body: JSON.stringify({ name }) });
+        ccState.funnelId = f.id;
+        try { localStorage.setItem(`${CC_FUNNEL_KEY}:${WS}`, f.id); } catch (e) {}
+        await ccLoad();
+      } catch (e) { ccError(e.message); }
+      return;
+    }
+    const f = ccState.funnels.find(x => x.id === v);
+    if (!f) return;
+    ccState.funnelId = f.id;
+    ccState.stages = f.stages;
+    try { localStorage.setItem(`${CC_FUNNEL_KEY}:${WS}`, f.id); } catch (e) {}
+    ccRender();
   }
-  function ccFillSelect(id, values, allLabel){
-    const el = document.getElementById(id);
-    const cur = el.value;
-    el.innerHTML = `<option value="">${allLabel}</option>` + values.map(([v, l]) => `<option value="${escapeAttr(v)}">${escapeHtml(l)}</option>`).join('');
-    el.value = values.some(([v]) => v === cur) ? cur : '';
+  function ccMarkPeriod(){
+    document.querySelectorAll('#ccPeriod .g-tab').forEach(b => b.classList.toggle('active', b.dataset.p === ccPeriod));
+  }
+  function ccSetPeriod(p){
+    ccPeriod = p;
+    if (p !== 'custom') { document.getElementById('ccFrom').value = ''; document.getElementById('ccTo').value = ''; }
+    else if (!document.getElementById('ccFrom').value && !document.getElementById('ccTo').value) ccPeriod = '';
+    ccMarkPeriod();
+    ccRender();
+  }
+  function ccPeriodRange(){
+    const now = new Date();
+    const sod = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (ccPeriod === 'today') return [sod.getTime(), Infinity];
+    if (ccPeriod === '7') return [sod.getTime() - 6 * 864e5, Infinity];
+    if (ccPeriod === '30') return [sod.getTime() - 29 * 864e5, Infinity];
+    if (ccPeriod === 'month') return [new Date(now.getFullYear(), now.getMonth(), 1).getTime(), Infinity];
+    if (ccPeriod === 'custom') {
+      const f = document.getElementById('ccFrom').value, t = document.getElementById('ccTo').value;
+      return [f ? new Date(`${f}T00:00:00`).getTime() : -Infinity, t ? new Date(`${t}T23:59:59.999`).getTime() : Infinity];
+    }
+    return null;
   }
   function ccFiltered(){
     const q = document.getElementById('ccSearch').value.trim().toLowerCase();
     const src = document.getElementById('ccFilterSource').value;
-    const stage = document.getElementById('ccFilterStage').value;
     const owner = document.getElementById('ccFilterOwner').value;
     const tag = document.getElementById('ccFilterTag').value;
+    const range = ccPeriodRange();
     const qDigits = q.replace(/\D/g, '');
     return ccState.deals.filter(d => {
+      if (d.funnelId && d.funnelId !== ccState.funnelId) return false;
       if (src && d.source !== src) return false;
-      if (stage && d.stageId !== stage) return false;
-      if (owner && (d.owner || '') !== owner) return false;
-      if (tag && !(d.tags || []).includes(tag)) return false;
+      if (owner === '__none' ? d.owner : (owner && (d.owner || '') !== owner)) return false;
+      if (tag && !(d.tags || []).some(t => ccLower(t) === ccLower(tag))) return false;
+      if (range) { const t = new Date(d.createdAt).getTime(); if (t < range[0] || t > range[1]) return false; }
       if (!q) return true;
       const hay = [d.name, d.email, d.company, d.phone, d.owner, d.sourceDetail, d.campaign, d.notes, ...(d.tags || [])].join(' ').toLowerCase();
       return hay.includes(q) || (qDigits.length >= 3 && String(d.phone || '').replace(/\D/g, '').includes(qDigits));
     });
   }
   function ccRender(){
-    const deals = ccState.deals;
-    // KPIs (sobre todos os leads, sem filtro)
-    const kind = d => (ccStage(d.stageId) || {}).kind || 'open';
-    const open = deals.filter(d => kind(d) === 'open');
-    const won = deals.filter(d => kind(d) === 'won');
-    const lost = deals.filter(d => kind(d) === 'lost');
+    const stages = ccState.stages;
     const sum = arr => arr.reduce((s, d) => s + (d.value || 0), 0);
+    // Seletor de funil
+    document.getElementById('ccFunnel').innerHTML = ccState.funnels.map(f => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.name)}</option>`).join('') + '<option value="__new">+ Novo funil</option>';
+    if (ccState.funnelId) document.getElementById('ccFunnel').value = ccState.funnelId;
+    // Filtros
+    const owners = [...new Set(ccState.deals.map(d => d.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    ccFillSelect('ccFilterOwner', [...owners.map(o => [o, o]), ['__none', 'Sem responsável']], 'Todos os responsáveis');
+    const tagNames = [...new Set([...ccState.tags.map(t => t.name), ...ccState.deals.flatMap(d => d.tags || [])])].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    ccFillSelect('ccFilterTag', tagNames.map(t => [t, t]), 'Todas as etiquetas');
+    document.getElementById('ccOwnerList').innerHTML = [...new Set([ccState.me, ...owners].filter(Boolean))].map(o => `<option value="${escapeAttr(o)}">`).join('');
+
+    const shown = ccFiltered();
+    const inFunnel = ccState.deals.filter(d => !d.funnelId || d.funnelId === ccState.funnelId);
+    const filtering = shown.length !== inFunnel.length;
+    // KPIs (respeitam os filtros)
+    const kind = d => (stages.find(s => s.id === d.stageId) || {}).kind || 'open';
+    const open = shown.filter(d => kind(d) === 'open');
+    const won = shown.filter(d => kind(d) === 'won');
+    const lost = shown.filter(d => kind(d) === 'lost');
     document.getElementById('ccKpiOpen').textContent = open.length;
     document.getElementById('ccKpiOpenValue').textContent = ccMoney(sum(open)) || 'R$ 0';
     document.getElementById('ccKpiWon').textContent = won.length ? `${won.length} · ${ccMoney(sum(won)) || 'R$ 0'}` : '0';
     document.getElementById('ccKpiRate').textContent = (won.length + lost.length) ? `${Math.round(won.length / (won.length + lost.length) * 100)}%` : '–';
-    // Filtros
-    ccFillSelect('ccFilterStage', ccState.stages.map(s => [s.id, s.name]), 'Todas as etapas');
-    const owners = [...new Set(deals.map(d => d.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    ccFillSelect('ccFilterOwner', owners.map(o => [o, o]), 'Todos os responsáveis');
-    const tags = [...new Set(deals.flatMap(d => d.tags || []))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    ccFillSelect('ccFilterTag', tags.map(t => [t, t]), 'Todas as tags');
-    document.getElementById('ccOwnerList').innerHTML = owners.map(o => `<option value="${escapeAttr(o)}">`).join('');
 
-    const shown = ccFiltered();
-    const filtering = shown.length !== deals.length;
-    const waHtml = d => d.phone ? `<a class="cc-wa" href="${escapeAttr(ccWaLink(d.phone))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">💬 WhatsApp</a>` : '';
-    const tagsHtml = d => (d.tags || []).length ? `<div class="cc-tags">${d.tags.map(t => `<span class="cc-tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
+    const convHtml = d => d.conversationId
+      ? `<a class="cc-wa" href="#" onclick="event.stopPropagation(); event.preventDefault(); ccGoConv('${escapeAttr(d.conversationId)}')">💬 Conversa${d.unread ? ` <span class="cc-unread">${d.unread}</span>` : ''}</a>`
+      : (d.phone ? `<a class="cc-wa" href="${escapeAttr(ccWaLink(d.phone))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">💬 WhatsApp</a>` : '');
 
     // Quadro
     const board = document.getElementById('ccBoard');
     board.innerHTML = '';
-    ccState.stages.forEach(stage => {
+    stages.forEach(stage => {
       const inStage = shown.filter(d => d.stageId === stage.id);
-      const total = sum(inStage);
       const col = document.createElement('div');
       col.className = 'crm-col';
+      col.style.setProperty('--cc-c', ccC(stage.color));
       col.ondragover = ev => { ev.preventDefault(); col.classList.add('drag-over'); };
       col.ondragleave = () => col.classList.remove('drag-over');
       col.ondrop = ev => { ev.preventDefault(); col.classList.remove('drag-over'); ccMove(ccDragId || ev.dataTransfer.getData('text/plain'), stage.id); };
       col.innerHTML = `
-        <div class="crm-col-head"><span class="cc-col-head-l"><span class="cc-dot ${escapeAttr(stage.kind)}"></span><span>${escapeHtml(stage.name)}</span>${total ? `<span class="cc-col-value">${escapeHtml(ccMoney(total))}</span>` : ''}</span><span class="crm-col-count">${inStage.length}</span></div>
+        <div class="crm-col-head"><span class="cc-col-title"><b>${escapeHtml(stage.name)}</b><small>${escapeHtml(ccMoney(sum(inStage)) || 'R$ 0')}</small></span><span class="crm-col-count">${inStage.length}</span></div>
         <div class="crm-col-cards">${inStage.length ? inStage.map(d => `
           <div class="crm-card" draggable="true" data-id="${escapeAttr(d.id)}" onclick="ccOpenDeal('${escapeAttr(d.id)}')">
-            <div class="cc-card-top"><div class="crm-card-name">${escapeHtml(d.name)}</div>${d.value != null ? `<span class="cc-value">${escapeHtml(ccMoney(d.value))}</span>` : ''}</div>
-            <div class="crm-card-sub">${escapeHtml(d.company || d.email || d.phone || '')}</div>
-            ${tagsHtml(d)}
-            <div class="crm-card-foot">${waHtml(d) || '<span></span>'}<span class="crm-card-source">${d.owner ? `<span class="cc-owner">${escapeHtml(d.owner)}</span> ` : ''}${ccSourceLabel(d)} · ${timeAgo(d.createdAt)}</span></div>
-          </div>`).join('') : '<div class="crm-empty-col">Nenhum lead aqui</div>'}</div>`;
+            <div class="cc-card-top"><div class="crm-card-name">${escapeHtml(d.name)}</div>${d.unread ? `<span class="cc-unread" title="Mensagens não lidas">${d.unread}</span>` : ''}</div>
+            <div class="cc-card-line"><span>${d.phone ? `📞 ${escapeHtml(d.phone)}` : escapeHtml(d.email || d.company || '')}</span>${d.value != null ? `<span class="cc-value">${escapeHtml(ccMoney(d.value))}</span>` : ''}</div>
+            ${ccTagsHtml(d.tags)}
+            <div class="crm-card-foot">${convHtml(d) || '<span></span>'}<span class="crm-card-source">${d.owner ? `<span class="cc-owner">👤 ${escapeHtml(d.owner)}</span> ` : ''}${escapeHtml(ccAgo(d.createdAt))}</span></div>
+          </div>`).join('') : '<div class="crm-empty-col">Nenhum negócio aqui</div>'}</div>`;
       col.querySelectorAll('.crm-card').forEach(card => {
         card.addEventListener('dragstart', ev => { ccDragId = card.dataset.id; ev.dataTransfer.setData('text/plain', card.dataset.id); card.classList.add('dragging'); });
         card.addEventListener('dragend', () => { ccDragId = null; card.classList.remove('dragging'); });
@@ -8874,25 +9427,29 @@
 
     // Lista (padrão no celular)
     const list = document.getElementById('ccList');
-    if (!shown.length) {
-      list.innerHTML = `<div class="cc-empty">${filtering ? 'Nenhum lead encontrado com esses filtros.' : 'Nenhum lead ainda. Os leads dos formulários aparecem aqui automaticamente, ou toque em "+ Novo lead".'}</div>`;
+    if (!ccState.loaded) list.innerHTML = '<div class="cc-empty">Carregando…</div>';
+    else if (!shown.length) {
+      list.innerHTML = `<div class="cc-empty">${filtering ? 'Nenhum negócio encontrado com esses filtros.' : 'Nenhum negócio ainda. Leads dos formulários e do WhatsApp aparecem aqui sozinhos, ou toque em "+ Novo negócio".'}</div>`;
     } else {
-      const order = new Map(ccState.stages.map((s, i) => [s.id, i]));
+      const order = new Map(stages.map((s, i) => [s.id, i]));
       const sorted = [...shown].sort((a, b) => (order.get(a.stageId) ?? 99) - (order.get(b.stageId) ?? 99) || String(b.createdAt).localeCompare(String(a.createdAt)));
-      list.innerHTML = sorted.map(d => `
-        <div class="cc-row" onclick="ccOpenDeal('${escapeAttr(d.id)}')">
+      list.innerHTML = sorted.map(d => {
+        const st = stages.find(s => s.id === d.stageId);
+        return `
+        <div class="cc-row" onclick="ccOpenDeal('${escapeAttr(d.id)}')" style="border-left:3px solid ${st ? ccC(st.color) : 'var(--line)'};">
           <div style="min-width:0;">
-            <div class="cc-row-name">${escapeHtml(d.name)}</div>
-            <div class="cc-row-sub"><span>${ccSourceLabel(d)} · ${timeAgo(d.createdAt)}</span>${d.owner ? `<span class="cc-owner">${escapeHtml(d.owner)}</span>` : ''}${waHtml(d)}</div>
-            ${tagsHtml(d)}
+            <div class="cc-row-name">${escapeHtml(d.name)}${d.unread ? ` <span class="cc-unread">${d.unread}</span>` : ''}</div>
+            <div class="cc-row-sub">${d.phone ? `<span>📞 ${escapeHtml(d.phone)}</span>` : ''}<span>${CC_SOURCES[d.source] || CC_SOURCES.manual} · ${escapeHtml(ccAgo(d.createdAt))}</span>${d.owner ? `<span class="cc-owner">👤 ${escapeHtml(d.owner)}</span>` : ''}${convHtml(d)}</div>
+            ${ccTagsHtml(d.tags)}
           </div>
           <div class="cc-row-right">
             <select class="modal-input" onclick="event.stopPropagation()" onchange="ccMove('${escapeAttr(d.id)}', this.value)" aria-label="Etapa">
-              ${ccState.stages.map(s => `<option value="${escapeAttr(s.id)}"${s.id === d.stageId ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+              ${stages.map(s => `<option value="${escapeAttr(s.id)}"${s.id === d.stageId ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
             </select>
             ${d.value != null ? `<span class="cc-value">${escapeHtml(ccMoney(d.value))}</span>` : ''}
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
   }
   async function ccMove(id, stageId){
@@ -8908,7 +9465,7 @@
     } catch (e) {
       deal.stageId = prev;
       ccRender();
-      ccError(`Não consegui mover o lead: ${e.message}`);
+      ccError(`Não consegui mover o negócio: ${e.message}`);
     }
   }
 
@@ -8923,28 +9480,70 @@
     setTimeout(() => { if (!o.classList.contains('open')) o.style.display = 'none'; }, 260);
     if (id === 'ccDealModal') ccCurrentId = null;
   }
-  function ccDealError(msg){
-    const el = document.getElementById('ccDealError');
-    el.style.display = msg ? 'block' : 'none';
-    el.textContent = msg || '';
+  function ccDealError(msg){ ccMsgEl('ccDealError', msg); }
+
+  /* Seletor de etiquetas (negócio e contato) */
+  function ccTagPicker(elId, selected){
+    const el = document.getElementById(elId);
+    el._sel = [...(selected || [])];
+    const add = () => {
+      const inp = el.querySelector('input');
+      const v = (inp.value || '').trim().slice(0, 30);
+      if (v && !el._sel.some(s => ccLower(s) === ccLower(v)) && el._sel.length < 10) el._sel.push(ccTagObj(v)?.name || v);
+      inp.value = '';
+      render();
+      el.querySelector('input').focus();
+    };
+    const render = () => {
+      const names = [...new Set([...ccState.tags.map(t => t.name), ...el._sel])];
+      el.innerHTML = names.map(n => `<button type="button" class="${el._sel.some(s => ccLower(s) === ccLower(n)) ? 'on' : ''}" style="--cc-c:${ccTagColor(n)}" data-n="${escapeAttr(n)}"><span class="cc-sw"></span>${escapeHtml(n)}</button>`).join('')
+        + '<input class="modal-input" maxlength="30" placeholder="+ Nova etiqueta (Enter)">';
+      el.querySelectorAll('button').forEach(b => { b.onclick = () => {
+        const i = el._sel.findIndex(s => ccLower(s) === ccLower(b.dataset.n));
+        if (i >= 0) el._sel.splice(i, 1); else if (el._sel.length < 10) el._sel.push(b.dataset.n);
+        render();
+      }; });
+      el.querySelector('input').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
+    };
+    render();
+  }
+  function ccTagPickerValue(elId){
+    const el = document.getElementById(elId);
+    const v = (el.querySelector('input')?.value || '').trim().slice(0, 30);
+    const out = [...(el._sel || [])];
+    if (v && !out.some(s => ccLower(s) === ccLower(v))) out.push(v);
+    return out.slice(0, 10);
+  }
+
+  /* Negócio */
+  function ccFillDealStages(funnelId, selected){
+    const f = ccFunnel(funnelId);
+    const sel = document.getElementById('ccdStage');
+    sel.innerHTML = (f ? f.stages : []).map(s => `<option value="${escapeAttr(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+    if (selected && f && f.stages.some(s => s.id === selected)) sel.value = selected;
   }
   function ccOpenDeal(id){
     const d = id ? ccState.deals.find(x => x.id === id) : null;
     if (id && !d) return;
     ccCurrentId = d ? d.id : null;
     ccDealError('');
-    document.getElementById('ccDealTitle').textContent = d ? d.name : 'Novo lead';
-    document.getElementById('ccdStage').innerHTML = ccState.stages.map(s => `<option value="${escapeAttr(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+    document.getElementById('ccDealTitle').textContent = d ? d.name : 'Novo negócio';
+    const fid = d ? (d.funnelId || ccState.funnels[0]?.id) : ccState.funnelId;
+    document.getElementById('ccdFunnel').innerHTML = ccState.funnels.map(f => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.name)}</option>`).join('');
+    document.getElementById('ccdFunnel').value = fid;
+    document.getElementById('ccdFunnel').parentElement.style.display = ccState.funnels.length > 1 ? '' : 'none';
+    ccFillDealStages(fid, d ? d.stageId : null);
     const set = (k, v) => { document.getElementById(k).value = v == null ? '' : v; };
     set('ccdName', d?.name); set('ccdPhone', d?.phone); set('ccdEmail', d?.email);
-    set('ccdStage', d ? d.stageId : ccState.stages[0]?.id);
     set('ccdValue', d?.value != null ? d.value.toLocaleString('pt-BR', { minimumFractionDigits: d.value % 1 ? 2 : 0 }) : '');
     set('ccdSource', d?.source || 'manual'); set('ccdSourceDetail', d?.sourceDetail);
-    set('ccdOwner', d?.owner); set('ccdTags', (d?.tags || []).join(', ')); set('ccdNotes', d?.notes);
+    set('ccdOwner', d ? d.owner : ccState.me); set('ccdNotes', d?.notes);
+    ccTagPicker('ccdTags', d?.tags || []);
     document.getElementById('ccdDelete').style.visibility = d ? 'visible' : 'hidden';
     const quick = document.getElementById('ccDealQuick');
     quick.innerHTML = d ? [
-      d.phone ? `<a href="${escapeAttr(ccWaLink(d.phone))}" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>` : '',
+      d.conversationId ? `<a href="#" onclick="event.preventDefault(); ccCloseModal('ccDealModal'); ccGoConv('${escapeAttr(d.conversationId)}')">💬 Abrir conversa</a>`
+        : d.phone ? `<a href="${escapeAttr(ccWaLink(d.phone))}" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>` : '',
       d.phone ? `<a href="tel:${escapeAttr(String(d.phone).replace(/[^\d+]/g, ''))}">📞 Ligar</a>` : '',
       d.email ? `<a href="mailto:${escapeAttr(d.email)}">✉️ E-mail</a>` : '',
     ].join('') : '';
@@ -8967,13 +9566,18 @@
         <div class="cc-ev-meta">${escapeHtml(h.by?.name || '')}${h.by?.name ? ' · ' : ''}${h.at ? escapeHtml(new Date(h.at).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' })) : ''}</div>
       </div>`).join('') : '<div class="footnote" style="border:none; padding:0;">Sem histórico ainda.</div>';
   }
+  function ccAfterDealChange(){
+    ccRender();
+    if (ccPane === 'contatos') ccLoadContacts();
+    else ccContactsLoaded = false;
+  }
   async function ccSaveDeal(ev){
     ev.preventDefault();
     const g = id => document.getElementById(id).value.trim();
     const body = {
-      name: g('ccdName'), phone: g('ccdPhone'), email: g('ccdEmail'), stageId: g('ccdStage'),
+      name: g('ccdName'), phone: g('ccdPhone'), email: g('ccdEmail'), funnelId: g('ccdFunnel'), stageId: g('ccdStage'),
       value: g('ccdValue'), source: g('ccdSource'), sourceDetail: g('ccdSourceDetail'), owner: g('ccdOwner'),
-      tags: g('ccdTags').split(',').map(t => t.trim()).filter(Boolean), notes: document.getElementById('ccdNotes').value.trim(),
+      tags: ccTagPickerValue('ccdTags'), notes: document.getElementById('ccdNotes').value.trim(),
     };
     const btn = document.getElementById('ccdSave');
     btn.disabled = true;
@@ -8981,12 +9585,14 @@
       if (ccCurrentId) {
         const updated = await ccApi(`/deals/${encodeURIComponent(ccCurrentId)}`, { method: 'PATCH', body: JSON.stringify(body) });
         const i = ccState.deals.findIndex(d => d.id === ccCurrentId);
-        if (i >= 0) ccState.deals[i] = updated;
+        if (i >= 0) ccState.deals[i] = { ...ccState.deals[i], ...updated };
       } else {
         const created = await ccApi('/deals', { method: 'POST', body: JSON.stringify(body) });
         ccState.deals.unshift(created);
       }
-      ccRender();
+      // Etiquetas novas criadas pelo negócio passam a existir na lista.
+      if (body.tags.some(t => !ccTagObj(t))) await ccLoad(); else ccAfterDealChange();
+      if (ccPane === 'contatos') ccLoadContacts();
       ccCloseModal('ccDealModal');
     } catch (e) {
       ccDealError(e.message);
@@ -8994,11 +9600,11 @@
   }
   async function ccDeleteDeal(){
     const d = ccState.deals.find(x => x.id === ccCurrentId);
-    if (!d || !confirm(`Excluir o lead "${d.name}"? Isso não pode ser desfeito.`)) return;
+    if (!d || !confirm(`Excluir o negócio "${d.name}"? O contato continua salvo. Isso não pode ser desfeito.`)) return;
     try {
       await ccApi(`/deals/${encodeURIComponent(d.id)}`, { method: 'DELETE' });
       ccState.deals = ccState.deals.filter(x => x.id !== d.id);
-      ccRender();
+      ccAfterDealChange();
       ccCloseModal('ccDealModal');
     } catch (e) { ccDealError(e.message); }
   }
@@ -9010,26 +9616,32 @@
     try {
       const updated = await ccApi(`/deals/${encodeURIComponent(ccCurrentId)}/comments`, { method: 'POST', body: JSON.stringify({ text }) });
       const i = ccState.deals.findIndex(d => d.id === updated.id);
-      if (i >= 0) ccState.deals[i] = updated;
+      if (i >= 0) ccState.deals[i] = { ...ccState.deals[i], ...updated };
       input.value = '';
       ccRenderTimeline(updated);
       ccDealError('');
     } catch (e) { ccDealError(e.message); }
   }
 
-  /* Etapas */
+  /* Funil: nome, etapas e cores */
   function ccOpenStages(){
-    ccStagesDraft = ccState.stages.map(s => ({ ...s }));
-    if (!ccStagesDraft.length) return;
-    document.getElementById('ccStagesError').style.display = 'none';
+    const f = ccFunnel(ccState.funnelId);
+    if (!f) return;
+    ccStagesFunnel = f.id;
+    ccStagesDraft = f.stages.map(s => ({ ...s }));
+    document.getElementById('ccFunnelName').value = f.name;
+    document.getElementById('ccFunnelDelete').style.visibility = ccState.funnels.length > 1 ? 'visible' : 'hidden';
+    ccMsgEl('ccStagesError', '');
     ccRenderStages();
     ccOpenModal('ccStagesModal');
   }
   function ccRenderStages(){
     const n = ccStagesDraft.length;
+    const colorOpts = c => Object.keys(CC_COLOR_VAR).map(k => `<option value="${k}"${k === c ? ' selected' : ''}>${CC_COLOR_NAME[k]}</option>`).join('');
     document.getElementById('ccStagesList').innerHTML = ccStagesDraft.map((s, i) => `
       <div class="cc-stage-row">
-        <input class="modal-input" maxlength="40" value="${escapeAttr(s.name)}" oninput="ccStagesDraft[${i}].name = this.value" aria-label="Nome da etapa">
+        <input class="modal-input" maxlength="40" value="${escapeAttr(s.name)}" oninput="ccStagesDraft[${i}].name = this.value" aria-label="Nome da etapa" style="border-left:4px solid ${ccC(s.color)};">
+        <select class="modal-input cc-color-sel" style="--cc-c:${ccC(s.color)}" onchange="ccStagesDraft[${i}].color = this.value; ccRenderStages()" aria-label="Cor">${colorOpts(s.color || 'gray')}</select>
         <select class="modal-input" onchange="ccStagesDraft[${i}].kind = this.value" aria-label="Tipo">
           <option value="open"${s.kind === 'open' ? ' selected' : ''}>Em andamento</option>
           <option value="won"${s.kind === 'won' ? ' selected' : ''}>Ganho</option>
@@ -9051,25 +9663,650 @@
   function ccStageRemove(i){ ccStagesDraft.splice(i, 1); ccRenderStages(); }
   function ccStageAdd(){
     if (ccStagesDraft.length >= 12) return;
-    ccStagesDraft.push({ name: 'Nova etapa', kind: 'open' });
+    ccStagesDraft.push({ name: 'Nova etapa', kind: 'open', color: 'gray' });
     ccRenderStages();
   }
   async function ccSaveStages(){
-    const errEl = document.getElementById('ccStagesError');
     const keep = new Set(ccStagesDraft.filter(s => s.id).map(s => s.id));
-    const orphans = ccState.deals.filter(d => !keep.has(d.stageId)).length;
+    const orphans = ccState.deals.filter(d => (d.funnelId || ccState.funnels[0]?.id) === ccStagesFunnel && !keep.has(d.stageId)).length;
     const firstName = (ccStagesDraft[0] || {}).name || '';
-    if (orphans && !confirm(`${orphans} lead(s) estão em etapas que você removeu e vão para "${firstName}". Continuar?`)) return;
+    if (orphans && !confirm(`${orphans} negócio(s) estão em etapas que você removeu e vão para "${firstName}". Continuar?`)) return;
     const btn = document.getElementById('ccStagesSave');
     btn.disabled = true;
     try {
-      await ccApi('/pipeline', { method: 'PUT', body: JSON.stringify({ stages: ccStagesDraft.map(s => ({ id: s.id, name: String(s.name || '').trim(), kind: s.kind })) }) });
+      await ccApi('/pipeline', { method: 'PUT', body: JSON.stringify({
+        funnelId: ccStagesFunnel, funnelName: document.getElementById('ccFunnelName').value.trim(),
+        stages: ccStagesDraft.map(s => ({ id: s.id, name: String(s.name || '').trim(), kind: s.kind, color: s.color || 'gray' })),
+      }) });
       ccCloseModal('ccStagesModal');
       await ccLoad();
     } catch (e) {
-      errEl.style.display = 'block';
-      errEl.textContent = e.message;
+      ccMsgEl('ccStagesError', e.message);
     } finally { btn.disabled = false; }
+  }
+  async function ccDeleteFunnel(){
+    const f = ccFunnel(ccStagesFunnel);
+    if (!f || !confirm(`Excluir o funil "${f.name}"? Só dá para excluir um funil sem negócios.`)) return;
+    try {
+      await ccApi(`/funnels/${encodeURIComponent(f.id)}`, { method: 'DELETE' });
+      ccState.funnelId = null;
+      try { localStorage.removeItem(`${CC_FUNNEL_KEY}:${WS}`); } catch (e) {}
+      ccCloseModal('ccStagesModal');
+      await ccLoad();
+    } catch (e) { ccMsgEl('ccStagesError', e.message); }
+  }
+
+  /* ---- Contatos ---- */
+  async function ccLoadContacts(){
+    const clientId = WS;
+    try {
+      const data = await ccApi('/contacts');
+      if (clientId !== WS) return;
+      ccContacts = data.contacts || [];
+      ccContactsLoaded = true;
+      ccError('');
+    } catch (e) { ccError(`Não consegui carregar os contatos: ${e.message}`); }
+    ccRenderContacts();
+  }
+  function ccContactsFiltered(){
+    const q = document.getElementById('ccContSearch').value.trim().toLowerCase();
+    const tag = document.getElementById('ccContTag').value;
+    const qd = q.replace(/\D/g, '');
+    return ccContacts.filter(c => {
+      if (tag && !(c.tags || []).some(t => ccLower(t) === ccLower(tag))) return false;
+      if (!q) return true;
+      const hay = [c.name, c.email, c.company, c.phone, ...(c.tags || [])].join(' ').toLowerCase();
+      return hay.includes(q) || (qd.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(qd));
+    });
+  }
+  function ccRenderContacts(){
+    const tagNames = [...new Set([...ccState.tags.map(t => t.name), ...ccContacts.flatMap(c => c.tags || [])])].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    ccFillSelect('ccContTag', tagNames.map(t => [t, t]), 'Todas as etiquetas');
+    const rows = ccContactsFiltered();
+    document.getElementById('ccContCount').textContent = ccContactsLoaded ? `${rows.length} de ${ccContacts.length} contato(s)` : '';
+    const body = document.getElementById('ccContBody');
+    if (!ccContactsLoaded) { body.innerHTML = '<tr><td colspan="6" class="cc-dim">Carregando…</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = `<tr><td colspan="6" class="cc-dim" style="text-align:center; padding:28px;">${ccContacts.length ? 'Nenhum contato com esses filtros.' : 'Nenhum contato ainda. Eles aparecem quando chega um lead ou uma mensagem, ou você pode importar uma planilha.'}</td></tr>`; return; }
+    body.innerHTML = rows.map(c => {
+      const id = escapeAttr(c.id);
+      const st = c.deal && c.deal.stage;
+      return `<tr>
+        <td class="cc-td-name"><div class="cc-cname"><span class="cc-av">${escapeHtml(ccInitials(c.name))}</span><div style="min-width:0;"><div>${escapeHtml(c.name || 'Sem nome')}</div><div class="cc-dim">${escapeHtml(c.email || c.company || '')}</div></div></div></td>
+        <td class="cc-td-empty" data-l="Etiquetas">${(c.tags || []).map(ccTagChip).join(' ')}</td>
+        <td data-l="Última conversa">${c.lastConversationAt ? `<a href="#" class="cc-wa" onclick="event.preventDefault(); ccGoConv('${escapeAttr(c.conversationId)}')">${escapeHtml(ccAgo(c.lastConversationAt))}</a>` : '<span class="cc-dim">Nenhuma</span>'}</td>
+        <td data-l="Telefone">${c.phone ? escapeHtml(c.phone) : '<span class="cc-dim">–</span>'}</td>
+        <td data-l="Negócio">${c.deal ? `<a href="#" onclick="event.preventDefault(); ccOpenDeal('${escapeAttr(c.deal.id)}')" style="text-decoration:none;">${st ? `<span class="cc-stage-chip" style="--cc-c:${ccC(st.color)}">${escapeHtml(st.name)}</span>` : ''}${c.deal.value != null ? ` <span class="cc-value">${escapeHtml(ccMoney(c.deal.value))}</span>` : ''}</a>${ccState.funnels.length > 1 && st ? `<div class="cc-dim">${escapeHtml(st.funnelName || '')}</div>` : ''}` : '<span class="cc-dim">Sem negócio</span>'}</td>
+        <td class="cc-td-act"><div class="cc-acts">
+          ${c.phone ? `<button type="button" title="Conversar" onclick="ccStartConv('${id}')">💬</button>` : ''}
+          <button type="button" title="Editar" onclick="ccOpenContact('${id}')">✏️</button>
+          <button type="button" class="del" title="Excluir" onclick="ccDeleteContact('${id}')">🗑</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+  function ccOpenContact(id){
+    const c = id ? ccContacts.find(x => x.id === id) : null;
+    ccEditContactId = c ? c.id : null;
+    ccMsgEl('ccContactError', '');
+    document.getElementById('ccContactTitle').textContent = c ? 'Editar contato' : 'Novo contato';
+    const set = (k, v) => { document.getElementById(k).value = v == null ? '' : v; };
+    set('cctName', c?.name); set('cctPhone', c?.phone); set('cctEmail', c?.email); set('cctCompany', c?.company); set('cctNotes', c?.notes);
+    ccTagPicker('cctTags', c?.tags || []);
+    ccOpenModal('ccContactModal');
+    if (!c) setTimeout(() => document.getElementById('cctName').focus(), 300);
+  }
+  async function ccSaveContact(ev){
+    ev.preventDefault();
+    const g = id => document.getElementById(id).value.trim();
+    const body = { name: g('cctName'), phone: g('cctPhone'), email: g('cctEmail'), company: g('cctCompany'), notes: g('cctNotes'), tags: ccTagPickerValue('cctTags') };
+    const btn = document.getElementById('cctSave');
+    btn.disabled = true;
+    try {
+      if (ccEditContactId) await ccApi(`/contacts/${encodeURIComponent(ccEditContactId)}`, { method: 'PATCH', body: JSON.stringify(body) });
+      else await ccApi('/contacts', { method: 'POST', body: JSON.stringify(body) });
+      ccCloseModal('ccContactModal');
+      if (body.tags.some(t => !ccTagObj(t))) await ccLoad();
+      await ccLoadContacts();
+    } catch (e) { ccMsgEl('ccContactError', e.message); }
+    finally { btn.disabled = false; }
+  }
+  async function ccDeleteContact(id){
+    const c = ccContacts.find(x => x.id === id);
+    if (!c || !confirm(`Excluir o contato "${c.name}"? As conversas dele também são apagadas. Os negócios continuam no funil.`)) return;
+    try {
+      await ccApi(`/contacts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      ccContacts = ccContacts.filter(x => x.id !== id);
+      ccRenderContacts();
+      ccConv.loaded = false;
+      ccLoad();
+    } catch (e) { ccError(e.message); }
+  }
+  function ccCsvCell(v){
+    const s = String(v == null ? '' : v);
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  function ccExportCsv(){
+    const rows = ccContactsFiltered();
+    if (!rows.length) { alert('Nenhum contato para baixar.'); return; }
+    const head = ['Nome', 'Telefone', 'E-mail', 'Empresa', 'Etiquetas', 'Funil', 'Etapa', 'Valor', 'Última conversa', 'Criado em'];
+    const lines = rows.map(c => [
+      c.name, c.phone, c.email, c.company, (c.tags || []).join(' | '),
+      c.deal?.stage?.funnelName || '', c.deal?.stage?.name || '',
+      c.deal?.value != null ? String(c.deal.value).replace('.', ',') : '',
+      c.lastConversationAt ? new Date(c.lastConversationAt).toLocaleString('pt-BR') : '',
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '',
+    ].map(ccCsvCell).join(';'));
+    const blob = new Blob(['\ufeff' + [head.join(';'), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `contatos-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function ccParseCsv(text){
+    text = text.replace(/^\ufeff/, '');
+    const first = text.split(/\r?\n/)[0] || '';
+    const delim = (first.split(';').length >= first.split(',').length) ? ';' : ',';
+    const rows = []; let row = []; let cell = ''; let q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === delim) { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows.filter(r => r.some(c => c.trim()));
+  }
+  async function ccImportCsv(input){
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('Arquivo muito grande (máximo 5 MB).'); return; }
+    const rows = ccParseCsv(await file.text());
+    if (rows.length < 2) { alert('A planilha está vazia ou sem cabeçalho.'); return; }
+    const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const alias = {
+      name: ['nome', 'name', 'nome completo', 'contato', 'cliente'],
+      phone: ['telefone', 'phone', 'celular', 'whatsapp', 'fone', 'tel', 'numero'],
+      email: ['email', 'e-mail', 'mail'],
+      company: ['empresa', 'company', 'negocio'],
+      tags: ['etiquetas', 'etiqueta', 'tags', 'tag'],
+      notes: ['notas', 'observacoes', 'observacao', 'obs', 'notes'],
+    };
+    const head = rows[0].map(norm);
+    const col = {};
+    Object.entries(alias).forEach(([k, names]) => { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[k] = i; });
+    if (col.name == null && col.phone == null) { alert('Não achei as colunas "Nome" e "Telefone" na primeira linha da planilha.'); return; }
+    const items = rows.slice(1).map(r => {
+      const o = {};
+      Object.entries(col).forEach(([k, i]) => { o[k] = (r[i] || '').trim(); });
+      if (o.tags != null) o.tags = o.tags.split(/[|,;]/).map(t => t.trim()).filter(Boolean);
+      return o;
+    });
+    if (!confirm(`Importar ${items.length} contato(s) de "${file.name}"? Contatos com o mesmo telefone são atualizados.`)) return;
+    const tot = { created: 0, updated: 0, skippedCount: 0, skipped: [] };
+    try {
+      for (let i = 0; i < items.length; i += 300) {
+        const r = await ccApi('/contacts/import', { method: 'POST', body: JSON.stringify({ rows: items.slice(i, i + 300) }) });
+        tot.created += r.created; tot.updated += r.updated; tot.skippedCount += r.skippedCount;
+        (r.skipped || []).forEach(s => tot.skipped.push({ line: s.line + i, reason: s.reason }));
+      }
+    } catch (e) { alert(`A importação parou no meio: ${e.message}`); }
+    const extra = tot.skipped.slice(0, 5).map(s => `linha ${s.line}: ${s.reason}`).join('\n');
+    alert(`Importação concluída.\n${tot.created} criado(s), ${tot.updated} atualizado(s), ${tot.skippedCount} ignorado(s).${extra ? `\n\n${extra}` : ''}`);
+    await ccLoad();
+    await ccLoadContacts();
+  }
+  async function ccStartConv(contactId){
+    try {
+      const conv = await ccApi('/conversations', { method: 'POST', body: JSON.stringify({ contactId }) });
+      ccGoConv(conv.id || conv.conversation?.id);
+    } catch (e) { ccError(e.message); }
+  }
+  function ccGoConv(convId){
+    if (!convId) return;
+    ccConv.pendingOpen = convId;
+    if (ccPane === 'conversas' && document.getElementById('view-ccrm').classList.contains('active')) { ccLoadConvs(); return; }
+    wsGo('crm-conversas');
+  }
+
+  /* ---- Etiquetas ---- */
+  async function ccLoadTags(){
+    try {
+      const data = await ccApi('/tags');
+      ccTagsFull = data.tags || [];
+      ccState.tags = ccTagsFull.map(({ usage, ...t }) => t);
+      ccError('');
+    } catch (e) { ccError(`Não consegui carregar as etiquetas: ${e.message}`); }
+    ccRenderTags();
+  }
+  function ccRenderTags(){
+    const body = document.getElementById('ccTagBody');
+    if (!ccTagsFull.length) { body.innerHTML = '<tr><td colspan="4" class="cc-dim" style="text-align:center; padding:28px;">Nenhuma etiqueta ainda.</td></tr>'; return; }
+    body.innerHTML = ccTagsFull.map(t => {
+      const id = escapeAttr(t.id);
+      const u = t.usage || { deals: 0, contacts: 0 };
+      return `<tr>
+        <td class="cc-td-name"><span class="cc-tag c" style="--cc-c:${ccC(t.color)}; font-size:12px; padding:3px 10px;"><span class="cc-sw"></span>${escapeHtml(t.name)}</span>${t.system ? ' <span class="cc-dim" title="Etiqueta padrão, não pode ser excluída">🔒</span>' : ''}</td>
+        <td data-l="Significado"><select class="modal-input cc-meaning" onchange="ccSetMeaning('${id}', this.value)" aria-label="Significado">
+          <option value="common"${t.meaning === 'common' ? ' selected' : ''}>Comum</option>
+          <option value="qualified"${t.meaning === 'qualified' ? ' selected' : ''}>Qualificado</option>
+          <option value="disqualified"${t.meaning === 'disqualified' ? ' selected' : ''}>Desqualificado</option>
+        </select></td>
+        <td data-l="Em uso">${u.deals} negócio(s) · ${u.contacts} contato(s)</td>
+        <td class="cc-td-act"><div class="cc-acts">
+          <button type="button" title="Editar" onclick="ccOpenTag('${id}')">✏️</button>
+          ${t.system ? '' : `<button type="button" class="del" title="Excluir" onclick="ccDeleteTag('${id}')">🗑</button>`}
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+  async function ccSetMeaning(id, meaning){
+    try { await ccApi(`/tags/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ meaning }) }); await ccLoadTags(); }
+    catch (e) { ccError(e.message); ccLoadTags(); }
+  }
+  function ccRenderSwatches(sel){
+    const el = document.getElementById('cgColors');
+    el.dataset.v = sel;
+    el.innerHTML = Object.keys(CC_COLOR_VAR).map(k => `<button type="button" class="${k === sel ? 'on' : ''}" style="--cc-c:${CC_COLOR_VAR[k]}" title="${CC_COLOR_NAME[k]}" aria-label="${CC_COLOR_NAME[k]}" onclick="ccRenderSwatches('${k}')"></button>`).join('');
+  }
+  function ccOpenTag(id){
+    const t = id ? ccTagsFull.find(x => x.id === id) : null;
+    ccEditTagId = t ? t.id : null;
+    ccMsgEl('ccTagError', '');
+    document.getElementById('ccTagTitle').textContent = t ? 'Editar etiqueta' : 'Nova etiqueta';
+    document.getElementById('cgName').value = t ? t.name : '';
+    document.getElementById('cgMeaning').value = t ? t.meaning : 'common';
+    ccRenderSwatches(t ? t.color : 'blue');
+    ccOpenModal('ccTagModal');
+    if (!t) setTimeout(() => document.getElementById('cgName').focus(), 300);
+  }
+  async function ccSaveTag(ev){
+    ev.preventDefault();
+    const body = { name: document.getElementById('cgName').value.trim(), color: document.getElementById('cgColors').dataset.v, meaning: document.getElementById('cgMeaning').value };
+    const btn = document.getElementById('cgSave');
+    btn.disabled = true;
+    try {
+      if (ccEditTagId) await ccApi(`/tags/${encodeURIComponent(ccEditTagId)}`, { method: 'PATCH', body: JSON.stringify(body) });
+      else await ccApi('/tags', { method: 'POST', body: JSON.stringify(body) });
+      ccCloseModal('ccTagModal');
+      ccContactsLoaded = false;
+      await ccLoad();
+      await ccLoadTags();
+    } catch (e) { ccMsgEl('ccTagError', e.message); }
+    finally { btn.disabled = false; }
+  }
+  async function ccDeleteTag(id){
+    const t = ccTagsFull.find(x => x.id === id);
+    if (!t) return;
+    const u = t.usage || { deals: 0, contacts: 0 };
+    if (!confirm(`Excluir a etiqueta "${t.name}"? Ela sai de ${u.deals} negócio(s) e ${u.contacts} contato(s).`)) return;
+    try {
+      await ccApi(`/tags/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      ccContactsLoaded = false;
+      await ccLoad();
+      await ccLoadTags();
+    } catch (e) { ccError(e.message); }
+  }
+
+  /* ---- Relatórios ---- */
+  function ccIsoDay(d){ return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  function ccRepRange(){
+    const now = new Date();
+    const sod = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(sod.getTime() + 864e5);
+    if (ccRepPreset === '7') return [new Date(sod.getTime() - 6 * 864e5), tomorrow];
+    if (ccRepPreset === '90') return [new Date(sod.getTime() - 89 * 864e5), tomorrow];
+    if (ccRepPreset === 'month') return [new Date(now.getFullYear(), now.getMonth(), 1), tomorrow];
+    if (ccRepPreset === 'lastmonth') return [new Date(now.getFullYear(), now.getMonth() - 1, 1), new Date(now.getFullYear(), now.getMonth(), 1)];
+    if (ccRepPreset === 'custom') {
+      const f = document.getElementById('ccRepFrom').value, t = document.getElementById('ccRepTo').value;
+      if (f && t) return [new Date(`${f}T00:00:00`), new Date(new Date(`${t}T00:00:00`).getTime() + 864e5)];
+    }
+    return [new Date(sod.getTime() - 29 * 864e5), tomorrow];
+  }
+  function ccRepPeriod(p){
+    ccRepPreset = p;
+    if (p === 'custom') {
+      const f = document.getElementById('ccRepFrom').value, t = document.getElementById('ccRepTo').value;
+      if (!f || !t) return;
+    } else {
+      const [a, b] = ccRepRange();
+      document.getElementById('ccRepFrom').value = ccIsoDay(a);
+      document.getElementById('ccRepTo').value = ccIsoDay(new Date(b.getTime() - 864e5));
+    }
+    document.querySelectorAll('#ccRepPeriod .g-tab').forEach(x => x.classList.toggle('active', x.dataset.p === ccRepPreset));
+    ccLoadReport();
+  }
+  async function ccLoadReport(){
+    const fsel = document.getElementById('ccRepFunnel');
+    const curF = fsel.value || ccState.funnelId;
+    fsel.innerHTML = ccState.funnels.map(f => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.name)}</option>`).join('');
+    if (ccState.funnels.some(f => f.id === curF)) fsel.value = curF;
+    fsel.style.display = ccState.funnels.length > 1 ? '' : 'none';
+    const [a, b] = ccRepRange();
+    if (ccRepPreset !== 'custom') {
+      document.getElementById('ccRepFrom').value = ccIsoDay(a);
+      document.getElementById('ccRepTo').value = ccIsoDay(new Date(b.getTime() - 864e5));
+    }
+    const params = new URLSearchParams({ from: a.toISOString(), to: b.toISOString(), funnelId: fsel.value || '' });
+    const owner = document.getElementById('ccRepOwner').value, source = document.getElementById('ccRepSource').value;
+    if (owner) params.set('owner', owner);
+    if (source) params.set('source', source);
+    const box = document.getElementById('ccReport');
+    if (!box.innerHTML) box.innerHTML = '<div class="cc-empty">Carregando…</div>';
+    try {
+      const r = await ccApi(`/reports?${params}`);
+      ccFillSelect('ccRepOwner', (r.owners || []).map(o => [o, o]), 'Todos os responsáveis');
+      ccRenderReport(r);
+      ccError('');
+    } catch (e) { box.innerHTML = `<div class="cc-empty">Não consegui gerar o relatório: ${escapeHtml(e.message)}</div>`; }
+  }
+  function ccDelta(cur, prev, money){
+    const fmt = v => money ? (ccMoney(v) || 'R$ 0') : String(v);
+    if (!cur && !prev) return `<div class="cc-delta flat">Igual ao período anterior (${fmt(0)})</div>`;
+    if (!prev) return `<div class="cc-delta up">▲ Novo (antes: ${fmt(0)})</div>`;
+    const pct = Math.round((cur - prev) / prev * 100);
+    const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+    return `<div class="cc-delta ${cls}">${pct > 0 ? '▲' : pct < 0 ? '▼' : '='} ${Math.abs(pct)}% vs anterior (${escapeHtml(fmt(prev))})</div>`;
+  }
+  function ccRenderReport(r){
+    const c = r.current, p = r.previous;
+    const kpi = (label, v, pv, money) => `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${escapeHtml(money ? (ccMoney(v) || 'R$ 0') : String(v))}</div>${ccDelta(v, pv, money)}</div>`;
+    const top = (r.steps[0] || {}).passed || 0;
+    const steps = r.steps.map((s, i) => {
+      const w = top ? Math.max(4, Math.round(s.passed / top * 100)) : 0;
+      const prevP = i ? r.steps[i - 1].passed : 0;
+      const rate = i ? `<div class="cc-conv-rate">↓ ${prevP ? Math.round(s.passed / prevP * 100) : 0}% avançaram da etapa anterior</div>` : '';
+      return `${rate}<div class="cc-funnel-step" style="--cc-c:${ccC(s.color)}"><span class="nm">${escapeHtml(s.name)}</span><div class="cc-bar"><div style="width:${w}%">${s.passed}</div></div><span class="pct">${top ? Math.round(s.passed / top * 100) : 0}%</span></div>`;
+    }).join('');
+    const totalNow = r.now.reduce((s, x) => s + x.count, 0);
+    const now = r.now.map(s => `<div class="cc-funnel-step" style="--cc-c:${ccC(s.color)}"><span class="nm">${escapeHtml(s.name)}</span><div class="cc-bar"><div style="width:${totalNow ? Math.max(s.count ? 4 : 0, Math.round(s.count / totalNow * 100)) : 0}%; ${s.count ? '' : 'min-width:0; padding:0;'}">${s.count || ''}</div></div><span class="pct">${s.count} · ${totalNow ? Math.round(s.count / totalNow * 100) : 0}%</span></div>`).join('');
+    const q = r.qualification, qt = q.qualified + q.disqualified + q.none;
+    const qp = v => qt ? Math.round(v / qt * 100) : 0;
+    const src = r.bySource.length ? `<table class="cc-table" style="font-size:12.5px;"><thead><tr><th>Origem</th><th>Leads</th><th>Ganhos</th></tr></thead><tbody>${r.bySource.map(s => `<tr><td>${CC_SOURCES[s.source] || escapeHtml(s.source)}</td><td data-l="Leads">${s.leads}</td><td data-l="Ganhos">${s.won}</td></tr>`).join('')}</tbody></table>` : '<div class="cc-dim">Nenhum lead no período.</div>';
+    const per = `${new Date(r.period.from).toLocaleDateString('pt-BR')} a ${new Date(new Date(r.period.to).getTime() - 1).toLocaleDateString('pt-BR')}`;
+    document.getElementById('ccReport').innerHTML = `
+      <div class="cc-rep-kpis">
+        ${kpi('Leads no período', c.leads, p.leads)}
+        ${kpi('Vendas fechadas', c.sales, p.sales)}
+        ${kpi('Receita', c.revenue, p.revenue, true)}
+        ${kpi('Ticket médio', c.ticket, p.ticket, true)}
+      </div>
+      <div class="cc-rep-grid">
+        <div class="panel"><h3 class="cc-rep-h">Conversão do funil</h3><p class="cc-rep-sub">${escapeHtml(r.funnel.name)} · ${escapeHtml(per)}. Quantos leads do período chegaram a cada etapa.</p>${c.leads ? steps : '<div class="cc-dim">Nenhum lead no período.</div>'}</div>
+        <div class="panel"><h3 class="cc-rep-h">Onde os leads estão agora</h3><p class="cc-rep-sub">Etapa atual dos ${c.leads} lead(s) que entraram no período.</p>${c.leads ? now : '<div class="cc-dim">Nenhum lead no período.</div>'}</div>
+      </div>
+      <div class="cc-rep-grid" style="margin-top:14px;">
+        <div class="panel"><h3 class="cc-rep-h">Qualificação</h3><p class="cc-rep-sub">Pelas etiquetas marcadas como Qualificado ou Desqualificado (configure em Etiquetas).</p>
+          <div class="cc-qual">
+            <div><b style="color:var(--green)">${q.qualified}</b><span>Qualificados · ${qp(q.qualified)}%</span></div>
+            <div><b style="color:var(--red)">${q.disqualified}</b><span>Desqualificados · ${qp(q.disqualified)}%</span></div>
+            <div><b>${q.none}</b><span>Sem avaliação · ${qp(q.none)}%</span></div>
+          </div>
+          <div class="cc-stack"><div style="width:${qp(q.qualified)}%; background:var(--green)"></div><div style="width:${qp(q.disqualified)}%; background:var(--red)"></div></div>
+        </div>
+        <div class="panel"><h3 class="cc-rep-h">Leads por origem</h3><p class="cc-rep-sub">De onde vieram os leads do período.</p><div class="cc-table-wrap" style="border:none;">${src}</div></div>
+      </div>`;
+  }
+
+  /* ---- Conversas (WhatsApp) ---- */
+  async function ccLoadConvs(silent){
+    const clientId = WS;
+    try {
+      const data = await ccApi('/conversations');
+      if (clientId !== WS) return;
+      ccConv.list = data.conversations || [];
+      ccConv.loaded = true;
+      if (data.me) ccState.me = data.me;
+      ccState.whatsapp = data.whatsapp || ccState.whatsapp;
+      ccState.mock = !!data.mock;
+      if (!silent) ccError('');
+    } catch (e) { if (!silent) ccError(`Não consegui carregar as conversas: ${e.message}`); return; }
+    ccSetUnread(ccConv.list.reduce((s, c) => s + (c.unread || 0), 0));
+    ccWaNote();
+    ccTopActions();
+    ccRenderConvList();
+    if (ccConv.pendingOpen) {
+      const id = ccConv.pendingOpen;
+      ccConv.pendingOpen = null;
+      const c = ccConv.list.find(x => x.id === id);
+      if (c && c.status === 'closed') document.getElementById('ccConvStatus').value = '';
+      ccConvTab('all');
+      ccOpenConv(id);
+    } else if (silent && ccConv.activeId) ccOpenConv(ccConv.activeId, true);
+  }
+  function ccWaNote(){
+    const el = document.getElementById('ccWaNote');
+    const wa = ccState.whatsapp || {};
+    let msg = '';
+    if (ccState.mock) msg = '🧪 Modo de teste: nenhuma mensagem sai de verdade e as conversas são de exemplo.';
+    else if (!wa.connected) msg = CLIENT_MODE ? 'O WhatsApp ainda não está conectado. Fale com a Instinto Digital para ligar o seu número.' : 'O WhatsApp deste cliente ainda não está conectado. Toque em "⚙ WhatsApp" para ligar o número.';
+    else if (wa.displayPhone) msg = `✅ WhatsApp conectado: ${wa.displayPhone}`;
+    el.style.display = msg ? 'block' : 'none';
+    el.textContent = msg;
+  }
+  function ccConvTab(t){
+    ccConv.tab = t;
+    document.querySelectorAll('.cc-itab').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+    ccRenderConvList();
+  }
+  function ccConvFiltered(){
+    const q = document.getElementById('ccConvSearch').value.trim().toLowerCase();
+    const status = document.getElementById('ccConvStatus').value;
+    const stage = document.getElementById('ccConvStage').value;
+    const unread = document.getElementById('ccConvUnread').checked;
+    const qd = q.replace(/\D/g, '');
+    return ccConv.list.filter(c => {
+      if (ccConv.tab === 'mine' && ccLower(c.assignee) !== ccLower(ccState.me)) return false;
+      if (ccConv.tab === 'none' && c.assignee) return false;
+      if (status && (c.status || 'open') !== status) return false;
+      if (stage && (!c.deal || c.deal.stageId !== stage)) return false;
+      if (unread && !c.unread) return false;
+      if (!q) return true;
+      const hay = [c.contact.name, c.contact.phone, c.lastText, c.assignee, ...(c.contact.tags || [])].join(' ').toLowerCase();
+      return hay.includes(q) || (qd.length >= 3 && String(c.contact.phone || '').replace(/\D/g, '').includes(qd));
+    }).sort((a, b) => String(b.lastAt || '').localeCompare(String(a.lastAt || '')));
+  }
+  function ccShortTime(iso){
+    if (!iso) return '';
+    const d = new Date(iso), now = new Date();
+    if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (now - d < 6 * 864e5) return d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  }
+  function ccRenderConvList(){
+    const multi = ccState.funnels.length > 1;
+    ccFillSelect('ccConvStage', ccAllStages().map(s => [s.id, multi ? `${s.funnelName}: ${s.name}` : s.name]), 'Todas as etapas');
+    const items = ccConvFiltered();
+    const box = document.getElementById('ccConvItems');
+    if (!ccConv.loaded) { box.innerHTML = '<div class="cc-chat-empty">Carregando…</div>'; return; }
+    if (!items.length) { box.innerHTML = `<div class="cc-chat-empty">${ccConv.list.length ? 'Nenhuma conversa com esses filtros.' : 'Nenhuma conversa ainda. Quando alguém mandar mensagem para o WhatsApp conectado, ela aparece aqui.'}</div>`; return; }
+    box.innerHTML = items.map(c => {
+      const st = c.deal && c.deal.stageName ? { name: c.deal.stageName, color: c.deal.stageColor } : null;
+      return `<div class="cc-conv${c.id === ccConv.activeId ? ' active' : ''}${c.unread ? ' unread' : ''}" onclick="ccOpenConv('${escapeAttr(c.id)}')">
+        <span class="cc-av">${escapeHtml(ccInitials(c.contact.name))}</span>
+        <span class="cc-conv-name">${escapeHtml(c.contact.name)}</span>
+        <span class="cc-conv-time">${escapeHtml(ccShortTime(c.lastAt))}</span>
+        <span class="cc-conv-last">${c.lastDirection === 'out' ? 'Você: ' : ''}${escapeHtml(c.lastText || 'Sem mensagens ainda')}</span>
+        <span>${c.unread ? `<span class="cc-unread">${c.unread}</span>` : ''}</span>
+        <span class="cc-conv-meta">${ccStageChip(st)}${c.assignee ? `<span class="cc-owner">👤 ${escapeHtml(c.assignee)}</span>` : ''}${c.status === 'closed' ? '<span class="cc-owner">Encerrada</span>' : ''}</span>
+      </div>`;
+    }).join('');
+  }
+  async function ccOpenConv(id, silent){
+    const chat = document.getElementById('ccChat');
+    ccConv.activeId = id;
+    document.getElementById('ccInbox').classList.add('chat-open');
+    if (!silent) ccRenderConvList();
+    if (chat.dataset.id !== id) {
+      chat.dataset.id = id;
+      chat.innerHTML = `
+        <div class="cc-chat-head" id="ccChatHead"></div>
+        <div class="cc-msgs" id="ccMsgs"><div class="cc-chat-empty">Carregando…</div></div>
+        <div class="cc-window" id="ccWindow" style="display:none;"></div>
+        <form class="cc-compose" id="ccCompose" onsubmit="ccSend(event)">
+          <textarea class="modal-input" id="ccMsgText" rows="1" maxlength="4096" placeholder="Escreva uma mensagem" onkeydown="if(event.key==='Enter' && !event.shiftKey && !window.matchMedia('(max-width: 760px)').matches){ event.preventDefault(); ccSend(event); }" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+          <button type="submit" class="btn-add" id="ccSendBtn">Enviar</button>
+        </form>`;
+    }
+    try {
+      const data = await ccApi(`/conversations/${encodeURIComponent(id)}?read=1`);
+      if (ccConv.activeId !== id) return;
+      const prevCount = ccConv.detail && ccConv.detail.conversation.id === id ? ccConv.detail.messages.length : -1;
+      ccConv.detail = data;
+      const li = ccConv.list.find(c => c.id === id);
+      if (li && li.unread) { li.unread = 0; ccSetUnread(ccConv.list.reduce((s, c) => s + (c.unread || 0), 0)); ccRenderConvList(); }
+      const d = ccState.deals.find(x => x.contactId === data.contact?.id);
+      if (d && d.unread) { d.unread = 0; ccRender(); }
+      ccRenderChat(prevCount !== data.messages.length);
+    } catch (e) {
+      if (!silent) document.getElementById('ccMsgs').innerHTML = `<div class="cc-chat-empty">Não consegui abrir a conversa: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+  function ccCloseChat(){
+    ccConv.activeId = null;
+    document.getElementById('ccInbox').classList.remove('chat-open');
+    ccRenderConvList();
+  }
+  function ccMsgStatus(m){
+    if (m.direction !== 'out') return '';
+    if (m.status === 'simulated') return ' · simulada';
+    if (m.status === 'read') return ' <span class="read">✓✓</span>';
+    if (m.status === 'delivered') return ' ✓✓';
+    if (m.status === 'failed') return ' <span class="failed">⚠ falhou</span>';
+    return ' ✓';
+  }
+  function ccRenderChat(scroll){
+    const data = ccConv.detail;
+    if (!data) return;
+    const conv = data.conversation, ct = data.contact || {};
+    const st = data.deal ? ccStage(data.deal.stageId) : null;
+    const names = [...new Set([ccState.me, conv.assignee, ...ccState.deals.map(d => d.owner)].filter(Boolean))];
+    document.getElementById('ccChatHead').innerHTML = `
+      <button type="button" class="btn-cancel cc-back" onclick="ccCloseChat()" aria-label="Voltar">←</button>
+      <span class="cc-av">${escapeHtml(ccInitials(ct.name))}</span>
+      <div class="cc-chat-who"><b>${escapeHtml(ct.name || ct.phone || 'Sem nome')}</b><span>${escapeHtml(ct.phone || '')} ${ccStageChip(st)}</span></div>
+      <div class="cc-chat-actions">
+        <select class="modal-input" onchange="ccAssign(this.value)" aria-label="Responsável">
+          <option value="">Sem responsável</option>
+          ${names.map(n => `<option value="${escapeAttr(n)}"${n === conv.assignee ? ' selected' : ''}>${escapeHtml(n === ccState.me ? `${n} (eu)` : n)}</option>`).join('')}
+        </select>
+        ${data.deal ? `<button type="button" class="btn-cancel" onclick="ccOpenDeal('${escapeAttr(data.deal.id)}')">Ver negócio</button>` : ''}
+        <button type="button" class="btn-cancel" onclick="ccSetConvStatus('${conv.status === 'closed' ? 'open' : 'closed'}')">${conv.status === 'closed' ? 'Reabrir' : 'Encerrar'}</button>
+      </div>`;
+    let lastDay = '';
+    const today = new Date().toDateString(), yest = new Date(Date.now() - 864e5).toDateString();
+    const msgs = document.getElementById('ccMsgs');
+    msgs.innerHTML = data.messages.length ? data.messages.map(m => {
+      const d = new Date(m.at), ds = d.toDateString();
+      let sep = '';
+      if (ds !== lastDay) { lastDay = ds; sep = `<div class="cc-day">${ds === today ? 'Hoje' : ds === yest ? 'Ontem' : d.toLocaleDateString('pt-BR')}</div>`; }
+      const who = m.direction === 'out' && m.by?.name ? `${escapeHtml(m.by.name)} · ` : '';
+      return `${sep}<div class="cc-msg ${m.direction === 'out' ? 'out' : 'in'}">${escapeHtml(m.text || '')}<div class="cc-msg-meta">${who}${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}${ccMsgStatus(m)}</div></div>`;
+    }).join('') : '<div class="cc-chat-empty">Nenhuma mensagem ainda.</div>';
+    if (scroll) msgs.scrollTop = msgs.scrollHeight;
+    const win = document.getElementById('ccWindow');
+    const wa = ccState.whatsapp || {};
+    let block = '';
+    if (!ccState.mock && !wa.connected) block = 'O WhatsApp não está conectado, então não dá para responder por aqui ainda.';
+    else if (!ccState.mock && !data.windowOpen) block = 'Já passaram 24h desde a última mensagem do contato. Pela regra da Meta, só dá para responder depois que ele escrever de novo (ou com um modelo aprovado).';
+    win.style.display = block ? 'block' : 'none';
+    win.textContent = block;
+    document.getElementById('ccMsgText').disabled = !!block;
+    document.getElementById('ccSendBtn').disabled = !!block;
+  }
+  async function ccSend(ev){
+    ev.preventDefault();
+    const ta = document.getElementById('ccMsgText');
+    const text = ta.value.trim();
+    const id = ccConv.activeId;
+    if (!text || !id) return;
+    const btn = document.getElementById('ccSendBtn');
+    btn.disabled = true;
+    try {
+      const msg = await ccApi(`/conversations/${encodeURIComponent(id)}/messages`, { method: 'POST', body: JSON.stringify({ text }) });
+      ta.value = ''; ta.style.height = '';
+      if (ccConv.detail && ccConv.detail.conversation.id === id) {
+        ccConv.detail.messages.push(msg);
+        if (!ccConv.detail.conversation.assignee) ccConv.detail.conversation.assignee = ccState.me;
+        ccRenderChat(true);
+      }
+      const li = ccConv.list.find(c => c.id === id);
+      if (li) { Object.assign(li, { lastAt: msg.at, lastText: msg.text.slice(0, 160), lastDirection: 'out', assignee: li.assignee || ccState.me }); ccRenderConvList(); }
+      ta.focus();
+    } catch (e) { alert(`Não consegui enviar: ${e.message}`); }
+    finally { btn.disabled = false; }
+  }
+  async function ccPatchConv(body){
+    const id = ccConv.activeId;
+    if (!id) return;
+    try {
+      const conv = await ccApi(`/conversations/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+      if (ccConv.detail && ccConv.detail.conversation.id === id) Object.assign(ccConv.detail.conversation, conv);
+      const li = ccConv.list.find(c => c.id === id);
+      if (li) Object.assign(li, { assignee: conv.assignee, status: conv.status });
+      ccRenderChat(false);
+      ccRenderConvList();
+    } catch (e) { ccError(e.message); }
+  }
+  const ccAssign = v => ccPatchConv({ assignee: v || null });
+  const ccSetConvStatus = s => ccPatchConv({ status: s });
+  function ccStartPoll(){
+    if (ccPollTimer) return;
+    ccPollTimer = setInterval(() => {
+      const active = document.getElementById('view-ccrm').classList.contains('active') && ccPane === 'conversas';
+      if (!active) { clearInterval(ccPollTimer); ccPollTimer = null; return; }
+      if (document.hidden) return;
+      ccLoadConvs(true);
+    }, 15000);
+  }
+
+  /* WhatsApp do cliente (só a agência) */
+  function ccOpenWa(){
+    const wa = ccState.whatsapp || {};
+    document.getElementById('cwPhoneId').value = wa.phoneNumberId || '';
+    document.getElementById('cwWaba').value = wa.wabaId || '';
+    document.getElementById('cwDisplay').value = wa.displayPhone || '';
+    document.getElementById('cwHook').textContent = `${API_BASE_URL}/api/whatsapp/webhook`;
+    ccMsgEl('ccWaError', '');
+    ccOpenModal('ccWaModal');
+  }
+  async function ccSaveWa(ev, disconnect){
+    if (ev) ev.preventDefault();
+    const body = disconnect ? { phoneNumberId: '' } : {
+      phoneNumberId: document.getElementById('cwPhoneId').value.trim(),
+      wabaId: document.getElementById('cwWaba').value.trim(),
+      displayPhone: document.getElementById('cwDisplay').value.trim(),
+    };
+    try {
+      const r = await ccApi('/whatsapp', { method: 'PUT', body: JSON.stringify(body) });
+      ccState.whatsapp = r.whatsapp || r;
+      ccCloseModal('ccWaModal');
+      ccWaNote();
+      if (ccConv.detail) ccRenderChat(false);
+    } catch (e) { ccMsgEl('ccWaError', e.message); }
+  }
+  function ccDisconnectWa(){
+    if (confirm('Desconectar o WhatsApp deste cliente? As conversas continuam salvas, mas novas mensagens deixam de chegar.')) ccSaveWa(null, true);
+  }
+  async function ccSimulate(){
+    const from = (prompt('Teste: telefone de quem manda (com DDD, ex: 5511999990099)', '5511999990099') || '').trim();
+    if (!from) return;
+    const text = (prompt('Mensagem de teste', 'Olá! Vi o anúncio e quero saber mais.') || '').trim();
+    if (!text) return;
+    try {
+      const r = await ccApi('/whatsapp/simulate', { method: 'POST', body: JSON.stringify({ from, name: 'Contato de teste', text }) });
+      ccConv.pendingOpen = r.conversationId;
+      await ccLoad();
+      await ccLoadConvs();
+    } catch (e) { ccError(e.message); }
   }
 
   /* ---------- Captação & CRM ---------- */

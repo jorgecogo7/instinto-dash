@@ -67,3 +67,32 @@ isso, o teste falha porque os IDs no arquivo hoje são placeholders.
 
 **Meta Ads ainda usa dados de exemplo**, esperando App ID, App Secret e
 o token do Usuário de Sistema.
+
+## CRM dos clientes e WhatsApp
+
+Cada cliente tem um CRM isolado (funis, negócios, contatos, etiquetas,
+conversas e relatórios). A agência usa `/api/crm/:clientId`; o login do
+cliente usa `/api/client/crm`, que só existe quando o CRM está liberado
+para ele em "Acesso do cliente". O cliente nunca recebe IDs da conta do
+WhatsApp, só se está conectado e o número de exibição.
+
+WhatsApp pela Meta Cloud API oficial:
+
+1. Variáveis de ambiente (no hPanel, nunca no código): `WHATSAPP_TOKEN`,
+   `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` (ou `META_APP_SECRET`),
+   `WHATSAPP_API_VERSION` (opcional) e `USE_MOCK_DATA=false`.
+2. No app da Meta, em WhatsApp > Configuração, cadastre o webhook
+   `https://api.instintodigital.com.br/api/whatsapp/webhook` com o mesmo
+   valor de `WHATSAPP_VERIFY_TOKEN` e assine o campo `messages`.
+3. No painel, abra o cliente > CRM > Conversas > "⚙ WhatsApp" e informe o
+   ID do número (phone_number_id), o ID da conta (WABA) e o número de
+   exibição. Um número só pode estar ligado a um cliente.
+
+Regras da Meta que o sistema respeita: só dá para responder em até 24h
+depois da última mensagem do contato. Fora disso é preciso um modelo
+(template) aprovado, que ainda não está implementado.
+
+Modo de teste (`USE_MOCK_DATA=true`): nada sai de verdade, os envios
+ficam marcados como "simulada" e a agência pode usar "🧪 Simular
+mensagem" para testar a entrada. Dados de exemplo para um cliente de
+teste (só local): `USE_MOCK_DATA=true node scripts/seed-crm-demo.js <clientId>`.

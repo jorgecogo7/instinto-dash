@@ -44,9 +44,12 @@ const { syncAllAccounts } = require('./lib/syncQueue');
 const metaSync = require('./lib/metaSync');
 
 const app = express();
-app.use(express.json({ limit: '100kb' }));
+// rawBody: o webhook do WhatsApp confere a assinatura em cima dos bytes originais.
+app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { if (req.originalUrl.startsWith('/api/whatsapp/')) req.rawBody = buf; } }));
 
 app.use(securityHeaders);
+// Webhook do WhatsApp antes do limite por IP: a Meta manda rajadas de eventos.
+app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use(rateLimit);
 
 app.use((req, res, next) => {
