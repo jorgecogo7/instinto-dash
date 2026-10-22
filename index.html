@@ -3372,6 +3372,33 @@
 <script>
   // Endereço do backend.
   const API_BASE_URL = 'https://api.instintodigital.com.br';
+
+  // O CDN da Hostinger às vezes devolve um 307 de mentira (sem passar pelo backend).
+  // No navegador isso vira "Failed to fetch". Para leituras e alterações que podem
+  // ser repetidas sem efeito colateral, tenta de novo sozinho (até 3 vezes, com
+  // espera curta). POST não é repetido, para nunca duplicar um cadastro.
+  {
+    const nativeFetch = window.fetch.bind(window);
+    const RETRY_METHODS = ['GET', 'HEAD', 'PUT', 'PATCH', 'DELETE'];
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    window.fetch = async function(input, init){
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+      if (!url.startsWith(API_BASE_URL) || !RETRY_METHODS.includes(method)) return nativeFetch(input, init);
+      const delays = [700, 1500, 3000];
+      for (let i = 0; ; i++) {
+        try {
+          const res = await nativeFetch(input, init);
+          if ((res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504) && i < delays.length) { await wait(delays[i] * 2); continue; }
+          return res;
+        } catch (err) {
+          if (err && err.name === 'AbortError') throw err;
+          if (i >= delays.length) throw err;
+          await wait(delays[i]);
+        }
+      }
+    };
+  }
   { const el = document.getElementById('backendUrlLabel'); if (el) el.textContent = API_BASE_URL; }
 
   /* ---------- Autenticação (login do dono) ---------- */
