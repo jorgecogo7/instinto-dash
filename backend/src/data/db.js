@@ -266,4 +266,22 @@ function ensureCampaignTables() {
   return campaignTablesReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables };
+// Histórico de quem pausou ou ativou o quê nas contas de anúncio (aba Campanhas,
+// área Gerenciar). Só a agência lê; nunca vai para o login do cliente.
+let adStatusLogReady = null;
+function ensureAdStatusLogTable() {
+  if (!adStatusLogReady) {
+    adStatusLogReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS ad_status_log (
+        id VARCHAR(191) PRIMARY KEY,
+        client_id VARCHAR(191) NOT NULL,
+        created_at DATETIME(3) NOT NULL,
+        data JSON NOT NULL,
+        INDEX idx_adstatus_client (client_id, created_at)
+      )
+    `);
+  }
+  return adStatusLogReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable };

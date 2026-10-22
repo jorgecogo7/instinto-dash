@@ -1422,6 +1422,41 @@
   .cp-status{ font-size:12.5px; color:var(--text-dim); }
   .btn-danger-soft{ font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:8px; border:1px solid rgba(232,81,79,.4); background:transparent; color:var(--red); cursor:pointer; }
 
+  /* ===================== Campanhas: Gerenciar status (só agência) ===================== */
+  .mg-switch{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .mg-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .mg-toolbar .g-tabs{ margin:0; }
+  .mg-tree{ display:flex; flex-direction:column; gap:8px; }
+  .mg-node{ border:1px solid var(--line); border-radius:11px; overflow:hidden; }
+  .mg-node .mg-node{ border-radius:9px; }
+  .mg-row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
+  .mg-exp{ flex-shrink:0; width:28px; height:28px; border-radius:7px; border:1px solid var(--line); background:transparent; color:var(--text-dim); cursor:pointer; font-size:12px; display:inline-flex; align-items:center; justify-content:center; transition:transform .15s; }
+  .mg-exp.open{ transform:rotate(90deg); }
+  .mg-exp.none{ visibility:hidden; }
+  .mg-main{ flex:1; min-width:0; }
+  .mg-name{ font-weight:700; font-size:13.5px; word-break:break-word; }
+  .mg-node .mg-node .mg-name{ font-size:13px; font-weight:600; }
+  .mg-sub{ font-size:11.5px; color:var(--text-dim); margin-top:3px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .mg-kind{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); }
+  .mg-badge{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; border:1px solid var(--line); color:var(--text-dim); }
+  .mg-badge.on{ color:var(--green); border-color:rgba(53,196,138,.5); }
+  .mg-badge.warn{ color:#FFB020; border-color:rgba(255,176,32,.5); }
+  .mg-badge.bad{ color:var(--red); border-color:rgba(232,81,79,.5); }
+  .mg-children{ padding:0 10px 10px 30px; display:flex; flex-direction:column; gap:6px; }
+  .mg-empty{ font-size:12px; color:var(--text-dim); padding:4px 2px; }
+  .mg-btn{ flex-shrink:0; font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:8px; cursor:pointer; min-width:78px; background:transparent; }
+  .mg-btn.pause{ border:1px solid rgba(232,81,79,.45); color:var(--red); }
+  .mg-btn.play{ border:1px solid rgba(53,196,138,.5); color:var(--green); }
+  .mg-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .mg-modal-warn{ border:1px solid rgba(255,176,32,.45); background:rgba(255,176,32,.08); border-radius:10px; padding:9px 12px; font-size:12.5px; line-height:1.5; margin-top:10px; }
+  .mg-log{ font-size:12px; color:var(--text-dim); display:flex; flex-direction:column; gap:5px; }
+  .mg-log b{ color:var(--text); font-weight:600; }
+  @media (max-width: 760px){
+    .mg-row{ padding:9px 10px; gap:8px; }
+    .mg-children{ padding:0 6px 8px 14px; }
+    .mg-btn{ min-width:70px; padding:9px 11px; }
+  }
+
   /* ===================== Relatório PDF ===================== */
   .btn-report{ display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:8px; border:none; cursor:pointer;
     background:linear-gradient(90deg, var(--flame), var(--amber)); color:#1a0e05; white-space:nowrap; }
@@ -3126,7 +3161,27 @@
       <div class="cd-pane" id="cdPaneAccess"><div id="cdAccessContent"></div></div>
       <div class="cd-pane" id="cdPaneReports"><div id="cdReportsContent"></div></div>
       <!-- ===== Aba: Campanhas (só a agência; nunca renderiza no login de cliente nem no link) ===== -->
-      <div class="cd-pane cnav-admin" id="cdPaneCampaigns"><div id="cdCampaignsContent"></div></div>
+      <div class="cd-pane cnav-admin" id="cdPaneCampaigns">
+        <div class="mg-switch">
+          <button type="button" class="g-tab active" id="cpViewBtnCreate" onclick="cpSetView('create')">Criar campanhas</button>
+          <button type="button" class="g-tab" id="cpViewBtnManage" onclick="cpSetView('manage')">Gerenciar na conta</button>
+        </div>
+        <div id="cdCampaignsContent"></div>
+        <div id="cdManageContent" style="display:none;"></div>
+      </div>
+      <!-- Confirmação de pausar/ativar (Gerenciar) -->
+      <div class="rp-modal" id="mgModal" onclick="if (event.target === this) mgCloseModal()">
+        <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="mgModalTitle">
+          <h3 id="mgModalTitle"></h3>
+          <div class="rp-modal-sub" id="mgModalBody"></div>
+          <div id="mgModalExtra"></div>
+          <div class="rp-modal-actions">
+            <span class="rp-status" id="mgModalStatus"></span>
+            <button type="button" class="btn-cancel" id="mgModalCancel" onclick="mgCloseModal()">Cancelar</button>
+            <button type="button" class="btn-add" id="mgModalOk" onclick="mgConfirm()">Confirmar</button>
+          </div>
+        </div>
+      </div>
 
       <div class="cd-pane" id="cdPaneIntegrations">
       <div class="panel cd-model-panel">
@@ -6675,6 +6730,230 @@
     if (el) setTimeout(() => { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.focus(); }, 50);
   }
 
+  /* ===================== Campanhas: Gerenciar na conta (só agência) =====================
+     Lista o que já existe na conta (campanha > conjunto > anúncio) e deixa pausar ou
+     reativar. Toda alteração pede confirmação e só o admin faz. Nunca roda no login
+     de cliente nem no link público (a API também devolve 403 para cliente). */
+  const MG = { clientId:null, platform:null, caps:null, tree:null, err:null, loading:false, open:{}, pending:null, log:null, msg:null };
+  const MG_LEVEL = {
+    meta:{ campaign:['campanha', 'a'], adset:['conjunto', 'o'], ad:['anúncio', 'o'] },
+    google:{ campaign:['campanha', 'a'], adset:['grupo de anúncios', 'o'], ad:['anúncio', 'o'] },
+  };
+  function mgOn(st){ return st === 'ACTIVE' || st === 'ENABLED'; }
+  function mgBadge(platform, level, eff){
+    const g = MG_LEVEL[platform][level][1];
+    const map = {
+      ACTIVE:['Ativ' + g, 'on'], ENABLED:['Ativ' + g, 'on'], PAUSED:['Pausad' + g, ''],
+      CAMPAIGN_PAUSED:['Campanha pausada', ''], ADSET_PAUSED:[platform === 'google' ? 'Grupo pausado' : 'Conjunto pausado', ''],
+      IN_PROCESS:['Em processamento', 'warn'], PENDING_REVIEW:['Em análise', 'warn'], PREAPPROVED:['Pré-aprovado', 'warn'],
+      WITH_ISSUES:['Com problemas', 'bad'], DISAPPROVED:['Reprovado', 'bad'], PENDING_BILLING_INFO:['Pagamento pendente', 'bad'],
+      ARCHIVED:['Arquivad' + g, ''], DELETED:['Excluíd' + g, ''], REMOVED:['Removid' + g, ''],
+    };
+    const [t, k] = map[eff] || [eff || '-', ''];
+    return `<span class="mg-badge ${k}">${escapeHtml(t)}</span>`;
+  }
+
+  function cpSetView(v){
+    CP.view = v;
+    document.getElementById('cpViewBtnCreate').classList.toggle('active', v !== 'manage');
+    document.getElementById('cpViewBtnManage').classList.toggle('active', v === 'manage');
+    document.getElementById('cdCampaignsContent').style.display = v === 'manage' ? 'none' : '';
+    document.getElementById('cdManageContent').style.display = v === 'manage' ? '' : 'none';
+    if (v === 'manage') loadManage();
+  }
+
+  function mgUrl(path){ return `${API_BASE_URL}/api/ad-status/${encodeURIComponent(MG.clientId)}${path || ''}`; }
+  async function mgApi(path, opts = {}){
+    const res = await fetch(mgUrl(path), { ...opts, headers:{ ...authHeaders(), ...(opts.body ? { 'Content-Type':'application/json' } : {}) } });
+    if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) { const e = new Error(json.error || `Erro ${res.status}`); e.status = res.status; e.body = json; throw e; }
+    return json;
+  }
+
+  async function loadManage(){
+    if (!cpCanUse()) return;
+    if (MG.clientId !== currentClientId) Object.assign(MG, { clientId:currentClientId, platform:null, caps:null, tree:null, err:null, open:{}, log:null, msg:null });
+    const id = MG.clientId;
+    if (!MG.caps) {
+      renderManage();
+      try {
+        const caps = await mgApi('');
+        if (id !== MG.clientId) return;
+        MG.caps = caps;
+        MG.platform = MG.platform || (caps.meta.linked ? 'meta' : caps.google.linked ? 'google' : 'meta');
+      } catch (err) { MG.err = err.message; renderManage(); return; }
+    }
+    await mgLoadTree();
+  }
+
+  async function mgLoadTree(quiet){
+    const id = MG.clientId, platform = MG.platform;
+    const cap = MG.caps && MG.caps[platform];
+    if (!cap || !cap.linked) { MG.tree = null; MG.err = null; renderManage(); return; }
+    MG.loading = true; if (!quiet) { MG.err = null; renderManage(); }
+    try {
+      const data = await mgApi(`?platform=${platform}`);
+      if (id !== MG.clientId || platform !== MG.platform) return;
+      MG.tree = data; MG.err = null;
+    } catch (err) {
+      if (id !== MG.clientId) return;
+      MG.err = err.message; if (!quiet) MG.tree = null;
+    }
+    MG.loading = false;
+    renderManage();
+  }
+
+  function mgSetPlatform(p){ if (MG.platform === p) return; MG.platform = p; MG.tree = null; MG.msg = null; mgLoadTree(); }
+  function mgToggleOpen(key){ MG.open[key] = !MG.open[key]; renderManage(); }
+
+  function mgBanner(cap){
+    if (!cap) return '';
+    if (cap.mode === 'mock') return `<div class="cp-banner mock"><b>Modo de teste.</b> A lista abaixo é fictícia e pausar ou ativar não muda nada na Meta nem no Google.</div>`;
+    if (!cap.canWrite) return `<div class="cp-banner off">Você consegue ver, mas pausar e ativar está desligado. Falta configurar: ${escapeHtml(cap.writeMissing.join(', '))}.</div>`;
+    return `<div class="cp-banner on">Alterações reais ligadas: pausar ou ativar aqui muda na ${MG.platform === 'meta' ? 'Meta' : 'conta do Google Ads'} na hora.${MG.platform === 'google' ? ' Se o developer token da MCC ainda estiver em "Acesso de teste", o Google recusa a alteração e o motivo aparece aqui.' : ''}</div>`;
+  }
+
+  function mgNodeHtml(node, parents){
+    const platform = MG.platform, key = `${node.level}:${node.id}`;
+    const canChange = MG.tree.canChange && MG.tree.capabilities.canWrite;
+    const kids = node.children || [];
+    const hasKids = node.level !== 'ad';
+    const open = !!MG.open[key];
+    const on = mgOn(node.status);
+    const [kindLabel] = MG_LEVEL[platform][node.level];
+    const extra = [];
+    if (node.level === 'campaign' && node.spend7d != null) extra.push(`${cpMoney(node.spend7d, MG.tree.currency)} nos últimos 7 dias`);
+    if (node.level === 'campaign' && platform === 'google' && node.channel && node.channel !== 'SEARCH') extra.push(escapeHtml({ PERFORMANCE_MAX:'Performance Max', DISPLAY:'Display', VIDEO:'Vídeo', SHOPPING:'Shopping', DEMAND_GEN:'Demand Gen', MULTI_CHANNEL:'App' }[node.channel] || node.channel));
+    if (hasKids) extra.push(`${kids.length} ${node.level === 'campaign' ? (platform === 'google' ? (kids.length === 1 ? 'grupo' : 'grupos') : (kids.length === 1 ? 'conjunto' : 'conjuntos')) : (kids.length === 1 ? 'anúncio' : 'anúncios')}`);
+    if (node.review && node.review !== 'APPROVED') extra.push(escapeHtml({ DISAPPROVED:'reprovado', APPROVED_LIMITED:'aprovado com limitação', AREA_OF_INTEREST_ONLY:'aprovado só em algumas regiões', UNKNOWN:'em análise' }[node.review] || node.review.toLowerCase()));
+    const btn = `<button type="button" class="mg-btn ${on ? 'pause' : 'play'}" ${canChange ? '' : 'disabled title="Pausar e ativar está desligado"'}
+      onclick="mgAsk('${node.level}','${escapeAttr(node.id)}')">${on ? 'Pausar' : 'Ativar'}</button>`;
+    const emptyMsg = node.level === 'campaign'
+      ? (platform === 'google' && node.channel === 'PERFORMANCE_MAX' ? 'Performance Max não tem grupos de anúncios. Os grupos de recursos ficam no Google Ads.' : 'Nenhum conjunto nesta campanha.')
+      : 'Nenhum anúncio neste conjunto.';
+    return `<div class="mg-node" data-key="${escapeAttr(key)}">
+      <div class="mg-row">
+        <button type="button" class="mg-exp ${hasKids ? (open ? 'open' : '') : 'none'}" ${hasKids ? `onclick="mgToggleOpen('${escapeAttr(key)}')" aria-label="Abrir"` : 'tabindex="-1"'}>▶</button>
+        <div class="mg-main">
+          <div class="mg-name">${escapeHtml(node.name || '(sem nome)')}</div>
+          <div class="mg-sub"><span class="mg-kind">${escapeHtml(kindLabel)}</span>${mgBadge(platform, node.level, node.effectiveStatus)}${extra.length ? `<span>${extra.join(' · ')}</span>` : ''}</div>
+        </div>
+        ${btn}
+      </div>
+      ${hasKids && open ? `<div class="mg-children">${kids.length ? kids.map(k => mgNodeHtml(k, [...parents, node])).join('') : `<div class="mg-empty">${emptyMsg}</div>`}</div>` : ''}
+    </div>`;
+  }
+
+  function renderManage(){
+    const el = document.getElementById('cdManageContent');
+    if (!el || !cpCanUse()) return;
+    const caps = MG.caps;
+    if (!caps) { el.innerHTML = MG.err ? `<div class="cp-problems cp-err">${escapeHtml(MG.err)}</div>` : '<div class="fm-help">Carregando…</div>'; return; }
+    const cap = caps[MG.platform];
+    const tabs = ['meta', 'google'].map(p => `<button type="button" class="g-tab ${MG.platform === p ? 'active' : ''}" onclick="mgSetPlatform('${p}')">${p === 'meta' ? 'Meta Ads' : 'Google Ads'}</button>`).join('');
+    let body;
+    if (!cap.linked) body = `<div class="fm-help">Este cliente não tem ${MG.platform === 'meta' ? 'conta de anúncios da Meta' : 'conta do Google Ads'} cadastrada. Veja a aba Integrações.</div>`;
+    else if (MG.err && !MG.tree) body = `<div class="cp-problems cp-err">${escapeHtml(MG.err)}</div>`;
+    else if (!MG.tree) body = '<div class="fm-help">Buscando campanhas na conta…</div>';
+    else {
+      const list = MG.tree.campaigns || [];
+      body = list.length ? `<div class="mg-tree">${list.map(c => mgNodeHtml(c, [])).join('')}</div>` : '<div class="fm-help">Nenhuma campanha ativa ou pausada nesta conta.</div>';
+    }
+    const msg = MG.msg ? `<div class="cp-problems ${MG.msg.kind === 'ok' ? 'cp-ok' : 'cp-err'}">${escapeHtml(MG.msg.text)}</div>` : '';
+    const softErr = MG.err && MG.tree ? `<div class="cp-problems cp-err">${escapeHtml(MG.err)}</div>` : '';
+    el.innerHTML = `
+      ${mgBanner(MG.tree ? MG.tree.capabilities : cap)}
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Campanhas na conta</h3><div class="panel-head-sub">Pause ou reative campanhas, ${MG.platform === 'google' ? 'grupos de anúncios' : 'conjuntos'} e anúncios que já existem. Toda alteração pede confirmação e fica registrada no histórico.</div></div></div>
+        <div class="mg-toolbar"><div class="g-tabs">${tabs}</div>
+          <button type="button" class="btn-cancel" onclick="mgLoadTree()" ${MG.loading || !cap.linked ? 'disabled' : ''}>${MG.loading ? 'Atualizando…' : 'Atualizar'}</button></div>
+        ${msg}${softErr}
+        ${body}
+      </div>
+      <div class="panel fm-panel">
+        <details id="mgLogDetails" ${MG.logOpen ? 'open' : ''} ontoggle="MG.logOpen = this.open; if (this.open) mgLoadLog()">
+          <summary style="cursor:pointer;font-weight:700;font-size:14px;">Histórico de alterações</summary>
+          <div id="mgLogBody" style="margin-top:10px;">${mgLogHtml()}</div>
+        </details>
+      </div>`;
+  }
+
+  function mgFind(level, id){
+    for (const c of (MG.tree?.campaigns || [])) {
+      if (level === 'campaign' && c.id === id) return { node:c, parents:[] };
+      for (const s of c.children || []) {
+        if (level === 'adset' && s.id === id) return { node:s, parents:[c] };
+        for (const a of s.children || []) if (level === 'ad' && a.id === id) return { node:a, parents:[c, s] };
+      }
+    }
+    return null;
+  }
+
+  function mgAsk(level, id){
+    const hit = mgFind(level, id);
+    if (!hit) return;
+    const { node, parents } = hit, platform = MG.platform;
+    const [kind, g] = MG_LEVEL[platform][level];
+    const activate = !mgOn(node.status);
+    const where = platform === 'meta' ? 'na Meta' : 'no Google Ads';
+    MG.pending = { level, id, status: activate ? 'ACTIVE' : 'PAUSED', parent: level === 'ad' && platform === 'google' ? parents[1].id : undefined, name: node.name, kind };
+    document.getElementById('mgModalTitle').textContent = `${activate ? 'Ativar' : 'Pausar'} ${g === 'a' ? 'a' : 'o'} ${kind}?`;
+    document.getElementById('mgModalBody').innerHTML = `<b>${escapeHtml(node.name || '(sem nome)')}</b><br>` + (activate
+      ? `${g === 'a' ? 'Ela volta' : 'Ele volta'} a veicular ${where} e a gastar orçamento assim que você confirmar.`
+      : `${g === 'a' ? 'Ela para' : 'Ele para'} de veicular ${where} assim que você confirmar. Dá para ativar de novo depois.`);
+    const warn = [];
+    const pausedParent = parents.find(p => !mgOn(p.status));
+    if (activate && pausedParent) warn.push(`${pausedParent.level === 'campaign' ? 'A campanha' : (platform === 'google' ? 'O grupo de anúncios' : 'O conjunto')} "${escapeHtml(pausedParent.name)}" está pausad${pausedParent.level === 'campaign' ? 'a' : 'o'}. Este item só volta a rodar quando ${pausedParent.level === 'campaign' ? 'ela' : 'ele'} for ativad${pausedParent.level === 'campaign' ? 'a' : 'o'} também.`);
+    if (!activate && level !== 'ad') warn.push(`Tudo que está dentro ${g === 'a' ? 'dela' : 'dele'} também para de veicular.`);
+    if (MG.tree.capabilities.mode === 'mock') warn.push('Modo de teste: nada muda de verdade na plataforma.');
+    document.getElementById('mgModalExtra').innerHTML = warn.map(w => `<div class="mg-modal-warn">${w}</div>`).join('');
+    const ok = document.getElementById('mgModalOk');
+    ok.textContent = activate ? `Sim, ativar` : `Sim, pausar`;
+    ok.className = activate ? 'btn-add' : 'btn-danger-soft';
+    ok.disabled = false; document.getElementById('mgModalCancel').disabled = false;
+    document.getElementById('mgModalStatus').textContent = '';
+    document.getElementById('mgModal').classList.add('open');
+  }
+  function mgCloseModal(){ if (MG.busy) return; document.getElementById('mgModal').classList.remove('open'); MG.pending = null; }
+
+  async function mgConfirm(){
+    const p = MG.pending;
+    if (!p || MG.busy) return;
+    MG.busy = true;
+    document.getElementById('mgModalOk').disabled = true; document.getElementById('mgModalCancel').disabled = true;
+    document.getElementById('mgModalStatus').textContent = 'Aguarde…';
+    try {
+      const r = await mgApi(`/${MG.platform}/${p.level}/${encodeURIComponent(p.id)}/status`, { method:'POST', body: JSON.stringify({ status:p.status, confirm:true, parent:p.parent }) });
+      const hit = mgFind(p.level, p.id);
+      if (hit) { hit.node.status = r.item.status; hit.node.effectiveStatus = r.item.effectiveStatus || r.item.status; }
+      const word = mgOn(r.item.status) ? 'ativ' : 'pausad';
+      MG.msg = { kind:'ok', text: r.unchanged ? `"${p.name}" já estava ${word}${MG_LEVEL[MG.platform][p.level][1]}. Nada mudou.` : `${p.kind.charAt(0).toUpperCase() + p.kind.slice(1)} "${p.name}" ${word}${MG_LEVEL[MG.platform][p.level][1]}${r.mock ? ' (teste)' : ''}. Status conferido na plataforma.` };
+      MG.log = null;
+      MG.busy = false; mgCloseModal();
+      renderManage();
+      mgLoadTree(true); // relê a árvore inteira: os itens de dentro também mudam de status efetivo
+      if (MG.logOpen) mgLoadLog();
+    } catch (err) {
+      MG.busy = false;
+      document.getElementById('mgModalStatus').textContent = '';
+      document.getElementById('mgModalCancel').disabled = false;
+      document.getElementById('mgModalExtra').insertAdjacentHTML('beforeend', `<div class="cp-problems cp-err">${escapeHtml(err.message)}</div>`);
+    }
+  }
+
+  async function mgLoadLog(){
+    try { const r = await mgApi('/log'); MG.log = r.log; } catch (err) { MG.log = { error: err.message }; }
+    const b = document.getElementById('mgLogBody'); if (b) b.innerHTML = mgLogHtml();
+  }
+  function mgLogHtml(){
+    if (!MG.log) return '<div class="fm-help">Carregando…</div>';
+    if (MG.log.error) return `<div class="cp-problems cp-err">${escapeHtml(MG.log.error)}</div>`;
+    if (!MG.log.length) return '<div class="fm-help">Nenhuma alteração feita pelo sistema ainda.</div>';
+    const st = (v) => mgOn(v) ? 'ativo' : v === 'PAUSED' ? 'pausado' : String(v || '-').toLowerCase();
+    return `<div class="mg-log">${MG.log.map(l => `<div>${cpWhen(l.at)} · <b>${escapeHtml(l.by)}</b> ${l.result === 'falhou' ? `tentou ${l.requested === 'ACTIVE' ? 'ativar' : 'pausar'}` : l.result === 'sem mudança' ? `pediu para ${l.requested === 'ACTIVE' ? 'ativar' : 'pausar'}` : l.requested === 'ACTIVE' ? 'ativou' : 'pausou'} ${escapeHtml(MG_LEVEL[l.platform]?.[l.level]?.[0] || l.level)} <b>${escapeHtml(l.name || l.itemId)}</b> (${l.platform === 'meta' ? 'Meta' : 'Google'})${l.result === 'falhou' ? `: falhou, ${escapeHtml(l.error || '')}` : l.result === 'sem mudança' ? `: já estava ${st(l.newStatus)}${l.mock ? ', teste' : ''}` : `: ${st(l.oldStatus)} para ${st(l.newStatus)}${l.mock ? ', teste' : ''}`}</div>`).join('')}</div>`;
+  }
+
   /* ===================== Campanhas (só agência) =====================
      Rascunho -> aprovação -> publicar PAUSADA na Meta ou no Google.
      Nunca roda no login de cliente nem no link público. */
@@ -7106,7 +7385,7 @@
     const isCamp = tab === 'campaigns' && !CLIENT_MODE && !PUBLIC_TOKEN;
     document.getElementById('cdTabBtnCampaigns').classList.toggle('active', isCamp);
     document.getElementById('cdPaneCampaigns').classList.toggle('active', isCamp);
-    if (isCamp) loadCampaigns();
+    if (isCamp) { loadCampaigns(); if (CP.view === 'manage') loadManage(); }
     document.getElementById('cdToolbar').style.display = (tab === 'overview' || tab === 'social') ? 'flex' : 'none';
     document.getElementById('cdPlatformTabs').style.visibility = tab === 'overview' ? 'visible' : 'hidden';
     if (tab === 'overview') applyPlatformView();

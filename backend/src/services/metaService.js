@@ -589,6 +589,6 @@ async function resolveInstagram({ pageId, igBusinessId } = {}) {
 module.exports = {
   resolveInstagram,
   getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
-  hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll,
+  hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll, friendlyError,
 };
 

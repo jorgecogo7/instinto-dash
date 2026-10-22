@@ -36,6 +36,7 @@ const mediaRoutes = require('./routes/media');
 const reportsRoutes = require('./routes/reports');
 const alertsRoutes = require('./routes/alerts');
 const campaignsRoutes = require('./routes/campaigns');
+const adStatusRoutes = require('./routes/adStatus');
 const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
@@ -101,6 +102,8 @@ app.use('/api/reports', requireAdminAuth, reportsRoutes);
 app.use('/api/alerts', requireAdminAuth, alertsRoutes);
 app.use('/api/crm/:clientId', requireAdminAuth, crmRoutes.adminRouter);
 app.use('/api/campaigns/:clientId', requireAdminAuth, campaignsRoutes);
+// Pausar/ativar campanhas, conjuntos e anúncios que já existem (só a agência).
+app.use('/api/ad-status/:clientId', requireAdminAuth, adStatusRoutes);
 // Área do cliente (login próprio de cada cliente).
 app.use('/api/client/crm', requireClientAuth, crmRoutes.clientRouter);
 app.use('/api/client', requireClientAuth, clientRoutes);
