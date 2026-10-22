@@ -595,6 +595,6 @@ module.exports = {
   resolveInstagram,
   getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
   hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll, friendlyError,
-  pickResult, RESULT_LABELS,
+  pickResult, RESULT_LABELS, RESULT_ACTIONS,
 };
 
