@@ -1,4 +1,4 @@
-# Instinto Dash — Backend
+# Sistema Instinto Digital: Backend
 
 Backend do dashboard, estruturado para múltiplas contas de clientes
 (Meta Ads e Google Ads). Hoje roda 100% com dados de exemplo — assim que
