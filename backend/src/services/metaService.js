@@ -521,7 +521,7 @@ async function getAccountReport(adAccountId, options = {}) {
 
   let result;
   if (!hasRealCredentials()) {
-    result = withDeltas(mockMetaReport.build(range));
+    result = withDeltas(mockMetaReport.build(range, accountId));
   } else {
     if (!accountId) throw new Error('Este cliente ainda não tem um ID de conta de anúncios da Meta.');
     result = withDeltas(await fetchRealReport(accountId, range));

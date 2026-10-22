@@ -21,10 +21,14 @@ const ADS = [
   { name: 'post_impulsionado', adset: 'alcance_local', campaign: 'Reconhecimento · Região', w: 0.4, conv: 0 },
 ];
 
-function build(range) {
+// salt (opcional, ex.: ID da conta): cada conta de exemplo ganha números próprios,
+// pra telas que comparam clientes (Hoje) não mostrarem todos iguais.
+function build(range, salt) {
   const prev = period.previousRange(range);
   const days = period.eachDay(range);
-  const seed = Number(range.from.replace(/-/g, '')) % 100000;
+  const h = salt ? [...String(salt)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7) : 0;
+  const seed = (Number(range.from.replace(/-/g, '')) + h * 13) % 100000;
+  const curScale = salt ? 0.7 + (h % 60) / 100 : 1;
 
   function series(r, rand) {
     return period.eachDay(r).map((date, i) => {
@@ -133,7 +137,7 @@ function build(range) {
     };
   }
 
-  const ads = adsFor(range, rng(seed), 1).sort((x, y) => (y.results - x.results) || (y.spend - x.spend));
+  const ads = adsFor(range, rng(seed), curScale).sort((x, y) => (y.results - x.results) || (y.spend - x.spend));
   const prevAds = adsFor(prev, rng(seed + 7), 0.88);
   const t = totals(ads);
 
