@@ -125,6 +125,9 @@ router.delete('/:id', async (req, res) => {
     if (!removed) return res.status(404).json({ error: 'Cliente não encontrado.' });
     // Leva junto o CRM do cliente (não fica nada órfão no banco).
     await crmStore.removeAllForClient(req.params.id).catch((e) => console.warn('CRM do cliente não foi apagado:', e.message));
+    // Não deixa rascunho de campanha órfão para um cliente novo com o mesmo id.
+    await require('../data/campaignsStore').removeAllForClient(req.params.id)
+      .catch((e) => console.error('Limpeza de campanhas do cliente falhou:', e));
     res.status(204).end();
   } catch (err) {
     console.error(err);

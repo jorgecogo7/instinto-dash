@@ -230,4 +230,40 @@ function ensureCrmTables() {
   return crmTablesReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables };
+// Campanhas (rascunhos que viram campanhas na Meta/Google depois da aprovação).
+// Tudo indexado por client_id: toda consulta filtra pelo cliente.
+// A coluna status existe fora do JSON pra permitir a troca atômica
+// "aguardando aprovação" -> "publicando" (evita publicar duas vezes).
+let campaignTablesReady = null;
+function ensureCampaignTables() {
+  if (!campaignTablesReady) {
+    const pool = getPool();
+    campaignTablesReady = Promise.all([
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS campaign_drafts (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          status VARCHAR(32) NOT NULL,
+          created_at DATETIME NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_campaign_client (client_id, created_at)
+        )
+      `),
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS campaign_assets (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          created_at DATETIME NOT NULL,
+          mime VARCHAR(64) NOT NULL,
+          name VARCHAR(191) NULL,
+          size INT NOT NULL,
+          data LONGBLOB NOT NULL,
+          INDEX idx_asset_client (client_id)
+        )
+      `),
+    ]);
+  }
+  return campaignTablesReady;
+}
+
+module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables };

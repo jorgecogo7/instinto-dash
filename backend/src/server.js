@@ -35,6 +35,7 @@ const clientRoutes = require('./routes/client');
 const mediaRoutes = require('./routes/media');
 const reportsRoutes = require('./routes/reports');
 const alertsRoutes = require('./routes/alerts');
+const campaignsRoutes = require('./routes/campaigns');
 const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
@@ -44,6 +45,15 @@ const { syncAllAccounts } = require('./lib/syncQueue');
 const metaSync = require('./lib/metaSync');
 
 const app = express();
+// Upload da imagem do criativo (Campanhas) é a única rota com corpo grande.
+// Confere o login ANTES de ler os 8 MB; as demais seguem com o limite de 100 kb.
+const bigJson = express.json({ limit: '8mb' });
+app.use((req, res, next) => {
+  if (req.method === 'POST' && /^\/api\/campaigns\/[^/]+\/assets\/?$/.test(req.path)) {
+    return requireAdminAuth(req, res, () => bigJson(req, res, next));
+  }
+  next();
+});
 // rawBody: o webhook do WhatsApp confere a assinatura em cima dos bytes originais.
 app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { if (req.originalUrl.startsWith('/api/whatsapp/')) req.rawBody = buf; } }));
 
@@ -82,6 +92,7 @@ app.use('/api/forms', requireAdminAuth, formsRoutes);
 app.use('/api/reports', requireAdminAuth, reportsRoutes);
 app.use('/api/alerts', requireAdminAuth, alertsRoutes);
 app.use('/api/crm/:clientId', requireAdminAuth, crmRoutes.adminRouter);
+app.use('/api/campaigns/:clientId', requireAdminAuth, campaignsRoutes);
 // Área do cliente (login próprio de cada cliente).
 app.use('/api/client/crm', requireClientAuth, crmRoutes.clientRouter);
 app.use('/api/client', requireClientAuth, clientRoutes);

@@ -727,6 +727,8 @@
   body.public-mode #cdTabBtnContract,
   body.public-mode #cdTabBtnHistory,
   body.public-mode #cdTabBtnIntegrations,
+  body.public-mode #cdTabBtnCampaigns,
+  body.public-mode #cdPaneCampaigns,
   body.public-mode #cdMetricsBtn,
   body.public-mode #cdMetricsPicker,
   body.public-mode #cdModelWarning,
@@ -1381,9 +1383,44 @@
   body.client-mode .fm-card-actions button[title="Excluir"],
   body.client-mode .fm-head-actions,
   body.client-mode .fm-empty .btn-add,
-  body.client-mode .client-detail-tabs{ display:none !important; }
+  body.client-mode .client-detail-tabs,
+  body.client-mode #cdTabBtnCampaigns,
+  body.client-mode #cdPaneCampaigns{ display:none !important; }
   body.client-mode .ws-btn{ cursor:default; pointer-events:none; }
   body.client-mode .fm-name-input{ pointer-events:none; }
+
+  /* ===================== Campanhas (só agência) ===================== */
+  .cp-banner{ max-width:880px; border-radius:12px; padding:11px 14px; font-size:12.5px; line-height:1.5; margin-bottom:14px; border:1px solid var(--line); background:var(--bg-panel); }
+  .cp-banner.mock{ border-color:rgba(255,176,32,.45); background:rgba(255,176,32,.08); }
+  .cp-banner.off{ border-color:rgba(232,81,79,.4); background:rgba(232,81,79,.07); }
+  .cp-banner.on{ border-color:rgba(53,196,138,.4); background:rgba(53,196,138,.07); }
+  .cp-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .cp-list{ display:flex; flex-direction:column; gap:8px; }
+  .cp-item{ display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:11px 13px; border:1px solid var(--line); border-radius:11px; cursor:pointer; }
+  .cp-item:hover{ border-color:var(--flame); }
+  .cp-item.sel{ border-color:var(--flame); background:rgba(255,90,30,.06); }
+  .cp-item-name{ font-weight:700; font-size:13.5px; }
+  .cp-item-sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+  .cp-plat{ font-size:11px; font-weight:800; padding:4px 8px; border-radius:7px; background:rgba(127,127,127,.12); }
+  .cp-chip{ font-size:11px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; border:1px solid var(--line); }
+  .cp-chip.draft{ color:var(--text-dim); }
+  .cp-chip.pending_approval{ color:#FFB020; border-color:rgba(255,176,32,.5); }
+  .cp-chip.publishing{ color:#5AA9FF; border-color:rgba(90,169,255,.5); }
+  .cp-chip.published{ color:var(--green); border-color:rgba(53,196,138,.5); }
+  .cp-chip.failed{ color:var(--red); border-color:rgba(232,81,79,.5); }
+  .cp-section{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); margin:16px 0 8px; }
+  .cp-problems{ border:1px solid rgba(255,176,32,.45); background:rgba(255,176,32,.07); border-radius:10px; padding:10px 14px; font-size:12.5px; margin:12px 0; }
+  .cp-problems ul{ margin:6px 0 0 18px; padding:0; }
+  .cp-err{ border-color:rgba(232,81,79,.5); background:rgba(232,81,79,.08); }
+  .cp-ok{ border-color:rgba(53,196,138,.5); background:rgba(53,196,138,.08); }
+  .cp-img{ max-width:180px; max-height:180px; border-radius:10px; border:1px solid var(--line); display:block; margin-top:8px; }
+  .cp-pos{ display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:6px 12px; margin-top:6px; }
+  .cp-log{ font-size:12px; color:var(--text-dim); display:flex; flex-direction:column; gap:4px; }
+  .cp-log b{ color:var(--text); font-weight:600; }
+  .cp-ids{ font-family:ui-monospace, Menlo, monospace; font-size:12px; line-height:1.7; }
+  .cp-pre{ font-family:ui-monospace, Menlo, monospace; font-size:11px; white-space:pre-wrap; word-break:break-all; max-height:340px; overflow:auto; background:rgba(127,127,127,.08); border-radius:8px; padding:10px; }
+  .cp-status{ font-size:12.5px; color:var(--text-dim); }
+  .btn-danger-soft{ font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:8px; border:1px solid rgba(232,81,79,.4); background:transparent; color:var(--red); cursor:pointer; }
 
   /* ===================== Relatório PDF ===================== */
   .btn-report{ display:inline-flex; align-items:center; gap:6px; font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:8px; border:none; cursor:pointer;
@@ -1864,6 +1901,7 @@
       </nav>
       <div class="nav-divider cnav-admin">Gestão · só você</div>
       <nav class="nav">
+        <div class="nav-item cnav cnav-admin" data-ctab="campaigns" onclick="wsGo('campaigns')">🚀 Campanhas</div>
         <div class="nav-item cnav cnav-admin" data-ctab="insights" onclick="wsGo('insights')">💡 Observações</div>
         <div class="nav-item cnav cnav-admin" data-ctab="contract" onclick="wsGo('contract')">📄 Contrato</div>
         <div class="nav-item cnav cnav-admin" data-ctab="history" onclick="wsGo('history')">🕘 Histórico</div>
@@ -2855,6 +2893,7 @@
         <button type="button" class="g-tab" id="cdTabBtnIntegrations" onclick="setClientDetailTab('integrations')">Integrações</button>
         <button type="button" class="g-tab" id="cdTabBtnAccess" onclick="setClientDetailTab('access')">Acesso do cliente</button>
         <button type="button" class="g-tab" id="cdTabBtnReports" onclick="setClientDetailTab('reports')">Relatório automático</button>
+        <button type="button" class="g-tab cnav-admin" id="cdTabBtnCampaigns" onclick="setClientDetailTab('campaigns')">Campanhas</button>
       </div>
 
       <div class="cd-toolbar" id="cdToolbar">
@@ -3086,6 +3125,8 @@
       <!-- ===== Aba: Integrações ===== -->
       <div class="cd-pane" id="cdPaneAccess"><div id="cdAccessContent"></div></div>
       <div class="cd-pane" id="cdPaneReports"><div id="cdReportsContent"></div></div>
+      <!-- ===== Aba: Campanhas (só a agência; nunca renderiza no login de cliente nem no link) ===== -->
+      <div class="cd-pane cnav-admin" id="cdPaneCampaigns"><div id="cdCampaignsContent"></div></div>
 
       <div class="cd-pane" id="cdPaneIntegrations">
       <div class="panel cd-model-panel">
@@ -6607,6 +6648,415 @@
     if (el) setTimeout(() => { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.focus(); }, 50);
   }
 
+  /* ===================== Campanhas (só agência) =====================
+     Rascunho -> aprovação -> publicar PAUSADA na Meta ou no Google.
+     Nunca roda no login de cliente nem no link público. */
+  const CP = { clientId:null, data:null, edit:null, msg:null, busy:false, imgUrl:null, imgFor:null };
+  const CP_STATUS = { draft:'Rascunho', pending_approval:'Aguardando aprovação', publishing:'Publicando', published:'Publicada (pausada)', failed:'Falhou' };
+  const CP_OBJ = { mensagens:'Mensagens no WhatsApp', trafego:'Tráfego para o site', cadastros:'Cadastros no site (pixel)', vendas:'Vendas no site (pixel)', alcance:'Alcance / reconhecimento' };
+  const CP_CTA = { LEARN_MORE:'Saiba mais', SHOP_NOW:'Comprar agora', SIGN_UP:'Cadastre-se', CONTACT_US:'Fale conosco', GET_QUOTE:'Pedir orçamento', ORDER_NOW:'Peça agora', BOOK_TRAVEL:'Reservar', SUBSCRIBE:'Assinar', APPLY_NOW:'Candidate-se', DOWNLOAD:'Baixar' };
+  const CP_POS = { facebook_feed:'Facebook: Feed', facebook_stories:'Facebook: Stories', facebook_reels:'Facebook: Reels', instagram_feed:'Instagram: Feed', instagram_stories:'Instagram: Stories', instagram_reels:'Instagram: Reels', instagram_explore:'Instagram: Explorar' };
+  const CP_EU = ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'];
+  const CP_GCOUNTRY = { BR:'Brasil', PT:'Portugal', US:'Estados Unidos', ES:'Espanha', IT:'Itália', FR:'França', DE:'Alemanha', GB:'Reino Unido', AR:'Argentina', MX:'México', CL:'Chile', CO:'Colômbia', UY:'Uruguai', PY:'Paraguai', CA:'Canadá' };
+  const CP_LANG = { pt:'Português', en:'Inglês', es:'Espanhol', it:'Italiano', fr:'Francês', de:'Alemão' };
+
+  function cpCanUse(){ return !CLIENT_MODE && !PUBLIC_TOKEN && !!currentClientId; }
+  function cpUrl(path){ return `${API_BASE_URL}/api/campaigns/${encodeURIComponent(CP.clientId)}${path || ''}`; }
+  async function cpApi(path, opts = {}){
+    const res = await fetch(cpUrl(path), { ...opts, headers:{ ...authHeaders(), ...(opts.body ? { 'Content-Type':'application/json' } : {}) } });
+    if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
+    if (res.status === 204) return null;
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) { const e = new Error(json.error || `Erro ${res.status}`); e.problems = json.problems; e.body = json; e.status = res.status; throw e; }
+    return json;
+  }
+  function cpMoney(v, cur){ if (v == null) return '-'; try { return new Intl.NumberFormat('pt-BR', { style:'currency', currency:cur || 'BRL' }).format(v); } catch (e) { return `${cur} ${v}`; } }
+  function cpDate(d){ return d ? d.split('-').reverse().join('/') : ''; }
+  function cpWhen(iso){ try { return new Date(iso).toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', dateStyle:'short', timeStyle:'short' }); } catch (e) { return iso; } }
+  function cpToday(){ return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Sao_Paulo' }).format(new Date()); }
+
+  async function loadCampaigns(){
+    if (!cpCanUse()) return;
+    if (CP.clientId !== currentClientId) { CP.clientId = currentClientId; CP.edit = null; CP.msg = null; CP.data = null; }
+    const el = document.getElementById('cdCampaignsContent');
+    if (!CP.data) el.innerHTML = '<div class="fm-help">Carregando campanhas…</div>';
+    try {
+      const id = CP.clientId;
+      const data = await cpApi('');
+      if (id !== CP.clientId) return;
+      CP.data = data;
+      if (data.capabilities.mode === 'real' && CP.writeCheck !== id) {
+        CP.writeCheck = id;
+        cpApi('?check=1').then(d => { if (CP.clientId === id && CP.data) { CP.data.capabilities = d.capabilities; renderCampaigns(); } }).catch(() => {});
+      }
+      renderCampaigns();
+    } catch (err) {
+      el.innerHTML = `<div class="cp-problems cp-err">${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function cpBanner(cap){
+    if (cap.mode === 'mock') return `<div class="cp-banner mock"><b>Modo de teste.</b> Publicar é só uma simulação: nada é enviado para a Meta ou o Google. Você vê exatamente o que seria criado.</div>`;
+    const lines = [];
+    ['meta', 'google'].forEach(p => {
+      const c = cap[p]; const label = p === 'meta' ? 'Meta' : 'Google';
+      if (c.ready) lines.push(`${label}: publicação real ligada.${p === 'meta' && c.adsManagement === false ? ' <b>Atenção: o token não tem a permissão ads_management, a Meta vai recusar.</b>' : ''}`);
+      else lines.push(`${label}: publicação real desligada. Falta configurar ${escapeHtml(c.missing.join(', '))}.`);
+    });
+    const ok = cap.meta.ready || cap.google.ready;
+    return `<div class="cp-banner ${ok ? 'on' : 'off'}">${lines.join('<br>')}<br>Tudo é criado <b>pausado</b>. Para rodar, ative no gerenciador da plataforma.</div>`;
+  }
+
+  function cpItemSub(d){
+    const what = d.platform === 'meta' ? (CP_OBJ[d.objective] || d.objective) : 'Rede de Pesquisa';
+    const budget = d.budget ? `${cpMoney(d.budget, d.currency)} ${d.budgetType === 'lifetime' ? 'no total' : 'por dia'}` : 'sem orçamento';
+    const dates = d.startDate ? ` · ${cpDate(d.startDate)}${d.endDate ? ' a ' + cpDate(d.endDate) : ''}` : '';
+    return `${escapeHtml(what)} · ${budget}${dates}`;
+  }
+
+  function renderCampaigns(){
+    if (!cpCanUse() || !CP.data) return;
+    const { client, capabilities:cap, drafts } = CP.data;
+    const el = document.getElementById('cdCampaignsContent');
+    const metaOk = !!client.meta.adAccountId, googleOk = !!client.google.customerId;
+    const list = drafts.length ? drafts.map(d => `
+      <div class="cp-item ${CP.edit && CP.edit.id === d.id ? 'sel' : ''}" onclick="cpOpen('${escapeAttr(d.id)}')">
+        <span class="cp-plat">${d.platform === 'meta' ? 'Meta' : 'Google'}</span>
+        <div><div class="cp-item-name">${escapeHtml(d.name)}</div><div class="cp-item-sub">${cpItemSub(d)}</div></div>
+        <span class="cp-chip ${d.status}">${d.status === 'published' && d.mock ? 'Simulada' : CP_STATUS[d.status] || d.status}</span>
+      </div>`).join('') : '<div class="fm-help">Nenhuma campanha criada para este cliente ainda.</div>';
+    el.innerHTML = `
+      ${cpBanner(cap)}
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>Campanhas de ${escapeHtml(client.name)}</h3><div class="panel-head-sub">Monte o rascunho, envie para aprovação e publique. Só você aprova, e tudo nasce pausado. Valores em ${escapeHtml(client.currency)}.</div></div></div>
+        <div class="cp-actions" style="margin-bottom:12px;">
+          <button type="button" class="btn-add" onclick="cpNew('meta')" ${metaOk ? '' : 'disabled title="Cadastre a conta de anúncios da Meta na aba Integrações"'}>+ Nova campanha Meta</button>
+          <button type="button" class="btn-add" onclick="cpNew('google')" ${googleOk ? '' : 'disabled title="Cadastre a conta do Google Ads na aba Integrações"'}>+ Nova campanha Google (Pesquisa)</button>
+          ${!metaOk || !googleOk ? `<span class="fm-help" style="margin:0;">${!metaOk ? 'Sem conta da Meta cadastrada. ' : ''}${!googleOk ? 'Sem conta do Google Ads cadastrada. ' : ''}Veja a aba Integrações.</span>` : ''}
+        </div>
+        <div class="cp-list">${list}</div>
+      </div>
+      <div id="cpEditor">${CP.edit ? cpEditorHtml() : ''}</div>`;
+    if (CP.edit) cpLoadImage();
+  }
+
+  function cpBlank(platform){
+    const today = cpToday();
+    if (platform === 'meta') return { objective:'mensagens', pixelId:'', specialAdCategory:'NONE', budgetType:'daily', budget:null, startDate:today, endDate:'',
+      audience:{ countries:['BR'], cities:[], ageMin:18, ageMax:65, gender:'all', interests:[], advantage:false },
+      placements:{ mode:'auto', positions:[] }, creative:{ assetId:'', primaryText:'', headline:'', description:'', cta:'LEARN_MORE', link:'' }, dsa:{ beneficiary:'', payor:'' } };
+    return { budget:null, startDate:today, endDate:'', bidding:'maximize_clicks', cpcBid:null, country:'BR', cities:[], language:'pt', searchPartners:false,
+      keywords:[], negatives:[], finalUrl:'', headlines:[], descriptions:[], path1:'', path2:'' };
+  }
+  function cpNew(platform){
+    CP.edit = { id:null, platform, name:'', notes:'', status:'draft', currency:CP.data.client.currency, spec:cpBlank(platform), log:[], problems:[] };
+    CP.msg = null; renderCampaigns();
+    document.getElementById('cpEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  async function cpOpen(id){
+    try { CP.edit = await cpApi(`/drafts/${encodeURIComponent(id)}`); CP.msg = null; renderCampaigns();
+      document.getElementById('cpEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+    } catch (err) { alert(err.message); }
+  }
+  function cpClose(){ CP.edit = null; CP.msg = null; renderCampaigns(); }
+
+  const cpLines = (arr) => (arr || []).join('\n');
+  const cpSplit = (v) => String(v || '').split('\n').map(x => x.trim()).filter(Boolean);
+  const cpKw = (k) => k.match === 'EXACT' ? `[${k.text}]` : k.match === 'PHRASE' ? `"${k.text}"` : k.text;
+  const cpOpt = (map, cur) => Object.entries(map).map(([v, l]) => `<option value="${escapeAttr(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('');
+  const cpIn = (id, v, extra = '') => `<input class="modal-input" id="${id}" value="${escapeAttr(v ?? '')}" ${extra}>`;
+  const cpRow = (label, inner, help) => `<div class="fm-row"><label class="modal-label">${label}</label>${inner}${help ? `<div class="fm-help">${help}</div>` : ''}</div>`;
+
+  function cpEditorHtml(){
+    const d = CP.edit, s = d.spec, cur = d.currency;
+    const locked = ['publishing', 'published'].includes(d.status);
+    const dis = locked ? 'disabled' : '';
+    let body = '';
+    if (d.platform === 'meta') {
+      const eu = (s.audience.countries || []).some(c => CP_EU.includes(c));
+      body = `
+        <div class="cp-section">Objetivo e orçamento</div>
+        <div class="fm-2col">
+          ${cpRow('Objetivo', `<select class="modal-input" id="cpObjective" onchange="cpRefresh()" ${dis}>${cpOpt(CP_OBJ, s.objective)}</select>`, s.objective === 'mensagens' ? 'Abre conversa no WhatsApp ligado à Página do cliente.' : '')}
+          ${['cadastros', 'vendas'].includes(s.objective) ? cpRow('ID do pixel da Meta', cpIn('cpPixel', s.pixelId, `placeholder="Ex.: 123456789012345" ${dis}`)) : cpRow('Categoria especial', `<select class="modal-input" id="cpSpecial" ${dis}>${cpOpt({ NONE:'Nenhuma', HOUSING:'Imóveis / moradia', EMPLOYMENT:'Emprego', FINANCIAL_PRODUCTS_SERVICES:'Crédito e serviços financeiros' }, s.specialAdCategory)}</select>`)}
+        </div>
+        <div class="fm-2col">
+          ${cpRow('Tipo de orçamento', `<select class="modal-input" id="cpBudgetType" onchange="cpRefresh()" ${dis}>${cpOpt({ daily:'Diário', lifetime:'Total (do período)' }, s.budgetType)}</select>`)}
+          ${cpRow(`Valor (${escapeHtml(cur)})`, cpIn('cpBudget', s.budget ?? '', `inputmode="decimal" placeholder="Ex.: 50,00" ${dis}`))}
+        </div>
+        <div class="fm-2col">
+          ${cpRow('Início', cpIn('cpStart', s.startDate, `type="date" ${dis}`))}
+          ${cpRow(`Término${s.budgetType === 'lifetime' ? '' : ' (opcional)'}`, cpIn('cpEnd', s.endDate, `type="date" ${dis}`))}
+        </div>
+        <div class="cp-section">Público</div>
+        <div class="fm-2col">
+          ${cpRow('Países', cpIn('cpCountries', (s.audience.countries || []).join(', '), `placeholder="BR" onchange="cpRefresh()" ${dis}`), 'Códigos de 2 letras, separados por vírgula. Ex.: BR, PT')}
+          ${cpRow('Cidades (opcional)', `<textarea class="modal-input" id="cpCities" rows="2" placeholder="Uma por linha. Ex.: São Paulo" ${dis}>${escapeHtml(cpLines(s.audience.cities))}</textarea>`, 'Com cidades, o anúncio fica só nelas.')}
+        </div>
+        <div class="fm-2col">
+          <div class="fm-2col">
+            ${cpRow('Idade mín.', cpIn('cpAgeMin', s.audience.ageMin, `type="number" min="18" max="65" ${dis}`))}
+            ${cpRow('Idade máx.', cpIn('cpAgeMax', s.audience.ageMax, `type="number" min="18" max="65" ${dis}`), '65 = 65 ou mais')}
+          </div>
+          ${cpRow('Gênero', `<select class="modal-input" id="cpGender" ${dis}>${cpOpt({ all:'Todos', female:'Mulheres', male:'Homens' }, s.audience.gender)}</select>`)}
+        </div>
+        ${cpRow('Interesses (opcional)', `<textarea class="modal-input" id="cpInterests" rows="2" placeholder="Um por linha. Ex.: Odontologia" ${dis}>${escapeHtml(cpLines(s.audience.interests))}</textarea>`, 'Buscamos cada termo na Meta na hora de publicar. O que não for encontrado fica de fora e aparece no aviso.')}
+        <label class="fm-check" style="margin-top:6px;"><input type="checkbox" id="cpAdvantage" ${s.audience.advantage ? 'checked' : ''} ${dis}> Público Advantage+ (a Meta pode ir além do público acima)</label>
+        ${eu ? `<div class="fm-2col" style="margin-top:8px;">
+          ${cpRow('Beneficiário (União Europeia)', cpIn('cpDsaB', s.dsa.beneficiary, dis), 'Quem se beneficia do anúncio. Exigência da Meta para a UE.')}
+          ${cpRow('Pagador (União Europeia)', cpIn('cpDsaP', s.dsa.payor, dis), 'Quem paga pelo anúncio.')}
+        </div>` : ''}
+        <div class="cp-section">Posicionamentos</div>
+        <select class="modal-input" id="cpPlacementMode" onchange="cpRefresh()" style="max-width:360px;" ${dis}>${cpOpt({ auto:'Automáticos (recomendado pela Meta)', manual:'Escolher manualmente' }, s.placements.mode)}</select>
+        ${s.placements.mode === 'manual' ? `<div class="cp-pos">${Object.entries(CP_POS).map(([k, l]) => `<label class="fm-check"><input type="checkbox" class="cpPos" value="${k}" ${s.placements.positions.includes(k) ? 'checked' : ''} ${dis}> ${l}</label>`).join('')}</div>` : ''}
+        <div class="cp-section">Anúncio</div>
+        <div class="fm-row"><label class="modal-label">Imagem (JPG ou PNG, até 5 MB)</label>
+          ${locked ? '' : `<input type="file" accept="image/jpeg,image/png" id="cpFile" onchange="cpUpload(this)">`}
+          <div class="fm-help" id="cpImgStatus">${s.creative.assetId ? 'Imagem enviada.' : 'Nenhuma imagem ainda. Formato quadrado (1080x1080) funciona em todos os posicionamentos.'}</div>
+          <img class="cp-img" id="cpImg" style="display:none;" alt="Prévia da imagem do anúncio"></div>
+        ${cpRow('Texto principal', `<textarea class="modal-input" id="cpPrimary" rows="4" ${dis}>${escapeHtml(s.creative.primaryText)}</textarea>`)}
+        <div class="fm-2col">
+          ${cpRow('Título', cpIn('cpHeadline', s.creative.headline, dis))}
+          ${cpRow('Descrição (opcional)', cpIn('cpDesc', s.creative.description, dis))}
+        </div>
+        ${s.objective === 'mensagens' ? '<div class="fm-help">Botão do anúncio: "Enviar mensagem" no WhatsApp.</div>' : `<div class="fm-2col">
+          ${cpRow('Link de destino', cpIn('cpLink', s.creative.link, `placeholder="https://" ${dis}`))}
+          ${cpRow('Botão', `<select class="modal-input" id="cpCta" ${dis}>${cpOpt(CP_CTA, s.creative.cta)}</select>`)}
+        </div>`}`;
+    } else {
+      const hl = s.headlines || [], ds = s.descriptions || [];
+      const longH = hl.filter(h => h.length > 30).length, longD = ds.filter(x => x.length > 90).length;
+      body = `
+        <div class="cp-section">Orçamento e datas</div>
+        <div class="fm-2col">
+          ${cpRow(`Orçamento diário (${escapeHtml(cur)})`, cpIn('cpBudget', s.budget ?? '', `inputmode="decimal" placeholder="Ex.: 80,00" ${dis}`), 'No Google Pesquisa a v1 usa só orçamento diário.')}
+          ${cpRow('Estratégia de lance', `<select class="modal-input" id="cpBidding" onchange="cpRefresh()" ${dis}>${cpOpt({ maximize_clicks:'Maximizar cliques', maximize_conversions:'Maximizar conversões', manual_cpc:'CPC manual' }, s.bidding)}</select>`, s.bidding === 'maximize_conversions' ? 'Precisa de conversões configuradas na conta.' : '')}
+        </div>
+        <div class="fm-2col">
+          ${cpRow('Início', cpIn('cpStart', s.startDate, `type="date" ${dis}`))}
+          ${cpRow('Término (opcional)', cpIn('cpEnd', s.endDate, `type="date" ${dis}`))}
+        </div>
+        ${s.bidding !== 'maximize_conversions' ? `<div class="fm-2col">${cpRow(s.bidding === 'manual_cpc' ? `Lance por clique (${escapeHtml(cur)})` : `Limite de CPC (${escapeHtml(cur)}, opcional)`, cpIn('cpCpc', s.cpcBid ?? '', `inputmode="decimal" ${dis}`))}<div></div></div>` : ''}
+        <div class="cp-section">Segmentação</div>
+        <div class="fm-2col">
+          ${cpRow('País', `<select class="modal-input" id="cpCountry" ${dis}>${cpOpt(CP_GCOUNTRY, s.country)}</select>`)}
+          ${cpRow('Idioma', `<select class="modal-input" id="cpLanguage" ${dis}>${cpOpt(CP_LANG, s.language)}</select>`)}
+        </div>
+        ${cpRow('Cidades (opcional)', `<textarea class="modal-input" id="cpCities" rows="2" placeholder="Uma por linha. Ex.: São Paulo" ${dis}>${escapeHtml(cpLines(s.cities))}</textarea>`, 'Com cidades, a campanha fica só nelas (pessoas que estão no local).')}
+        <label class="fm-check"><input type="checkbox" id="cpPartners" ${s.searchPartners ? 'checked' : ''} ${dis}> Incluir parceiros de pesquisa do Google</label>
+        <div class="cp-section">Palavras-chave</div>
+        <div class="fm-2col">
+          ${cpRow('Palavras-chave', `<textarea class="modal-input" id="cpKeywords" rows="6" placeholder="Uma por linha" ${dis}>${escapeHtml(cpLines((s.keywords || []).map(cpKw)))}</textarea>`, 'Texto puro = ampla, "entre aspas" = frase, [entre colchetes] = exata.')}
+          ${cpRow('Palavras negativas (opcional)', `<textarea class="modal-input" id="cpNegatives" rows="6" placeholder="Uma por linha. Ex.: grátis" ${dis}>${escapeHtml(cpLines(s.negatives))}</textarea>`)}
+        </div>
+        <div class="cp-section">Anúncio responsivo</div>
+        ${cpRow('URL final', cpIn('cpFinalUrl', s.finalUrl, `placeholder="https://" ${dis}`))}
+        <div class="fm-2col">
+          ${cpRow(`Títulos (${hl.length}/15)`, `<textarea class="modal-input" id="cpHeadlines" rows="7" placeholder="Um por linha, de 3 a 15, até 30 caracteres" oninput="cpCount(this, 30, 'cpHlHelp')" ${dis}>${escapeHtml(cpLines(hl))}</textarea>`, `<span id="cpHlHelp">${longH ? `${longH} título(s) com mais de 30 caracteres.` : 'De 3 a 15 títulos, até 30 caracteres cada.'}</span>`)}
+          ${cpRow(`Descrições (${ds.length}/4)`, `<textarea class="modal-input" id="cpDescriptions" rows="7" placeholder="Uma por linha, de 2 a 4, até 90 caracteres" oninput="cpCount(this, 90, 'cpDsHelp')" ${dis}>${escapeHtml(cpLines(ds))}</textarea>`, `<span id="cpDsHelp">${longD ? `${longD} descrição(ões) com mais de 90 caracteres.` : 'De 2 a 4 descrições, até 90 caracteres cada.'}</span>`)}
+        </div>
+        <div class="fm-2col">
+          ${cpRow('Caminho 1 (opcional)', cpIn('cpPath1', s.path1, `maxlength="15" ${dis}`))}
+          ${cpRow('Caminho 2 (opcional)', cpIn('cpPath2', s.path2, `maxlength="15" ${dis}`))}
+        </div>`;
+    }
+    return `
+      <div class="panel fm-panel">
+        <div class="panel-head"><div><h3>${d.id ? escapeHtml(d.name) : `Nova campanha ${d.platform === 'meta' ? 'Meta' : 'Google (Pesquisa)'}`}</h3>
+          <div class="panel-head-sub">${d.id ? `<span class="cp-chip ${d.status}">${d.status === 'published' && d.publish && d.publish.mock ? 'Simulada' : CP_STATUS[d.status]}</span> Criada por ${escapeHtml(d.createdBy?.by || '-')} em ${cpWhen(d.createdAt)}` : 'Ainda não salva.'}</div></div>
+          <button type="button" class="btn-cancel" onclick="cpClose()">Fechar</button></div>
+        ${cpRow('Nome da campanha', cpIn('cpName', d.name, `placeholder="Ex.: Avaliação gratuita, outubro" ${dis}`))}
+        ${body}
+        <div class="cp-section">Observações internas (opcional)</div>
+        <textarea class="modal-input" id="cpNotes" rows="2" ${dis}>${escapeHtml(d.notes || '')}</textarea>
+        ${cpFeedbackHtml()}
+        ${cpActionsHtml()}
+        ${cpResultHtml()}
+        ${cpLogHtml()}
+      </div>`;
+  }
+
+  function cpFeedbackHtml(){
+    const d = CP.edit, m = CP.msg;
+    let out = '';
+    if (m) out += `<div class="cp-problems ${m.kind === 'ok' ? 'cp-ok' : m.kind === 'err' ? 'cp-err' : ''}">${escapeHtml(m.text)}${m.problems && m.problems.length ? `<ul>${m.problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}</div>`;
+    else if (d.id && ['draft', 'failed'].includes(d.status) && d.problems && d.problems.length) out += `<div class="cp-problems"><b>Falta para enviar para aprovação:</b><ul>${d.problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul></div>`;
+    if (d.status === 'pending_approval') out += `<div class="cp-problems"><b>Aguardando sua aprovação.</b> Pedido por ${escapeHtml(d.approvalRequest?.by || '-')} em ${cpWhen(d.approvalRequest?.at)}${d.approvalRequest?.note ? `: "${escapeHtml(d.approvalRequest.note)}"` : ''}. Se editar, volta para rascunho.</div>`;
+    if (d.status === 'failed' && d.publish?.error) out += `<div class="cp-problems cp-err"><b>A publicação falhou:</b> ${escapeHtml(d.publish.error)}${Object.keys(d.publish.partialIds || {}).length ? `<br>Já criado na plataforma (pausado): ${escapeHtml(Object.entries(d.publish.partialIds).map(([k, v]) => `${k} ${v}`).join(', '))}. Confira no gerenciador antes de tentar de novo, para não duplicar.` : ''}</div>`;
+    return out;
+  }
+
+  function cpActionsHtml(){
+    const d = CP.edit, cap = CP.data.capabilities;
+    if (['publishing', 'published'].includes(d.status)) return '';
+    const b = [];
+    b.push(`<button type="button" class="btn-cancel" onclick="cpSave()">Salvar rascunho</button>`);
+    if (['draft', 'failed'].includes(d.status)) b.push(`<button type="button" class="btn-add" onclick="cpRequestApproval()">Enviar para aprovação</button>`);
+    if (d.status === 'pending_approval' && cap.canPublish) {
+      b.push(`<button type="button" class="btn-cancel" onclick="cpReject()">Pedir ajustes</button>`);
+      b.push(`<button type="button" class="btn-report" onclick="cpPublish()">Aprovar e publicar (pausada)</button>`);
+    }
+    if (d.id) b.push(`<button type="button" class="btn-danger-soft" onclick="cpDelete()">Excluir</button>`);
+    return `<div class="cp-actions" style="margin-top:14px;">${b.join('')}<span class="cp-status" id="cpBusy">${CP.busy ? 'Aguarde…' : ''}</span></div>`;
+  }
+
+  function cpResultHtml(){
+    const p = CP.edit.publish;
+    if (!p || CP.edit.status !== 'published') return '';
+    const ids = Object.entries(p.ids || {}).map(([k, v]) => `${escapeHtml({ campaign:'Campanha', adset:'Conjunto', creative:'Criativo', ad:'Anúncio' }[k] || k)}: ${escapeHtml(v || '-')}`).join('<br>');
+    return `
+      <div class="cp-section">Resultado da publicação</div>
+      <div class="cp-problems ${p.mock ? '' : 'cp-ok'}">${p.mock ? '<b>Simulação.</b> Nada foi enviado para a plataforma. Os IDs abaixo são fictícios.' : `<b>Criada pausada</b> em ${cpWhen(p.at)} por ${escapeHtml(p.by)}. Para rodar, ative no gerenciador da plataforma.`}
+        <div class="cp-ids" style="margin-top:6px;">${ids}</div>
+        ${(p.warnings || []).length ? `<ul>${p.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : ''}</div>
+      ${p.requests ? `<details><summary class="fm-help" style="cursor:pointer;">Ver as chamadas que seriam feitas na API (${p.requests.length})</summary>
+        ${p.requests.map(r => `<div class="fm-help"><b>${escapeHtml(r.label)}</b>: ${escapeHtml(r.method)} ${escapeHtml(r.url)}</div><div class="cp-pre">${escapeHtml(JSON.stringify(r.params, null, 2))}</div>`).join('')}</details>` : ''}`;
+  }
+
+  function cpLogHtml(){
+    const log = CP.edit.log || [];
+    if (!log.length) return '';
+    return `<div class="cp-section">Histórico</div><div class="cp-log">${log.slice().reverse().map(l => `<div>${cpWhen(l.at)} · <b>${escapeHtml(l.by)}</b> ${escapeHtml(l.action)}${l.detail ? `: ${escapeHtml(l.detail)}` : ''}</div>`).join('')}</div>`;
+  }
+
+  function cpCount(el, max, helpId){
+    const lines = cpSplit(el.value), long = lines.filter(x => x.length > max).length;
+    const h = document.getElementById(helpId);
+    if (h) h.textContent = long ? `${long} linha(s) com mais de ${max} caracteres.` : `${lines.length} linha(s), todas dentro de ${max} caracteres.`;
+  }
+
+  const cpVal = (id) => { const el = document.getElementById(id); return el ? el.value : undefined; };
+  // Lê o formulário de volta para o rascunho em memória.
+  function cpCollect(){
+    const d = CP.edit; if (!d || ['publishing', 'published'].includes(d.status)) return;
+    d.name = (cpVal('cpName') || '').trim();
+    d.notes = cpVal('cpNotes') || '';
+    const s = d.spec;
+    s.budget = cpVal('cpBudget') || null;
+    s.startDate = cpVal('cpStart') || ''; s.endDate = cpVal('cpEnd') || '';
+    if (d.platform === 'meta') {
+      s.objective = cpVal('cpObjective');
+      if (cpVal('cpPixel') !== undefined) s.pixelId = cpVal('cpPixel');
+      if (cpVal('cpSpecial') !== undefined) s.specialAdCategory = cpVal('cpSpecial');
+      s.budgetType = cpVal('cpBudgetType');
+      s.audience = { countries:(cpVal('cpCountries') || '').split(/[,\s]+/).map(x => x.trim().toUpperCase()).filter(Boolean), cities:cpSplit(cpVal('cpCities')),
+        ageMin:Number(cpVal('cpAgeMin')) || 18, ageMax:Number(cpVal('cpAgeMax')) || 65, gender:cpVal('cpGender'), interests:cpSplit(cpVal('cpInterests')),
+        advantage:document.getElementById('cpAdvantage').checked };
+      if (cpVal('cpDsaB') !== undefined) s.dsa = { beneficiary:cpVal('cpDsaB'), payor:cpVal('cpDsaP') };
+      const prevPos = (s.placements && s.placements.positions) || [];
+      s.placements = { mode:cpVal('cpPlacementMode'), positions:document.querySelector('.cpPos') ? [...document.querySelectorAll('.cpPos:checked')].map(x => x.value) : prevPos };
+      s.creative.primaryText = cpVal('cpPrimary') || ''; s.creative.headline = cpVal('cpHeadline') || ''; s.creative.description = cpVal('cpDesc') || '';
+      if (cpVal('cpLink') !== undefined) { s.creative.link = cpVal('cpLink'); s.creative.cta = cpVal('cpCta'); }
+    } else {
+      s.bidding = cpVal('cpBidding');
+      if (cpVal('cpCpc') !== undefined) s.cpcBid = cpVal('cpCpc') || null;
+      s.country = cpVal('cpCountry'); s.language = cpVal('cpLanguage'); s.cities = cpSplit(cpVal('cpCities'));
+      s.searchPartners = document.getElementById('cpPartners').checked;
+      s.keywords = cpSplit(cpVal('cpKeywords')); s.negatives = cpSplit(cpVal('cpNegatives'));
+      s.finalUrl = cpVal('cpFinalUrl') || ''; s.headlines = cpSplit(cpVal('cpHeadlines')); s.descriptions = cpSplit(cpVal('cpDescriptions'));
+      s.path1 = cpVal('cpPath1') || ''; s.path2 = cpVal('cpPath2') || '';
+    }
+  }
+  // Campos que mudam o formulário (objetivo, tipo de orçamento etc.): relê e redesenha.
+  function cpRefresh(){ cpCollect(); const y = window.scrollY; document.getElementById('cpEditor').innerHTML = cpEditorHtml(); cpLoadImage(); window.scrollTo(0, y); }
+
+  function cpSetBusy(on){ CP.busy = on; const el = document.getElementById('cpBusy'); if (el) el.textContent = on ? 'Aguarde…' : ''; document.querySelectorAll('#cpEditor button').forEach(b => b.disabled = on); }
+  async function cpAfter(draft, msg){
+    CP.edit = draft; CP.msg = msg || null; CP.busy = false;
+    const data = await cpApi('').catch(() => null);
+    if (data) CP.data = data;
+    renderCampaigns();
+  }
+
+  async function cpSave(silent){
+    cpCollect();
+    const d = CP.edit;
+    if (!d.name) { CP.msg = { kind:'warn', text:'Dê um nome para a campanha antes de salvar.' }; cpRefresh(); return null; }
+    if (d.status === 'pending_approval' && !silent && !confirm('Essa campanha está aguardando aprovação. Salvar uma alteração faz ela voltar para rascunho. Continuar?')) return null;
+    cpSetBusy(true);
+    try {
+      const body = JSON.stringify({ platform:d.platform, name:d.name, notes:d.notes, spec:d.spec });
+      const saved = d.id ? await cpApi(`/drafts/${encodeURIComponent(d.id)}`, { method:'PATCH', body }) : await cpApi('/drafts', { method:'POST', body });
+      if (!silent) await cpAfter(saved, { kind:'ok', text:'Rascunho salvo.' });
+      return saved;
+    } catch (err) { cpSetBusy(false); CP.msg = { kind:'err', text:err.message, problems:err.problems }; cpRefresh(); return null; }
+  }
+
+  async function cpRequestApproval(){
+    const saved = await cpSave(true);
+    if (!saved) return;
+    CP.edit = saved;
+    if (saved.problems && saved.problems.length) { await cpAfter(saved, { kind:'warn', text:'Rascunho salvo, mas ainda falta:', problems:saved.problems }); return; }
+    try {
+      const d = await cpApi(`/drafts/${encodeURIComponent(saved.id)}/request-approval`, { method:'POST', body:JSON.stringify({}) });
+      await cpAfter(d, { kind:'ok', text:'Enviada para aprovação.' });
+    } catch (err) { await cpAfter(saved, { kind:'err', text:err.message, problems:err.problems }); }
+  }
+
+  async function cpReject(){
+    const note = prompt('O que precisa ajustar? (fica registrado no histórico)');
+    if (note === null) return;
+    cpSetBusy(true);
+    try { const d = await cpApi(`/drafts/${encodeURIComponent(CP.edit.id)}/reject`, { method:'POST', body:JSON.stringify({ note }) }); await cpAfter(d, { kind:'ok', text:'Voltou para rascunho com o pedido de ajuste.' }); }
+    catch (err) { cpSetBusy(false); alert(err.message); }
+  }
+
+  async function cpPublish(){
+    const d = CP.edit, s = d.spec, mock = CP.data.capabilities.mode === 'mock';
+    const plat = d.platform === 'meta' ? 'Meta' : 'Google Ads';
+    const budget = `${cpMoney(Number(s.budget), d.currency)} ${d.platform === 'meta' && s.budgetType === 'lifetime' ? 'no total' : 'por dia'}`;
+    const text = `${mock ? 'SIMULAÇÃO (modo de teste, nada é enviado)\n\n' : ''}Publicar na ${plat} para ${CP.data.client.name}:\n\n${d.name}\nOrçamento: ${budget}\nPeríodo: ${cpDate(s.startDate)}${s.endDate ? ' a ' + cpDate(s.endDate) : ', sem data de término'}\n\nA campanha é criada PAUSADA. Nada é gasto até alguém ativar no gerenciador.\n\nConfirmar?`;
+    if (!confirm(text)) return;
+    cpSetBusy(true);
+    try {
+      const out = await cpApi(`/drafts/${encodeURIComponent(d.id)}/publish`, { method:'POST', body:JSON.stringify({}) });
+      await cpAfter(out, { kind:'ok', text:mock ? 'Simulação concluída. Veja abaixo o que seria criado.' : 'Publicada pausada. Os IDs estão abaixo.' });
+    } catch (err) {
+      const draft = err.body && err.body.id ? err.body : await cpApi(`/drafts/${encodeURIComponent(d.id)}`).catch(() => d);
+      await cpAfter(draft, err.body && err.body.id ? null : { kind:'err', text:err.message, problems:err.problems });
+    }
+  }
+
+  async function cpDelete(){
+    if (!confirm('Excluir este rascunho? Não dá para desfazer.')) return;
+    try { await cpApi(`/drafts/${encodeURIComponent(CP.edit.id)}`, { method:'DELETE' }); CP.edit = null; CP.msg = null; await loadCampaigns(); }
+    catch (err) { alert(err.message); }
+  }
+
+  function cpUpload(input){
+    const f = input.files && input.files[0]; if (!f) return;
+    const st = document.getElementById('cpImgStatus');
+    if (!/^image\/(jpeg|png)$/.test(f.type)) { st.textContent = 'Use uma imagem JPG ou PNG.'; return; }
+    if (f.size > 5 * 1024 * 1024) { st.textContent = 'Imagem acima de 5 MB.'; return; }
+    st.textContent = 'Enviando imagem…';
+    const r = new FileReader();
+    r.onload = async () => {
+      try {
+        const a = await cpApi('/assets', { method:'POST', body:JSON.stringify({ name:f.name, dataUrl:r.result }) });
+        CP.edit.spec.creative.assetId = a.id;
+        st.textContent = `Imagem enviada (${Math.round(a.size / 1024)} KB). Salve o rascunho para guardar.`;
+        cpLoadImage();
+      } catch (err) { st.textContent = err.message; }
+    };
+    r.readAsDataURL(f);
+  }
+  // A imagem precisa do login, então buscamos com o token e mostramos como blob.
+  async function cpLoadImage(){
+    const id = CP.edit && CP.edit.platform === 'meta' && CP.edit.spec.creative.assetId;
+    const img = document.getElementById('cpImg');
+    if (!id || !img) return;
+    if (CP.imgFor !== id) {
+      try {
+        const res = await fetch(cpUrl(`/assets/${encodeURIComponent(id)}`), { headers:authHeaders() });
+        if (!res.ok) throw new Error();
+        if (CP.imgUrl) URL.revokeObjectURL(CP.imgUrl);
+        CP.imgUrl = URL.createObjectURL(await res.blob()); CP.imgFor = id;
+      } catch (e) { return; }
+    }
+    const el = document.getElementById('cpImg');
+    if (el) { el.src = CP.imgUrl; el.style.display = 'block'; }
+  }
+
   function setClientDetailTab(tab){
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
     document.getElementById('cdTabBtnSocial').classList.toggle('active', tab === 'social');
@@ -6626,6 +7076,10 @@
     document.getElementById('cdTabBtnReports').classList.toggle('active', tab === 'reports');
     document.getElementById('cdPaneReports').classList.toggle('active', tab === 'reports');
     if (tab === 'reports') { renderClientReportsPane(); loadReports(); }
+    const isCamp = tab === 'campaigns' && !CLIENT_MODE && !PUBLIC_TOKEN;
+    document.getElementById('cdTabBtnCampaigns').classList.toggle('active', isCamp);
+    document.getElementById('cdPaneCampaigns').classList.toggle('active', isCamp);
+    if (isCamp) loadCampaigns();
     document.getElementById('cdToolbar').style.display = (tab === 'overview' || tab === 'social') ? 'flex' : 'none';
     document.getElementById('cdPlatformTabs').style.visibility = tab === 'overview' ? 'visible' : 'hidden';
     if (tab === 'overview') applyPlatformView();
