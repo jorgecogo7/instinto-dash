@@ -37,6 +37,7 @@ function parseValue(v) {
   if (typeof v === 'string') {
     let s = v.replace(/[^\d,.-]/g, '');
     if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); // "3.500" = três mil e quinhentos
     n = Number(s);
   }
   if (!Number.isFinite(n) || n < 0 || n > 1e10) throw new CrmError(400, 'Valor inválido.');
