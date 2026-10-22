@@ -1451,10 +1451,38 @@
   .mg-modal-warn{ border:1px solid rgba(255,176,32,.45); background:rgba(255,176,32,.08); border-radius:10px; padding:9px 12px; font-size:12.5px; line-height:1.5; margin-top:10px; }
   .mg-log{ font-size:12px; color:var(--text-dim); display:flex; flex-direction:column; gap:5px; }
   .mg-log b{ color:var(--text); font-weight:600; }
+  .mg-period{ width:auto; max-width:260px; padding:7px 10px; font-size:12.5px; }
+  .mg-periodline{ font-size:11.5px; color:var(--text-dim); margin:-4px 0 10px; }
+  .mg-mets{ display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:7px; }
+  .mg-met{ display:flex; flex-direction:column; min-width:0; }
+  .mg-met small{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); white-space:nowrap; }
+  .mg-met b{ font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .mg-met.mg-k b{ color:var(--amber, #FFB020); }
+  .mg-met.mg-d b{ color:var(--text-dim); font-weight:600; }
+  .mg-nodata{ font-size:11.5px; color:var(--text-dim); margin-top:6px; }
+  .mg-thumb{ flex-shrink:0; position:relative; width:56px; height:56px; border-radius:9px; overflow:hidden; border:1px solid var(--line); padding:0; cursor:zoom-in;
+    background:linear-gradient(135deg, rgba(255,122,26,.28), rgba(255,176,32,.12)); color:var(--text-dim); font-size:20px; display:flex; align-items:center; justify-content:center; }
+  .mg-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .mg-thumb.text{ font-size:13px; font-weight:800; }
+  .mg-thumb .mg-fmt{ position:absolute; right:3px; bottom:3px; font-size:9.5px; font-weight:800; padding:1px 5px; border-radius:6px; background:rgba(0,0,0,.62); color:#fff; line-height:1.4; }
+  .mg-snip{ font-size:12px; color:var(--text-dim); margin-top:4px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
+  .mg-snip b{ color:var(--text); font-weight:600; }
+  .mg-pv-img{ display:block; width:100%; max-height:62vh; object-fit:contain; border-radius:12px; background:rgba(127,127,127,.12); margin-bottom:12px; }
+  .mg-pv-ph{ border-radius:12px; padding:28px 14px; text-align:center; font-size:13px; color:var(--text-dim); background:linear-gradient(135deg, rgba(255,122,26,.18), rgba(255,176,32,.06)); margin-bottom:12px; }
+  .mg-pv-t{ font-weight:700; font-size:14px; margin-bottom:6px; word-break:break-word; }
+  .mg-pv-b{ font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .mg-pv-note{ font-size:11.5px; color:var(--text-dim); margin-top:10px; }
+  .mg-pv-list{ margin:0 0 8px; padding-left:18px; font-size:13px; line-height:1.5; }
   @media (max-width: 760px){
     .mg-row{ padding:9px 10px; gap:8px; }
     .mg-children{ padding:0 6px 8px 14px; }
     .mg-btn{ min-width:70px; padding:9px 11px; }
+    .mg-row{ align-items:flex-start; }
+    .mg-btn{ margin-top:2px; }
+    .mg-thumb{ width:48px; height:48px; }
+    .mg-mets{ gap:4px 12px; }
+    .mg-met b{ font-size:12.5px; }
+    .mg-toolbar .mg-period{ flex:1; min-width:140px; max-width:none; }
   }
 
   /* ===================== Relatório PDF ===================== */
@@ -3180,6 +3208,16 @@
             <button type="button" class="btn-cancel" id="mgModalCancel" onclick="mgCloseModal()">Cancelar</button>
             <button type="button" class="btn-add" id="mgModalOk" onclick="mgConfirm()">Confirmar</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Prévia do criativo (Gerenciar) -->
+      <div class="rp-modal" id="mgPrevModal" onclick="if (event.target === this) mgClosePreview()">
+        <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="mgPrevTitle">
+          <h3 id="mgPrevTitle"></h3>
+          <div class="rp-modal-sub" id="mgPrevSub"></div>
+          <div id="mgPrevBody"></div>
+          <div class="rp-modal-actions"><button type="button" class="btn-cancel" onclick="mgClosePreview()">Fechar</button></div>
         </div>
       </div>
 
@@ -5669,8 +5707,10 @@
   // no formato "de tela" — chamada tanto com o exemplo quanto com dados reais.
   // Miniatura do criativo; sem imagem (ou se falhar ao carregar), cai no quadrado laranja.
   function adThumbHtml(a){
-    if (!a.thumb) return '<div class="ad-thumb"></div>';
-    return `<div class="ad-thumb has-img"><img src="${escapeHtml(a.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.className='ad-thumb';this.remove()"></div>`;
+    // Sem imagem (ou se ela falhar): .ad-thumb-ph. O .ad-thumb vazio herda o fundo
+    // escuro da regra da tabela de anúncios e aparecia como um quadrado preto.
+    if (!a.thumb) return '<div class="ad-thumb-ph">🖼</div>';
+    return `<div class="ad-thumb has-img"><img src="${escapeHtml(a.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.outerHTML='<div class=&quot;ad-thumb-ph&quot;>🖼</div>'"></div>`;
   }
 
   function renderMetaView(metaCampaigns, real = false){
@@ -6983,7 +7023,7 @@
      Lista o que já existe na conta (campanha > conjunto > anúncio) e deixa pausar ou
      reativar. Toda alteração pede confirmação e só o admin faz. Nunca roda no login
      de cliente nem no link público (a API também devolve 403 para cliente). */
-  const MG = { clientId:null, platform:null, caps:null, tree:null, err:null, loading:false, open:{}, pending:null, log:null, msg:null };
+  const MG = { clientId:null, platform:null, caps:null, tree:null, err:null, loading:false, open:{}, pending:null, log:null, msg:null, period:'7' };
   const MG_LEVEL = {
     meta:{ campaign:['campanha', 'a'], adset:['conjunto', 'o'], ad:['anúncio', 'o'] },
     google:{ campaign:['campanha', 'a'], adset:['grupo de anúncios', 'o'], ad:['anúncio', 'o'] },
@@ -7042,7 +7082,8 @@
     if (!cap || !cap.linked) { MG.tree = null; MG.err = null; renderManage(); return; }
     MG.loading = true; if (!quiet) { MG.err = null; renderManage(); }
     try {
-      const data = await mgApi(`?platform=${platform}`);
+      const r = mgRange();
+      const data = await mgApi(`?platform=${platform}&from=${r.from}&to=${r.to}`);
       if (id !== MG.clientId || platform !== MG.platform) return;
       MG.tree = data; MG.err = null;
     } catch (err) {
@@ -7052,6 +7093,93 @@
     MG.loading = false;
     renderManage();
   }
+
+  // Período das métricas. Padrão: últimos 7 dias (hoje incluído), no fuso de São Paulo.
+  function mgToday(){ return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Sao_Paulo' }).format(new Date()); }
+  function mgAddDays(iso, n){ const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function mgRange(){
+    const t = mgToday(), p = MG.period;
+    if (p === 'panel' && cdCurrentRange) return { from:cdCurrentRange.from, to:cdCurrentRange.to };
+    if (p === 'today') return { from:t, to:t };
+    if (p === 'yesterday') { const y = mgAddDays(t, -1); return { from:y, to:y }; }
+    const n = Number(p) || 7;
+    return { from:mgAddDays(t, -(n - 1)), to:t };
+  }
+  function mgSetPeriod(v){ MG.period = v; mgLoadTree(); }
+  function mgPeriodSelect(){
+    const opts = [['today', 'Hoje'], ['yesterday', 'Ontem'], ['7', 'Últimos 7 dias'], ['14', 'Últimos 14 dias'], ['30', 'Últimos 30 dias']];
+    if (cdCurrentRange) opts.push(['panel', `Período do painel (${dateBr(cdCurrentRange.from)} a ${dateBr(cdCurrentRange.to)})`]);
+    if (MG.period === 'panel' && !cdCurrentRange) MG.period = '7';
+    return `<select class="modal-input mg-period" aria-label="Período das métricas" onchange="mgSetPeriod(this.value)" ${MG.loading ? 'disabled' : ''}>${opts.map(([v, l]) => `<option value="${v}" ${MG.period === v ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+  }
+
+  // Números do período. Sem dado: "-". Nada é estimado aqui.
+  function mgNum(v, dec){ return v == null || !isFinite(v) ? '-' : Number(v).toLocaleString('pt-BR', { maximumFractionDigits:dec ?? 0 }); }
+  function mgMetricsHtml(node){
+    const m = node.metrics, cur = MG.tree.currency;
+    const met = (label, value, cls) => `<span class="mg-met ${cls || ''}"><small>${escapeHtml(label)}</small><b>${value}</b></span>`;
+    if (m && m.noDelivery) return `<div class="mg-nodata">Sem veiculação no período.</div>`;
+    if (!m) return `<div class="mg-mets">${met('Investimento', '-')}${met('Resultados', '-')}${met('Custo por resultado', '-')}</div>`;
+    const google = MG.platform === 'google';
+    const items = [met(google ? 'Custo' : 'Investimento', cpMoney(m.spend, cur))];
+    if (m.resultKind === 'mixed') items.push(met('Resultados', '-', 'mg-d'));
+    else items.push(met(m.resultLabel || 'Resultados', mgNum(m.results, google ? 1 : 2), 'mg-k'));
+    items.push(met(m.costLabel || 'Custo por resultado', m.costPerResult == null ? '-' : cpMoney(m.costPerResult, cur)));
+    if (m.roas != null) items.push(met('ROAS', `${mgNum(m.roas, 2)}x`));
+    if (google) items.push(met('Cliques', mgNum(m.clicks)));
+    if (m.resultKind !== 'impressions') items.push(met(google ? 'CTR' : 'CTR do link', m.ctr == null ? '-' : `${mgNum(m.ctr, 2)}%`, 'mg-d'));
+    if (!google && m.resultKind !== 'impressions') items.push(met('Impressões', m.impressions == null ? '-' : compactFmt(m.impressions), 'mg-d'));
+    const mixedNote = m.resultKind === 'mixed' ? `<div class="mg-nodata">Os conjuntos têm metas diferentes. Abra para ver o resultado de cada um.</div>` : '';
+    return `<div class="mg-mets">${items.join('')}</div>${mixedNote}`;
+  }
+
+  // Miniatura do anúncio (toque para ampliar). Sem imagem: quadro laranja com ícone, nunca preto.
+  const MG_FMT = { video:'Vídeo', carousel:'Carrossel', image:'', text:'' };
+  function mgThumbHtml(node){
+    const c = node.creative;
+    const fmt = c && c.format === 'carousel' && c.cards ? `${c.cards} cards` : (c ? MG_FMT[c.format] || '' : '');
+    const badge = fmt ? `<span class="mg-fmt">${escapeHtml(fmt)}</span>` : '';
+    const label = escapeAttr(`Ver criativo de ${node.name || 'anúncio'}`);
+    if (c && c.imageUrl) {
+      return `<button type="button" class="mg-thumb" onclick="mgPreview('${escapeAttr(node.id)}')" aria-label="${label}"><img src="${escapeAttr(c.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">${badge}</button>`;
+    }
+    const icon = c && c.format === 'text' ? 'Aa' : c && c.format === 'video' ? '▶' : '🖼';
+    return `<button type="button" class="mg-thumb ${c && c.format === 'text' ? 'text' : ''}" onclick="mgPreview('${escapeAttr(node.id)}')" aria-label="${label}">${icon}${badge}</button>`;
+  }
+  function mgSnipHtml(node){
+    const c = node.creative;
+    if (!c || (!c.title && !c.body)) return '';
+    return `<div class="mg-snip">${c.title ? `<b>${escapeHtml(c.title)}</b>${c.body ? ' · ' : ''}` : ''}${c.body ? escapeHtml(c.body) : ''}</div>`;
+  }
+  function mgPreview(id){
+    const hit = mgFind('ad', id);
+    if (!hit) return;
+    const { node, parents } = hit, c = node.creative, google = MG.platform === 'google';
+    document.getElementById('mgPrevTitle').textContent = node.name || '(sem nome)';
+    document.getElementById('mgPrevSub').textContent = parents.map(p => p.name).join(' > ');
+    let html = '';
+    if (c && c.imageUrl) html += `<img class="mg-pv-img" src="${escapeAttr(c.imageUrl)}" alt="Criativo do anúncio" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=&quot;mg-pv-ph&quot;>A imagem não carregou. O link da plataforma pode ter expirado: toque em Atualizar e abra de novo.</div>'">`;
+    else html += `<div class="mg-pv-ph">${c ? (google ? 'Anúncio só de texto: sem imagem.' : 'A Meta não devolveu imagem para este criativo.') : 'Não consegui ler o criativo deste anúncio.'}</div>`;
+    if (c && google) {
+      if (c.headlines && c.headlines.length) html += `<div class="mg-pv-t">Títulos</div><ul class="mg-pv-list">${c.headlines.map(h => `<li>${escapeHtml(h)}</li>`).join('')}</ul>`;
+      if (c.descriptions && c.descriptions.length) html += `<div class="mg-pv-t">Descrições</div><ul class="mg-pv-list">${c.descriptions.map(h => `<li>${escapeHtml(h)}</li>`).join('')}</ul>`;
+      if (c.finalUrl) html += `<div class="mg-pv-note">Página de destino: ${escapeHtml(c.finalUrl)}</div>`;
+    } else if (c) {
+      if (c.title) html += `<div class="mg-pv-t">${escapeHtml(c.title)}</div>`;
+      if (c.body) html += `<div class="mg-pv-b">${escapeHtml(c.body)}</div>`;
+      if (!c.title && !c.body) html += `<div class="mg-pv-note">Sem texto no criativo.</div>`;
+      const notes = [];
+      if (c.format === 'video') notes.push('Vídeo: a imagem é a capa.');
+      if (c.format === 'carousel') notes.push(`Carrossel${c.cards ? ` com ${c.cards} cards` : ''}: a imagem é a do primeiro card.`);
+      if (c.dynamic) notes.push('Criativo dinâmico: a Meta combina várias imagens e textos. Aqui aparece a primeira opção.');
+      if (c.source && c.imageUrl) notes.push(`Origem da imagem: ${c.source}.`);
+      if (notes.length) html += `<div class="mg-pv-note">${escapeHtml(notes.join(' '))}</div>`;
+    }
+    if (node.metrics && !node.metrics.noDelivery) html += `<div style="margin-top:12px">${mgMetricsHtml(node)}</div>`;
+    document.getElementById('mgPrevBody').innerHTML = html;
+    document.getElementById('mgPrevModal').classList.add('open');
+  }
+  function mgClosePreview(){ document.getElementById('mgPrevModal').classList.remove('open'); document.getElementById('mgPrevBody').innerHTML = ''; }
 
   function mgSetPlatform(p){ if (MG.platform === p) return; MG.platform = p; MG.tree = null; MG.msg = null; mgLoadTree(); }
   function mgToggleOpen(key){ MG.open[key] = !MG.open[key]; renderManage(); }
@@ -7072,7 +7200,6 @@
     const on = mgOn(node.status);
     const [kindLabel] = MG_LEVEL[platform][node.level];
     const extra = [];
-    if (node.level === 'campaign' && node.spend7d != null) extra.push(`${cpMoney(node.spend7d, MG.tree.currency)} nos últimos 7 dias`);
     if (node.level === 'campaign' && platform === 'google' && node.channel && node.channel !== 'SEARCH') extra.push(escapeHtml({ PERFORMANCE_MAX:'Performance Max', DISPLAY:'Display', VIDEO:'Vídeo', SHOPPING:'Shopping', DEMAND_GEN:'Demand Gen', MULTI_CHANNEL:'App' }[node.channel] || node.channel));
     if (hasKids) extra.push(`${kids.length} ${node.level === 'campaign' ? (platform === 'google' ? (kids.length === 1 ? 'grupo' : 'grupos') : (kids.length === 1 ? 'conjunto' : 'conjuntos')) : (kids.length === 1 ? 'anúncio' : 'anúncios')}`);
     if (node.review && node.review !== 'APPROVED') extra.push(escapeHtml({ DISAPPROVED:'reprovado', APPROVED_LIMITED:'aprovado com limitação', AREA_OF_INTEREST_ONLY:'aprovado só em algumas regiões', UNKNOWN:'em análise' }[node.review] || node.review.toLowerCase()));
@@ -7083,10 +7210,12 @@
       : 'Nenhum anúncio neste conjunto.';
     return `<div class="mg-node" data-key="${escapeAttr(key)}">
       <div class="mg-row">
-        <button type="button" class="mg-exp ${hasKids ? (open ? 'open' : '') : 'none'}" ${hasKids ? `onclick="mgToggleOpen('${escapeAttr(key)}')" aria-label="Abrir"` : 'tabindex="-1"'}>▶</button>
+        ${hasKids ? `<button type="button" class="mg-exp ${open ? 'open' : ''}" onclick="mgToggleOpen('${escapeAttr(key)}')" aria-label="Abrir">▶</button>` : mgThumbHtml(node)}
         <div class="mg-main">
           <div class="mg-name">${escapeHtml(node.name || '(sem nome)')}</div>
           <div class="mg-sub"><span class="mg-kind">${escapeHtml(kindLabel)}</span>${mgBadge(platform, node.level, node.effectiveStatus)}${extra.length ? `<span>${extra.join(' · ')}</span>` : ''}</div>
+          ${node.level === 'ad' ? mgSnipHtml(node) : ''}
+          ${mgMetricsHtml(node)}
         </div>
         ${btn}
       </div>
@@ -7114,9 +7243,11 @@
     el.innerHTML = `
       ${mgBanner(MG.tree ? MG.tree.capabilities : cap)}
       <div class="panel fm-panel">
-        <div class="panel-head"><div><h3>Campanhas na conta</h3><div class="panel-head-sub">Pause ou reative campanhas, ${MG.platform === 'google' ? 'grupos de anúncios' : 'conjuntos'} e anúncios que já existem. Toda alteração pede confirmação e fica registrada no histórico.</div></div></div>
-        <div class="mg-toolbar"><div class="g-tabs">${tabs}</div>
+        <div class="panel-head"><div><h3>Campanhas na conta</h3><div class="panel-head-sub">Veja o desempenho e pause ou reative campanhas, ${MG.platform === 'google' ? 'grupos de anúncios' : 'conjuntos'} e anúncios que já existem. Toque na imagem do anúncio para ampliar. Toda alteração pede confirmação e fica registrada no histórico.</div></div></div>
+        <div class="mg-toolbar"><div class="g-tabs">${tabs}</div>${cap.linked ? mgPeriodSelect() : ''}
           <button type="button" class="btn-cancel" onclick="mgLoadTree()" ${MG.loading || !cap.linked ? 'disabled' : ''}>${MG.loading ? 'Atualizando…' : 'Atualizar'}</button></div>
+        ${MG.tree && MG.tree.period ? `<div class="mg-periodline">Métricas de ${dateBr(MG.tree.period.from)} a ${dateBr(MG.tree.period.to)}${MG.tree.capabilities.mode === 'mock' ? ' · números de exemplo [TESTE]' : ''}. ${MG.platform === 'google' ? 'Conversões e custo por conversão como o Google Ads conta.' : 'Resultado conforme a meta de cada conjunto, como no Gerenciador de Anúncios.'}</div>` : ''}
+        ${MG.tree && MG.tree.metricsError ? `<div class="cp-problems cp-err">Não consegui ler as métricas agora (${escapeHtml(MG.tree.metricsError)}). A lista e o pausar/ativar continuam funcionando.</div>` : ''}
         ${msg}${softErr}
         ${body}
       </div>
