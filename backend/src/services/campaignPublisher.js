@@ -424,4 +424,4 @@ async function metaWriteCheck() {
   }
 }
 
-module.exports = { publish, readiness, metaWriteCheck, buildMetaRequests, buildGoogleMutate, minorUnits, tzSuffix };
+module.exports = { publish, readiness, metaWriteCheck, buildMetaRequests, buildGoogleMutate, minorUnits, tzSuffix, metaRequest, googlePost, GOOGLE_API };
