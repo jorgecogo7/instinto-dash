@@ -6,6 +6,7 @@ const metaService = require('./metaService');
 const googleService = require('./googleService');
 const { visibilityOf } = require('../lib/clientAccess');
 const goalsLib = require('../lib/goals');
+const adStatusLogStore = require('../data/adStatusLogStore');
 
 /**
  * Relatórios automáticos: no dia agendado de cada cliente, monta a mensagem
@@ -31,6 +32,7 @@ function addDays(ymd, n) {
   return d.toISOString().slice(0, 10);
 }
 const br = (ymd) => ymd.split('-').reverse().slice(0, 2).join('/');
+const brFull = (ymd) => ymd.split('-').reverse().join('/');
 
 const FREQS = new Set(['weekly', 'biweekly', 'monthly']);
 
@@ -127,6 +129,33 @@ function observation(meta, google) {
   return parts.join(' ');
 }
 
+/* ---------- Otimizações do período (histórico de pausar/ativar do sistema) ---------- */
+const LEVEL_TXT = { campaign: 'a campanha', adset: 'o conjunto', ad: 'o anúncio' };
+const LEVEL_ANY = { campaign: 'uma campanha', adset: 'um conjunto', ad: 'um anúncio' };
+const OPT_PLACEHOLDER = '[Otimizações: descreva aqui os ajustes feitos no período, ou apague esta parte]';
+
+async function optimizationsFor(account, range) {
+  let log = [];
+  try { log = await adStatusLogStore.list(account.id, 200); } catch (e) { return null; }
+  return log
+    .filter((e) => e.result === 'ok' && ['PAUSED', 'ACTIVE'].includes(e.requested))
+    .map((e) => ({ ...e, day: nowParts(new Date(e.at)).ymd }))
+    .filter((e) => e.day >= range.from && e.day <= range.to)
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+}
+
+function optimizationLines(entries) {
+  if (!entries || !entries.length) return [OPT_PLACEHOLDER];
+  const MAX = 8;
+  const lines = entries.slice(0, MAX).map((e) => {
+    const verb = e.requested === 'PAUSED' ? 'pausamos' : 'ativamos';
+    const what = e.name ? `${LEVEL_TXT[e.level] || 'o item'} "${e.name}"` : (LEVEL_ANY[e.level] || 'um item');
+    return `• ${br(e.day)}: ${verb} ${what}`;
+  });
+  if (entries.length > MAX) lines.push(`• e mais ${entries.length - MAX} ${entries.length - MAX === 1 ? 'ajuste' : 'ajustes'} no período`);
+  return lines;
+}
+
 // Linhas de metas (só se o cliente puder ver as metas no painel).
 function goalLines(lines, account, platform, actual, range, one) {
   if (!visibilityOf(account).ads_goals) return;
@@ -141,12 +170,14 @@ function goalLines(lines, account, platform, actual, range, one) {
   });
 }
 
-function buildMessage({ account, schedule, range, meta, google }) {
+function buildMessage({ account, schedule, range, meta, google, optimizations, weekly = false }) {
   const wish = { todos: 'Espero que estejam todos bem!', individual: 'Espero que esteja tudo certo por aí!', esperamos: 'Esperamos que estejam todos bem!' }[schedule.wish];
   const lines = [
     `Bom dia, ${schedule.greetingName}! Tudo bem?`,
     wish,
-    `Segue o feedback ${range.label} das campanhas (${br(range.from)} a ${br(range.to)}).`,
+    weekly
+      ? `Segue o feedback ${range.label} das campanhas, de ${brFull(range.from)} a ${brFull(range.to)}.`
+      : `Segue o feedback ${range.label} das campanhas (${br(range.from)} a ${br(range.to)}).`,
   ];
   if (meta && meta.totals.spend > 0) {
     const t = meta.totals;
@@ -177,10 +208,15 @@ function buildMessage({ account, schedule, range, meta, google }) {
   } else {
     lines.push('', observation(meta, google));
   }
-  if (schedule.includeLink && account.shareToken) {
+  if (weekly) {
+    lines.push('', `🔧 *Otimizações ${range.label.startsWith('dos últimos 7') ? 'da semana' : 'do período'}*`, ...optimizationLines(optimizations));
+  }
+  if ((schedule.includeLink || weekly) && account.shareToken) {
     lines.push('', `📈 Painel completo (com PDF): ${DASH_URL}/?share=${account.shareToken}`);
   }
-  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const text = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  // Sem travessão (—) no texto que vai pro cliente.
+  return weekly ? text.replace(/\s*—\s*/g, ' - ') : text;
 }
 
 /* ---------- E-mail (opcional, via SMTP) ---------- */
@@ -218,7 +254,7 @@ async function sendEmail(to, subject, text, account) {
 }
 
 /* ---------- Geração ---------- */
-async function generateFor(account, range, { sendMail = true } = {}) {
+async function generateFor(account, range, { sendMail = true, weekly = false } = {}) {
   const schedule = normalizeSchedule(account.reportSchedule);
   const vis = visibilityOf(account);
   const mOn = account.meta?.status === 'connected' && vis.ads && vis.ads_meta;
@@ -234,7 +270,8 @@ async function generateFor(account, range, { sendMail = true } = {}) {
   const errors = [meta?.error && `Meta: ${meta.error}`, google?.error && `Google: ${google.error}`].filter(Boolean);
   const m = meta && !meta.error ? meta : null;
   const g = google && !google.error ? google : null;
-  const message = buildMessage({ account, schedule, range, meta: m, google: g });
+  const optimizations = weekly ? await optimizationsFor(account, range) : null;
+  const message = buildMessage({ account, schedule, range, meta: m, google: g, optimizations, weekly });
   const summary = {
     meta: m ? { spend: m.totals.spend, results: m.totals.results, costPerResult: m.totals.costPerResult, resultLabel: m.resultLabel,
       prevResults: m.previousTotals?.results, prevCost: m.previousTotals?.costPerResult } : null,
@@ -255,6 +292,7 @@ async function generateFor(account, range, { sendMail = true } = {}) {
     email: schedule.email,
     status: 'pending',
     emailStatus: null,
+    ...(weekly ? { kind: 'weekly', optimizationsCount: optimizations ? optimizations.length : 0 } : {}),
   };
   if (sendMail && schedule.email) {
     const res = await sendEmail(schedule.email, `Relatório ${range.label} · ${account.name}`, message, account);
