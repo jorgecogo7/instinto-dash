@@ -747,6 +747,8 @@
   body.public-mode #cdTabBtnIntegrations,
   body.public-mode #cdTabBtnCampaigns,
   body.public-mode #cdPaneCampaigns,
+  body.public-mode #cdWeeklyBtn,
+  body.public-mode #wkModal,
   body.public-mode #cdMetricsBtn,
   body.public-mode #cdMetricsPicker,
   body.public-mode #cdModelWarning,
@@ -1436,6 +1438,7 @@
   body.vis-off-ads_goals [data-vis="ads_goals"]{ display:none !important; }
   /* Cliente logado: mesmo painel, sem nada interno */
   body.client-mode .cnav-admin,
+  body.client-mode #wkModal,
   body.client-mode #navAgency,
   body.client-mode .ws-caret,
   body.client-mode .cd-back-link,
@@ -1591,6 +1594,13 @@
   .rp-modal-box{ width:min(520px, 100%); max-height:calc(100vh - 32px); overflow:auto; background:var(--bg-panel); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:0 30px 60px rgba(0,0,0,.4); }
   .rp-modal-box h3{ font-size:17px; }
   .rp-modal-sub{ font-size:12.5px; color:var(--text-dim); margin:4px 0 12px; }
+  .wk-box{ width:min(620px, 100%); }
+  .wk-name-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .wk-name-row .modal-input{ max-width:220px; margin:0; }
+  .wk-msg{ width:100%; font-family:inherit; font-size:13px; line-height:1.5; min-height:300px; resize:vertical; }
+  .wk-notes{ font-size:12px; color:var(--text-dim); margin-top:8px; display:flex; flex-direction:column; gap:4px; }
+  .wk-notes .warn{ color:var(--amber); }
+  @media (max-width: 760px){ .wk-msg{ min-height:340px; font-size:12.5px; } .wk-name-row{ flex-direction:column; align-items:stretch; gap:4px; } .wk-name-row .modal-input{ max-width:none; } }
   .rp-modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; align-items:center; flex-wrap:wrap; }
   .rp-status{ font-size:12.5px; color:var(--text-dim); margin-right:auto; }
   #rpRender{ position:fixed; left:-12000px; top:0; width:794px; z-index:-1; }
@@ -3084,6 +3094,7 @@
       <div class="cd-toolbar" id="cdToolbar">
         <div class="cd-subtabs" id="cdPlatformTabs"></div>
         <div class="cd-toolbar-right">
+          <button type="button" class="btn-report cnav-admin" id="cdWeeklyBtn" onclick="openWeeklyReport()" title="Texto pronto do feedback semanal (últimos 7 dias) pra copiar e mandar no WhatsApp. Não envia nada.">💬 Relatório de segunda</button>
           <button type="button" class="btn-report" onclick="openReportModal()">⬇ Baixar PDF</button>
         <div class="range-picker" id="cdRangePicker">
           <button type="button" class="range-picker-btn" onclick="toggleRangeMenu()">📅 <span id="cdRangeLabel">Últimos 30 dias</span> ▾</button>
@@ -3126,6 +3137,27 @@
         </div>
       </div>
       <div id="rpRender" aria-hidden="true"></div>
+
+      <!-- Relatório de segunda (só agência): gera o texto, você copia e manda. Nada é enviado daqui. -->
+      <div class="rp-modal" id="wkModal" onclick="if (event.target === this) closeWeeklyReport()">
+        <div class="rp-modal-box wk-box">
+          <h3>💬 Relatório de segunda</h3>
+          <div class="rp-modal-sub" id="wkSub">Últimos 7 dias completos</div>
+          <div class="wk-name-row">
+            <label class="modal-label" for="wkName" style="margin:0;">Nome na saudação</label>
+            <input class="modal-input" id="wkName" placeholder="pessoal" oninput="wkApplyName()">
+          </div>
+          <textarea class="modal-input wk-msg" id="wkMsg" rows="16" spellcheck="true"></textarea>
+          <div class="wk-notes" id="wkNotes"></div>
+          <div class="rp-modal-actions">
+            <span class="rp-status" id="wkStatus"></span>
+            <button type="button" class="btn-cancel" onclick="closeWeeklyReport()">Fechar</button>
+            <button type="button" class="btn-cancel" onclick="openWeeklyReport(true)">↻ Gerar de novo</button>
+            <button type="button" class="btn-cancel" id="wkPdfBtn" onclick="wkPdf()">⬇ PDF do período</button>
+            <button type="button" class="btn-add" id="wkCopyBtn" onclick="wkCopy()">Copiar</button>
+          </div>
+        </div>
+      </div>
 
       <!-- ===== Aba: Anúncios (dashboard real do cliente) ===== -->
       <div class="cd-pane active" id="cdPaneOverview">
@@ -4500,6 +4532,58 @@
       setTimeout(openReportModal, 1500);
     }, 100);
   }
+  /* ---------- Relatório de segunda (botão no painel do cliente, só agência) ---------- */
+  let wkReport = null, wkGreeting = '';
+  async function openWeeklyReport(force){
+    if (CLIENT_MODE || PUBLIC_TOKEN || !currentClientId) return;
+    const modal = document.getElementById('wkModal'), msg = document.getElementById('wkMsg');
+    const st = document.getElementById('wkStatus'), notes = document.getElementById('wkNotes');
+    modal.classList.add('open');
+    if (!force && wkReport && wkReport.clientId === currentClientId && Date.now() - wkReport._at < 10 * 60e3) return;
+    msg.value = ''; notes.innerHTML = ''; st.textContent = 'Montando o relatório…';
+    document.getElementById('wkCopyBtn').disabled = true;
+    try {
+      const r = await rptApi(`/weekly/${encodeURIComponent(currentClientId)}`, { method:'POST', body: '{}' });
+      wkReport = { ...r, _at: Date.now() };
+      msg.value = r.message;
+      const m = r.message.match(/^Bom dia, (.+?)! Tudo bem\?/);
+      wkGreeting = m ? m[1] : '';
+      document.getElementById('wkName').value = wkGreeting;
+      document.getElementById('wkSub').textContent = `${rptDate(r.range.from)} a ${rptDate(r.range.to)} · últimos 7 dias completos · fica salvo na Central de Relatórios como "pronto pra enviar"`;
+      const n = [];
+      if ((r.errors || []).length) n.push(`<span class="warn">⚠ ${escapeHtml(r.errors.join(' · '))}</span>`);
+      n.push(r.optimizationsCount
+        ? `🔧 ${r.optimizationsCount} ${r.optimizationsCount === 1 ? 'otimização puxada' : 'otimizações puxadas'} do histórico de pausar/ativar do sistema.`
+        : '<span class="warn">🔧 Nenhuma pausa/ativação registrada no sistema no período: complete o trecho entre [colchetes] ou apague.</span>');
+      if (!r.hasShareLink) n.push('<span class="warn">Este cliente não tem link do painel: a mensagem saiu sem o link.</span>');
+      n.push('O PDF não vai junto no texto: baixe em "PDF do período" e anexe na conversa. Nada é enviado por aqui.');
+      notes.innerHTML = n.map(x => `<div>${x}</div>`).join('');
+      st.textContent = '';
+      if (typeof rptData !== 'undefined' && rptData && rptData.reports) { rptData.reports = [r, ...rptData.reports.filter(x => x.id !== r.id && !(x.clientId === r.clientId && x.periodKey === r.periodKey))]; }
+    } catch (e) { st.textContent = `⚠ ${e.message}`; }
+    document.getElementById('wkCopyBtn').disabled = false;
+  }
+  function closeWeeklyReport(){ document.getElementById('wkModal').classList.remove('open'); }
+  function wkApplyName(){
+    const ta = document.getElementById('wkMsg');
+    const name = document.getElementById('wkName').value.trim() || 'pessoal';
+    ta.value = ta.value.replace(/^Bom dia, .*?! Tudo bem\?/, `Bom dia, ${name}! Tudo bem?`);
+    wkGreeting = name;
+  }
+  async function wkCopy(){
+    const text = document.getElementById('wkMsg').value.replace(/\s*—\s*/g, ' - ');
+    if (text.includes('[Otimizações:') && !confirm('Ainda tem o trecho [Otimizações: ...] pra completar ou apagar. Copiar mesmo assim?')) return;
+    fmCopy(text, document.getElementById('wkCopyBtn'));
+    if (wkReport && text !== wkReport.message) { rptApi(`/${wkReport.id}`, { method:'PATCH', body: JSON.stringify({ message: text }) }).then(u => { wkReport.message = u.message; }).catch(() => {}); }
+  }
+  function wkPdf(){
+    if (!wkReport) return;
+    closeWeeklyReport();
+    setClientRange(wkReport.range.from, wkReport.range.to);
+    if (typeof wsGo === 'function' && WS !== 'agency') wsGo('overview'); else setClientDetailTab('overview');
+    setTimeout(openReportModal, 1500);
+  }
+
   function setClientRange(from, to){
     document.getElementById('cdRangeFrom').value = from;
     document.getElementById('cdRangeTo').value = to;

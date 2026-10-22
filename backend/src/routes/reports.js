@@ -41,6 +41,17 @@ router.post('/generate', async (req, res) => {
   res.json(out);
 });
 
+// POST /api/reports/weekly/:clientId — "Relatório de segunda": últimos 7 dias completos,
+// com as otimizações do histórico de status e o link do painel. Só gera o texto
+// (fica na Central como pendente); nunca envia nada.
+router.post('/weekly/:clientId', async (req, res) => {
+  const account = (await accountsStore.getAll()).find((a) => a.id === req.params.clientId);
+  if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  const range = reportService.lastDaysRange(7);
+  const report = await reportService.generateFor(account, range, { sendMail: false, weekly: true });
+  res.json({ ...report, hasShareLink: !!account.shareToken });
+});
+
 // PATCH /api/reports/:id { status?: 'pending'|'sent', message? }
 router.patch('/:id', async (req, res) => {
   const changes = {};
