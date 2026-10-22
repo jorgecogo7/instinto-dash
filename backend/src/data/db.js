@@ -173,6 +173,58 @@ function ensureCrmTables() {
           INDEX idx_crm_client (client_id, created_at)
         )
       `),
+      // Configurações do CRM do cliente (etiquetas, WhatsApp).
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_settings (
+          client_id VARCHAR(191) PRIMARY KEY,
+          data JSON NOT NULL
+        )
+      `),
+      // Contatos (pessoas). phone_key = só os dígitos do telefone, pra achar
+      // o contato quando chega mensagem do WhatsApp.
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_contacts (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          phone_key VARCHAR(32) NULL,
+          created_at DATETIME NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_crm_contacts_client (client_id, created_at),
+          INDEX idx_crm_contacts_phone (client_id, phone_key)
+        )
+      `),
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_conversations (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          contact_id VARCHAR(191) NOT NULL,
+          last_at DATETIME NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_crm_conv_client (client_id, last_at),
+          INDEX idx_crm_conv_contact (client_id, contact_id)
+        )
+      `),
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_messages (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          conversation_id VARCHAR(191) NOT NULL,
+          wa_id VARCHAR(191) NULL,
+          created_at DATETIME(3) NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_crm_msg_conv (client_id, conversation_id, created_at),
+          UNIQUE KEY uniq_crm_msg_wa (wa_id)
+        )
+      `),
+      // Qual número de WhatsApp (phone_number_id da Meta) é de qual cliente.
+      // Chave primária no número: um número só pode estar em um cliente.
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS crm_wa_numbers (
+          phone_number_id VARCHAR(64) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          INDEX idx_crm_wa_client (client_id)
+        )
+      `),
     ]);
   }
   return crmTablesReady;
