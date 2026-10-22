@@ -4937,13 +4937,15 @@
       document.getElementById('cnavDivCapture').style.display = vis.forms ? '' : 'none';
       document.getElementById('cdTabBtnSocial').style.display = showSocial ? '' : 'none';
       document.title = `${me.name} · Instinto Digital`;
-      const first = showAds ? 'overview' : showSocial ? 'social' : vis.forms ? 'forms' : vis.crm ? 'crm' : 'overview';
-      if (first === 'forms' || first === 'crm') { openClientDetail(me.id, 'overview'); wsGo(first); }
+      const first = navStartTab([showAds && 'overview', showSocial && 'social', vis.forms && 'forms', ...(vis.crm ? Object.keys(CC_PANES) : [])],
+        showAds ? 'overview' : showSocial ? 'social' : vis.forms ? 'forms' : vis.crm ? 'crm' : 'overview');
+      if (first === 'forms' || first.startsWith('crm')) { openClientDetail(me.id, 'overview'); wsGo(first); }
       else openClientDetail(me.id, first);
       document.getElementById('clientDetailSub').textContent = `Relatório de resultados${me.niche ? ' · ' + me.niche : ''}`;
       if (!showAds && !showSocial && !vis.forms && !vis.crm) {
         document.getElementById('cdPaneOverview').innerHTML = '<div class="panel"><p class="footnote" style="border:none; padding:0;">Seu painel está sendo preparado pela agência. Em breve os resultados aparecem aqui.</p></div>';
       }
+      navStartDone();
     } catch (err) {
       document.getElementById('cdPaneOverview').innerHTML = `<div class="offline-banner" style="display:flex;"></div>`;
       document.getElementById('cdPaneOverview').firstChild.textContent = `⚠ ${err.message}`;
@@ -5138,6 +5140,248 @@
     if (saved !== 'agency' && rawAccountsById[saved] && rawAccountsById[saved].status !== 'inativo') setWorkspace(saved);
     else wsApplyUi('agency');
   }
+
+  // ===== Estado da navegação na URL =====
+  // Guarda cliente, aba, sub-visão e período no hash (#c=...&t=...&p=30) para que o refresh,
+  // o voltar/avançar do navegador e links copiados reabram exatamente a mesma tela.
+  // O último período escolhido também fica no localStorage como reserva.
+  // Segurança: o hash só escolhe entre telas que o login atual já pode ver. Cliente e link
+  // público (?share=) nunca usam "c" e só aceitam as abas liberadas para eles.
+  const NAV_PERIOD_KEY = 'instintoDashPeriodo';
+  const NAV_AGENCY_VIEWS = ['overview', 'alerts', 'meta', 'google', 'instagram', 'connections', 'clients', 'crm', 'forms', 'reports'];
+  const NAV_CLIENT_TABS = ['overview', 'social', 'insights', 'contract', 'history', 'integrations', 'access', 'reports', 'campaigns',
+    'forms', 'crm', 'crm-conversas', 'crm-contatos', 'crm-etiquetas', 'crm-relatorios'];
+  const NAV_PRESETS = [7, 14, 30, 90];
+  const NAV = { ready: false, timer: null, replaceNext: true, period: null, metaPeriod: null, cdTab: 'overview', allowed: [], defaultTab: 'overview', boot: null, lastHash: '', lastApplied: null };
+
+  function navIsoOk(s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + 'T00:00:00')); }
+  // Lê um período ({p} ou {de, ate}) de um objeto, com prefixo opcional ('m' = visão Meta).
+  function navPeriodNorm(o, pre) {
+    if (!o) return null;
+    pre = pre || '';
+    const p = Number(o[pre + 'p']);
+    if (NAV_PRESETS.includes(p)) return { p };
+    const de = o[pre + 'de'], ate = o[pre + 'ate'];
+    if (navIsoOk(de) && navIsoOk(ate) && de <= ate) return { de, ate };
+    return null;
+  }
+  function navSamePeriod(a, b) { return JSON.stringify(a || null) === JSON.stringify(b || null); }
+  function navPutPeriod(st, per, pre) {
+    if (!per) return;
+    if (per.p) st[pre + 'p'] = per.p; else { st[pre + 'de'] = per.de; st[pre + 'ate'] = per.ate; }
+  }
+  function navStorePeriod(per) {
+    NAV.period = per;
+    try { localStorage.setItem(NAV_PERIOD_KEY, JSON.stringify(per)); } catch (e) {}
+  }
+  function navStoredPeriod() {
+    if (NAV.period) return NAV.period;
+    let per = null;
+    try { per = navPeriodNorm(JSON.parse(localStorage.getItem(NAV_PERIOD_KEY) || 'null'), ''); } catch (e) {}
+    return NAV.period = per || { p: 30 };
+  }
+  function navRangeOf(per) {
+    return per && per.de ? { from: per.de, to: per.ate } : { from: isoDaysAgo(((per && per.p) || 30) - 1), to: isoDaysAgo(0) };
+  }
+  function navApplyClientPeriod(per) {
+    per = per || { p: 30 };
+    if (per.p) applyRangePreset(per.p); else setClientRange(per.de, per.ate);
+  }
+
+  function navParse() {
+    const st = {};
+    try { new URLSearchParams(location.hash.replace(/^#/, '')).forEach((v, k) => { st[k] = v; }); } catch (e) {}
+    return st;
+  }
+  function navActiveView() { const v = document.querySelector('.view.active'); return v ? v.id : ''; }
+  function navDetailOpen() { const v = document.getElementById('view-client-detail'); return !!(v && v.classList.contains('active')); }
+
+  // Estado atual, lido da tela.
+  function navCurrent() {
+    const st = {};
+    const view = navActiveView();
+    if (!PUBLIC_TOKEN && !CLIENT_MODE && WS === 'agency') {
+      let v = view.replace(/^view-/, '');
+      if (!NAV_AGENCY_VIEWS.includes(v)) v = 'overview';
+      st.v = v;
+      const ov = document.getElementById('ovRange');
+      if (ov && ov.value && ov.value !== '30') st.op = ov.value;
+      if (v === 'meta') {
+        const mc = document.getElementById('metaClientSelect');
+        if (mc && mc.value) st.mc = mc.value;
+        navPutPeriod(st, NAV.metaPeriod, 'm');
+      }
+      return st;
+    }
+    if (!PUBLIC_TOKEN && !CLIENT_MODE) st.c = WS;
+    let t = NAV.cdTab || 'overview';
+    if (view === 'view-ccrm') t = Object.keys(CC_PANES).find(k => CC_PANES[k] === ccPane) || 'crm';
+    else if (view === 'view-forms') t = 'forms';
+    st.t = t;
+    navPutPeriod(st, navStoredPeriod(), '');
+    const id = PUBLIC_TOKEN ? '__public' : WS;
+    if (currentClientId === id) { if (cdAvailable.meta && cdAvailable.google && cdPlatformView !== 'all') st.pv = cdPlatformView; }
+    else { const h = navParse(); if (h.c === st.c && ['meta', 'google'].includes(h.pv)) st.pv = h.pv; }   // painel ainda não aberto (CRM/Formulários)
+    if (t === 'campaigns' && !PUBLIC_TOKEN && !CLIENT_MODE && CP.view === 'manage') {
+      st.cv = 'manage';
+      if (MG.platform) st.ca = MG.platform;
+    }
+    return st;
+  }
+  function navKey(st) { return [st.c, st.v, st.t, st.cv].join('|'); }
+
+  function navSchedule() {
+    if (!NAV.ready) return;
+    clearTimeout(NAV.timer);
+    NAV.timer = setTimeout(navCommit, 0);
+  }
+  function navCommit() {
+    if (!NAV.ready) return;
+    let st;
+    try { st = navCurrent(); } catch (e) { return; }
+    const hash = '#' + new URLSearchParams(st).toString();
+    if (hash === location.hash) { NAV.lastHash = hash; NAV.replaceNext = false; return; }
+    const url = location.pathname + location.search + hash;   // mantém ?share=
+    const push = !NAV.replaceNext && navKey(st) !== navKey(navParse());
+    try { history[push ? 'pushState' : 'replaceState'](null, '', url); } catch (e) {}
+    NAV.lastHash = hash;
+    NAV.replaceNext = false;
+  }
+
+  // Ajustes que dependem do painel do cliente já aberto: período, Meta/Google, Campanhas.
+  function navAfterClientNav(st, per) {
+    const id = PUBLIC_TOKEN ? '__public' : WS;
+    if (!navDetailOpen() || currentClientId !== id) return;
+    if (per && !navSamePeriod(per, NAV.lastApplied)) navApplyClientPeriod(per);
+    const pv = ['all', 'meta', 'google'].includes(st.pv) ? st.pv : 'all';
+    if (cdAvailable.meta && cdAvailable.google && pv !== cdPlatformView) setPlatformView(pv);
+    if (NAV.cdTab === 'campaigns' && !PUBLIC_TOKEN && !CLIENT_MODE) {
+      const ca = ['meta', 'google'].includes(st.ca) ? st.ca : null;
+      if (st.cv === 'manage') {
+        if (CP.view !== 'manage') cpSetView('manage');
+        if (ca && MG.caps && MG.platform !== ca) mgSetPlatform(ca);
+      } else if (CP.view === 'manage') cpSetView('create');
+    }
+  }
+  function navPrepManage(id, ca) {
+    if (!['meta', 'google'].includes(ca)) return;
+    if (MG.clientId !== id || !MG.caps) Object.assign(MG, { clientId: id, platform: ca, caps: null, tree: null, err: null, loading: false, open: {}, pending: {}, log: null, msg: null });
+  }
+
+  // Admin. Devolve false quando o hash não tem um estado válido (cliente apagado/inativo etc.).
+  function navApplyAdmin(st, boot) {
+    if (st.c) {
+      const a = rawAccountsById[st.c];
+      if (!a || a.status === 'inativo') return false;
+      const t = NAV_CLIENT_TABS.includes(st.t) ? st.t : 'overview';
+      const per = navPeriodNorm(st, '');
+      if (per) navStorePeriod(per);
+      if (t === 'campaigns' && st.cv === 'manage') navPrepManage(st.c, st.ca);
+      if (WS !== st.c) wsApplyUi(st.c);
+      wsGo(t);
+      navAfterClientNav(st, per);
+      return true;
+    }
+    if (!NAV_AGENCY_VIEWS.includes(st.v)) return false;
+    const ov = document.getElementById('ovRange');
+    const op = ['7', '14', '30', '90'].includes(st.op) ? st.op : '30';
+    const opChanged = ov && ov.value !== op;
+    if (ov) ov.value = op;
+    const wasAgency = WS === 'agency';
+    wsApplyUi('agency');
+    if (!boot && (!wasAgency || opChanged)) loadOverview();
+    const item = document.querySelector(`.nav-item[data-view="${st.v}"]`);
+    if (item) item.click();
+    if (st.v === 'meta') navApplyMetaView(st);
+    return true;
+  }
+  function navApplyMetaView(st) {
+    const sel = document.getElementById('metaClientSelect');
+    if (!sel) return;
+    const mc = st.mc && [...sel.options].some(o => o.value === st.mc) ? st.mc : sel.value;
+    const changed = sel.value !== mc;
+    sel.value = mc;
+    const per = navPeriodNorm(st, 'm');
+    if (per && !navSamePeriod(per, NAV.metaPeriod)) {
+      if (per.p) applyMetaRangePreset(per.p);
+      else {
+        const f = document.getElementById('metaRangeFrom'), t = document.getElementById('metaRangeTo');
+        if (f && t) { f.value = per.de; t.value = per.ate; applyMetaRangeCustom(); }
+      }
+    } else if (changed) onMetaClientChange();
+  }
+
+  // Cliente (login de cliente) e link público: só abas liberadas.
+  function navStartTab(allowed, def) {
+    NAV.allowed = allowed.filter(Boolean);
+    NAV.defaultTab = def;
+    const st = navParse();
+    const per = navPeriodNorm(st, '');
+    if (per) navStorePeriod(per);
+    NAV.boot = st;
+    return NAV.allowed.includes(st.t) ? st.t : def;
+  }
+  function navStartDone() {
+    const st = NAV.boot;
+    NAV.boot = null;
+    try { if (st) navAfterClientNav(st, navPeriodNorm(st, '')); } catch (e) {}
+    NAV.ready = true;
+    NAV.replaceNext = true;
+    navSchedule();
+  }
+  function navApplyClient(st) {
+    const t = NAV.allowed.includes(st.t) ? st.t : NAV.defaultTab;
+    const per = navPeriodNorm(st, '');
+    if (per) navStorePeriod(per);
+    if (PUBLIC_TOKEN) setClientDetailTab(t); else wsGo(t);
+    navAfterClientNav(st, per);
+  }
+
+  window.addEventListener('popstate', () => {
+    if (!NAV.ready) return;
+    if (fmIsDirty && !confirm('Você tem alterações não salvas. Sair mesmo assim?')) {
+      try { history.pushState(null, '', location.pathname + location.search + NAV.lastHash); } catch (e) {}
+      return;
+    }
+    fmIsDirty = false;
+    const st = navParse();
+    NAV.ready = false;
+    try {
+      if (PUBLIC_TOKEN || CLIENT_MODE) navApplyClient(st);
+      else if (!navApplyAdmin(st, false)) navApplyAdmin({ v: 'overview' }, false);
+    } catch (e) { console.warn('[nav] restore', e); }
+    NAV.ready = true;
+    NAV.replaceNext = true;
+    navSchedule();
+  });
+
+  // Envolve as funções de navegação existentes para atualizar a URL depois de cada mudança.
+  function navWrap(name, after) {
+    const orig = window[name];
+    if (typeof orig !== 'function') return;
+    window[name] = function (...args) {
+      const r = orig.apply(this, args);
+      try { if (after) after(args); } catch (e) {}
+      navSchedule();
+      return r;
+    };
+  }
+  navWrap('setClientDetailTab', ([tab]) => { NAV.cdTab = tab || 'overview'; });
+  navWrap('applyRangePreset', ([days]) => {
+    if (NAV_PRESETS.includes(Number(days))) { navStorePeriod({ p: Number(days) }); NAV.lastApplied = NAV.period; }
+  });
+  navWrap('applyRangeCustom', () => {
+    const f = document.getElementById('cdRangeFrom'), t = document.getElementById('cdRangeTo');
+    if (f && t && cdCurrentRange.from === f.value && cdCurrentRange.to === t.value) { navStorePeriod({ de: f.value, ate: t.value }); NAV.lastApplied = NAV.period; }
+  });
+  navWrap('applyMetaRangePreset', ([days]) => { NAV.metaPeriod = Number(days) === 30 ? null : { p: Number(days) }; });
+  navWrap('applyMetaRangeCustom', () => {
+    const f = document.getElementById('metaRangeFrom'), t = document.getElementById('metaRangeTo');
+    if (f && t && metaRange.from === f.value && metaRange.to === t.value) NAV.metaPeriod = { de: f.value, ate: t.value };
+  });
+  ['wsGo', 'ccShowView', 'setWorkspace', 'backToClients', 'setPlatformView', 'cpSetView', 'mgSetPlatform', 'onMetaClientChange', 'loadOverview']
+    .forEach(n => navWrap(n));
+  document.querySelectorAll('.nav-item[data-view]').forEach(i => i.addEventListener('click', navSchedule));
 
   /* ===================== Visão geral (dados reais dos clientes) ===================== */
   const OV_SEL_KEY = 'instintoDashOvClients';
@@ -6289,6 +6533,11 @@
       populateClientSelectors();
       if (banner) banner.style.display = 'none';
       renderOvClientMenu();
+      if (!NAV.ready && !CLIENT_MODE && !PUBLIC_TOKEN) {   // 1º carregamento: reabre a tela salva na URL
+        try { navApplyAdmin(navParse(), true); } catch (e) { console.warn('[nav] restore', e); }
+        NAV.ready = true;
+        navSchedule();
+      }
       if (WS === 'agency') {
         let saved = 'agency';
         try { saved = localStorage.getItem(WS_KEY) || 'agency'; } catch (e) {}
@@ -6635,11 +6884,11 @@
     document.getElementById('cdModelStatus').textContent = '';
     renderGoalsEditor();
     cdPlatformView = 'all';
-    cdCurrentRange = { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+    cdCurrentRange = navRangeOf(navStoredPeriod());
     igTypeFilter = 'all'; igPostSort = 'recent';
     metaCreativeSort = 'results'; metaShowAllCreatives = false;
     setClientDetailTab(initialTab || 'overview');
-    applyRangePreset(30);
+    navApplyClientPeriod(navStoredPeriod());
   }
 
   function backToClients(){
@@ -9807,9 +10056,10 @@
       applyVisibilityClasses({ ...VIS_DEFAULTS, ...(info.visibility || {}) });
       document.getElementById('cdTabBtnSocial').style.display = info.hasInstagram ? '' : 'none';
       const noAds = !info.platforms.length;
-      openClientDetail('__public', noAds && info.hasInstagram ? 'social' : 'overview');
+      openClientDetail('__public', navStartTab([!noAds && 'overview', info.hasInstagram && 'social'], noAds && info.hasInstagram ? 'social' : 'overview'));
       document.getElementById('clientDetailSub').textContent = `Relatório de resultados${info.niche ? ' · ' + info.niche : ''}`;
       if (noAds) document.getElementById('cdTabBtnOverview').style.display = 'none';
+      navStartDone();
     } catch (err) {
       document.getElementById('publicView').style.display = 'flex';
       document.getElementById('publicClientName').textContent = 'Não foi possível abrir o relatório';
