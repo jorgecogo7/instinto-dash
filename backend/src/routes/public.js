@@ -7,6 +7,7 @@ const leadsStore = require('../data/leadsStore');
 const instagramService = require('../services/instagramService');
 const formsStore = require('../data/formsStore');
 const formService = require('../services/formService');
+const crmService = require('../services/crmService');
 const { visibilityOf } = require('../lib/clientAccess');
 
 const router = express.Router();
@@ -121,6 +122,12 @@ router.post('/forms/:slug/submit', async (req, res) => {
         reasoning: result.reasons.join(' · ') || null, nextAction: null, scoredAt: null, convertedAccountId: null,
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       }).catch((e) => console.warn('Lead do formulário não entrou no CRM:', e.message));
+    }
+
+    // Formulário de um cliente: o lead entra no CRM desse cliente, na primeira etapa.
+    if (form.clientId) {
+      await crmService.addFromForm(form.clientId, { form, contact, readable, meta })
+        .catch((e) => console.warn('Lead do formulário não entrou no CRM do cliente:', e.message));
     }
 
     // API de Conversões e webhook não seguram a resposta do lead.

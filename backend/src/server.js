@@ -40,6 +40,7 @@ const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
 const publicRoutes = require('./routes/public');
+const crmRoutes = require('./routes/crm');
 const { syncAllAccounts } = require('./lib/syncQueue');
 const metaSync = require('./lib/metaSync');
 
@@ -53,9 +54,12 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.json({ limit: '100kb' }));
+// rawBody: o webhook do WhatsApp confere a assinatura em cima dos bytes originais.
+app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { if (req.originalUrl.startsWith('/api/whatsapp/')) req.rawBody = buf; } }));
 
 app.use(securityHeaders);
+// Webhook do WhatsApp antes do limite por IP: a Meta manda rajadas de eventos.
+app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use(rateLimit);
 
 app.use((req, res, next) => {
@@ -87,8 +91,10 @@ app.use('/api/contracts', requireAdminAuth, contractsRoutes);
 app.use('/api/forms', requireAdminAuth, formsRoutes);
 app.use('/api/reports', requireAdminAuth, reportsRoutes);
 app.use('/api/alerts', requireAdminAuth, alertsRoutes);
+app.use('/api/crm/:clientId', requireAdminAuth, crmRoutes.adminRouter);
 app.use('/api/campaigns/:clientId', requireAdminAuth, campaignsRoutes);
 // Área do cliente (login próprio de cada cliente).
+app.use('/api/client/crm', requireClientAuth, crmRoutes.clientRouter);
 app.use('/api/client', requireClientAuth, clientRoutes);
 
 app.post('/api/sync', requireAdminAuth, async (req, res) => {
@@ -163,7 +169,7 @@ setTimeout(runHealthChecks, 60 * 1000);
 setInterval(runHealthChecks, 60 * 60 * 1000);
 
 app.listen(config.port, () => {
-  console.log(`Instinto Dash backend rodando em http://localhost:${config.port}`);
+  console.log(`Sistema Instinto Digital (API) rodando em http://localhost:${config.port}`);
   console.log(`Modo mock: ${config.useMockData ? 'ativado (dados de exemplo)' : 'desativado'}`);
   console.log(`Login configurado: ${config.auth.username ? 'sim' : 'não (defina ADMIN_USERNAME/ADMIN_PASSWORD_HASH)'}`);
   setTimeout(runBackgroundSync, 10 * 1000);

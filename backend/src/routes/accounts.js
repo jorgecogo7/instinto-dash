@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const accountsStore = require('../data/accountsStore');
+const crmStore = require('../data/crmStore');
 const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
 const { hashPassword } = require('../lib/auth');
@@ -122,6 +123,8 @@ router.delete('/:id', async (req, res) => {
   try {
     const removed = await accountsStore.remove(req.params.id);
     if (!removed) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    // Leva junto o CRM do cliente (não fica nada órfão no banco).
+    await crmStore.removeAllForClient(req.params.id).catch((e) => console.warn('CRM do cliente não foi apagado:', e.message));
     // Não deixa rascunho de campanha órfão para um cliente novo com o mesmo id.
     await require('../data/campaignsStore').removeAllForClient(req.params.id)
       .catch((e) => console.error('Limpeza de campanhas do cliente falhou:', e));

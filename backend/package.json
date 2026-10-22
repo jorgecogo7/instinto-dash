@@ -1,12 +1,13 @@
 {
   "name": "instinto-dash-backend",
   "version": "0.1.0",
-  "description": "Backend do Instinto Dash \u2014 agrega dados de Meta Ads e Google Ads para m\u00faltiplas contas de clientes.",
+  "description": "Backend do Sistema Instinto Digital: agrega dados de Meta Ads e Google Ads para m\u00faltiplas contas de clientes.",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "seed:crm-demo": "node scripts/seed-crm-demo.js"
   },
   "dependencies": {
     "express": "^4.19.2",
