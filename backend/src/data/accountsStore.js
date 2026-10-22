@@ -34,6 +34,13 @@ async function remove(id) {
   return result.affectedRows > 0;
 }
 
+async function getById(id) {
+  await db.ensureTable();
+  const [rows] = await db.getPool().query('SELECT data FROM accounts WHERE id = ?', [String(id || '').slice(0, 191)]);
+  if (!rows.length) return null;
+  return typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+}
+
 // Usado pelo link de compartilhamento (visualização do cliente, sem login).
 async function getByShareToken(token) {
   await db.ensureTable();
@@ -43,4 +50,4 @@ async function getByShareToken(token) {
   return typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
 }
 
-module.exports = { getAll, add, update, remove, getByShareToken };
+module.exports = { getAll, getById, add, update, remove, getByShareToken };

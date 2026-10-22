@@ -35,6 +35,24 @@ module.exports = {
     loginCustomerId: process.env.GOOGLE_LOGIN_CUSTOMER_ID || '',
   },
 
+  // WhatsApp Cloud API (oficial da Meta). Os valores ficam só nas variáveis
+  // de ambiente do hPanel, nunca no código.
+  whatsapp: {
+    token: process.env.WHATSAPP_TOKEN || '',
+    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+    appSecret: process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET || '',
+    apiVersion: process.env.WHATSAPP_API_VERSION || process.env.META_API_VERSION || 'v21.0',
+  },
+
+  // Módulo Campanhas (criar campanhas na Meta/Google a partir do sistema).
+  campaigns: {
+    // Trava geral: sem CAMPAIGNS_PUBLISH_ENABLED=true, nada é enviado de verdade
+    // pras plataformas (mesmo com o modo mock desligado).
+    publishEnabled: process.env.CAMPAIGNS_PUBLISH_ENABLED === 'true',
+    // Versão da Marketing API usada só pra CRIAR campanhas (as leituras seguem META_API_VERSION).
+    metaApiVersion: process.env.META_ADS_API_VERSION || 'v25.0',
+  },
+
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',

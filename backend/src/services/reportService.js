@@ -206,7 +206,7 @@ async function sendEmail(to, subject, text, account) {
     <div style="border:1px solid #E6E9F2;border-top:none;padding:22px 24px;border-radius:0 0 14px 14px;line-height:1.6;font-size:14px">
       ${esc(text).replace(/\*([^*]+)\*/g, '<b>$1</b>').replace(/\n/g, '<br>').replace(/(https?:\/\/\S+)/g, '<a href="$1" style="color:#FF5A1E">$1</a>')}
     </div>
-    <div style="font-size:11px;color:#8A93A6;text-align:center;margin-top:12px">Enviado automaticamente pelo Instinto Dash · Instinto Digital</div>
+    <div style="font-size:11px;color:#8A93A6;text-align:center;margin-top:12px">Enviado automaticamente pelo Sistema Instinto Digital</div>
   </div>`;
   try {
     await transport.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject, text: text.replace(/\*/g, ''), html });

@@ -12,6 +12,7 @@ const VISIBILITY_DEFAULTS = {
   ads_goals: true,       //   Metas do mês (investimento, custo por resultado)
   social: true,          // Redes Sociais (Instagram)
   forms: false,          // Formulários e respostas
+  crm: false,            // CRM (funil de leads do próprio cliente)
 };
 
 function visibilityOf(account) {
