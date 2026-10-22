@@ -889,7 +889,7 @@
 
   .table-scroll{ overflow-x:auto; margin:0 -4px; }
   .table-scroll table{ min-width:720px; }
-  .sort-table th{ cursor:pointer; user-select:none; white-space:nowrap; }
+  .sort-table th{ cursor:pointer; user-select:none; white-space:nowrap; padding-right:8px; }
   .sort-table th:hover{ color:var(--text); }
   .sort-table th.sorted{ color:var(--text); }
   .sort-table td.num, .sort-table th.num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -1903,6 +1903,17 @@
     .wd-val{ font-size:10.5px; }
     .wd-bar-wrap{ height:100px; }
     .wd-sub{ font-size:9.5px; }
+    /* Revisão no celular (390px) */
+    .topbar-right{ flex-wrap:wrap; max-width:100%; }
+    .g-tabs{ flex-wrap:wrap; }
+    .cd-toolbar-right{ flex-wrap:wrap; max-width:100%; }
+    .conn-table th, .conn-table td{ padding-left:10px; padding-right:10px; }
+    .conn-table th:last-child, .conn-table td:last-child:empty{ display:none; }
+    .crm-kpi-row{ grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px; }
+    .creative-metrics{ grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:6px 8px; }
+    .creative-metrics .m-label{ font-size:9px; letter-spacing:.2px; overflow-wrap:anywhere; }
+    .sort-table th, .sort-table td{ padding-right:12px; }
+    .sort-table th:last-child, .sort-table td:last-child{ padding-right:0; }
   }
 
   /* ===================== Metas ===================== */
@@ -9207,7 +9218,7 @@
           <div class="creative-metrics">
             <div><div class="m-label">Investido</div><div class="m-val">${brl2(a.spend)}</div></div>
             <div><div class="m-label">${escapeHtml(a.resultLabel || 'Resultados')}</div><div class="m-val">${a.results ? intFmt(a.results) : '—'}</div></div>
-            <div><div class="m-label">Custo/result.</div><div class="m-val">${a.results ? brl2(a.costPerResult) : '—'}</div></div>
+            <div><div class="m-label">Custo/<wbr>result.</div><div class="m-val">${a.results ? brl2(a.costPerResult) : '—'}</div></div>
             <div><div class="m-label">CTR</div><div class="m-val">${pct2(a.ctr)}</div></div>
           </div>
           <div class="creative-metrics creative-more">
