@@ -592,6 +592,45 @@
   .meta-sync-toggle{ display:flex; align-items:center; gap:8px; margin:12px 0 4px; font-size:13px; color:var(--text); cursor:pointer; }
   .meta-sync-toggle small{ color:var(--text-dim); font-size:11.5px; }
   .meta-sync-toggle input{ width:16px; height:16px; accent-color: var(--green); }
+  /* Saúde da integração */
+  .ih-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .ih-score{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .ih-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .ih-item{ border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:13px; background:rgba(255,255,255,0.015); }
+  .ih-item-top{ display:flex; gap:9px; align-items:flex-start; }
+  .ih-ico{ flex:0 0 20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+  .ih-ok .ih-ico{ background:rgba(53,196,138,0.16); color:var(--green); }
+  .ih-error .ih-ico, .ih-missing .ih-ico{ background:rgba(232,81,79,0.16); color:var(--red); }
+  .ih-warn .ih-ico{ background:rgba(240,170,60,0.16); color:var(--amber); }
+  .ih-optional .ih-ico{ background:rgba(255,255,255,0.06); color:var(--text-dim); }
+  .ih-error, .ih-missing{ border-color:rgba(232,81,79,0.35); }
+  .ih-warn{ border-color:rgba(240,170,60,0.35); }
+  .ih-label{ font-weight:600; color:var(--text); }
+  .ih-detail{ color:var(--text-dim); font-size:12.5px; line-height:1.45; overflow-wrap:anywhere; }
+  .ih-item details{ margin:6px 0 0 29px; }
+  .ih-item summary{ cursor:pointer; color:var(--accent, #FF5A1E); font-size:12.5px; font-weight:600; list-style:none; }
+  .ih-item summary::-webkit-details-marker{ display:none; }
+  .ih-item summary::before{ content:'▸ '; }
+  .ih-item details[open] summary::before{ content:'▾ '; }
+  .ih-fix{ font-size:12.5px; line-height:1.55; color:var(--text); margin-top:4px; }
+  .ih-pill{ display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; white-space:nowrap; }
+  .ih-pill.bad{ background:rgba(232,81,79,0.15); color:var(--red); }
+  .ih-pill.warn{ background:rgba(240,170,60,0.15); color:var(--amber); }
+  .ih-pill.ok{ background:rgba(53,196,138,0.15); color:var(--green); }
+  .ih-kpis{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin:0 0 12px; }
+  .ih-kpi{ border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--bg-panel, rgba(255,255,255,0.02)); }
+  .ih-kpi b{ display:block; font-size:22px; line-height:1.1; }
+  .ih-kpi span{ font-size:11.5px; color:var(--text-dim); }
+  .ih-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .ih-toolbar label{ font-size:12.5px; color:var(--text-dim); display:inline-flex; gap:6px; align-items:center; }
+  .ih-client{ border:1px solid var(--line); border-radius:10px; padding:11px 12px; margin-bottom:8px; background:var(--bg-panel, rgba(255,255,255,0.02)); }
+  .ih-client-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .ih-client-name{ font-weight:600; font-size:14px; color:var(--text); cursor:pointer; overflow-wrap:anywhere; }
+  .ih-client-name:hover{ text-decoration:underline; }
+  .ih-client .ih-list{ margin-top:8px; }
+  .ih-banner{ border:1px solid rgba(240,170,60,0.4); background:rgba(240,170,60,0.08); border-radius:8px; padding:9px 12px; font-size:12.5px; line-height:1.5; margin-bottom:10px; color:var(--text); }
+  .ih-meta{ font-size:11.5px; color:var(--text-dim); }
+  @media (max-width: 600px){ .ih-kpi b{ font-size:19px; } .ih-item details{ margin-left:0; } }
   .meta-sync-box{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12.5px; line-height:1.6; margin:8px 0 0; color:var(--text-dim); }
   .meta-sync-box b{ color:var(--text); }
   .meta-sync-box.ok{ border-color: rgba(53,196,138,0.4); background: rgba(53,196,138,0.08); }
@@ -2461,8 +2500,10 @@
     <!-- ================= CONEXÕES ================= -->
     <section class="view" id="view-connections">
       <div class="topbar">
-        <div><h1>Conexões</h1><p>Status de acesso por cliente e plataforma</p></div>
+        <div><h1>Conexões</h1><p>O que falta conectar em cada cliente e como resolver</p></div>
       </div>
+      <div id="ihOverview"><div class="cd-empty">Conferindo as integrações…</div></div>
+      <div class="integ-overview-label" style="margin-top:18px;">Resumo por plataforma</div>
       <div class="panel">
         <table>
           <thead><tr><th>Cliente</th><th>Meta Ads</th><th>Google Ads</th><th>Instagram</th></tr></thead>
@@ -3393,6 +3434,13 @@
       </div>
 
       <div class="cd-pane" id="cdPaneIntegrations">
+      <div class="panel cnav-admin" id="cdHealthPanel">
+        <div class="ih-head">
+          <div><h3 style="margin:0;">Saúde da integração</h3><div class="ih-score" id="cdHealthScore">Conferindo…</div></div>
+          <button type="button" class="btn-cancel" id="cdHealthBtn" onclick="loadClientHealth(true)">Conferir agora</button>
+        </div>
+        <div class="ih-list" id="cdHealthList"></div>
+      </div>
       <div class="panel cd-model-panel">
         <div class="panel-head"><div><h3>Modelo do painel de anúncios</h3><div class="panel-head-sub">Define quais plataformas aparecem na aba Anúncios deste cliente — nem todo cliente anuncia nas duas.</div></div></div>
         <div class="cd-model-row">
@@ -3791,6 +3839,7 @@
       document.getElementById('view-' + item.dataset.view).classList.add('active');
       if (item.dataset.view === 'reports') loadReports();
       if (item.dataset.view === 'today') loadToday();
+      if (item.dataset.view === 'connections') loadIntegrationHealth(false);
       if (item.dataset.view === 'alerts') { renderAlertsView(); loadAlerts(); }
       if (item.dataset.view === 'forms') { document.getElementById('fmEditMode').style.display === 'none' && loadForms(); }
     });
@@ -3826,7 +3875,7 @@
       row.innerHTML = `
         <div class="client-item-name">
           <div class="client-avatar">${initials(c.name)}</div>
-          <span>${c.name}</span>
+          <span>${escapeHtml(c.name)}</span>
         </div>
         <div class="client-dots">
           <span style="background:${dotColor(c.meta)}" title="Meta ${statusLabel(c.meta)}"></span>
@@ -3842,7 +3891,7 @@
       tableEl.innerHTML = '';
       clients.forEach(c=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${c.name}</td><td>${badge(c.meta)}</td><td>${badge(c.google)}</td><td>${badge(c.ig)}</td>`;
+        tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td>${badge(c.meta)}</td><td>${badge(c.google)}</td><td>${badge(c.ig)}</td>`;
         tableEl.appendChild(tr);
       });
     });
@@ -3850,6 +3899,112 @@
     if (connCountEl) connCountEl.textContent = `${clients.length} conta${clients.length === 1 ? '' : 's'} cadastrada${clients.length === 1 ? '' : 's'}`;
   }
 
+
+
+  /* ===================== Saúde da integração ===================== */
+  // Checklist do que falta em cada cliente (Meta, Página, Instagram, usuário do sistema, Google, GTM)
+  // com o passo a passo pra corrigir. Só agência: a rota é admin e o painel tem cnav-admin.
+  const IH = { all: null, allErr: '', loadingAll: false, onlyGaps: true, clientSeq: 0 };
+  const IH_ICON = { ok: '✓', error: '✕', missing: '✕', warn: '!', optional: '○' };
+  function ihWhen(iso){
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  }
+  function ihItemHtml(it){
+    const detail = it.key === 'meta_sync' && it.state === 'ok' && it.at ? `Ligada · última em ${ihWhen(it.at)}` : it.detail;
+    const fix = it.fix && it.state !== 'ok'
+      ? `<details${it.state === 'error' || it.state === 'missing' ? ' open' : ''}><summary>Como resolver</summary><div class="ih-fix">${escapeHtml(it.fix)}</div></details>` : '';
+    return `<div class="ih-item ih-${it.state}"><div class="ih-item-top"><span class="ih-ico">${IH_ICON[it.state] || '?'}</span>
+      <div><div class="ih-label">${escapeHtml(it.label)}${it.state === 'optional' ? ' <span class="ih-meta">(opcional)</span>' : ''}</div>${detail ? `<div class="ih-detail">${escapeHtml(detail)}</div>` : ''}</div></div>${fix}</div>`;
+  }
+  function ihScoreText(c){
+    const s = c.summary || {};
+    if (s.problems) return `${s.problems} pendência${s.problems > 1 ? 's' : ''}${s.warn ? ` e ${s.warn} ponto${s.warn > 1 ? 's' : ''} de atenção` : ''}`;
+    if (s.warn) return `${s.warn} ponto${s.warn > 1 ? 's' : ''} de atenção`;
+    return 'Tudo certo';
+  }
+  function ihPill(c){ return `<span class="ih-pill ${c.level}">${escapeHtml(ihScoreText(c))}</span>`; }
+
+  async function loadClientHealth(refresh){
+    if (CLIENT_MODE || PUBLIC_TOKEN) return;
+    const id = currentClientId, seq = ++IH.clientSeq;
+    const list = document.getElementById('cdHealthList'), score = document.getElementById('cdHealthScore'), btn = document.getElementById('cdHealthBtn');
+    if (!list) return;
+    score.textContent = 'Conferindo na Meta…'; btn.disabled = true;
+    if (!list.children.length || list.dataset.id !== id) list.innerHTML = '';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${encodeURIComponent(id)}/integration-health${refresh ? '?refresh=1' : ''}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (seq !== IH.clientSeq || id !== currentClientId) return;
+      list.dataset.id = id;
+      const items = [...data.items].sort((a, b) => ({ error:0, missing:0, warn:1, optional:2, ok:3 }[a.state] - { error:0, missing:0, warn:1, optional:2, ok:3 }[b.state]));
+      list.innerHTML = items.map(ihItemHtml).join('');
+      score.innerHTML = `${ihPill(data)} <span class="ih-meta">· conferido às ${ihWhen(data.checkedAt).split(' ').pop()}${data.live ? '' : ' (pelo que está salvo)'}</span>`;
+      if (IH.all) { IH.all.clients = IH.all.clients.map(c => c.id === id ? data : c); }
+    } catch (e) {
+      if (seq !== IH.clientSeq) return;
+      score.textContent = '';
+      list.innerHTML = `<div class="ih-item ih-warn"><div class="ih-item-top"><span class="ih-ico">!</span><div><div class="ih-label">Não consegui conferir agora</div><div class="ih-detail">${escapeHtml(e.message)}. Clique em "Conferir agora" pra tentar de novo.</div></div></div></div>`;
+    } finally { if (seq === IH.clientSeq) btn.disabled = false; }
+  }
+
+  async function loadIntegrationHealth(refresh){
+    const box = document.getElementById('ihOverview');
+    if (!box || CLIENT_MODE || PUBLIC_TOKEN || IH.loadingAll) return;
+    IH.loadingAll = true; IH.allErr = '';
+    if (!IH.all) box.innerHTML = '<div class="cd-empty">Conferindo as integrações de todos os clientes na Meta… pode levar alguns segundos.</div>';
+    else renderIntegrationHealth(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/integration-health${refresh ? '?refresh=1' : ''}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      IH.all = data;
+    } catch (e) { IH.allErr = e.message; }
+    IH.loadingAll = false;
+    renderIntegrationHealth(false);
+  }
+  function ihToggleOnlyGaps(v){ IH.onlyGaps = v; renderIntegrationHealth(false); }
+  function ihOpenClient(id){ setWorkspace(id); wsGo('integrations'); }
+
+  function renderIntegrationHealth(busy){
+    const box = document.getElementById('ihOverview');
+    if (!box) return;
+    if (!IH.all) {
+      box.innerHTML = `<div class="ih-banner">Não consegui conferir as integrações: ${escapeHtml(IH.allErr || 'erro desconhecido')}. <button type="button" class="btn-cancel" onclick="loadIntegrationHealth(true)">Tentar de novo</button></div>`;
+      return;
+    }
+    const d = IH.all, cl = d.clients || [];
+    const nBad = cl.filter(c => c.level === 'bad').length, nWarn = cl.filter(c => c.level === 'warn').length, nOk = cl.length - nBad - nWarn;
+    const tok = d.token || {};
+    const banners = [];
+    if (IH.allErr) banners.push(`Última conferência falhou: ${escapeHtml(IH.allErr)}. Mostrando o resultado anterior.`);
+    if (!d.live) banners.push(escapeHtml(tok.note || 'Conferido só pelo que está salvo no sistema.'));
+    if (tok.missing && tok.missing.length) banners.push(`O token do usuário do sistema "${escapeHtml(d.systemUser)}" está sem a permissão <b>${tok.missing.map(escapeHtml).join(', ')}</b>. Isso afeta todos os clientes (ex.: sem <b>instagram_manage_insights</b> os números do Instagram ficam limitados). Pra corrigir: Gerenciador de Negócios da Instinto > Usuários do sistema > ${escapeHtml(d.systemUser)} > Gerar novo token, marcando essas permissões, e trocar o META_SYSTEM_USER_TOKEN no hPanel.`);
+    const shown = IH.onlyGaps ? cl.filter(c => c.level !== 'ok') : cl;
+    const clientHtml = c => {
+      const gaps = (c.items || []).filter(i => IH.onlyGaps ? (i.state !== 'ok' && i.state !== 'optional') : true);
+      return `<div class="ih-client"><div class="ih-client-head"><span class="ih-client-name" onclick="ihOpenClient('${escapeHtml(c.id)}')">${escapeHtml(c.name)}</span>${ihPill(c)}</div>
+        ${c.error ? `<div class="ih-detail">Não consegui conferir: ${escapeHtml(c.error)}</div>` : ''}
+        ${gaps.length ? `<div class="ih-list">${gaps.map(ihItemHtml).join('')}</div>` : ''}</div>`;
+    };
+    box.innerHTML = `
+      <div class="ih-kpis">
+        <div class="ih-kpi"><b style="color:var(--red)">${nBad}</b><span>com pendência</span></div>
+        <div class="ih-kpi"><b style="color:var(--amber)">${nWarn}</b><span>pontos de atenção</span></div>
+        <div class="ih-kpi"><b style="color:var(--green)">${nOk}</b><span>tudo certo</span></div>
+      </div>
+      ${banners.map(b => `<div class="ih-banner">${b}</div>`).join('')}
+      <div class="ih-toolbar">
+        <label><input type="checkbox" ${IH.onlyGaps ? 'checked' : ''} onchange="ihToggleOnlyGaps(this.checked)"> Só o que falta</label>
+        <button type="button" class="btn-cancel" onclick="loadIntegrationHealth(true)" ${busy ? 'disabled' : ''}>${busy ? 'Conferindo…' : 'Conferir agora'}</button>
+        <span class="ih-meta">Conferido em ${ihWhen(d.checkedAt)}${d.live ? ' direto na Meta' : ''}. Toque no nome pra abrir as integrações do cliente.</span>
+      </div>
+      ${shown.length ? shown.map(clientHtml).join('') : '<div class="cd-empty">Nenhuma pendência. Todos os clientes estão com as integrações em dia.</div>'}`;
+  }
 
   /* ===================== Formulários (estilo Typeform) ===================== */
   const FORM_BASE_URL = 'https://dash.instintodigital.com.br/f/';
@@ -8483,7 +8638,7 @@
     if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
     if (tab === 'contract') renderClientContractPane();
     if (tab === 'history') renderClientHistoryPane();
-    if (tab === 'integrations' && !CLIENT_MODE && !PUBLIC_TOKEN) loadGtm();
+    if (tab === 'integrations' && !CLIENT_MODE && !PUBLIC_TOKEN) { loadGtm(); loadClientHealth(true); }
   }
 
   function toggleRangeMenu(){

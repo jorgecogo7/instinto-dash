@@ -7,6 +7,7 @@ const googleService = require('../services/googleService');
 const { hashPassword } = require('../lib/auth');
 const clientAccess = require('../lib/clientAccess');
 const metaSync = require('../lib/metaSync');
+const integrationHealth = require('../services/integrationHealthService');
 
 const router = express.Router();
 
@@ -44,6 +45,29 @@ function pickEditableFields(body) {
 router.get('/', async (req, res) => {
   try {
     res.json((await accountsStore.getAll()).map(stripSecrets));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/accounts/integration-health — checklist de integração de todos os
+// clientes (o que falta e como corrigir). ?refresh=1 ignora o cache de 10 min.
+router.get('/integration-health', async (req, res) => {
+  try {
+    res.json(await integrationHealth.getHealth({ refresh: req.query.refresh === '1' }));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/accounts/:id/integration-health — o mesmo checklist, de um cliente só.
+router.get('/:id/integration-health', async (req, res) => {
+  try {
+    const r = await integrationHealth.getHealth({ accountId: req.params.id, refresh: req.query.refresh === '1' });
+    if (!r.clients.length) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    res.json({ checkedAt: r.checkedAt, live: r.live, systemUser: r.systemUser, ...r.clients[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
