@@ -876,6 +876,9 @@
   .hj-al-box{ border:1px solid var(--line); background:var(--bg-panel); border-radius:12px; padding:12px 14px; margin-bottom:16px; }
   .hj-al-box.crit{ border-color:rgba(232,81,79,.45); }
   .hj-al-box.ok{ color:var(--green); font-size:13px; font-weight:600; }
+  .hj-ih-box{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; border:1px solid rgba(232,163,23,.35); background:var(--bg-panel); border-radius:12px; padding:10px 14px; margin-bottom:16px; font-size:13px; }
+  .hj-ih-box .hj-ih-names{ color:var(--text-dim); flex:1 1 220px; min-width:0; }
+  .hj-ih-box .hj-ih-names a{ color:inherit; text-decoration:underline; cursor:pointer; }
   .hj-al-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13.5px; margin-bottom:6px; flex-wrap:wrap; }
   .hj-al-when{ color:var(--text-dim); font-weight:500; font-size:12px; }
   .hj-al-item{ display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
@@ -2144,7 +2147,7 @@
       <div class="nav-item" data-view="meta">▤ Meta Ads</div>
       <div class="nav-item" data-view="google">◈ Google Ads</div>
       <div class="nav-item" data-view="instagram">◎ Instagram</div>
-      <div class="nav-item" data-view="connections">⚙ Conexões</div>
+      <div class="nav-item" data-view="connections">⚙ Conexões <span class="nav-badge" id="navConnBadge" style="display:none;" title="Clientes com integração pendente"></span></div>
     </nav>
 
     <div class="nav-divider">Gestão</div>
@@ -2260,6 +2263,7 @@
       </div>
       <div class="hj-summary" id="hjSummary"></div>
       <div id="hjAlerts"></div>
+      <div id="hjIntegrations"></div>
       <div class="panel">
         <div class="panel-head"><div><h3>Carteira</h3><div class="panel-head-sub">Quem piorou aparece primeiro · clique num cliente pra abrir o painel dele</div></div></div>
         <div class="hj-list" id="hjList"></div>
@@ -3802,7 +3806,7 @@
   function startAdminApp(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'flex';
-    loadClientsFromBackend().then(() => loadAlerts());
+    loadClientsFromBackend().then(() => { loadAlerts(); loadIntegrationHealth(false); });
     loadLeadsFromBackend();
     loadContractsFromBackend();
     setInterval(loadAlerts, 15 * 60 * 1000);
@@ -3874,7 +3878,7 @@
       row.className = 'client-item' + (i===0 ? ' active' : ''); row.onclick = () => openClientDetail(c.id);
       row.innerHTML = `
         <div class="client-item-name">
-          <div class="client-avatar">${initials(c.name)}</div>
+          <div class="client-avatar">${escapeHtml(initials(c.name))}</div>
           <span>${escapeHtml(c.name)}</span>
         </div>
         <div class="client-dots">
@@ -3943,7 +3947,7 @@
       const items = [...data.items].sort((a, b) => ({ error:0, missing:0, warn:1, optional:2, ok:3 }[a.state] - { error:0, missing:0, warn:1, optional:2, ok:3 }[b.state]));
       list.innerHTML = items.map(ihItemHtml).join('');
       score.innerHTML = `${ihPill(data)} <span class="ih-meta">· conferido às ${ihWhen(data.checkedAt).split(' ').pop()}${data.live ? '' : ' (pelo que está salvo)'}</span>`;
-      if (IH.all) { IH.all.clients = IH.all.clients.map(c => c.id === id ? data : c); }
+      if (IH.all) { IH.all.clients = IH.all.clients.map(c => c.id === id ? data : c); ihRenderPendingEverywhere(); }
     } catch (e) {
       if (seq !== IH.clientSeq) return;
       score.textContent = '';
@@ -3966,7 +3970,23 @@
     } catch (e) { IH.allErr = e.message; }
     IH.loadingAll = false;
     renderIntegrationHealth(false);
+    ihRenderPendingEverywhere();
   }
+  // Badge no menu Conexões e aviso na tela Hoje: quantos clientes têm pendência de integração.
+  function ihRenderPendingEverywhere(){
+    const bad = (IH.all && IH.all.clients || []).filter(c => c.level === 'bad');
+    const badge = document.getElementById('navConnBadge');
+    if (badge) { badge.textContent = bad.length; badge.style.display = bad.length && !CLIENT_MODE && !PUBLIC_TOKEN ? '' : 'none'; }
+    const el = document.getElementById('hjIntegrations');
+    if (!el) return;
+    if (!bad.length || CLIENT_MODE || PUBLIC_TOKEN) { el.innerHTML = ''; return; }
+    const MAX = 4;
+    const names = bad.slice(0, MAX).map(c => `<a onclick="ihOpenClient('${escapeHtml(c.id)}')">${escapeHtml(c.name)}</a>`).join(', ');
+    el.innerHTML = `<div class="hj-ih-box"><b>🔌 ${bad.length} ${bad.length === 1 ? 'cliente com integração pendente' : 'clientes com integração pendente'}</b>
+      <span class="hj-ih-names">${names}${bad.length > MAX ? ` e mais ${bad.length - MAX}` : ''}</span>
+      <button type="button" class="al-btn" onclick="openConnectionsView()">Ver o que falta ›</button></div>`;
+  }
+  function openConnectionsView(){ document.querySelector('.nav-item[data-view="connections"]')?.click(); }
   function ihToggleOnlyGaps(v){ IH.onlyGaps = v; renderIntegrationHealth(false); }
   function ihOpenClient(id){ setWorkspace(id); wsGo('integrations'); }
 
@@ -6974,10 +6994,10 @@
     return `
       <div class="client-card" onclick="openClientDetail('${c.id}')">
         <div class="client-card-head">
-          <div class="client-card-avatar">${initials(c.name)}</div>
+          <div class="client-card-avatar">${escapeHtml(initials(c.name))}</div>
           <div>
-            <div class="client-card-name">${c.name}</div>
-            <div class="client-card-niche">${c.niche}</div>
+            <div class="client-card-name">${escapeHtml(c.name)}</div>
+            <div class="client-card-niche">${escapeHtml(c.niche)}</div>
           </div>
         </div>
         <div class="client-card-platforms">${platformsHtml}</div>
@@ -6993,7 +7013,7 @@
         </div>
         <div class="client-card-foot">
           ${statusChip(c.status)}
-          <div class="owner-dot" title="Responsável">${c.owner}</div>
+          <div class="owner-dot" title="Responsável">${escapeHtml(c.owner)}</div>
         </div>
       </div>`;
   }
@@ -7019,14 +7039,14 @@
     tbody.innerHTML = '';
     filtered.forEach(c => {
       const tr = document.createElement('tr');
-      const siteCell = c.site ? `<a class="link-chip" href="#" onclick="return false;">🔗 ${c.site}</a>` : `<span class="link-empty">— não informado</span>`;
-      const igCell = c.ig ? `<a class="link-chip ig" href="#" onclick="return false;">${c.ig}</a>` : `<span class="link-empty">— sem Instagram</span>`;
+      const siteCell = c.site ? `<a class="link-chip" href="#" onclick="return false;">🔗 ${escapeHtml(c.site)}</a>` : `<span class="link-empty">— não informado</span>`;
+      const igCell = c.ig ? `<a class="link-chip ig" href="#" onclick="return false;">${escapeHtml(c.ig)}</a>` : `<span class="link-empty">— sem Instagram</span>`;
       const driveCell = c.drive ? `<a class="link-chip drive" href="#" onclick="return false;">📁 Abrir pasta</a>` : `<span class="link-empty">— não criada</span>`;
       tr.innerHTML = `
-        <td><div class="client-cell-name" style="cursor:pointer;" onclick="openClientDetail('${c.id}')"><div class="client-cell-avatar">${initials(c.name)}</div>${c.name}</div></td>
+        <td><div class="client-cell-name" style="cursor:pointer;" onclick="openClientDetail('${c.id}')"><div class="client-cell-avatar">${escapeHtml(initials(c.name))}</div>${escapeHtml(c.name)}</div></td>
         <td>${brl(c.contract)}/mês</td>
         <td>${c.start}</td>
-        <td><span class="niche-tag">${c.niche}</span></td>
+        <td><span class="niche-tag">${escapeHtml(c.niche)}</span></td>
         <td><div class="platform-chips">${c.platforms.map(platformChip).join('')}</div></td>
         <td>${brl(c.daily)}/dia</td>
         <td>${pixCell(c)}</td>
@@ -7034,8 +7054,8 @@
         <td>${igCell}</td>
         <td>${driveCell}</td>
         <td>${statusChip(c.status)}</td>
-        <td><div class="owner-cell"><div class="owner-dot">${c.owner}</div></div></td>
-        <td><button class="btn-deactivate" onclick="deactivateClient('${c.id}','${c.name.replace(/'/g,"\\'")}')">Desativar</button></td>`;
+        <td><div class="owner-cell"><div class="owner-dot">${escapeHtml(c.owner)}</div></div></td>
+        <td><button class="btn-deactivate" onclick="deactivateClient('${c.id}')">Desativar</button></td>`;
       tbody.appendChild(tr);
     });
 
@@ -7077,6 +7097,7 @@
   }
 
   async function deactivateClient(id, name){
+    if (name == null) name = (clientsMgmt.find(c => c.id === id) || {}).name || 'este cliente';
     if (!confirm(`Mover "${name}" para clientes inativos? Os dados dele continuam guardados, só sai da lista principal.`)) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/accounts/${id}`, {
