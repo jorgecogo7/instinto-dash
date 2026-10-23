@@ -301,4 +301,36 @@ function ensureGtmLogTable() {
   return gtmLogReady;
 }
 
-module.exports = { getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable, ensureGtmLogTable };
+// Análise do gestor (comentário interno sobre cada cliente) e as chaves de
+// API dos gestores (IA). SÓ a agência lê: nenhuma rota de cliente, link
+// público, relatório ou PDF consulta estas tabelas.
+let gestorTablesReady = null;
+function ensureGestorTables() {
+  if (!gestorTablesReady) {
+    const pool = getPool();
+    gestorTablesReady = Promise.all([
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS gestor_analyses (
+          id VARCHAR(191) PRIMARY KEY,
+          client_id VARCHAR(191) NOT NULL,
+          created_at DATETIME(3) NOT NULL,
+          data JSON NOT NULL,
+          INDEX idx_gestor_analyses_client (client_id, created_at)
+        )
+      `),
+      // Só o hash (SHA-256) da chave fica no banco; a chave aparece uma vez na tela.
+      pool.query(`
+        CREATE TABLE IF NOT EXISTS gestor_keys (
+          id VARCHAR(191) PRIMARY KEY,
+          key_hash CHAR(64) NOT NULL UNIQUE,
+          created_at DATETIME NOT NULL,
+          revoked_at DATETIME NULL,
+          data JSON NOT NULL
+        )
+      `),
+    ]);
+  }
+  return gestorTablesReady;
+}
+
+module.exports = { ensureGestorTables, getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable, ensureGtmLogTable };
