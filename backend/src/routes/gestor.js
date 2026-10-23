@@ -6,6 +6,7 @@ const googleService = require('../services/googleService');
 const period = require('../lib/period');
 const { buildAnalysis, STATUSES } = require('../lib/gestorAnalysis');
 const { requireGestorKey } = require('../middleware/gestorAuth');
+const diagnostics = require('../services/gestorDiagnostics');
 
 /**
  * "Análise do gestor": comentário interno da agência sobre cada cliente.
@@ -188,6 +189,35 @@ machineRouter.post('/clients/:clientId/analyses', async (req, res) => {
   if (error) return res.status(400).json({ error });
   analysis.keyLabel = req.gestorKey.label;
   res.status(201).json(await gestorStore.saveAnalysis(analysis));
+});
+
+// Diagnóstico (somente leitura): como cada campanha está montada + o que
+// cada anúncio entregou. Serve pra explicar lead desqualificado ou pouco lead.
+async function diagContext(req, res) {
+  const account = await findClient(req.params.clientId);
+  if (!account) { res.status(404).json({ error: 'Cliente não encontrado. Veja a lista em GET /api/gestor/clients.' }); return null; }
+  const { range, error } = readRange(req.query);
+  if (error) { res.status(400).json({ error }); return null; }
+  return { account, range, head: { client: { id: account.id, name: account.name, niche: account.niche || null }, period: range, generatedAt: new Date().toISOString(), readOnly: true } };
+}
+
+machineRouter.get('/clients/:clientId/diagnostics', async (req, res) => {
+  const ctx = await diagContext(req, res);
+  if (!ctx) return;
+  const [meta, google] = await Promise.all([diagnostics.metaFor(ctx.account, ctx.range), diagnostics.googleFor(ctx.account, ctx.range)]);
+  res.json({ ...ctx.head, meta, google });
+});
+
+machineRouter.get('/clients/:clientId/diagnostics/meta', async (req, res) => {
+  const ctx = await diagContext(req, res);
+  if (!ctx) return;
+  res.json({ ...ctx.head, meta: await diagnostics.metaFor(ctx.account, ctx.range) });
+});
+
+machineRouter.get('/clients/:clientId/diagnostics/google', async (req, res) => {
+  const ctx = await diagContext(req, res);
+  if (!ctx) return;
+  res.json({ ...ctx.head, google: await diagnostics.googleFor(ctx.account, ctx.range) });
 });
 
 module.exports = { adminRouter, keysRouter, machineRouter };

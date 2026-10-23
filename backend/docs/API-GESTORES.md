@@ -3,7 +3,7 @@
 API para os agentes gestores (rodando num servidor Linux, só com `curl`) **lerem os números** dos clientes e **gravarem a "Análise do gestor"** no Sistema Instinto Digital.
 
 - Base: `https://api.instintodigital.com.br/api/gestor`
-- Só leitura de métricas + escrita de análises. **Não existe** rota pra publicar, pausar, ativar ou editar campanha, nem pra ver contrato, saldo, CRM ou dados pessoais de leads.
+- Só leitura de métricas e diagnóstico + escrita de análises. **Não existe** rota pra publicar, pausar, ativar ou editar campanha, nem pra ver contrato, saldo, CRM ou dados pessoais de leads.
 - A análise só aparece pro Jorge (aba **Análise do gestor** de cada cliente). O cliente nunca vê: nem no login dele, nem no link público, nem no PDF ou no relatório automático.
 
 ## 1. Chave de acesso
@@ -63,6 +63,38 @@ Meta Ads + Google Ads do período, de uma vez:
 ### `GET /clients/:id/meta?from=&to=` e `GET /clients/:id/google?from=&to=`
 Só uma plataforma (mesmo conteúdo de `report` acima). `409` se a plataforma não estiver conectada, `502` se a Meta/Google recusar.
 
+### `GET /clients/:id/diagnostics?from=&to=` (diagnóstico de leads, só leitura)
+Explica **por que os leads chegam desqualificados ou em pouca quantidade**: mostra como cada campanha está montada e o que cada anúncio entregou no período. Também existe só uma plataforma: `/clients/:id/diagnostics/meta` e `/clients/:id/diagnostics/google`. Mesmo `from`/`to` (padrão: últimos 30 dias). Resposta guardada por 5 minutos.
+
+Cada plataforma volta assim:
+- `connected: false`: plataforma não conectada nesse cliente.
+- `available: false, testMode: true`: servidor sem credenciais reais. **Não vem nenhum dado** (nada é inventado).
+- `available: true`: diagnóstico real. `errors` lista as partes que a Meta/Google recusaram (o resto vem normal).
+
+**Meta** (`meta`). Só entra o que está ativo agora ou teve entrega no período. Orçamento e gasto na moeda da conta (`account.currency`).
+| Bloco | O que traz |
+|---|---|
+| `account` | nome, moeda, fuso |
+| `totals` | gasto, impressões, cliques, CTR, CPC, resultados e custo por resultado do período |
+| `campaigns[]` | `objective`, `buyingType`, `bidStrategy`, `dailyBudget`/`lifetimeBudget`, `budgetLevel` (campanha ou conjunto), `specialAdCategories`, `metrics` |
+| `adSets[]` | `optimizationGoal`, `billingEvent`, `bidStrategy`, `bidAmount`, orçamentos, `destinationType`, `promotedObject`, `attribution`, `targeting` (idade, gênero, cidades/raio, regiões, exclusões, interesses, comportamentos, públicos personalizados e semelhantes, `advantageAudience` ligado/desligado, `placements` automático ou a lista de posicionamentos), `targetingRaw` (objeto completo da Meta), `metrics` (+ `frequency`) |
+| `ads[]` | `creative` (`primaryTexts`, `headlines`, `descriptions`, `format`, `dynamic`, `thumbnailUrl`, `imageUrl`), `destination` (`type`: `formulario`, `whatsapp`, `instagram_direct`, `messenger`, `site`, `engajamento`; `ctaTypes`, `urls`, `leadFormIds`), `metrics` (gasto, impressões, alcance, cliques, CTR, CPC, CPM, frequência, `resultType`, `results`, `costPerResult`, `actions`) |
+| `leadForms[]` | formulários usados pelos anúncios: `higherIntent` (`true` = "Maior intenção", `false` = "Mais volume"), `questions` (tipo, rótulo, opções), `customQuestionsCount`, `contextCard`, `thankYouPage`, `leadsCount` |
+| `signals[]` | sinais automáticos (regras fixas, não opinião): `form_more_volume`, `form_no_qualifying_question`, `advantage_audience_on`, `placements_auto`, `audience_network`, `high_frequency`, `spend_no_results`, `optimization_mismatch`, `low_ctr` |
+
+**Google** (`google`). Valores em reais (já convertidos de micros).
+| Bloco | O que traz |
+|---|---|
+| `campaigns[]` | `channelType` (SEARCH, PERFORMANCE_MAX…), `biddingStrategy`, `targetCpa`, `dailyBudget`, `network` (pesquisa, Display, parceiros), `impressionShare` (parcela, perdida por orçamento, perdida por classificação), `metrics` |
+| `keywords[]` | texto, `matchType` (EXACT, PHRASE, BROAD), status, Índice de qualidade, `metrics` (até 150, por gasto) |
+| `negativeKeywords[]` | negativas de campanha e de grupo |
+| `searchTerms[]` | termo pesquisado, `status` (ADDED, EXCLUDED, NONE), `matchType`, `metrics` (até 200, por gasto) |
+| `ads[]` | `headlines`, `descriptions`, `finalUrls`, `adStrength`, aprovação, `metrics` |
+| `conversionActions[]` | ações de conversão ativas: categoria, `primaryForGoal`, contagem (uma ou todas) |
+| `signals[]` | `search_with_display`, `search_partners`, `spend_no_conversions`, `broad_match`, `terms_without_conversion`, `weak_primary_conversion` |
+
+Os sinais são ponto de partida. Confirme nos dados antes de virar sugestão.
+
 ### `GET /clients/:id/analyses?limit=10`
 Análises já gravadas (mais recente primeiro), incluindo se o Jorge aprovou ou descartou cada sugestão. Use pra não repetir sugestão e pra acompanhar o que foi aprovado.
 
@@ -105,6 +137,10 @@ curl -s -H "Authorization: Bearer $GESTOR_API_KEY" $API/clients
 
 # números de setembro
 curl -s -H "Authorization: Bearer $GESTOR_API_KEY" "$API/clients/seiza/performance?from=2026-09-01&to=2026-09-30"
+
+# diagnóstico dos leads (montagem das campanhas + entrega por anúncio)
+curl -s -H "Authorization: Bearer $GESTOR_API_KEY" "$API/clients/seiza/diagnostics?from=2026-09-01&to=2026-09-30"
+curl -s -H "Authorization: Bearer $GESTOR_API_KEY" "$API/clients/seiza/diagnostics/meta?from=2026-09-01&to=2026-09-30"
 
 # análises anteriores
 curl -s -H "Authorization: Bearer $GESTOR_API_KEY" "$API/clients/seiza/analyses?limit=5"
