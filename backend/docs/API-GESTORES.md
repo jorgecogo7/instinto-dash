@@ -77,9 +77,9 @@ Cada plataforma volta assim:
 | `account` | nome, moeda, fuso |
 | `totals` | gasto, impressões, cliques, CTR, CPC, resultados e custo por resultado do período |
 | `campaigns[]` | `objective`, `buyingType`, `bidStrategy`, `dailyBudget`/`lifetimeBudget`, `budgetLevel` (campanha ou conjunto), `specialAdCategories`, `metrics` |
-| `adSets[]` | `optimizationGoal`, `billingEvent`, `bidStrategy`, `bidAmount`, orçamentos, `destinationType`, `promotedObject`, `attribution`, `targeting` (idade, gênero, cidades/raio, regiões, exclusões, interesses, comportamentos, públicos personalizados e semelhantes, `advantageAudience` ligado/desligado, `placements` automático ou a lista de posicionamentos), `targetingRaw` (objeto completo da Meta), `metrics` (+ `frequency`) |
-| `ads[]` | `creative` (`primaryTexts`, `headlines`, `descriptions`, `format`, `dynamic`, `thumbnailUrl`, `imageUrl`), `destination` (`type`: `formulario`, `whatsapp`, `instagram_direct`, `messenger`, `site`, `engajamento`; `ctaTypes`, `urls`, `leadFormIds`), `metrics` (gasto, impressões, alcance, cliques, CTR, CPC, CPM, frequência, `resultType`, `results`, `costPerResult`, `actions`) |
-| `leadForms[]` | formulários usados pelos anúncios: `higherIntent` (`true` = "Maior intenção", `false` = "Mais volume"), `questions` (tipo, rótulo, opções), `customQuestionsCount`, `contextCard`, `thankYouPage`, `leadsCount` |
+| `adSets[]` | `optimizationGoal`, `billingEvent`, `bidStrategy`, `bidAmount`, orçamentos, `destinationType`, `promotedObject`, `attribution`, `targeting` (idade, gênero (`todos` quando a Meta manda 0 ou nada), cidades/raio, regiões, CEPs, locais com raio (`places`, ex.: um hospital), bairros (`neighborhoods`), `subcities`, `geoMarkets`, locais excluídos (`excludedGeo`), exclusões, interesses, comportamentos, públicos personalizados e semelhantes, `advantageAudience` ligado/desligado, `placements` automático ou a lista de posicionamentos), `targetingRaw` (objeto completo da Meta), `metrics` (+ `frequency`) |
+| `ads[]` | `creative` (`primaryTexts` (em criativo dinâmico sem texto, vem da publicação e `primaryTextSource` = `publicacao`), `headlines`, `descriptions`, `format`, `dynamic`, `thumbnailUrl`, `imageUrl`), `destination` (`type`: `formulario`, `whatsapp`, `instagram_direct`, `perfil_instagram` (CTA para o perfil do Instagram), `messenger`, `site`, `engajamento`; `ctaTypes`, `urls`, `leadFormIds`), `metrics` (gasto, impressões, alcance, cliques, CTR, CPC, CPM, frequência, `resultType`, `results`, `costPerResult`, `actions`) |
+| `leadForms[]` | formulários usados pelos anúncios (se a Meta não deixar ler, aparece em `errors` como `leadForm:<id>` com a explicação: o usuário do sistema precisa de acesso à Página dona do formulário): `higherIntent` (`true` = "Maior intenção", `false` = "Mais volume"), `questions` (tipo, rótulo, opções), `customQuestionsCount`, `contextCard`, `thankYouPage`, `leadsCount` |
 | `signals[]` | sinais automáticos (regras fixas, não opinião): `form_more_volume`, `form_no_qualifying_question`, `advantage_audience_on`, `placements_auto`, `audience_network`, `high_frequency`, `spend_no_results`, `optimization_mismatch`, `low_ctr` |
 
 **Google** (`google`). Valores em reais (já convertidos de micros).
@@ -167,28 +167,32 @@ JSON
 
 ## 4. Slugs dos clientes
 
-A fonte oficial é sempre `GET /clients` (o slug vem do nome cadastrado e pode ter sufixo se houver nome repetido). Slugs **prováveis**, calculados pelo nome, pra conferir:
+A fonte oficial é sempre `GET /clients` (o slug vem do nome cadastrado e pode ter sufixo se houver nome repetido). Slugs conferidos em produção em 23/10/2026:
 
-| Cliente | Slug provável |
-|---|---|
-| Abmix | `abmix` |
-| Ara Faria Lima | `ara-faria-lima` |
-| Arvis | `arvis` |
-| Biòs Farmacêutica | `bi-s-farmac-utica` |
-| Dado Grifes | `dado-grifes` |
-| Dr. Jordão | `dr-jord-o` |
-| Dr. Raphael | `dr-raphael` |
-| GB Amadora | `gb-amadora` |
-| GL Baterias | `gl-baterias` |
-| MiKit | `mikit` |
-| MyBi | `mybi` |
-| Nippon | `nippon` |
-| One Touch | `one-touch` |
-| Pão & Água | `p-o-gua` |
-| Prime Baterias | `prime-baterias` |
-| Raquel Bianca | `raquel-bianca` |
-| Seiza | `seiza` |
-| Síntese Moema | `s-ntese-moema` |
+| Cliente | Slug | Plataformas |
+|---|---|---|
+| Abmix | `abmix` | Meta |
+| Ara Faria Lima | `ara-faria-lima` | Meta |
+| Arvis | `arvis` | Meta |
+| Biòs Farmacêutica | `bi-s-farmac-utica-1792699638040` | Meta |
+| Boxe Training | `boxe-training` | Meta |
+| Dado Grifes | `dado-grifes` | Meta |
+| Dr. Jordão | `dr-jord-o` | Meta |
+| Dr. Raphael | `dr-raphael` | Meta |
+| Dra. Mara Lise | `dra-mara-lise` | nenhuma |
+| GB Amadora | `gb-amadora` | Meta |
+| GL Baterias | `gl-baterias` | Google |
+| MiKit | `bi-s-farmac-utica` | Meta |
+| MyBi | `mybi` | Meta |
+| Nippon | `nippon` | Meta |
+| One Touch | `one-touch` | Meta e Google |
+| Pão & Água | `p-o-gua` | Meta |
+| Prime Baterias | `prime-baterias` | Google |
+| Raquel Bianca | `raquel-bianca` | nenhuma |
+| Seiza | `seiza` | Meta |
+| Síntese Moema | `s-ntese-moema` | Meta |
+
+Atenção: o slug do MiKit é `bi-s-farmac-utica` (herdado de um nome antigo) e o da Biòs tem sufixo.
 
 ## 5. Rotas do painel (só login do Jorge)
 

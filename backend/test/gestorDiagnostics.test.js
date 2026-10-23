@@ -106,3 +106,62 @@ test('google: lê campanhas, palavras-chave, termos e anúncios via GAQL', async
   const rules = d.signals.map((s) => s.rule);
   ['search_with_display', 'spend_no_conversions', 'broad_match', 'terms_without_conversion', 'weak_primary_conversion'].forEach((r) => assert.ok(rules.includes(r), r));
 });
+
+test('targeting: locais com raio, exclusões, gênero 0 = todos', () => {
+  const t = diag.summarizeTargeting({
+    genders: [0],
+    geo_locations: { places: [{ key: 'p1', name: 'Hospital X', radius: 2, distance_unit: 'kilometer' }], neighborhoods: [{ key: 'n1', name: 'Moema' }], subcities: [{ key: 's1', name: 'Zona Sul' }], geo_markets: [{ key: 'DMA:1', name: 'Mercado 1' }] },
+    excluded_geo_locations: { regions: [{ key: '1', name: 'Bahia' }] },
+  });
+  assert.deepStrictEqual(t.genders, ['todos']);
+  assert.deepStrictEqual(t.geo.places, ['Hospital X (+2 kilometer)']);
+  assert.deepStrictEqual(t.geo.neighborhoods, ['Moema']);
+  assert.deepStrictEqual(t.geo.subcities, ['Zona Sul']);
+  assert.deepStrictEqual(t.geo.geoMarkets, ['Mercado 1']);
+  assert.deepStrictEqual(t.excludedGeo.regions, ['Bahia']);
+  assert.deepStrictEqual(diag.summarizeTargeting({ genders: [1, 2] }).genders, ['masculino', 'feminino']);
+});
+
+test('destino: perfil do Instagram não vira site', () => {
+  const d1 = diag.adDestination({ object_story_spec: { link_data: { call_to_action: { type: 'VIEW_INSTAGRAM_PROFILE' } } } }, {});
+  assert.strictEqual(d1.type, 'perfil_instagram');
+  const d2 = diag.adDestination({ call_to_action: { type: 'INSTAGRAM_PROFILE' } }, { destination_type: 'INSTAGRAM_PROFILE' });
+  assert.strictEqual(d2.type, 'perfil_instagram');
+  assert.strictEqual(diag.adDestination({ link_url: 'https://site.com' }, {}).type, 'site');
+});
+
+test('formulário sem acesso: mensagem própria de formulário, com o detalhe da Meta', async () => {
+  const g = fakeGraph();
+  const orig = g.graphGet;
+  g.graphGet = async (path, params) => {
+    if (path === 'f1') { const e = new Error('A Meta não encontrou essa conta de anúncios'); e.code = 100; e.raw = 'Object with ID f1 does not exist'; throw e; }
+    return orig(path, params);
+  };
+  const d = await diag.fetchMetaDiagnostics('123', range, g);
+  const msg = d.errors['leadForm:f1'];
+  assert.ok(msg.startsWith('Não foi possível ler o formulário'), msg);
+  assert.ok(msg.includes('Object with ID f1 does not exist'));
+  assert.ok(!/conta de anúncios/.test(msg));
+});
+
+test('criativo dinâmico sem texto: usa a mensagem da publicação e tolera falha', async () => {
+  const g = fakeGraph();
+  const orig = g.graphGet;
+  let fail = false;
+  g.graphGetAll = (() => { const o = g.graphGetAll; return async (path, params) => {
+    const r = await o(path, params);
+    if (path === 'act_123/ads') return r.map((a) => (a.id === 'a1' ? { ...a, creative: { id: 'cr1', effective_object_story_id: 'pg_post', asset_feed_spec: { titles: [{ text: 'T1' }, { text: 'T2' }] } } } : a));
+    return r;
+  }; })();
+  g.graphGet = async (path, params) => {
+    if (path === 'pg_post') { if (fail) throw new Error('sem acesso'); return { message: 'Texto do post' }; }
+    return orig(path, params);
+  };
+  let d = await diag.fetchMetaDiagnostics('123', range, g);
+  assert.deepStrictEqual(d.ads[0].creative.primaryTexts, ['Texto do post']);
+  assert.strictEqual(d.ads[0].creative.primaryTextSource, 'publicacao');
+  fail = true;
+  d = await diag.fetchMetaDiagnostics('123', range, g);
+  assert.deepStrictEqual(d.ads[0].creative.primaryTexts, []);
+  assert.ok(!Object.keys(d.errors).some((k) => k.includes('post')));
+});
