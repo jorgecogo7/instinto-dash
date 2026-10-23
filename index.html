@@ -45,7 +45,7 @@
 
   /* ---------- Modo claro ----------
      Alternável pelo usuário (botão na sidebar), aplicado no app inteiro via
-     [data-theme="light"] na <html> — antes isso só existia fixo dentro do
+     [data-theme="light"] na <html>: antes isso só existia fixo dentro do
      detalhe do cliente; agora vale pra tudo (menu, Clientes, CRM etc.), já
      que quase todo componente consome var(--bg-panel), var(--text) etc. em
      vez de cor fixa, então só sobrescrever essas variáveis já "vira" os
@@ -65,7 +65,7 @@
     --card-shadow-hover: 0 4px 12px rgba(24,39,75,0.07), 0 16px 34px -16px rgba(24,39,75,0.18);
   }
   /* Painel do cliente: continua um "cartão" próprio (cantos arredondados,
-     padding), estilo Reportei — só que agora a cor dele segue o tema atual
+     padding), estilo Reportei: só que agora a cor dele segue o tema atual
      em vez de ficar sempre claro. */
   #view-client-detail{
     color: var(--text);
@@ -2055,7 +2055,7 @@
     <img class="access-logo" src="" id="leadFormLogo" alt="Instinto Digital">
     <div id="leadFormStep">
       <h2>Vamos conversar sobre seus anúncios</h2>
-      <p class="access-sub">Preencha os dados abaixo — nossa equipe entra em contato em breve.</p>
+      <p class="access-sub">Preencha os dados abaixo: nossa equipe entra em contato em breve.</p>
       <div id="leadFormError" class="modal-error" style="display:none;"></div>
       <form id="publicLeadForm" onsubmit="submitPublicLead(event)">
         <label class="modal-label">Nome *</label>
@@ -2378,7 +2378,7 @@
           <span class="panel-head-sub">Análise gerada por IA a partir dos dados reais da conta</span>
         </div>
         <div id="metaInsights"></div>
-        <div class="footnote">Exemplo do formato — com a conta conectada, esta análise passa a rodar sobre os números reais de segmentação (públicos, idade, sexo, plataforma, locais) e de cada anúncio (CTR, cliques, visualizações, copy).</div>
+        <div class="footnote">Exemplo do formato: com a conta conectada, esta análise passa a rodar sobre os números reais de segmentação (públicos, idade, sexo, plataforma, locais) e de cada anúncio (CTR, cliques, visualizações, copy).</div>
       </div>
     </section>
 
@@ -2472,7 +2472,7 @@
             <thead><tr><th>Campanha</th><th>Força do anúncio</th><th>Cliques</th><th>CTR</th><th>Conv.</th></tr></thead>
             <tbody id="googleCriativosTable"></tbody>
           </table>
-          <div class="footnote">"Força do anúncio" é a métrica do próprio Google Ads que avalia a variedade e relevância dos títulos e descrições enviados — quanto mais forte, melhor o anúncio tende a performar.</div>
+          <div class="footnote">"Força do anúncio" é a métrica do próprio Google Ads que avalia a variedade e relevância dos títulos e descrições enviados: quanto mais forte, melhor o anúncio tende a performar.</div>
         </div>
       </div>
 
@@ -2482,7 +2482,7 @@
           <span class="panel-head-sub">Análise gerada por IA a partir dos dados reais da conta</span>
         </div>
         <div id="googleInsights"></div>
-        <div class="footnote">Exemplo do formato — com a conta conectada, esta análise passa a rodar sobre palavras-chave, Quality Score e posição no leilão de verdade.</div>
+        <div class="footnote">Exemplo do formato: com a conta conectada, esta análise passa a rodar sobre palavras-chave, Quality Score e posição no leilão de verdade.</div>
       </div>
     </section>
 
@@ -2493,7 +2493,7 @@
         <div class="topbar-right"><div class="client-select">📁 Todos os clientes ▾</div></div>
       </div>
       <div class="panel">
-        <div class="footnote" style="border-top:none; padding-top:0; margin-top:0;">Assim que um cliente tiver Instagram Business vinculado à Página dele no Meta, esta tela mostra alcance, engajamento e desempenho de Reels — funciona por cliente, então clientes sem Instagram vinculado simplesmente não aparecem aqui.</div>
+        <div class="footnote" style="border-top:none; padding-top:0; margin-top:0;">Assim que um cliente tiver Instagram Business vinculado à Página dele no Meta, esta tela mostra alcance, engajamento e desempenho de Reels: funciona por cliente, então clientes sem Instagram vinculado simplesmente não aparecem aqui.</div>
       </div>
     </section>
 
@@ -2583,7 +2583,7 @@
       </div>
       <div class="inactive-list" id="inactiveClientsList" style="display:none;"></div>
 
-      <div class="footnote">Esta tabela é só de organização interna da equipe — não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>) — sobrevive a reiniciar o servidor.</div>
+      <div class="footnote">Esta tabela é só de organização interna da equipe: não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>): sobrevive a reiniciar o servidor.</div>
     </section>
 
     <!-- ================= CAPTAÇÃO & CRM ================= -->
@@ -2970,7 +2970,7 @@
           <button type="button" class="btn-add" id="alCheckBtn" onclick="runAlertsCheck(false)">↻ Verificar agora</button>
         </div>
       </div>
-      <div class="footnote" style="border:none; padding:0 0 12px;">Saldo Pix acabando (e quanto falta pra cobrir 7 dias), pagamento recusado, conta bloqueada, limite de gastos, anúncios reprovados e contas sem veicular — em todos os clientes ativos.</div>
+      <div class="footnote" style="border:none; padding:0 0 12px;">Saldo Pix acabando (e quanto falta pra cobrir 7 dias), pagamento recusado, conta bloqueada, limite de gastos, anúncios reprovados e contas sem veicular: em todos os clientes ativos.</div>
       <div class="chip-row"><div class="chips" id="alChips"></div></div>
       <div id="alList"></div>
     </section>
@@ -2979,7 +2979,7 @@
       <div class="topbar">
         <div>
           <h1>Relatórios</h1>
-          <p>Mensagens de resultado prontas no dia agendado de cada cliente — revise e envie com 1 clique.</p>
+          <p>Mensagens de resultado prontas no dia agendado de cada cliente: revise e envie com 1 clique.</p>
         </div>
         <div class="topbar-right">
           <button type="button" class="btn-add" id="rptGenAllBtn" onclick="rptGenerateAll()">⚡ Gerar agora para todos</button>
@@ -2998,7 +2998,7 @@
       <div class="topbar">
         <div>
           <h1>Captação & CRM</h1>
-          <p>Funil comercial — do formulário público até virar cliente</p>
+          <p>Funil comercial: do formulário público até virar cliente</p>
         </div>
         <div class="topbar-right" style="gap:8px;">
           <button class="btn-cancel" onclick="copyLeadFormLink()" id="copyLeadLinkBtn">🔗 Copiar link do formulário</button>
@@ -3179,10 +3179,10 @@
           <div class="rp-modal-sub">Período: <b id="rpPeriod"></b> (o mesmo selecionado no painel) · com a marca da Instinto Digital</div>
           <div id="rpOptions"></div>
           <div id="rpNoteWrap">
-            <label class="modal-label">Comentário do gestor (opcional — vai na última página, "Análise das campanhas")</label>
+            <label class="modal-label">Comentário do gestor (opcional: vai na última página, "Análise das campanhas")</label>
             <textarea class="modal-input" id="rpNote" rows="3" placeholder="Ex.: Semana com ótimo custo por conversa. Próximo passo: testar novos criativos em vídeo."></textarea>
             <div class="rp-ai-row">
-              <label class="modal-label" style="margin:0;">Análise da IA (opcional — você pode editar antes de gerar)</label>
+              <label class="modal-label" style="margin:0;">Análise da IA (opcional: você pode editar antes de gerar)</label>
               <button type="button" class="btn-cancel" id="rpAiBtn" onclick="writeReportAnalysis()">✨ Escrever com IA</button>
             </div>
             <textarea class="modal-input" id="rpAi" rows="7" placeholder="Clique em “Escrever com IA” pra gerar uma análise curta das campanhas com os números do período."></textarea>
@@ -3330,7 +3330,7 @@
 
           <div id="igExtra"></div>
 
-          <div class="ig-note" id="igDemoNote">Perfil dos seguidores <b>hoje</b> — não muda com o período selecionado.</div>
+          <div class="ig-note" id="igDemoNote">Perfil dos seguidores <b>hoje</b>: não muda com o período selecionado.</div>
           <div class="cd-social-grid">
             <div class="panel" style="margin-bottom:0;">
               <div class="panel-head"><h3>Audiência por faixa etária</h3></div>
@@ -3379,7 +3379,7 @@
         <div id="insightsContent">
           <div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>
         </div>
-        <div class="footnote">Gerado por IA a partir dos dados reais da conta — só aparece aqui, no seu painel; o cliente não vê essa aba.</div>
+        <div class="footnote">Gerado por IA a partir dos dados reais da conta: só aparece aqui, no seu painel; o cliente não vê essa aba.</div>
       </div>
 
       <!-- ===== Aba: Contrato (vigência, renovação automática, alertas) ===== -->
@@ -3442,7 +3442,7 @@
         <div class="ih-list" id="cdHealthList"></div>
       </div>
       <div class="panel cd-model-panel">
-        <div class="panel-head"><div><h3>Modelo do painel de anúncios</h3><div class="panel-head-sub">Define quais plataformas aparecem na aba Anúncios deste cliente — nem todo cliente anuncia nas duas.</div></div></div>
+        <div class="panel-head"><div><h3>Modelo do painel de anúncios</h3><div class="panel-head-sub">Define quais plataformas aparecem na aba Anúncios deste cliente: nem todo cliente anuncia nas duas.</div></div></div>
         <div class="cd-model-row">
           <select class="modal-input" id="cdModelSelect" onchange="saveDashboardModel(this.value)">
             <option value="auto">Automático (o que estiver conectado)</option>
@@ -3467,7 +3467,7 @@
         <div class="integration-head">
           <div>
             <div class="integration-title">Integração Google Ads</div>
-            <div class="integration-sub">Conecta via OAuth da sua MCC — a conta do cliente precisa já estar vinculada a ela</div>
+            <div class="integration-sub">Conecta via OAuth da sua MCC: a conta do cliente precisa já estar vinculada a ela</div>
           </div>
           <span class="integration-status" id="googleStatusBadge"></span>
         </div>
@@ -3481,7 +3481,7 @@
         <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
           <button class="btn-add" onclick="connectGoogle()" id="connectGoogleBtn">Conectar e verificar</button>
         </div>
-        <div class="footnote" style="margin-top:4px;">Isso testa o ID de verdade contra a API do Google — só marca como conectado se a conta responder.</div>
+        <div class="footnote" style="margin-top:4px;">Isso testa o ID de verdade contra a API do Google: só marca como conectado se a conta responder.</div>
       </div>
 
       <div class="integration-card">
@@ -3519,7 +3519,7 @@
           <button class="btn-add" id="metaSaveBtn" onclick="saveMetaConnection()">Salvar</button>
           <button class="btn-cancel" id="metaSyncNowBtn" onclick="syncMetaNow()">Sincronizar agora</button>
         </div>
-        <div class="footnote" style="margin-top:4px;">"Salvar" confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder — e você continua nesta tela. "Sincronizar agora" consulta a Meta na hora; se der erro, o motivo aparece aqui. Se o token da Meta ainda não estiver configurado no servidor, os IDs ficam salvos como "pendente".</div>
+        <div class="footnote" style="margin-top:4px;">"Salvar" confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder. E você continua nesta tela. "Sincronizar agora" consulta a Meta na hora; se der erro, o motivo aparece aqui. Se o token da Meta ainda não estiver configurado no servidor, os IDs ficam salvos como "pendente".</div>
       </div>
 
       <div class="integration-card cnav-admin" id="gtmCard">
@@ -3548,7 +3548,7 @@
 
       <div class="integration-card">
         <div class="integration-title">Link para o cliente</div>
-        <div class="integration-sub">O cliente abre isso sem precisar de usuário nem senha — só visualização, só dos dados dele.</div>
+        <div class="integration-sub">O cliente abre isso sem precisar de usuário nem senha: só visualização, só dos dados dele.</div>
         <div class="share-link-row">
           <code id="shareLinkText">—</code>
           <button class="btn-cancel" onclick="copyShareLink()">Copiar link</button>
@@ -3559,7 +3559,7 @@
         <div class="integration-head">
           <div>
             <div class="integration-title">Feedback semanal</div>
-            <div class="integration-sub">Mensagem pronta pra copiar e enviar no WhatsApp — últimos 30 dias</div>
+            <div class="integration-sub">Mensagem pronta pra copiar e enviar no WhatsApp: últimos 30 dias</div>
           </div>
           <div class="fb-platform-toggle">
             <button class="fb-toggle-btn active" id="fbToggleMeta" onclick="setFeedbackPlatform('meta')">Meta Ads</button>
@@ -3572,7 +3572,7 @@
           <button class="btn-add" onclick="generateFeedback()" id="generateFeedbackBtn">Gerar mensagem</button>
           <button class="btn-cancel" onclick="copyFeedbackMessage()">📋 Copiar mensagem</button>
         </div>
-        <div class="footnote" style="margin-top:4px;">Gerado por IA a partir dos dados reais da conta, no mesmo tom que você já usa nas suas mensagens de feedback — sem nome de cliente, pronto pra você completar.</div>
+        <div class="footnote" style="margin-top:4px;">Gerado por IA a partir dos dados reais da conta, no mesmo tom que você já usa nas suas mensagens de feedback: sem nome de cliente, pronto pra você completar.</div>
       </div>
       </div>
       <!-- fim da aba Integrações -->
@@ -4030,7 +4030,7 @@
       theme: { mode: 'dark', accent: '#FF5A1E', logoUrl: '' },
       fields: [
         { id: fmUid(), type: 'short_text', label: 'Qual é o seu nome?', description: '', required: true, placeholder: '', mapTo: 'name', goTo: 'next' },
-        { id: fmUid(), type: 'phone', label: 'Qual é o seu WhatsApp?', description: 'Com DDD — é por lá que vamos falar com você.', required: true, placeholder: '', mapTo: 'phone', goTo: 'next' },
+        { id: fmUid(), type: 'phone', label: 'Qual é o seu WhatsApp?', description: 'Com DDD: é por lá que vamos falar com você.', required: true, placeholder: '', mapTo: 'phone', goTo: 'next' },
         { id: fmUid(), type: 'choice', label: 'Qual dessas situações melhor descreve o seu momento?', description: '', required: true, placeholder: '', mapTo: '', goTo: 'next', options: [
           { id: fmUid(), label: 'Quero começar agora', points: 40, qualification: 'neutral', goTo: 'next', metaEvent: '' },
           { id: fmUid(), label: 'Estou pesquisando para os próximos meses', points: 20, qualification: 'neutral', goTo: 'next', metaEvent: '' },
@@ -4090,7 +4090,7 @@
       k('Qualificados', intFmt(tot.qualified), `${fmPct(fmRate(tot.qualified, tot.completes))} das respostas`);
     const grid = document.getElementById('fmGrid');
     if (!fmForms.length) {
-      grid.innerHTML = `<div class="fm-empty"><div style="font-size:34px;">📝</div><h3>Nenhum formulário ainda</h3><p>Crie o primeiro — já vem com um modelo de nome, WhatsApp e uma pergunta de qualificação pra você adaptar.</p><button type="button" class="btn-add" onclick="fmCreate()">+ Criar formulário</button></div>`;
+      grid.innerHTML = `<div class="fm-empty"><div style="font-size:34px;">📝</div><h3>Nenhum formulário ainda</h3><p>Crie o primeiro. Já vem com um modelo de nome, WhatsApp e uma pergunta de qualificação pra você adaptar.</p><button type="button" class="btn-add" onclick="fmCreate()">+ Criar formulário</button></div>`;
       return;
     }
     grid.innerHTML = fmForms.map(f => {
@@ -4262,7 +4262,7 @@
     } else if (fmTab === 'endings') {
       body.innerHTML = `
         <div class="panel fm-panel">
-          <div class="panel-head"><div><h3>Tela final — lead aprovado</h3><div class="panel-head-sub">O que aparece depois do envio (ou pra todo mundo, se não houver qualificação).</div></div></div>
+          <div class="panel-head"><div><h3>Tela final: lead aprovado</h3><div class="panel-head-sub">O que aparece depois do envio (ou pra todo mundo, se não houver qualificação).</div></div></div>
           ${fmRow('Título', fmInput('ending.title'))}
           ${fmRow('Texto', fmInput('ending.text', { type:'textarea' }))}
           <div class="fm-2col">
@@ -4270,13 +4270,13 @@
             ${fmRow('Mensagem pronta do WhatsApp', fmInput('ending.whatsappText', { placeholder:'Oi! Acabei de responder o formulário.' }))}
           </div>
           <div class="fm-2col">
-            ${fmRow('Botão extra — texto', fmInput('ending.buttonText', { placeholder:'Ver o site' }))}
-            ${fmRow('Botão extra — link', fmInput('ending.buttonUrl', { placeholder:'https://…' }))}
+            ${fmRow('Botão extra: texto', fmInput('ending.buttonText', { placeholder:'Ver o site' }))}
+            ${fmRow('Botão extra: link', fmInput('ending.buttonUrl', { placeholder:'https://…' }))}
           </div>
           ${fmRow('Redirecionar automaticamente para', fmInput('ending.redirectUrl', { placeholder:'https://… (opcional)' }), 'Se preencher, o lead é levado pra esse link 2 segundos depois.')}
         </div>
         <div class="panel fm-panel">
-          <div class="panel-head"><div><h3>Tela final — lead desqualificado</h3><div class="panel-head-sub">Usada quando a pontuação fica abaixo do mínimo ou quando ele escolhe uma opção que desqualifica.</div></div></div>
+          <div class="panel-head"><div><h3>Tela final: lead desqualificado</h3><div class="panel-head-sub">Usada quando a pontuação fica abaixo do mínimo ou quando ele escolhe uma opção que desqualifica.</div></div></div>
           ${fmRow('Título', fmInput('endingDisqualified.title'))}
           ${fmRow('Texto', fmInput('endingDisqualified.text', { type:'textarea' }))}
           ${fmRow('Redirecionar automaticamente para', fmInput('endingDisqualified.redirectUrl', { placeholder:'https://… (opcional)' }))}
@@ -4288,7 +4288,7 @@
           <div class="panel-head"><div><h3>Pixel da Meta</h3><div class="panel-head-sub">Carregado só nesta página do formulário.</div></div></div>
           ${fmRow('ID do Pixel', fmInput('tracking.metaPixelId', { placeholder:'123456789012345' }))}
           <div class="fm-2col">
-            ${fmRow('Token da API de Conversões (opcional)', `<input class="modal-input" type="password" placeholder="${t.capiToken === '__keep__' ? '•••••• salvo — deixe assim pra manter' : 'Cole o token gerado no Gerenciador de Eventos'}" value="" oninput="fmSetPath('tracking.capiToken', this.value || '${t.capiToken === '__keep__' ? '__keep__' : ''}')">`, 'Manda o Lead também pelo servidor (não é bloqueado por navegador), sem contar em dobro.')}
+            ${fmRow('Token da API de Conversões (opcional)', `<input class="modal-input" type="password" placeholder="${t.capiToken === '__keep__' ? '•••••• salvo: deixe assim pra manter' : 'Cole o token gerado no Gerenciador de Eventos'}" value="" oninput="fmSetPath('tracking.capiToken', this.value || '${t.capiToken === '__keep__' ? '__keep__' : ''}')">`, 'Manda o Lead também pelo servidor (não é bloqueado por navegador), sem contar em dobro.')}
             ${fmRow('Código de teste (opcional)', fmInput('tracking.capiTestCode', { placeholder:'TEST12345' }), 'Do Gerenciador de Eventos → Testar eventos. Apague depois de testar.')}
           </div>
         </div>
@@ -4302,7 +4302,7 @@
             <div>${fmInput('tracking.disqualifiedEvent')}<span>quando envia e foi desqualificado</span></div>
           </div>
           ${fmInput('tracking.stepEvents', { type:'checkbox', label:'Disparar <b>EtapaFormulario</b> a cada pergunta respondida (pra ver onde as pessoas desistem)' })}
-          <div class="fm-help" style="margin-top:10px;">Cada opção de resposta também pode disparar um evento próprio — configure em <b>Perguntas</b> (campo "Evento do Meta" da opção).</div>
+          <div class="fm-help" style="margin-top:10px;">Cada opção de resposta também pode disparar um evento próprio: configure em <b>Perguntas</b> (campo "Evento do Meta" da opção).</div>
         </div>
         <div class="panel fm-panel">
           <div class="panel-head"><h3>Google</h3></div>
@@ -4315,12 +4315,12 @@
       const url = FORM_BASE_URL + f.slug;
       const embed = `<iframe src="${url}" style="width:100%;height:620px;border:0;border-radius:12px;" allow="clipboard-write"></iframe>`;
       body.innerHTML = `
-        ${f.status !== 'published' ? '<div class="offline-banner" style="display:flex; margin-bottom:14px;">⚠ Este formulário está em rascunho — o link só funciona depois de mudar pra "Publicado" e salvar.</div>' : ''}
+        ${f.status !== 'published' ? '<div class="offline-banner" style="display:flex; margin-bottom:14px;">⚠ Este formulário está em rascunho: o link só funciona depois de mudar pra "Publicado" e salvar.</div>' : ''}
         <div class="panel fm-panel">
           <div class="panel-head"><h3>Link do formulário</h3></div>
           <div class="fm-link-row"><code id="fmLinkText">${escapeHtml(url)}</code><button type="button" class="btn-add" onclick="fmCopy(document.getElementById('fmLinkText').textContent, this)">Copiar</button>${f.status === 'published' ? `<a class="btn-cancel" href="${escapeAttr(url)}" target="_blank" rel="noopener">Abrir ↗</a>` : ''}</div>
           ${fmRow('Endereço (depois de /f/)', `<input class="modal-input" value="${escapeAttr(f.slug)}" oninput="fmSetPath('slug', this.value)">`, 'Só letras, números e hífen. Mudar o endereço quebra links já divulgados.')}
-          <div class="fm-help" style="margin-top:12px;">Nos anúncios, acrescente as UTMs no link (ex.: <code>?utm_source=meta&amp;utm_campaign=nome</code>) — elas ficam salvas em cada resposta.</div>
+          <div class="fm-help" style="margin-top:12px;">Nos anúncios, acrescente as UTMs no link (ex.: <code>?utm_source=meta&amp;utm_campaign=nome</code>): elas ficam salvas em cada resposta.</div>
         </div>
         <div class="panel fm-panel">
           <div class="panel-head"><div><h3>Colocar dentro de um site</h3><div class="panel-head-sub">Cole este código na página onde o formulário deve aparecer.</div></div></div>
@@ -4341,9 +4341,9 @@
     const f = fmCurrent, w = [];
     const usesDisq = f.scoring.enabled || f.fields.some(x => (x.options || []).some(o => o.qualification === 'disqualifies' || o.goTo === 'end_disqualified'));
     if (!f.fields.some(x => x.type !== 'statement')) w.push(['err', 'Adicione pelo menos uma pergunta.']);
-    if (!f.fields.some(x => x.mapTo === 'phone' || x.mapTo === 'email' || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'O formulário não pede WhatsApp nem e-mail — o lead chega sem contato.']);
+    if (!f.fields.some(x => x.mapTo === 'phone' || x.mapTo === 'email' || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'O formulário não pede WhatsApp nem e-mail: o lead chega sem contato.']);
     if (usesDisq && !f.endingDisqualified.title) w.push(['err', 'Existe desqualificação, mas a tela final de desqualificado está sem título (aba Telas finais).']);
-    if (!f.privacyUrl && f.fields.some(x => x.mapTo || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'Coleta contato sem link de política de privacidade (LGPD) — recomendado configurar na aba Geral.']);
+    if (!f.privacyUrl && f.fields.some(x => x.mapTo || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'Coleta contato sem link de política de privacidade (LGPD): recomendado configurar na aba Geral.']);
     const ids = new Set(f.fields.map(x => x.id));
     f.fields.forEach((x, i) => (x.options || []).forEach(o => { if (o.goTo && !['next','end','end_disqualified'].includes(o.goTo) && !ids.has(o.goTo)) w.push(['err', `Pergunta ${i + 1}: a opção "${o.label}" leva pra uma pergunta que não existe mais.`]); }));
     return w;
@@ -4480,7 +4480,7 @@
     const rows = f.fields.map((x, i) => x.options ? `<tr><td><b>${i + 1}.</b> ${escapeHtml(x.label || 'Sem título')}</td><td>${x.options.map(o => `<span class="fm-pt ${o.qualification}">${escapeHtml(o.label)} · ${o.points || 0} pts${o.qualification === 'qualifies' ? ' · qualifica' : o.qualification === 'disqualifies' ? ' · desqualifica' : ''}</span>`).join(' ')}</td></tr>` : '').join('');
     document.getElementById('fmTabBody').innerHTML = `
       <div class="panel fm-panel">
-        <div class="panel-head"><div><h3>Regra de pontuação</h3><div class="panel-head-sub">Soma os pontos das opções escolhidas. O cálculo é feito no servidor — o lead não vê os pontos.</div></div></div>
+        <div class="panel-head"><div><h3>Regra de pontuação</h3><div class="panel-head-sub">Soma os pontos das opções escolhidas. O cálculo é feito no servidor: o lead não vê os pontos.</div></div></div>
         <div class="fm-inline">
           ${fmInput('scoring.enabled', { type:'checkbox', label:'Desqualificar quando a pontuação final for menor que', rerender:true })}
           <div style="width:110px;">${fmInput('scoring.minScore', { type:'number', rerender:true })}</div><span>pontos</span>
@@ -4630,7 +4630,7 @@
           : `<button type="button" class="btn-cancel" onclick="rptSetStatus('${r.id}', 'sent')">✓ Marcar como enviado</button>`}
         <button type="button" class="fm-icon-btn danger" title="Excluir" onclick="rptDelete('${r.id}')">🗑</button>
       </div>
-      ${!r.whatsapp ? '<div class="fm-help">Sem número de WhatsApp cadastrado — o botão abre o WhatsApp pra você escolher o contato ou o grupo.</div>' : ''}
+      ${!r.whatsapp ? '<div class="fm-help">Sem número de WhatsApp cadastrado: o botão abre o WhatsApp pra você escolher o contato ou o grupo.</div>' : ''}
     </div>`;
   }
 
@@ -4788,7 +4788,7 @@
             ${opt('todos', 'Espero que estejam todos bem!', s.wish)}${opt('individual', 'Espero que esteja tudo certo por aí!', s.wish)}${opt('esperamos', 'Esperamos que estejam todos bem!', s.wish)}</select></div>
         </div>
         <div class="fm-2col">
-          <div class="fm-row"><label class="modal-label">WhatsApp do cliente (opcional)</label><input class="modal-input" id="rsWhatsapp" value="${escapeAttr(s.whatsapp)}" placeholder="5511999999999" onchange="saveReportSchedule()"><div class="fm-help">Com DDI + DDD. Se for um grupo, deixe vazio — o botão abre o WhatsApp pra você escolher.</div></div>
+          <div class="fm-row"><label class="modal-label">WhatsApp do cliente (opcional)</label><input class="modal-input" id="rsWhatsapp" value="${escapeAttr(s.whatsapp)}" placeholder="5511999999999" onchange="saveReportSchedule()"><div class="fm-help">Com DDI + DDD. Se for um grupo, deixe vazio: o botão abre o WhatsApp pra você escolher.</div></div>
           <div class="fm-row"><label class="modal-label">E-mail do cliente (opcional)</label><input class="modal-input" id="rsEmail" value="${escapeAttr(s.email)}" placeholder="cliente@empresa.com" onchange="saveReportSchedule()"><div class="fm-help">${rptData.smtpConfigured ? 'Enviado automaticamente no dia agendado.' : 'O envio automático por e-mail é ativado quando o e-mail da agência for configurado no servidor.'}</div></div>
         </div>
         <label class="fm-check" style="margin-top:8px;"><input type="checkbox" id="rsLink" ${s.includeLink !== false ? 'checked' : ''} onchange="saveReportSchedule()"> Incluir o link do painel (onde o cliente vê tudo e baixa o PDF)</label>
@@ -4931,7 +4931,7 @@
       if (c !== null && t.results > 0) (c <= 0 ? good : (c > 10 ? warn : good)).push(`Custo por resultado de <b>${brl2(t.costPerResult)}</b>${c <= 0 ? `, <b>${f1(c)} mais barato</b>` : `, ${f1(c)} mais caro`} que no período anterior.`);
       const best = (meta.ads || []).filter(a => a.results > 0).sort((a, b) => b.results - a.results)[0];
       if (best) good.push(`Criativo destaque: <b>${escapeHtml(best.name)}</b>, com ${intFmt(best.results)} ${rl} a ${brl2(best.costPerResult)} cada.`);
-      if (t.frequency > 3) warn.push(`Frequência em ${dec2(t.frequency)}: o público já viu os anúncios muitas vezes — hora de renovar criativos.`);
+      if (t.frequency > 3) warn.push(`Frequência em ${dec2(t.frequency)}: o público já viu os anúncios muitas vezes. Hora de renovar criativos.`);
     }
     if (google) {
       const t = google.totals, p = google.previousTotals || {};
@@ -5150,7 +5150,7 @@
           </div>` : ''}
           ${terms.length ? `<div class="rp-card"><div class="rp-card-t">Termos de pesquisa com mais investimento</div>
             ${rpTable(['Termo pesquisado', 'Cliques', 'CTR', 'Custo', 'Conv.', 'Custo/conv.'], terms.map(x => [escapeHtml(x.term), intFmt(x.clicks), pct2(x.ctr), brl2(x.spend), convFmt(x.conversions), x.conversions ? brl2(x.costPerConv) : '—']))}</div>
-            ${waste.length ? `<div class="rp-box warn"><div class="rp-box-t">⚑ Termos sem conversão</div>${waste.length} ${waste.length === 1 ? 'termo gastou' : 'termos gastaram'} ${brl2(waste.reduce((s2, x) => s2 + x.spend, 0))} sem converter — são candidatos a palavras-chave negativas.</div>` : ''}` : ''}
+            ${waste.length ? `<div class="rp-box warn"><div class="rp-box-t">⚑ Termos sem conversão</div>${waste.length} ${waste.length === 1 ? 'termo gastou' : 'termos gastaram'} ${brl2(waste.reduce((s2, x) => s2 + x.spend, 0))} sem converter: são candidatos a palavras-chave negativas.</div>` : ''}` : ''}
         `, client, n++, { section:'Google Ads · Pesquisa' }));
       }
     }
@@ -5407,7 +5407,7 @@
           <span class="fm-status ${auth ? 'published' : ''}">${auth ? 'Acesso ativo' : 'Sem acesso'}</span></div>
         ${created ? `
           <div class="access-new">
-            <div class="access-new-title">✓ Acesso ${auth && created.renewed ? 'atualizado' : 'criado'} — copie agora, a senha não aparece de novo</div>
+            <div class="access-new-title">✓ Acesso ${auth && created.renewed ? 'atualizado' : 'criado'}: copie agora, a senha não aparece de novo</div>
             <div class="access-cred"><span>Usuário</span><code>${escapeHtml(created.username)}</code></div>
             <div class="access-cred"><span>Senha</span><code>${escapeHtml(created.password)}</code></div>
             <div class="fm-link-row" style="margin-top:10px;">
@@ -5422,7 +5422,7 @@
             <button type="button" class="btn-cancel" onclick="createClientAccess(true)">🔄 Gerar nova senha</button>
             <button type="button" class="btn-cancel danger" onclick="revokeClientAccess()">⛔ Bloquear acesso</button>
           </div>
-          <div class="fm-help">Gerar nova senha desconecta o cliente na hora — use se a senha vazar ou ele esquecer.</div>`
+          <div class="fm-help">Gerar nova senha desconecta o cliente na hora: use se a senha vazar ou ele esquecer.</div>`
         : `<p class="fm-help" style="margin-bottom:12px;">Este cliente ainda não tem login. O usuário é criado a partir do nome e a senha é gerada automaticamente (letras e números, diferente pra cada cliente).</p>
            <button type="button" class="btn-add" onclick="createClientAccess(false)">+ Criar acesso do cliente</button>`}
       </div>`;
@@ -5431,7 +5431,7 @@
         <span><b>${it.label}</b>${it.desc ? `<small>${it.desc}</small>` : ''}</span></label>`;
     const visCard = `
       <div class="panel fm-panel">
-        <div class="panel-head"><div><h3>Visibilidade</h3><div class="panel-head-sub">O que este cliente pode ver — no login dele e no link de compartilhamento. Você (agência) sempre vê tudo.</div></div><span class="cd-model-status" id="visStatus"></span></div>
+        <div class="panel-head"><div><h3>Visibilidade</h3><div class="panel-head-sub">O que este cliente pode ver: no login dele e no link de compartilhamento. Você (agência) sempre vê tudo.</div></div><span class="cd-model-status" id="visStatus"></span></div>
         ${VIS_GROUPS.map(g => visRow(g) + (g.children || []).map(c => visRow({ ...c, parent: g.key }, true)).join('')).join('')}
         <div class="fm-help" style="margin-top:12px;">Contrato, histórico, observações, integrações e o acesso nunca aparecem pro cliente.</div>
       </div>`;
@@ -5968,7 +5968,7 @@
     sub.textContent = `Últimos ${days} dias (${dateBr(range.from)} – ${dateBr(range.to)}) · ${accounts.length} cliente${accounts.length === 1 ? '' : 's'} selecionado${accounts.length === 1 ? '' : 's'}${anyMock ? ' · inclui dados de exemplo' : ''}`;
 
     if (!accounts.length) {
-      document.getElementById('ovKpis').innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhum cliente selecionado — escolha os clientes no botão "📁" acima.</div>';
+      document.getElementById('ovKpis').innerHTML = '<div class="footnote" style="border:none; padding:0;">Nenhum cliente selecionado: escolha os clientes no botão "📁" acima.</div>';
     } else {
       document.getElementById('ovKpis').innerHTML = [
         kpi2Html({ label:'Investimento total', value:T.spend, prev:P.spend, fmt:brl2 }),
@@ -6230,7 +6230,7 @@
     days.forEach((d, i) => {
       const x = padL + i * slot + (slot - bw) / 2;
       const yG = y(d.google), yM = y(d.google + d.meta);
-      const tip = `<title>${dateBr(d.date)} — Meta: ${brl2(d.meta)} · Google: ${brl2(d.google)} · Total: ${brl2(d.meta + d.google)}</title>`;
+      const tip = `<title>${dateBr(d.date)} · Meta: ${brl2(d.meta)} · Google: ${brl2(d.google)} · Total: ${brl2(d.meta + d.google)}</title>`;
       if (d.google > 0) bars += `<rect x="${x.toFixed(1)}" y="${yG.toFixed(1)}" width="${bw.toFixed(1)}" height="${(padT + plotH - yG).toFixed(1)}" fill="#F5A524" rx="2">${tip}</rect>`;
       if (d.meta > 0) bars += `<rect x="${x.toFixed(1)}" y="${yM.toFixed(1)}" width="${bw.toFixed(1)}" height="${(yG - yM).toFixed(1)}" fill="#4C7EFF" rx="2">${tip}</rect>`;
       if ((i % every === 0 && (n - 1 - i >= every * 0.6 || i === 0)) || i === n - 1) xl += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text-dim)">${dateBr(d.date).slice(0,5)}</text>`;
@@ -6415,7 +6415,7 @@
     const highlights = [
       { icon:'💰', title:`Investimento concentrado em "${topCampaign.name}"`, sub:`${topCampaign.spend} do total investido no período` },
       { icon:'📈', title:`Anúncio com melhor CTR: "${bestCtrAd.name}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${bestCtrAd.campaign}` },
-      { icon:'⚡', title:`Menor custo por clique: "${topAd.name}"`, sub:`${topAd.cpc} por clique — vale testar escalar o orçamento aqui` },
+      { icon:'⚡', title:`Menor custo por clique: "${topAd.name}"`, sub:`${topAd.cpc} por clique: vale testar escalar o orçamento aqui` },
     ];
     document.getElementById('metaHighlights').innerHTML = highlights.map(h => `
       <div class="highlight-card">
@@ -6602,8 +6602,8 @@
     if (keywords.length) {
       const bestQsKw = [...keywords].sort((a,b) => b.qs - a.qs)[0];
       const worstQsKw = [...keywords].sort((a,b) => a.qs - b.qs)[0];
-      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">✅</div><div class="highlight-title">Melhor Quality Score: "${bestQsKw.kw}"</div><div class="highlight-sub">${bestQsKw.qs}/10 — CPC de ${bestQsKw.cpc}, bem abaixo da média da conta</div></div>`;
-      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">⚠</div><div class="highlight-title">Quality Score mais baixo: "${worstQsKw.kw}"</div><div class="highlight-sub">${worstQsKw.qs}/10 — CPC de ${worstQsKw.cpc}, a mais cara da conta. Vale revisar correspondência e copy.</div></div>`;
+      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">✅</div><div class="highlight-title">Melhor Quality Score: "${bestQsKw.kw}"</div><div class="highlight-sub">${bestQsKw.qs}/10: CPC de ${bestQsKw.cpc}, bem abaixo da média da conta</div></div>`;
+      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">⚠</div><div class="highlight-title">Quality Score mais baixo: "${worstQsKw.kw}"</div><div class="highlight-sub">${worstQsKw.qs}/10: CPC de ${worstQsKw.cpc}, a mais cara da conta. Vale revisar correspondência e copy.</div></div>`;
     }
     document.getElementById('googleHighlights').innerHTML = highlightsHtml;
 
@@ -6757,21 +6757,21 @@
   const metaInsightsData = [
     {
       campaign: 'Alcance de marca · Q3', priority: 'alta',
-      targeting: 'Público "Interesse amplo" está disperso demais — CPC baixo (R$ 0,88) mas quase sem conversão. Sugiro criar um público personalizado a partir de quem engajou com o perfil no Instagram nos últimos 90 dias, e testar lookalike 1% em cima desse público em vez de interesse amplo.',
-      adLevel: 'O vídeo institucional de 15s tem CTR 25% maior que o estático (1,5% vs 1,2%), mas nenhum dos dois converte — coerente com objetivo de reconhecimento. Sugiro medir esta campanha por alcance/frequência, não por CPA, e migrar parte da verba pro vídeo.',
-      copy: 'O estático "Logo + tagline" não tem CTA nem proposta de valor — só marca. Testar uma variação com um benefício claro (ex: "Atendimento em até 24h") pode elevar o CTR sem perder o objetivo de marca.',
+      targeting: 'Público "Interesse amplo" está disperso demais: CPC baixo (R$ 0,88) mas quase sem conversão. Sugiro criar um público personalizado a partir de quem engajou com o perfil no Instagram nos últimos 90 dias, e testar lookalike 1% em cima desse público em vez de interesse amplo.',
+      adLevel: 'O vídeo institucional de 15s tem CTR 25% maior que o estático (1,5% vs 1,2%), mas nenhum dos dois converte: coerente com objetivo de reconhecimento. Sugiro medir esta campanha por alcance/frequência, não por CPA, e migrar parte da verba pro vídeo.',
+      copy: 'O estático "Logo + tagline" não tem CTA nem proposta de valor: só marca. Testar uma variação com um benefício claro (ex: "Atendimento em até 24h") pode elevar o CTR sem perder o objetivo de marca.',
     },
     {
       campaign: 'Prospecção · Lookalike 1%', priority: 'media',
-      targeting: 'O lookalike 1% já roda há tempo e pode estar saturando — CPC subiu pra R$ 1,95. Sugiro testar lookalike 2-3% em paralelo e comparar CPA nas próximas 2 semanas antes de decidir qual escala.',
-      adLevel: '"Estático · Prova social" tem CPC 18% mais alto que o carrossel (R$ 2,12 vs R$ 1,80) com metade da conversão. Vale pausar ou reformular o criativo — pode ser saturação de audiência ou o anúncio em si.',
+      targeting: 'O lookalike 1% já roda há tempo e pode estar saturando: CPC subiu pra R$ 1,95. Sugiro testar lookalike 2-3% em paralelo e comparar CPA nas próximas 2 semanas antes de decidir qual escala.',
+      adLevel: '"Estático · Prova social" tem CPC 18% mais alto que o carrossel (R$ 2,12 vs R$ 1,80) com metade da conversão. Vale pausar ou reformular o criativo: pode ser saturação de audiência ou o anúncio em si.',
       copy: 'A copy do estático é genérica ("prova social" sem especificidade). Testar depoimento real com nome e resultado numérico costuma performar melhor que texto institucional.',
     },
     {
       campaign: 'Catálogo · Retarget carrinho', priority: 'baixa',
-      targeting: 'Carrinho abandonado 7 dias está 11% acima da meta — manter. Sugiro testar uma janela mais curta (3 dias) em paralelo, pra capturar intenção mais quente separadamente e comparar CPA.',
+      targeting: 'Carrinho abandonado 7 dias está 11% acima da meta: manter. Sugiro testar uma janela mais curta (3 dias) em paralelo, pra capturar intenção mais quente separadamente e comparar CPA.',
       adLevel: 'Só existe um anúncio ativo nesta campanha. Mesmo indo bem, criar 1-2 variações de imagem agora evita fadiga de anúncio (queda de CTR por repetição) daqui a algumas semanas.',
-      copy: 'Testar urgência ("frete grátis nas próximas 24h") em cima do que já funciona — cuidado pra não forçar urgência falsa, isso desgasta a marca a médio prazo.',
+      copy: 'Testar urgência ("frete grátis nas próximas 24h") em cima do que já funciona: cuidado pra não forçar urgência falsa, isso desgasta a marca a médio prazo.',
     },
   ];
 
@@ -6803,15 +6803,15 @@
   const googleInsightsData = [
     {
       campaign: 'Palavra-chave "ortodontista" (ampla)', priority: 'alta',
-      targeting: 'Correspondência ampla com Quality Score 5 e CTR de só 2,5% — provavelmente atraindo buscas irrelevantes (ex: "curso de ortodontia", "ortodontista salário"). Sugiro migrar pra frase ou exata e revisar o relatório de termos de pesquisa pra adicionar negativas.',
-      adLevel: 'CPC de R$ 2,64 é o mais alto da conta — sinal de baixa relevância anúncio-palavra-chave. Vale criar um grupo de anúncios específico só pra essa palavra, com copy dedicada.',
+      targeting: 'Correspondência ampla com Quality Score 5 e CTR de só 2,5%: provavelmente atraindo buscas irrelevantes (ex: "curso de ortodontia", "ortodontista salário"). Sugiro migrar pra frase ou exata e revisar o relatório de termos de pesquisa pra adicionar negativas.',
+      adLevel: 'CPC de R$ 2,64 é o mais alto da conta: sinal de baixa relevância anúncio-palavra-chave. Vale criar um grupo de anúncios específico só pra essa palavra, com copy dedicada.',
       copy: 'O anúncio ligado a essa palavra parece genérico. Testar um título que repita o termo de busca ("Ortodontista em [cidade]") tende a subir o Quality Score e baixar o CPC.',
     },
     {
       campaign: 'Performance Max · Catálogo', priority: 'media',
-      targeting: 'CTR de 3,2% é saudável, mas só 8 conversões pro investimento — indício de sinais de público fracos alimentando o Performance Max. Sugiro revisar a lista de clientes/eventos de conversão enviados como sinal, e checar se o feed de produtos está completo (imagem, preço, disponibilidade).',
-      adLevel: 'Sem visibilidade por criativo individual nesse tipo de campanha — recomendo isolar 2-3 grupos de produtos em campanhas Standard Shopping por 2 semanas pra comparar performance com mais controle.',
-      copy: 'Títulos e descrições vêm do feed de produtos — revisar se estão otimizados (nome do produto + atributo chave) tem mais impacto aqui do que ajustar o texto do anúncio em si.',
+      targeting: 'CTR de 3,2% é saudável, mas só 8 conversões pro investimento: indício de sinais de público fracos alimentando o Performance Max. Sugiro revisar a lista de clientes/eventos de conversão enviados como sinal, e checar se o feed de produtos está completo (imagem, preço, disponibilidade).',
+      adLevel: 'Sem visibilidade por criativo individual nesse tipo de campanha: recomendo isolar 2-3 grupos de produtos em campanhas Standard Shopping por 2 semanas pra comparar performance com mais controle.',
+      copy: 'Títulos e descrições vêm do feed de produtos: revisar se estão otimizados (nome do produto + atributo chave) tem mais impacto aqui do que ajustar o texto do anúncio em si.',
     },
     {
       campaign: 'Leilão · concorrente-a.com.br', priority: 'media',
@@ -7225,7 +7225,7 @@
       .map(c => {
         const name = rawAccountsById[c.accountId]?.name || 'Cliente';
         const label = c.status === 'vencido' ? `venceu há ${Math.abs(c.daysLeft)} dia(s)` : `vence em ${c.daysLeft} dia(s)`;
-        return `<span class="contract-alert-item" onclick="openClientDetail('${escapeHtml(c.accountId)}','contract')">${escapeHtml(name)} — ${label}</span>`;
+        return `<span class="contract-alert-item" onclick="openClientDetail('${escapeHtml(c.accountId)}','contract')">${escapeHtml(name)}: ${label}</span>`;
       }).join(' · ');
     banner.innerHTML = `<span class="contract-alert-banner-title">⚠ ${alerts.length} contrato(s) precisando de atenção</span><span>${items}</span>`;
     banner.style.display = 'flex';
@@ -7359,7 +7359,7 @@
     wrap.innerHTML = contracts.map(c => `
       <div class="contract-card">
         <div class="contract-card-head">
-          <span class="contract-card-title">Contrato · ${fmtDateBR(c.startDate)} — ${fmtDateBR(c.endDate)}</span>
+          <span class="contract-card-title">Contrato · ${fmtDateBR(c.startDate)} a ${fmtDateBR(c.endDate)}</span>
           ${contractStatusChipHtml(c)}
         </div>
         <div class="contract-card-grid">
@@ -7407,7 +7407,7 @@
     const account = rawAccountsById[currentClientId];
     const log = (account?.activityLog || []).slice().reverse();
     if (!log.length) {
-      wrap.innerHTML = `<div class="cd-empty">Nenhum registro ainda — use o campo acima pra começar o histórico desse cliente.</div>`;
+      wrap.innerHTML = `<div class="cd-empty">Nenhum registro ainda: use o campo acima pra começar o histórico desse cliente.</div>`;
       return;
     }
     wrap.innerHTML = log.map(entry => `
@@ -7467,7 +7467,7 @@
     if (googleConnected) connRows.push({ p:'google', name:'Google Ads', sub: account.google?.customerId || '—', status:'ativo' });
     if (metaStatus === 'connected' || metaStatus === 'pending') connRows.push({ p:'meta', name:'Meta Ads', sub: account.meta?.adAccountId || '—', status: metaStatus === 'connected' ? 'ativo' : 'onboarding' });
     if (igConnected) connRows.push({ p:'ig', name:'Instagram', sub: igApi.username ? '@' + igApi.username : (account.meta?.igBusinessId || '—'), status:'ativo' });
-    else if (igApi.status === 'error') connRows.push({ p:'ig', name:'Instagram', sub: 'não conectado — veja o motivo no card da Meta', status:'pausado' });
+    else if (igApi.status === 'error') connRows.push({ p:'ig', name:'Instagram', sub: 'não conectado: veja o motivo no card da Meta', status:'pausado' });
     const connTbody = document.getElementById('cdConnAccountsTable');
     connTbody.innerHTML = connRows.length
       ? connRows.map(r => `
@@ -7477,7 +7477,7 @@
           <td style="color:var(--text-dim);">${r.sub}</td>
           <td></td>
         </tr>`).join('')
-      : `<tr class="conn-empty-row"><td colspan="4">Nenhuma conta conectada ainda — use os cards abaixo pra conectar.</td></tr>`;
+      : `<tr class="conn-empty-row"><td colspan="4">Nenhuma conta conectada ainda: use os cards abaixo pra conectar.</td></tr>`;
 
     const integItems = [
       { p:'google', name:'Google Ads', connected: googleConnected, field:'googleCustomerIdInput' },
@@ -9152,7 +9152,7 @@
         <div class="table-scroll" id="mRegions"></div>
       </div>
       <div class="panel" data-vis="ads_creatives">
-        <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">Troque o critério pra reordenar — a faixa colorida mostra a métrica escolhida</div></div></div>
+        <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">Troque o critério pra reordenar: a faixa colorida mostra a métrica escolhida</div></div></div>
         <div class="chip-row"><span class="chip-row-label">Ordenar por</span><div class="chips" id="metaCreativeChips"></div></div>
         <div id="metaCreativeGrid"></div>
       </div>
@@ -9303,7 +9303,7 @@
         <div class="wd-label">${x.l}</div>
         <div class="wd-sub">${wdKey === 'results' ? (x.results ? brl2(x.spend / x.results) : '—') : ''}</div>
       </div>`).join('')}</div>
-      <div class="footnote" style="border:none; padding:8px 0 0;">${wdKey === 'results' ? `Embaixo: custo por resultado. Melhor dia: <b>${best.l}</b>.` : 'Sem resultados no período — mostrando investimento.'}</div>`;
+      <div class="footnote" style="border:none; padding:8px 0 0;">${wdKey === 'results' ? `Embaixo: custo por resultado. Melhor dia: <b>${best.l}</b>.` : 'Sem resultados no período: mostrando investimento.'}</div>`;
 
     // Posicionamentos e regiões
     const bdCols = (first) => [
@@ -9586,7 +9586,7 @@
         </div>
         ${items.map(a => alertRowHtml(rec, a)).join('')}
       </div>`).join('')
-      : `<div class="al-empty">${alertsFilter === 'snoozed' ? 'Nenhum alerta silenciado.' : '✓ Tudo certo — nenhuma conta com problema agora.'}</div>`)
+      : `<div class="al-empty">${alertsFilter === 'snoozed' ? 'Nenhum alerta silenciado.' : '✓ Tudo certo: nenhuma conta com problema agora.'}</div>`)
       + (alertsFilter !== 'snoozed' && okCount ? `<div class="al-ok">✓ ${okCount} ${okCount === 1 ? 'conta sem' : 'contas sem'} problemas</div>` : '')
       + (errs.length ? `<div class="al-errs">Não consegui conferir: ${errs.map(r => `<b>${escapeHtml(r.name)}</b> (${r.errors.map(e => `${e.platform === 'google' ? 'Google' : 'Meta'}: ${escapeHtml(e.message)}`).join('; ')})`).join(' · ')}</div>` : '');
   }
@@ -9598,7 +9598,7 @@
     const clients = [...new Set(all.map(a => a.c.name))];
     el.className = `al-banner${crit ? ' crit' : ''}`;
     el.style.display = '';
-    el.innerHTML = `<div><b>${crit ? `⚠ ${crit} ${crit === 1 ? 'alerta crítico' : 'alertas críticos'}` : `${all.length} ${all.length === 1 ? 'alerta' : 'alertas'}`}</b> em ${clients.length} ${clients.length === 1 ? 'cliente' : 'clientes'}: ${all.slice(0, 3).map(a => `${escapeHtml(a.c.name)} — ${escapeHtml(a.title)}`).join(' · ')}${all.length > 3 ? ' …' : ''}</div>
+    el.innerHTML = `<div><b>${crit ? `⚠ ${crit} ${crit === 1 ? 'alerta crítico' : 'alertas críticos'}` : `${all.length} ${all.length === 1 ? 'alerta' : 'alertas'}`}</b> em ${clients.length} ${clients.length === 1 ? 'cliente' : 'clientes'}: ${all.slice(0, 3).map(a => `${escapeHtml(a.c.name)}: ${escapeHtml(a.title)}`).join(' · ')}${all.length > 3 ? ' …' : ''}</div>
       <button type="button" class="al-btn" onclick="openAlertsView()">Ver alertas</button>`;
   }
 
@@ -9632,7 +9632,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
       rawAccountsById[currentClientId] = data;
-      status.textContent = '✓ Salvo — a aba Anúncios já segue esse modelo.';
+      status.textContent = '✓ Salvo: a aba Anúncios já segue esse modelo.';
       cdPlatformView = model === 'combined' ? 'all' : cdPlatformView;
       loadClientDashboard();
     } catch (err) {
@@ -9959,7 +9959,7 @@
     { id: 'spend', label: 'Investimento', kind: 'currency', get: t => t.spend, fmt: v => brl(v), deltaKey: 'spend', desc: 'Quanto você gastou em anúncios no período.' },
     { id: 'impressions', label: 'Impressões', kind: 'count', get: t => t.impressions, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'impressions', desc: 'Quantas vezes seu anúncio foi exibido.' },
     { id: 'clicks', label: 'Cliques', kind: 'count', get: t => t.clicks, fmt: v => (v || 0).toLocaleString('pt-BR'), deltaKey: 'clicks', desc: 'Quantas vezes as pessoas clicaram no seu anúncio.' },
-    { id: 'ctr', label: 'CTR (Taxa de Cliques)', kind: 'percent', get: t => t.ctr, fmt: v => pct1(v), deltaKey: 'ctr', desc: '% de cliques a cada 100 impressões — mede o quanto seu anúncio atrai atenção.' },
+    { id: 'ctr', label: 'CTR (Taxa de Cliques)', kind: 'percent', get: t => t.ctr, fmt: v => pct1(v), deltaKey: 'ctr', desc: '% de cliques a cada 100 impressões: mede o quanto seu anúncio atrai atenção.' },
     { id: 'cpm', label: 'CPM médio', kind: 'currency', get: t => t.cpm, fmt: v => brl(v), deltaKey: 'cpm', desc: 'Quanto você paga, em média, a cada 1.000 impressões.' },
     { id: 'cpc', label: 'CPC médio', kind: 'currency', get: t => t.cpc, fmt: v => brl(v), deltaKey: 'cpc', desc: 'Quanto você paga, em média, por cada clique.' },
     { id: 'conversions', label: 'Conversões', kind: 'decimalCount', get: t => t.conversions, fmt: v => convFmt(v), deltaKey: 'conversions', desc: 'Ações valiosas (compra, contato, cadastro) atribuídas aos seus anúncios.' },
@@ -10100,10 +10100,10 @@
         <div class="kpi-value">${val}</div>
         <div class="kpi-prev">Anterior: ${prevVal === undefined || prevVal === null ? '—' : m.fmt(prevVal || 0)}</div>
         <div class="kpi-delta">${deltaHtml(deltaPct, invert)}</div>
-        <div class="kpi-hint">${isActive ? 'No gráfico — clique pra remover' : 'Clique pra ver no gráfico'}</div>
+        <div class="kpi-hint">${isActive ? 'No gráfico: clique pra remover' : 'Clique pra ver no gráfico'}</div>
       </div>`;
     });
-    grid.innerHTML = cards.length ? cards.join('') : '<div class="footnote" style="border:none; padding:0;">Nenhuma métrica selecionada — clique em "Personalizar métricas" pra escolher o que aparece aqui.</div>';
+    grid.innerHTML = cards.length ? cards.join('') : '<div class="footnote" style="border:none; padding:0;">Nenhuma métrica selecionada: clique em "Personalizar métricas" pra escolher o que aparece aqui.</div>';
 
     const activeDefs = allDefs.filter(m => active.includes(m.id))
       .map(m => ({ id: m.id, label: m.label, color: cdColorFor(m.id), fmt: m.fmt, get: m.get }));
@@ -10150,7 +10150,7 @@
       <div class="metrics-picker-title">Métricas padrão</div>
       ${baseHtml}
       <div class="metrics-picker-title">Suas métricas personalizadas</div>
-      ${customHtml || '<span class="footnote" style="border:none; padding:0; grid-column:1/-1;">Nenhuma ainda — crie a sua abaixo.</span>'}
+      ${customHtml || '<span class="footnote" style="border:none; padding:0; grid-column:1/-1;">Nenhuma ainda: crie a sua abaixo.</span>'}
       <button type="button" class="btn-add-metric" onclick="toggleCustomMetricForm(event)">+ Criar métrica personalizada</button>
       <div class="custom-metric-form" id="cdCustomMetricForm" style="display:none;" onclick="event.stopPropagation()">
         <input type="text" id="cmName" placeholder="Nome (ex: Custo por Lead)">
@@ -10265,9 +10265,9 @@
     const devColors = { Mobile:CH_BLUE, Celular:CH_BLUE, Computador:CH_GREEN, Desktop:CH_GREEN, Tablet:CH_AMBER };
     const devItems = key => dev.map((d, i) => ({ label:d.label, value:d[key] || 0, color: devColors[d.label] || DONUT_COLORS[i % DONUT_COLORS.length] }));
     document.getElementById('cdDeviceDonuts').innerHTML = dev.length
-      ? donutCardHtml('Dispositivos — Custo', devItems('spend'), brl) +
-        donutCardHtml('Dispositivos — Cliques', devItems('clicks'), intFmt) +
-        donutCardHtml('Dispositivos — Conversões', devItems('conversions'), convFmt)
+      ? donutCardHtml('Dispositivos: Custo', devItems('spend'), brl) +
+        donutCardHtml('Dispositivos: Cliques', devItems('clicks'), intFmt) +
+        donutCardHtml('Dispositivos: Conversões', devItems('conversions'), convFmt)
       : '';
 
     const renderBreakdownGrid = (elId, items, emptyMsg) => {
@@ -10295,8 +10295,8 @@
     if (!is) return '';
     const seg = (v, c, label) => v > 0.5 ? `<div style="width:${v}%; background:${c};" title="${label}: ${pct1(v)}">${v >= 9 ? pct1(v) : ''}</div>` : '';
     const advice = is.lostBudget >= 15
-      ? `💡 ${pct1(is.lostBudget)} das buscas ficaram sem o anúncio por falta de orçamento — aumentar a verba nas campanhas mais eficientes traz mais cliques no mesmo custo.`
-      : is.lostRank >= 25 ? `💡 ${pct1(is.lostRank)} perdido por classificação — melhorar o índice de qualidade (anúncio e página) e ajustar lances ajuda a aparecer mais.`
+      ? `💡 ${pct1(is.lostBudget)} das buscas ficaram sem o anúncio por falta de orçamento: aumentar a verba nas campanhas mais eficientes traz mais cliques no mesmo custo.`
+      : is.lostRank >= 25 ? `💡 ${pct1(is.lostRank)} perdido por classificação: melhorar o índice de qualidade (anúncio e página) e ajustar lances ajuda a aparecer mais.`
       : '✓ O anúncio está aparecendo na maior parte das buscas possíveis.';
     const rows = (is.campaigns || []).map(c => `<tr><td>${escapeHtml(c.name)}</td><td class="num"><b>${pct1(c.share)}</b></td><td class="num">${pct1(c.lostBudget)}</td><td class="num">${pct1(c.lostRank)}</td></tr>`).join('');
     return `<div class="panel"><div class="panel-head"><div><h3>Parcela de impressões</h3><div class="panel-head-sub">Das vezes em que o anúncio podia aparecer na pesquisa do Google, quantas ele apareceu</div></div></div>
@@ -10315,7 +10315,7 @@
     const waste = terms.filter(t => t.spend > 0 && !t.conversions);
     const wasteSpend = waste.reduce((s, t) => s + t.spend, 0);
     const cols = [
-      { key:'term', label:'Termo pesquisado', sortVal:t => t.term, cell:t => `<div class="cell-main">${escapeHtml(t.term)}${t.spend > 0 && !t.conversions && t.clicks >= 5 ? '<span class="st-flag" title="Gastou e não converteu — candidato a palavra-chave negativa">sem conversão</span>' : ''}</div><div class="cell-sub">${escapeHtml(t.campaign || '')}</div>` },
+      { key:'term', label:'Termo pesquisado', sortVal:t => t.term, cell:t => `<div class="cell-main">${escapeHtml(t.term)}${t.spend > 0 && !t.conversions && t.clicks >= 5 ? '<span class="st-flag" title="Gastou e não converteu: candidato a palavra-chave negativa">sem conversão</span>' : ''}</div><div class="cell-sub">${escapeHtml(t.campaign || '')}</div>` },
       { key:'impressions', label:'Impr.', num:true, cell:t => intFmt(t.impressions) },
       { key:'clicks', label:'Cliques', num:true, cell:t => intFmt(t.clicks) },
       { key:'ctr', label:'CTR', num:true, cell:t => pct2(t.ctr) },
@@ -10324,7 +10324,7 @@
       { key:'costPerConv', label:'Custo/conv.', num:true, sortVal:t => t.conversions ? t.costPerConv : 1e12, cell:t => t.conversions ? brl2(t.costPerConv) : '—' },
     ];
     el.innerHTML = `<div class="panel"><div class="panel-head"><div><h3>Termos de pesquisa</h3><div class="panel-head-sub">O que as pessoas digitaram no Google antes de clicar · clique num cabeçalho pra reordenar</div></div></div>
-      ${waste.length ? `<div class="footnote" style="border:none; padding:0 0 10px;">⚠ ${waste.length} ${waste.length === 1 ? 'termo gastou' : 'termos gastaram'} ${brl2(wasteSpend)} sem nenhuma conversão — bons candidatos a palavras-chave negativas.</div>` : ''}
+      ${waste.length ? `<div class="footnote" style="border:none; padding:0 0 10px;">⚠ ${waste.length} ${waste.length === 1 ? 'termo gastou' : 'termos gastaram'} ${brl2(wasteSpend)} sem nenhuma conversão: bons candidatos a palavras-chave negativas.</div>` : ''}
       <div class="table-scroll" id="gTermsWrap"></div></div>`;
     sortRenderers.gTerms = () => {
       const w = document.getElementById('gTermsWrap');
@@ -10398,16 +10398,16 @@
     const when = ig.checkedAt ? ` · conferido em ${new Date(ig.checkedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}` : '';
     if (ig.status === 'connected') {
       box.className = 'meta-sync-box ok';
-      box.innerHTML = `<div><b>Instagram conectado</b>${ig.username ? ` — @${escapeHtml(ig.username)}` : ''}${escapeHtml(when)}</div>`;
+      box.innerHTML = `<div><b>Instagram conectado</b>${ig.username ? `: @${escapeHtml(ig.username)}` : ''}${escapeHtml(when)}</div>`;
     } else if (ig.status === 'error') {
       box.className = 'meta-sync-box err';
       box.innerHTML = `<div><b>Instagram não conectado</b>${escapeHtml(when)}</div><div>Motivo: ${escapeHtml(ig.error || 'a Meta não informou o motivo.')}</div><span class="hint">Depois de corrigir, clique em Salvar (ou Sincronizar agora) pra conferir de novo.</span>`;
     } else if (ig.status === 'pending') {
       box.className = 'meta-sync-box';
-      box.innerHTML = `<div><b>Instagram pendente</b> — ${escapeHtml(ig.error || 'ainda não conferido.')}</div>`;
+      box.innerHTML = `<div><b>Instagram pendente</b>: ${escapeHtml(ig.error || 'ainda não conferido.')}</div>`;
     } else if (account.meta?.pageId || account.meta?.igBusinessId) {
       box.className = 'meta-sync-box';
-      box.innerHTML = '<div><b>Instagram ainda não conferido</b> — clique em Salvar pra o sistema verificar e mostrar o motivo se não conectar.</div>';
+      box.innerHTML = '<div><b>Instagram ainda não conferido</b>: clique em Salvar pra o sistema verificar e mostrar o motivo se não conectar.</div>';
     } else { box.style.display = 'none'; return; }
     box.style.display = 'block';
   }
@@ -10475,7 +10475,7 @@
       }
       if (sync.warning) lines.push(`<span class="hint" style="color:#E0A526;">⚠ ${escapeHtml(sync.warning)}</span>`);
     } else if (sync.enabled) {
-      lines.push(metaStatus === 'connected' ? 'Sync ativo — a primeira sincronização acontece em instantes.' : 'Sync ativo, mas a conta ainda não está conectada. Clique em Salvar para verificar.');
+      lines.push(metaStatus === 'connected' ? 'Sync ativo: a primeira sincronização acontece em instantes.' : 'Sync ativo, mas a conta ainda não está conectada. Clique em Salvar para verificar.');
     }
     if (sync.enabled && !running && sync.nextSyncAt) lines.push(`<span class="hint">Próxima sincronização automática: ${escapeHtml(fmtMetaSyncDate(sync.nextSyncAt))}</span>`);
     if (!sync.enabled && lines.length === 0) { box.style.display = 'none'; return; }
@@ -10574,7 +10574,7 @@
     const account = rawAccountsById[currentClientId];
     const connectionField = feedbackPlatform === 'meta' ? account?.meta : account?.google;
     if (connectionField?.status !== 'connected') {
-      errEl.textContent = `Este cliente ainda não tem ${feedbackPlatform === 'meta' ? 'Meta Ads' : 'Google Ads'} conectado — conecte na seção acima primeiro.`;
+      errEl.textContent = `Este cliente ainda não tem ${feedbackPlatform === 'meta' ? 'Meta Ads' : 'Google Ads'} conectado: conecte na seção acima primeiro.`;
       errEl.style.display = 'block';
       return;
     }
@@ -10665,18 +10665,18 @@
     const banner = document.getElementById('igMockBanner');
     if (data.mock && PUBLIC_TOKEN) {
       banner.style.display = 'flex';
-      banner.textContent = 'Os dados do Instagram ainda estão sendo conectados pela agência — por enquanto, esta é uma prévia com dados de exemplo.';
+      banner.textContent = 'Os dados do Instagram ainda estão sendo conectados pela agência: por enquanto, esta é uma prévia com dados de exemplo.';
     } else if (data.mock) {
       banner.style.display = 'flex';
       banner.innerHTML = data.igError
-        ? `⚠ Dados de exemplo — o Instagram não conectou. Motivo: ${escapeHtml(data.igError)} <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab('integrations')">Abrir Integrações</a>`
+        ? `⚠ Dados de exemplo: o Instagram não conectou. Motivo: ${escapeHtml(data.igError)} <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab('integrations')">Abrir Integrações</a>`
         : data.igConfigured
-        ? '⚠ Dados de exemplo — o servidor ainda não tem o token da Meta configurado, então não dá pra ler o Instagram de verdade.'
-        : '⚠ Dados de exemplo — cadastre o ID do Instagram Business (ou só a Página do Facebook, que eu acho o Instagram ligado a ela) na aba <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Integrações</a>.';
+        ? '⚠ Dados de exemplo: o servidor ainda não tem o token da Meta configurado, então não dá pra ler o Instagram de verdade.'
+        : '⚠ Dados de exemplo: cadastre o ID do Instagram Business (ou só a Página do Facebook, que eu acho o Instagram ligado a ela) na aba <a style="text-decoration:underline; cursor:pointer; margin-left:4px;" onclick="setClientDetailTab(\'integrations\')">Integrações</a>.';
     } else if ((data.warnings || []).length && !CLIENT_MODE && !PUBLIC_TOKEN) {
       banner.style.display = 'block';
       const perm = data.warnings.some(w => /permission|permiss|#10|#200/i.test(w));
-      banner.innerHTML = `⚠ Algumas métricas não vieram da Meta${perm ? ' — falta permissão de insights do Instagram (instagram_manage_insights) no token do usuário do sistema, ou o Instagram não foi atribuído a ele com acesso total' : ''}.<div style="font-size:11.5px; opacity:.85; margin-top:4px;">${data.warnings.map(w => escapeHtml(w)).join('<br>')}</div>`;
+      banner.innerHTML = `⚠ Algumas métricas não vieram da Meta${perm ? ': falta permissão de insights do Instagram (instagram_manage_insights) no token do usuário do sistema, ou o Instagram não foi atribuído a ele com acesso total' : ''}.<div style="font-size:11.5px; opacity:.85; margin-top:4px;">${data.warnings.map(w => escapeHtml(w)).join('<br>')}</div>`;
     } else banner.style.display = 'none';
     const r = data.range || {};
     document.getElementById('igSourceLine').innerHTML = `<b style="color:#FF5DA2;">Instagram orgânico</b> · ${dateBr(r.from)} – ${dateBr(r.to)}${data.previousRange ? ` · comparado com ${dateBr(data.previousRange.from)} – ${dateBr(data.previousRange.to)}` : ''}`;
@@ -10731,7 +10731,7 @@
     if (note) note.innerHTML = demo.source === 'engaged'
       ? 'Perfil do <b>público que interagiu</b> neste mês (a Meta não liberou o perfil completo dos seguidores pra esta conta).'
       : demo.source === 'reached' ? 'Perfil do <b>público alcançado</b> neste mês (a Meta não liberou o perfil completo dos seguidores pra esta conta).'
-      : 'Perfil dos seguidores <b>hoje</b> — não muda com o período selecionado.';
+      : 'Perfil dos seguidores <b>hoje</b>: não muda com o período selecionado.';
     // Faixa etária: barras verticais
     const age = demo.age || [];
     const ageEl = document.getElementById('igAgeChart');
@@ -10948,7 +10948,7 @@
       <line x1="${padL}" x2="${W - padR}" y1="${padT + plotH}" y2="${padT + plotH}" stroke="var(--line)"/>
       <rect class="hv" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"/></svg>
       <div class="chart-tooltip" style="display:none;"></div>
-      <div class="footnote" style="border:none; padding:6px 0 0;">🔥 Picos: <b>${top.slice().sort((a, b) => a - b).map(h => `${h}h`).join(', ')}</b> — publicar perto desses horários tende a alcançar mais seguidores.</div>`;
+      <div class="footnote" style="border:none; padding:6px 0 0;">🔥 Picos: <b>${top.slice().sort((a, b) => a - b).map(h => `${h}h`).join(', ')}</b>. Publicar perto desses horários tende a alcançar mais seguidores.</div>`;
     bindIgHover(el, W, n, mx => Math.floor((mx - padL) / bw), h => `<div class="ctt-date">${h}h – ${(h + 1) % 24}h</div><div style="color:#9B7BFF">● ${hours[h].toLocaleString('pt-BR')} seguidores online (média)</div>`);
   }
 
@@ -11045,7 +11045,7 @@
     const account = rawAccountsById[currentClientId];
     const connectionField = insightsPlatform === 'meta' ? account?.meta : account?.google;
     if (connectionField?.status !== 'connected') {
-      errEl.textContent = `Este cliente ainda não tem ${insightsPlatform === 'meta' ? 'Meta Ads' : 'Google Ads'} conectado — conecte na aba Integrações primeiro.`;
+      errEl.textContent = `Este cliente ainda não tem ${insightsPlatform === 'meta' ? 'Meta Ads' : 'Google Ads'} conectado: conecte na aba Integrações primeiro.`;
       errEl.style.display = 'block';
       return;
     }
@@ -12562,7 +12562,7 @@
       });
       const lead = allLeads.find(l => l.id === currentLeadId);
       if (lead) lead[field] = value;
-    } catch { /* falha silenciosa — não trava o preenchimento do campo */ }
+    } catch { /* falha silenciosa: não trava o preenchimento do campo */ }
   }
 
   async function scoreCurrentLead(){

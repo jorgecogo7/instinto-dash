@@ -90,7 +90,7 @@ Regras:
   try {
     out = JSON.parse(text.replace(/```json|```/g, '').trim());
   } catch (e) {
-    throw new Error('A IA devolveu um formato inesperado — tente de novo.');
+    throw new Error('A IA devolveu um formato inesperado. Tente de novo.');
   }
   const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 1200) : null);
   const result = {

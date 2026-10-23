@@ -38,7 +38,7 @@ function classifyError(message) {
     return { kind: 'limite', hint: 'É temporário. A próxima sincronização automática tenta de novo; ou use "Sincronizar agora" em alguns minutos.' };
   }
   if (/timeout|timed out|aborted|fetch failed|ECONN|ENOTFOUND|inesperado/i.test(m)) {
-    return { kind: 'rede', hint: 'A Meta demorou ou não respondeu. Costuma passar sozinho — tente de novo em alguns minutos.' };
+    return { kind: 'rede', hint: 'A Meta demorou ou não respondeu. Costuma passar sozinho, tente de novo em alguns minutos.' };
   }
   if (/não configurado|modo de exemplo/i.test(m)) {
     return { kind: 'config', hint: 'Defina META_SYSTEM_USER_TOKEN e USE_MOCK_DATA=false no servidor e reimplante.' };
@@ -138,7 +138,7 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
         ? { status: 'connected', accountName: verified.name, currency: verified.currency, accountActive: verified.active }
         : {};
       const warning = verified && verified.active === false
-        ? 'A conta de anúncios está desativada ou restrita na Meta — os anúncios podem estar parados.'
+        ? 'A conta de anúncios está desativada ou restrita na Meta. Os anúncios podem estar parados.'
         : null;
       return await writeSync(accountId, {
         lastStatus: 'ok',

@@ -131,7 +131,7 @@ function balanceAlerts(platform, balance, daily, manual) {
   const shortfall = Math.max(0, Math.ceil((daily * COVER_DAYS - balance) / 10) * 10);
   const sev = days <= CRITICAL_DAYS ? 'critical' : 'warning';
   const left = days < 1 ? 'menos de 1 dia' : `~${Math.floor(days)} ${Math.floor(days) === 1 ? 'dia' : 'dias'}`;
-  return [alert(platform, 'balance', sev, `Saldo acabando — faltam ${brl(shortfall)}`,
+  return [alert(platform, 'balance', sev, `Saldo acabando: faltam ${brl(shortfall)}`,
     `Saldo de ${brl(balance)} dá para ${left} no ritmo atual (${brl(daily)}/dia). Faltam ${brl(shortfall)} para cobrir ${COVER_DAYS} dias${src}.`,
     { balance, daily, daysLeft: days, shortfall })];
 }
@@ -145,11 +145,11 @@ function resultUnit(type) {
   return 'resultado';
 }
 const META_STATUS = {
-  2: ['critical', 'Conta de anúncios desativada', 'A Meta desativou a conta — nenhum anúncio está rodando.'],
-  3: ['critical', 'Pagamento recusado — conta parada', 'A Meta não conseguiu cobrar (cartão recusado ou saldo pendente). Os anúncios estão parados até o pagamento ser regularizado em Configurações de pagamento.'],
+  2: ['critical', 'Conta de anúncios desativada', 'A Meta desativou a conta. Nenhum anúncio está rodando.'],
+  3: ['critical', 'Pagamento recusado: conta parada', 'A Meta não conseguiu cobrar (cartão recusado ou saldo pendente). Os anúncios estão parados até o pagamento ser regularizado em Configurações de pagamento.'],
   7: ['warning', 'Conta em análise de risco', 'A Meta está analisando a conta; a veiculação pode ficar limitada.'],
   8: ['critical', 'Pagamento pendente', 'Há um pagamento pendente de quitação; a conta pode parar a qualquer momento.'],
-  9: ['warning', 'Pagamento falhou — período de carência', 'A última cobrança falhou. A conta ainda roda por pouco tempo; atualize a forma de pagamento.'],
+  9: ['warning', 'Pagamento falhou: período de carência', 'A última cobrança falhou. A conta ainda roda por pouco tempo; atualize a forma de pagamento.'],
   100: ['critical', 'Conta em encerramento', 'A conta está com encerramento pendente.'],
   101: ['critical', 'Conta encerrada', 'A conta de anúncios foi encerrada.'],
 };
@@ -212,7 +212,7 @@ async function checkMeta(account) {
     const left = cap - spent;
     out.info.spendCapLeft = left;
     if (left <= 1) out.alerts.push(alert('meta', 'spendcap', 'critical', 'Limite de gastos da conta atingido', `A conta bateu o limite de gastos de ${brl(cap)} e parou de veicular. Aumente ou remova o limite em Configurações de pagamento.`));
-    else if (avg && left < avg * 3) out.alerts.push(alert('meta', 'spendcap', 'warning', 'Limite de gastos quase no fim', `Restam ${brl(left)} até o limite de gastos da conta (${brl(cap)}) — cerca de ${Math.max(1, Math.floor(left / avg))} dia(s) no ritmo atual.`));
+    else if (avg && left < avg * 3) out.alerts.push(alert('meta', 'spendcap', 'warning', 'Limite de gastos quase no fim', `Restam ${brl(left)} até o limite de gastos da conta (${brl(cap)}), cerca de ${Math.max(1, Math.floor(left / avg))} dia(s) no ritmo atual.`));
   }
 
   // Anúncios reprovados / com problema em campanhas ativas
@@ -320,7 +320,7 @@ function mockCheck(account, idx) {
     out.alerts.push(...cpaSpikeAlert('meta', sp, rs, 'lead'));
   }
   if (account.meta?.status === 'connected' && idx % 3 === 1) {
-    out.alerts.push(alert('meta', 'status', 'critical', 'Pagamento recusado — conta parada', META_STATUS[3][2]));
+    out.alerts.push(alert('meta', 'status', 'critical', 'Pagamento recusado: conta parada', META_STATUS[3][2]));
   }
   return out;
 }
