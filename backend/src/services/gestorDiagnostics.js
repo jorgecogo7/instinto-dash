@@ -37,6 +37,12 @@ const errMsg = (e) => String((e && e.message) || e || 'erro desconhecido').slice
 const minorToMajor = (v) => (v === undefined || v === null || v === '' ? null : round(num(v) / 100));
 
 const GENDERS = { 1: 'masculino', 2: 'feminino' };
+// 0 (ou lista vazia) na Meta significa todos os gêneros.
+const genderList = (g) => {
+  const list = Array.isArray(g) ? g.filter((x) => Number(x) === 1 || Number(x) === 2) : [];
+  return list.length ? list.map((x) => GENDERS[Number(x)]) : ['todos'];
+};
+const withRadius = (label, c) => (label ? label + (c.radius ? ` (+${c.radius} ${c.distance_unit || 'km'})` : '') : null);
 
 // Resume o targeting do conjunto num formato fácil de ler. O objeto cru
 // também vai junto (targetingRaw) pra quem quiser o detalhe completo.
@@ -49,7 +55,12 @@ function summarizeTargeting(t) {
     regions: names(g.regions),
     cities: (g.cities || []).map((c) => (c.radius ? `${c.name || c.key} (+${c.radius} ${c.distance_unit || 'km'})` : (c.name || c.key))).filter(Boolean),
     zips: names(g.zips),
-    customLocations: (g.custom_locations || []).map((c) => (c.name || c.address_string || `${c.latitude},${c.longitude}`) + (c.radius ? ` (+${c.radius} ${c.distance_unit || 'km'})` : '')),
+    customLocations: (g.custom_locations || []).map((c) => withRadius(c.name || c.address_string || `${c.latitude},${c.longitude}`, c)),
+    // Locais (ex.: um hospital ou shopping) com raio em volta.
+    places: (g.places || []).map((c) => withRadius(c.name || c.key, c)).filter(Boolean),
+    neighborhoods: names(g.neighborhoods),
+    subcities: names(g.subcities),
+    geoMarkets: names(g.geo_markets),
     locationTypes: g.location_types || [],
   });
   const flex = Array.isArray(t.flexible_spec) ? t.flexible_spec : [];
@@ -60,7 +71,7 @@ function summarizeTargeting(t) {
   return {
     ageMin: t.age_min ?? null,
     ageMax: t.age_max ?? null,
-    genders: Array.isArray(t.genders) && t.genders.length ? t.genders.map((g) => GENDERS[g] || String(g)) : ['todos'],
+    genders: genderList(t.genders),
     geo: geoSummary(geo),
     excludedGeo: geoSummary(exGeo),
     interests: pick('interests'),
@@ -106,6 +117,7 @@ function formIdsFromCreative(c) {
   return [...new Set(ids.map(String))];
 }
 
+const IG_PROFILE_CTAS = ['INSTAGRAM_PROFILE', 'VIEW_INSTAGRAM_PROFILE'];
 const WA_RE = /(wa\.me|api\.whatsapp\.com|whatsapp\.com\/send)/i;
 
 // Para onde o anúncio leva: formulário, WhatsApp, Messenger, Direct ou site.
@@ -127,6 +139,7 @@ function adDestination(creative, adset) {
   if (formIds.length || dt === 'ON_AD') type = 'formulario';
   else if (dt.includes('WHATSAPP') || ctaTypes.includes('WHATSAPP_MESSAGE') || links.some((l) => WA_RE.test(l))) type = 'whatsapp';
   else if (dt.includes('INSTAGRAM_DIRECT')) type = 'instagram_direct';
+  else if (dt.includes('INSTAGRAM_PROFILE') || ctaTypes.some((x) => IG_PROFILE_CTAS.includes(x))) type = 'perfil_instagram';
   else if (dt.includes('MESSENGER') || ctaTypes.includes('MESSAGE_PAGE')) type = 'messenger';
   else if (dt === 'ON_POST' || dt === 'ON_PAGE' || dt === 'ON_VIDEO') type = 'engajamento';
   else if (!links.length && !dt) type = 'desconhecido';
@@ -247,6 +260,31 @@ function metaSignals(d) {
   return out;
 }
 
+// O friendlyError da Meta fala de conta de anúncios; para formulário o motivo
+// costuma ser outro (acesso à Página dona do formulário).
+const formErrMsg = (e) => {
+  const raw = String((e && (e.raw || e.message)) || 'erro desconhecido');
+  return `Não foi possível ler o formulário: o usuário do sistema precisa de acesso à Página dona do formulário (tarefa de leads/anúncios). Detalhe da Meta: ${raw}`.slice(0, 400);
+};
+
+const MAX_POST_LOOKUPS = 20;
+
+// Criativo dinâmico às vezes não traz o texto principal no asset_feed_spec;
+// nesse caso tenta a mensagem da publicação. Falha aqui não vira erro.
+async function fillPostMessages(rawAds, adsOut, graphGet) {
+  const pending = adsOut
+    .map((a, i) => ({ a, raw: rawAds[i] }))
+    .filter(({ a, raw }) => a.creative && !a.creative.primaryTexts.length && raw && raw.creative && raw.creative.effective_object_story_id)
+    .slice(0, MAX_POST_LOOKUPS);
+  await Promise.all(pending.map(async ({ a, raw }) => {
+    try {
+      const post = await graphGet(String(raw.creative.effective_object_story_id), { fields: 'message' });
+      const msg = clean(post && post.message);
+      if (msg) { a.creative.primaryTexts = [msg]; a.creative.primaryTextSource = 'publicacao'; }
+    } catch (e) { /* tolerante: segue sem o texto */ }
+  }));
+}
+
 const timeRange = (range) => JSON.stringify({ since: range.from, until: range.to });
 
 const ADSET_FIELDS = 'id,name,campaign_id,status,effective_status,optimization_goal,billing_event,bid_strategy,bid_amount,daily_budget,lifetime_budget,destination_type,promoted_object,targeting,attribution_spec,start_time,end_time';
@@ -259,10 +297,10 @@ async function fetchMetaDiagnostics(adAccountId, range, deps = {}) {
   const graphGetAll = deps.graphGetAll || metaService.graphGetAll;
   const act = metaService.normalizeAdAccountId(adAccountId);
   const errors = {};
-  const safe = async (key, fn, fallback) => {
+  const safe = async (key, fn, fallback, fmt = errMsg) => {
     try { return await fn(); } catch (e) {
-      if (fallback) { try { return await fallback(); } catch (e2) { errors[key] = errMsg(e2); return null; } }
-      errors[key] = errMsg(e); return null;
+      if (fallback) { try { return await fallback(); } catch (e2) { errors[key] = fmt(e2); return null; } }
+      errors[key] = fmt(e); return null;
     }
   };
   const live = (x) => /ACTIVE|IN_PROCESS|WITH_ISSUES|PENDING/.test(x.effective_status || '');
@@ -304,6 +342,8 @@ async function fetchMetaDiagnostics(adAccountId, range, deps = {}) {
     };
   });
 
+  await fillPostMessages(ads, adsOut, graphGet);
+
   const adSets = adsetsList.map((s) => {
     const mine = adsOut.filter((a) => a.adSetId === String(s.id));
     const rows = (insightRows || []).filter((r) => String(r.adset_id) === String(s.id));
@@ -337,7 +377,7 @@ async function fetchMetaDiagnostics(adAccountId, range, deps = {}) {
   const formIds = [...new Set(adsOut.flatMap((a) => a.destination.leadFormIds))].slice(0, 20);
   const leadForms = (await Promise.all(formIds.map((id) => safe(`leadForm:${id}`,
     () => graphGet(id, { fields: FORM_FIELDS }),
-    () => graphGet(id, { fields: FORM_FIELDS_MIN }))))).filter(Boolean).map(summarizeForm);
+    () => graphGet(id, { fields: FORM_FIELDS_MIN }), formErrMsg)))).filter(Boolean).map(summarizeForm);
 
   const d = {
     account: account ? { id: account.id, name: account.name || null, currency: account.currency || null, timezone: account.timezone_name || null } : null,
