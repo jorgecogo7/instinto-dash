@@ -2404,10 +2404,10 @@
       <div id="googleNotConnected" class="offline-banner" style="display:none;">⚠ Este cliente ainda não tem Google Ads conectado. Vá em Clientes → abre o cliente → Integrações pra conectar.</div>
 
       <div class="grid">
-        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value" id="googleKpiSpend">R$ 7.180</div><div class="kpi-delta up">▲ 14,2%</div></div>
-        <div class="kpi"><div class="kpi-label">Impr. share (leilão)</div><div class="kpi-value" id="googleKpiShare">61,4%</div><div class="kpi-delta down">▼ 2,1pp</div></div>
-        <div class="kpi"><div class="kpi-label">Quality Score médio</div><div class="kpi-value" id="googleKpiQs">7,2 / 10</div><div class="kpi-delta up">▲ 0,3</div></div>
-        <div class="kpi"><div class="kpi-label">Conv.</div><div class="kpi-value" id="googleKpiConv">156</div><div class="kpi-delta up">▲ 22,0%</div></div>
+        <div class="kpi"><div class="kpi-label">Investido</div><div class="kpi-value" id="googleKpiSpend">R$ 7.180</div><div class="kpi-delta up" id="googleKpiSpendD">▲ 14,2%</div></div>
+        <div class="kpi"><div class="kpi-label">Impr. share (leilão)</div><div class="kpi-value" id="googleKpiShare">61,4%</div><div class="kpi-delta down" id="googleKpiShareD">▼ 2,1pp</div></div>
+        <div class="kpi"><div class="kpi-label">Quality Score médio</div><div class="kpi-value" id="googleKpiQs">7,2 / 10</div><div class="kpi-delta up" id="googleKpiQsD">▲ 0,3</div></div>
+        <div class="kpi"><div class="kpi-label">Conv.</div><div class="kpi-value" id="googleKpiConv">156</div><div class="kpi-delta up" id="googleKpiConvD">▲ 22,0%</div></div>
       </div>
 
       <div class="g-tabs">
@@ -6325,6 +6325,7 @@
     return `<div class="ad-thumb has-img"><img src="${escapeHtml(a.thumb)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.outerHTML='<div class=&quot;ad-thumb-ph&quot;>🖼</div>'"></div>`;
   }
 
+  let metaViewCampaigns = [];
   function renderMetaView(metaCampaigns, real = false){
     const campaignListEl = document.getElementById('campaignList');
     campaignListEl.innerHTML = '';
@@ -6337,6 +6338,7 @@
         .sort((a,b) => b.n.spend - a.n.spend);
       if (!metaCampaigns.length) campaignListEl.innerHTML = '<p class="footnote" style="border:none; padding:12px 4px;">Nenhuma campanha com investimento nesse período. Tente um período maior.</p>';
     }
+    metaViewCampaigns = metaCampaigns;
     metaCampaigns.forEach((c,idx)=>{
       const block = document.createElement('div');
       block.className = 'campaign-block' + (idx===0 ? ' open' : '');
@@ -6347,8 +6349,8 @@
         <div class="ad-row">
           ${adThumbHtml(a)}
           <div>
-            <div class="ad-name">${a.name}</div>
-            <div class="ad-set">${a.set}</div>
+            <div class="ad-name">${escapeHtml(a.name)}</div>
+            <div class="ad-set">${escapeHtml(a.set)}</div>
           </div>
           <div><div class="micro-label">Invest.</div><div class="micro-value">${a.spend}</div></div>
           <div><div class="micro-label">CTR</div><div class="micro-value">${a.ctr}</div></div>
@@ -6365,8 +6367,8 @@
           <div class="campaign-title">
             <span class="campaign-status" style="background:${statusColor}"></span>
             <div>
-              <div class="campaign-title-text">${c.name}</div>
-              <div class="campaign-obj">${c.objective} · ${statusText} · ${c.ads.length} anúncios</div>
+              <div class="campaign-title-text">${escapeHtml(c.name)}</div>
+              <div class="campaign-obj">${escapeHtml(c.objective)} · ${statusText} · ${c.ads.length} anúncios</div>
             </div>
           </div>
           <div><span class="cell-value">${statusText}</span></div>
@@ -6433,9 +6435,9 @@
       ? [...allAds].sort((a,b) => b.n.ctr - a.n.ctr)[0]
       : [...allAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0];
     const highlights = [
-      { icon:'💰', title:`Investimento concentrado em "${topCampaign.name}"`, sub:`${topCampaign.spend} do total investido no período` },
-      { icon:'📈', title:`Anúncio com melhor CTR: "${bestCtrAd.name}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${bestCtrAd.campaign}` },
-      { icon:'⚡', title:`Menor custo por clique: "${topAd.name}"`, sub:`${topAd.cpc} por clique: vale testar escalar o orçamento aqui` },
+      { icon:'💰', title:`Investimento concentrado em "${escapeHtml(topCampaign.name)}"`, sub:`${topCampaign.spend} do total investido no período` },
+      { icon:'📈', title:`Anúncio com melhor CTR: "${escapeHtml(bestCtrAd.name)}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${escapeHtml(bestCtrAd.campaign)}` },
+      { icon:'⚡', title:`Menor custo por clique: "${escapeHtml(topAd.name)}"`, sub:`${topAd.cpc} por clique: vale testar escalar o orçamento aqui` },
     ];
     document.getElementById('metaHighlights').innerHTML = highlights.map(h => `
       <div class="highlight-card">
@@ -6462,7 +6464,7 @@
       funnelHtml += `<div class="funnel-step" style="width:${420 - i*70}px;"><span class="funnel-step-value">${step.value.toLocaleString('pt-BR')}</span><span class="funnel-step-label">${step.label}</span></div>`;
       if (i < funnel.length - 1) {
         const pct = step.value > 0 ? ((funnel[i+1].value / step.value) * 100).toFixed(1) : '0.0';
-        funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
+        funnelHtml += `<div class="funnel-drop">${String(pct).replace('.', ',')}% passaram para a próxima etapa</div>`;
       }
     });
     if (!real) document.getElementById('metaFunnel').innerHTML = funnelHtml;
@@ -6493,7 +6495,7 @@
       const avgCtr = (p.ctrs.reduce((s,v)=>s+v,0) / p.ctrs.length).toFixed(1);
       const avgCpc = (p.cpcs.reduce((s,v)=>s+v,0) / p.cpcs.length).toFixed(2);
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${p.set}</td><td>${p.campaign}</td><td>${brl(p.spend)}</td><td>${avgCtr}%</td><td>${brl2(parseFloat(avgCpc))}</td><td>${p.conv}</td>`;
+      tr.innerHTML = `<td>${escapeHtml(p.set)}</td><td>${escapeHtml(p.campaign)}</td><td>${brl(p.spend)}</td><td>${avgCtr}%</td><td>${brl2(parseFloat(avgCpc))}</td><td>${p.conv}</td>`;
       publicosEl.appendChild(tr);
     });
 
@@ -6504,8 +6506,8 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${adThumbHtml(a)}</td>
-        <td>${a.name}</td>
-        <td>${a.campaign}</td>
+        <td>${escapeHtml(a.name)}</td>
+        <td>${escapeHtml(a.campaign)}</td>
         <td>${a.spend}</td>
         <td>${a.ctr}</td>
         <td>${a.cpc}</td>
@@ -6517,6 +6519,7 @@
   renderMetaView(mockMetaCampaigns);
 
   const qsBadge = qs => {
+    if (qs === null || qs === undefined) return '<span class="link-empty" title="O Google ainda não calculou o Índice de qualidade desta palavra-chave">sem dado</span>';
     const cls = qs >= 8 ? 'qs-good' : qs >= 5 ? 'qs-avg' : 'qs-poor';
     return `<span class="qs-pill ${cls}">${qs}/10</span>`;
   };
@@ -6547,32 +6550,44 @@
   // Converte o formato que a API do Google devolve pro formato de tela.
   function mapGoogleApiToViewShape(report){
     const matchLabels = { EXACT:'Exata', PHRASE:'Frase', BROAD:'Ampla' };
+    const typeLabels = { SEARCH:'Pesquisa', DISPLAY:'Display', PERFORMANCE_MAX:'Performance Max', VIDEO:'Vídeo', SHOPPING:'Shopping', DEMAND_GEN:'Demand Gen', DISCOVERY:'Discovery', MULTI_CHANNEL:'App', LOCAL:'Local', SMART:'Inteligente' };
+    const strength = report.adStrength || null;
     return {
+      real: true,
       campaigns: (report.campaigns || []).map(c => ({
-        name: c.name, type: c.type, spend: brl(c.spend), clicks: c.clicks, ctr: pct1(c.ctr), cpc: brl2(c.cpc), conv: c.conv,
+        name: c.name, type: typeLabels[c.type] || c.type, spend: brl(c.spend), clicks: c.clicks, ctr: pct1(c.ctr), cpc: brl2(c.cpc), conv: c.conv ?? c.conversions ?? 0,
+        n: { spend: c.spend || 0, impressions: c.impressions || 0, clicks: c.clicks || 0, cpc: c.cpc || 0 },
+        adStrength: strength ? (strength[c.name] || {}) : null,
       })),
       keywords: (report.keywords || []).map(k => ({
-        kw: k.keyword, match: matchLabels[k.matchType] || k.matchType, qs: k.qualityScore ?? 5,
+        kw: k.keyword, match: matchLabels[k.matchType] || k.matchType, qs: k.qualityScore ?? null, nCpc: k.cpc || 0,
         impr: (k.impressions || 0).toLocaleString('pt-BR'), clicks: k.clicks, ctr: pct1(k.ctr), cpc: brl2(k.cpc), conv: k.conversions,
       })),
       auction: (report.auctionInsights || []).map(r => ({
         name: r.domain === 'sua_conta' ? 'Sua conta' : r.domain,
         share: r.impressionShare, overlap: r.overlapRate ?? '—', above: r.positionAboveRate ?? '—', top: r.topOfPageRate,
       })),
+      totals: report.totals || null,
+      deltas: report.deltas || null,
+      impressionShare: report.impressionShare || null,
+      daily: report.dailySpend || [],
     };
   }
 
   // Desenha a tela inteira de Google Ads (campanhas, palavras-chave,
   // leilão, destaques, funil, evolução, criativos) a partir de um objeto
   // { campaigns, keywords, auction } no formato de tela.
+  let googleViewData = null;
   function renderGoogleView(data){
+    googleViewData = data;
+    const real = !!data.real;
     const gCampaigns = data.campaigns, keywords = data.keywords, auction = data.auction;
 
     const gCampaignsEl = document.getElementById('gCampaignsTable');
     gCampaignsEl.innerHTML = '';
     gCampaigns.forEach(c=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td>${c.type}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td>`;
+      tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.type)}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td>`;
       gCampaignsEl.appendChild(tr);
     });
 
@@ -6580,17 +6595,20 @@
     keywordsEl.innerHTML = '';
     keywords.forEach(k=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k.kw}</td><td><span class="match-tag">${k.match}</span></td><td>${qsBadge(k.qs)}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td>`;
+      tr.innerHTML = `<td>${escapeHtml(k.kw)}</td><td><span class="match-tag">${escapeHtml(k.match)}</span></td><td>${qsBadge(k.qs)}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td>`;
       keywordsEl.appendChild(tr);
     });
 
     const auctionEl = document.getElementById('auctionTable');
     auctionEl.innerHTML = '';
+    if (real && !auction.length) {
+      auctionEl.innerHTML = '<tr><td colspan="5" class="link-empty" style="padding:14px 10px;">O Google Ads não envia os insights de leilão para este painel. Para ver, abra no Google Ads: Insights e relatórios > Insights de leilão.</td></tr>';
+    }
     auction.forEach(r=>{
       const tr = document.createElement('tr');
       const bar = typeof r.share === 'number' ? `<div class="is-bar-track"><div class="is-bar-fill" style="width:${r.share}%"></div></div>` : '';
       tr.innerHTML = `
-        <td>${r.name}</td>
+        <td>${escapeHtml(r.name)}</td>
         <td>${r.share}%<br>${bar}</td>
         <td>${r.overlap}${typeof r.overlap==='number' ? '%' : ''}</td>
         <td>${r.above}${typeof r.above==='number' ? '%' : ''}</td>
@@ -6603,8 +6621,33 @@
     const totalSpend = gCampaigns.reduce((s,c) => s + parseFloat(c.spend.replace(/[^\d,]/g,'').replace(',','.')), 0);
     document.getElementById('googleKpiSpend').textContent = brl(totalSpend);
     document.getElementById('googleKpiConv').textContent = gCampaigns.reduce((s,c)=>s+c.conv,0);
-    const avgQs = keywords.length ? (keywords.reduce((s,k)=>s+k.qs,0)/keywords.length).toFixed(1) : '—';
-    document.getElementById('googleKpiQs').textContent = `${avgQs} / 10`;
+    const qsKeywords = keywords.filter(k => typeof k.qs === 'number');
+    const avgQs = qsKeywords.length ? (qsKeywords.reduce((s,k)=>s+k.qs,0)/qsKeywords.length).toFixed(1).replace('.', ',') : null;
+    document.getElementById('googleKpiQs').textContent = avgQs ? `${avgQs} / 10` : '—';
+    const setDelta = (id, v) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (typeof v !== 'number' || !isFinite(v)) { el.style.display = 'none'; return; }
+      el.style.display = '';
+      el.className = 'kpi-delta ' + (v >= 0 ? 'up' : 'down');
+      el.textContent = `${v >= 0 ? '▲' : '▼'} ${Math.abs(v).toFixed(1).replace('.', ',')}% vs. período anterior`;
+    };
+    if (real) {
+      // Dados reais: só o que veio do Google (sem variações de exemplo).
+      const share = data.impressionShare?.share;
+      document.getElementById('googleKpiShare').textContent = typeof share === 'number' ? pct1(share) : '—';
+      document.getElementById('googleKpiShare').title = typeof share === 'number' ? 'Parcela de impressões da rede de pesquisa' : 'O Google não devolveu parcela de impressões (só existe para campanhas de pesquisa com volume)';
+      setDelta('googleKpiSpendD', data.deltas?.spend);
+      setDelta('googleKpiConvD', data.deltas?.conversions);
+      setDelta('googleKpiShareD', null);
+      setDelta('googleKpiQsD', null);
+    } else {
+      document.getElementById('googleKpiShare').textContent = '61,4%';
+      document.getElementById('googleKpiShare').title = '';
+      [['googleKpiSpendD','up','▲ 14,2%'],['googleKpiShareD','down','▼ 2,1pp'],['googleKpiQsD','up','▲ 0,3'],['googleKpiConvD','up','▲ 22,0%']].forEach(([id, cls, txt]) => {
+        const el = document.getElementById(id); el.style.display = ''; el.className = 'kpi-delta ' + cls; el.textContent = txt;
+      });
+    }
 
     if (!gCampaigns.length) {
       ['googleHighlights','googleFunnel','googleCriativosTable'].forEach(id => document.getElementById(id).innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados suficientes ainda.</p>');
@@ -6618,12 +6661,27 @@
     // --- Destaques ---
     const gTotalSpend = gCampaigns.reduce((s,c) => s + parseBRL(c.spend), 0);
     const topCampaign = [...gCampaigns].sort((a,b) => parseBRL(b.spend) - parseBRL(a.spend))[0];
-    let highlightsHtml = `<div class="highlight-card"><div class="highlight-icon">💰</div><div class="highlight-title">Investimento concentrado em "${topCampaign.name}"</div><div class="highlight-sub">${topCampaign.spend} de ${brl(gTotalSpend)} investidos (${Math.round(parseBRL(topCampaign.spend)/gTotalSpend*100)}%)</div></div>`;
-    if (keywords.length) {
-      const bestQsKw = [...keywords].sort((a,b) => b.qs - a.qs)[0];
-      const worstQsKw = [...keywords].sort((a,b) => a.qs - b.qs)[0];
-      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">✅</div><div class="highlight-title">Melhor Quality Score: "${bestQsKw.kw}"</div><div class="highlight-sub">${bestQsKw.qs}/10: CPC de ${bestQsKw.cpc}, bem abaixo da média da conta</div></div>`;
-      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">⚠</div><div class="highlight-title">Quality Score mais baixo: "${worstQsKw.kw}"</div><div class="highlight-sub">${worstQsKw.qs}/10: CPC de ${worstQsKw.cpc}, a mais cara da conta. Vale revisar correspondência e copy.</div></div>`;
+    const topShare = gTotalSpend > 0 ? ` (${Math.round(parseBRL(topCampaign.spend)/gTotalSpend*100)}%)` : '';
+    let highlightsHtml = `<div class="highlight-card"><div class="highlight-icon">💰</div><div class="highlight-title">Investimento concentrado em "${escapeHtml(topCampaign.name)}"</div><div class="highlight-sub">${topCampaign.spend} de ${brl(gTotalSpend)} investidos${topShare}</div></div>`;
+    // Comparação real com o CPC médio da conta (investimento ÷ cliques), sem frase pronta.
+    const gTotalClicks = gCampaigns.reduce((s,c) => s + (c.clicks || 0), 0);
+    const accCpc = gTotalClicks > 0 ? gTotalSpend / gTotalClicks : 0;
+    const cpcVsAcc = k => {
+      const v = parseBRL(k.cpc);
+      if (!accCpc || !isFinite(v)) return `CPC de ${k.cpc}`;
+      const diff = Math.round((v / accCpc - 1) * 100);
+      const rel = diff === 0 ? 'igual à média' : diff < 0 ? `${Math.abs(diff)}% abaixo da média` : `${diff}% acima da média`;
+      return `CPC de ${k.cpc}, ${rel} da conta (${brl2(accCpc)})`;
+    };
+    if (qsKeywords.length >= 2) {
+      const bestQsKw = [...qsKeywords].sort((a,b) => b.qs - a.qs)[0];
+      const worstQsKw = [...qsKeywords].sort((a,b) => a.qs - b.qs)[0];
+      if (bestQsKw.qs !== worstQsKw.qs) {
+        highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">✅</div><div class="highlight-title">Melhor Índice de qualidade: "${escapeHtml(bestQsKw.kw)}"</div><div class="highlight-sub">${bestQsKw.qs}/10: ${cpcVsAcc(bestQsKw)}</div></div>`;
+        highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">⚠</div><div class="highlight-title">Índice de qualidade mais baixo: "${escapeHtml(worstQsKw.kw)}"</div><div class="highlight-sub">${worstQsKw.qs}/10: ${cpcVsAcc(worstQsKw)}. Vale revisar correspondência, anúncio e página de destino.</div></div>`;
+      }
+    } else if (real && keywords.length && !qsKeywords.length) {
+      highlightsHtml += `<div class="highlight-card"><div class="highlight-icon">ℹ</div><div class="highlight-title">Índice de qualidade ainda sem dado</div><div class="highlight-sub">O Google só calcula o índice depois que a palavra-chave recebe impressões suficientes.</div></div>`;
     }
     document.getElementById('googleHighlights').innerHTML = highlightsHtml;
 
@@ -6631,7 +6689,8 @@
     const totalClicks = gCampaigns.reduce((s,c) => s + c.clicks, 0);
     const totalConv = gCampaigns.reduce((s,c) => s + c.conv, 0);
     const avgCtr = gCampaigns.reduce((s,c) => s + parsePct(c.ctr), 0) / gCampaigns.length;
-    const estImpressions = avgCtr > 0 ? Math.round(totalClicks / (avgCtr / 100)) : totalClicks * 20;
+    const realImpressions = real ? gCampaigns.reduce((s,c) => s + (c.n?.impressions || 0), 0) : 0;
+    const estImpressions = realImpressions > 0 ? realImpressions : (avgCtr > 0 ? Math.round(totalClicks / (avgCtr / 100)) : totalClicks * 20);
     const funnel = [
       { label:'Impressões', value: estImpressions },
       { label:'Cliques', value: totalClicks },
@@ -6642,7 +6701,7 @@
       funnelHtml += `<div class="funnel-step" style="width:${380 - i*80}px;"><span class="funnel-step-value">${step.value.toLocaleString('pt-BR')}</span><span class="funnel-step-label">${step.label}</span></div>`;
       if (i < funnel.length - 1) {
         const pct = step.value > 0 ? ((funnel[i+1].value / step.value) * 100).toFixed(1) : '0.0';
-        funnelHtml += `<div class="funnel-drop">${pct}% passaram para a próxima etapa</div>`;
+        funnelHtml += `<div class="funnel-drop">${String(pct).replace('.', ',')}% passaram para a próxima etapa</div>`;
       }
     });
     document.getElementById('googleFunnel').innerHTML = funnelHtml;
@@ -6650,11 +6709,28 @@
     // --- Evolução diária ---
     const gEvoChart = document.getElementById('googleEvoChart');
     gEvoChart.innerHTML = '';
-    for (let i = 0; i < 20; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'bar g';
-      bar.style.height = (25 + Math.round(Math.random() * 140)) + 'px';
-      gEvoChart.appendChild(bar);
+    if (real) {
+      // Barras = investimento real de cada dia (passe o mouse pra ver o número).
+      const days = (data.daily || []).filter(d => d && d.date);
+      const maxSpend = Math.max(0, ...days.map(d => d.spend || 0));
+      if (!days.length || maxSpend <= 0) {
+        gEvoChart.innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem investimento diário no período.</p>';
+      }
+      else days.forEach(d => {
+        const bar = document.createElement('div');
+        bar.className = 'bar g';
+        bar.style.height = Math.max(3, Math.round(((d.spend || 0) / maxSpend) * 165)) + 'px';
+        const [y, m, dd] = d.date.split('-');
+        bar.title = `${dd}/${m}: ${brl2(d.spend || 0)} · ${(d.conversions || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} conv.`;
+        gEvoChart.appendChild(bar);
+      });
+    } else {
+      for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'bar g';
+        bar.style.height = (25 + Math.round(Math.random() * 140)) + 'px';
+        gEvoChart.appendChild(bar);
+      }
     }
 
     // --- Criativos ---
@@ -6666,10 +6742,22 @@
     ];
     const criativosEl = document.getElementById('googleCriativosTable');
     criativosEl.innerHTML = '';
+    // Força real do anúncio (contagem por nível, vinda do Google). O ciclo
+    // de níveis acima é só para o modo demonstração.
+    const strengthLabels = { EXCELLENT:['Excelente','var(--green)'], GOOD:['Boa','var(--green)'], AVERAGE:['Média','var(--amber)'], POOR:['Ruim','var(--red)'], PENDING:['Em análise','var(--muted, #8A9099)'], NO_ADS:['Sem anúncios','var(--muted, #8A9099)'] };
+    const realStrengthHtml = st => {
+      if (!st) return '<span class="link-empty" title="O Google não devolveu a força dos anúncios desta conta">sem dado</span>';
+      const parts = Object.keys(strengthLabels).filter(k => st[k]).map(k => {
+        const [label, color] = strengthLabels[k];
+        return `<span style="color:${color}; font-weight:700; white-space:nowrap;">${st[k]} ${label}</span>`;
+      });
+      return parts.length ? parts.join(' · ') : '<span class="link-empty" title="Força do anúncio só existe para anúncio responsivo de pesquisa">não se aplica</span>';
+    };
     gCampaigns.forEach((c, i) => {
       const strength = adStrengths[i % adStrengths.length];
+      const strengthHtml = real ? realStrengthHtml(c.adStrength) : `<span style="color:${strength.color}; font-weight:700;">${strength.level}</span>`;
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${c.name}</td><td><span style="color:${strength.color}; font-weight:700;">${strength.level}</span></td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.conv}</td>`;
+      tr.innerHTML = `<td>${escapeHtml(c.name)}</td><td>${strengthHtml}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.conv}</td>`;
       criativosEl.appendChild(tr);
     });
   }
@@ -6682,7 +6770,7 @@
       const sel = document.getElementById(selId);
       const current = sel.value;
       sel.innerHTML = `<option value="">📁 Todos os clientes (exemplo)</option>` +
-        accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+        accounts.map(a => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.name)}</option>`).join('');
       if (accounts.some(a => a.id === current)) sel.value = current;
     });
   }
@@ -6757,7 +6845,7 @@
     subtitle.textContent = `Palavras-chave, leilão e campanhas de pesquisa · ${account.name}`;
     if (account.google?.status !== 'connected') {
       banner.style.display = 'flex';
-      renderGoogleView({ campaigns:[], keywords:[], auction:[] });
+      renderGoogleView({ real:true, campaigns:[], keywords:[], auction:[] });
       return;
     }
     try {
@@ -6769,7 +6857,7 @@
     } catch (err) {
       banner.style.display = 'flex';
       banner.textContent = `⚠ ${err.message}`;
-      renderGoogleView({ campaigns:[], keywords:[], auction:[] });
+      renderGoogleView({ real:true, campaigns:[], keywords:[], auction:[] });
     }
   }
 
@@ -6904,17 +6992,14 @@
 
   function buildMetaReport(){
     let html = reportHeader('Meta Ads · campanhas, conjuntos e anúncios');
-    html += kpiGrid([
-      { label:'Investido', value:'R$ 11.240' },
-      { label:'CTR médio', value:'2,84%' },
-      { label:'CPA médio', value:'R$ 32,90' },
-      { label:'ROAS', value:'4,1x' },
-    ]);
+    html += kpiGrid(kpisFromView('view-meta'));
+    const metaCampaigns = metaViewCampaigns || [];
+    if (!metaCampaigns.length) html += '<div class="pr-panel"><h3>Campanhas</h3><p>Sem campanhas com investimento no período.</p></div>';
     metaCampaigns.forEach(c => {
       const adsRows = c.ads.map(a => `
-        <tr><td style="padding-left:18px; color:#6b7280;">↳ ${a.name}</td><td>${a.spend}</td><td>${a.ctr}</td><td>${a.cpc}</td><td>${a.conv}</td><td>${perfText(a.perf)}</td></tr>`).join('');
+        <tr><td style="padding-left:18px; color:#6b7280;">↳ ${escapeHtml(a.name)}</td><td>${a.spend}</td><td>${a.ctr}</td><td>${a.cpc}</td><td>${a.conv}</td><td>${perfText(a.perf)}</td></tr>`).join('');
       html += `<div class="pr-panel">
-        <h3>${c.name} <span style="font-weight:400; color:#6b7280; font-size:11.5px;">— ${c.objective} · ${c.status==='on'?'Ativa':'Pausada'}</span></h3>
+        <h3>${escapeHtml(c.name)} <span style="font-weight:400; color:#6b7280; font-size:11.5px;">· ${escapeHtml(c.objective)} · ${c.status==='on'?'Ativa':'Pausada'}</span></h3>
         <table><thead><tr><th>Anúncio</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Performance</th></tr></thead>
         <tbody>
           <tr style="font-weight:700;"><td>Total da campanha</td><td>${c.spend}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td><td>${perfText(c.perf)}</td></tr>
@@ -6925,23 +7010,32 @@
     return html;
   }
 
+  // KPIs do PDF = os mesmos cartões que estão na tela (real ou demonstração).
+  function kpisFromView(viewId){
+    const grid = document.querySelector(`#${viewId} .grid`);
+    return [...(grid ? grid.querySelectorAll('.kpi') : [])].map(k => ({
+      label: escapeHtml(k.querySelector('.kpi-label')?.textContent || ''),
+      value: escapeHtml(k.querySelector('.kpi-value')?.textContent || '—'),
+    }));
+  }
+
   function buildGoogleReport(){
+    const d = googleViewData || mockGoogleReport;
+    const gCampaigns = d.campaigns || [], keywords = d.keywords || [], auction = d.auction || [];
+    const e = escapeHtml;
     let html = reportHeader('Google Ads · campanhas, palavras-chave e leilão');
-    html += kpiGrid([
-      { label:'Investido', value:'R$ 7.180' },
-      { label:'Impr. share', value:'61,4%' },
-      { label:'Quality Score médio', value:'7,2 / 10' },
-      { label:'Conv.', value:'156' },
-    ]);
+    html += kpiGrid(kpisFromView('view-google'));
     html += `<div class="pr-panel"><h3>Campanhas</h3>
       <table><thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>CTR</th><th>CPC méd.</th><th>Conv.</th></tr></thead>
-      <tbody>${gCampaigns.map(c => `<tr><td>${c.name}</td><td>${c.type}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td></tr>`).join('')}</tbody></table></div>`;
+      <tbody>${gCampaigns.map(c => `<tr><td>${e(c.name)}</td><td>${e(c.type)}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td></tr>`).join('') || '<tr><td colspan="7">Sem campanhas no período.</td></tr>'}</tbody></table></div>`;
     html += `<div class="pr-panel"><h3>Principais palavras-chave</h3>
       <table><thead><tr><th>Palavra-chave</th><th>Correspond.</th><th>QS</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC méd.</th><th>Conv.</th></tr></thead>
-      <tbody>${keywords.map(k => `<tr><td>${k.kw}</td><td>${k.match}</td><td>${k.qs}/10</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td></tr>`).join('')}</tbody></table></div>`;
-    html += `<div class="pr-panel"><h3>Insights de leilão</h3>
+      <tbody>${keywords.map(k => `<tr><td>${e(k.kw)}</td><td>${e(k.match)}</td><td>${typeof k.qs === 'number' ? k.qs + '/10' : 'sem dado'}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td></tr>`).join('') || '<tr><td colspan="8">Sem palavras-chave no período.</td></tr>'}</tbody></table></div>`;
+    if (auction.length) {
+      html += `<div class="pr-panel"><h3>Insights de leilão</h3>
       <table><thead><tr><th>Concorrente</th><th>Impr. share</th><th>Sobreposição</th><th>Posição acima</th><th>Topo da página</th></tr></thead>
-      <tbody>${auction.map(r => `<tr><td>${r.name}</td><td>${r.share}%</td><td>${r.overlap}${typeof r.overlap==='number'?'%':''}</td><td>${r.above}${typeof r.above==='number'?'%':''}</td><td>${r.top}%</td></tr>`).join('')}</tbody></table></div>`;
+      <tbody>${auction.map(r => `<tr><td>${e(r.name)}</td><td>${r.share}%</td><td>${r.overlap}${typeof r.overlap==='number'?'%':''}</td><td>${r.above}${typeof r.above==='number'?'%':''}</td><td>${r.top}%</td></tr>`).join('')}</tbody></table></div>`;
+    }
     html += reportFooter();
     return html;
   }
