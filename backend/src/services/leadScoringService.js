@@ -78,7 +78,7 @@ parece só curiosidade ou pesquisa de preço sem intenção real.`;
   try {
     parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
   } catch {
-    throw new Error('A IA devolveu um formato inesperado — tente novamente.');
+    throw new Error('A IA devolveu um formato inesperado. Tente novamente.');
   }
 
   const score = Number(parsed.score);

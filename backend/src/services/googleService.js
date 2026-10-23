@@ -63,7 +63,7 @@ async function runGAQL(customerId, query, accessToken, label) {
       const failures = (json.error.details || [])
         .flatMap((d) => d.errors || [])
         .map((e) => `${e.errorCode ? JSON.stringify(e.errorCode) : ''} ${e.message || ''}`.trim());
-      if (failures.length) detail = ' — ' + failures.join(' | ');
+      if (failures.length) detail = ': ' + failures.join(' | ');
     } catch (_) { /* ignore */ }
     const prefix = label ? `[${label}] ` : '';
     throw new Error(`Google Ads API: ${prefix}${json.error.message}${detail}`);
@@ -486,7 +486,7 @@ async function verifyCustomerAccess(customerId) {
   const accessToken = await getAccessToken();
   const rows = await runGAQL(customerId, `SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1`, accessToken, 'verificação da conta');
 
-  if (!rows.length) throw new Error('A conta respondeu, mas sem dados de cliente — verifique o ID informado.');
+  if (!rows.length) throw new Error('A conta respondeu, mas sem dados de cliente. Verifique o ID informado.');
 
   return {
     id: rows[0].customer.id,

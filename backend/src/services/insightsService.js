@@ -57,7 +57,7 @@ gasto ou pior performance. Máximo 4 campanhas por resposta.`;
   try {
     return JSON.parse(text.replace(/```json|```/g, '').trim());
   } catch {
-    throw new Error('A IA devolveu um formato inesperado — tente novamente.');
+    throw new Error('A IA devolveu um formato inesperado. Tente novamente.');
   }
 }
 
@@ -119,7 +119,7 @@ Regras de tom e linguagem:
 
   const json = await res.json();
   const text = json.content?.find((b) => b.type === 'text')?.text;
-  if (!text) throw new Error('A IA não devolveu texto — tente novamente.');
+  if (!text) throw new Error('A IA não devolveu texto. Tente novamente.');
   return text.trim();
 }
 
