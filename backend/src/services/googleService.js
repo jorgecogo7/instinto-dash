@@ -380,7 +380,7 @@ async function fetchRealReport(customerId, range) {
   };
 
   // Extras "melhor esforço": se a API recusar, o relatório principal segue normal.
-  const [shareRows, termRows] = await Promise.all([
+  const [shareRows, termRows, strengthRows] = await Promise.all([
     runGAQL(customerId, `
       SELECT campaign.name, metrics.impressions, metrics.search_impression_share,
              metrics.search_budget_lost_impression_share, metrics.search_rank_lost_impression_share
@@ -395,6 +395,13 @@ async function fetchRealReport(customerId, range) {
       ORDER BY metrics.cost_micros DESC
       LIMIT 60
     `, accessToken, 'termos de pesquisa').catch((e) => { console.warn(e.message); return null; }),
+    // Força do anúncio (só existe pra anúncio responsivo de pesquisa).
+    runGAQL(customerId, `
+      SELECT campaign.name, ad_group_ad.ad_strength
+      FROM ad_group_ad
+      WHERE campaign.status = 'ENABLED' AND ad_group.status = 'ENABLED'
+        AND ad_group_ad.status = 'ENABLED' AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+    `, accessToken, 'força do anúncio').catch((e) => { console.warn(e.message); return null; }),
   ]);
 
   return {
@@ -418,7 +425,24 @@ async function fetchRealReport(customerId, range) {
         ctr: impressions ? (clicks / impressions) * 100 : 0, cpc: clicks ? spend / clicks : 0, costPerConv: conversions ? spend / conversions : 0,
       };
     }) : null,
+    adStrength: strengthRows ? aggregateAdStrength(strengthRows) : null,
   };
+}
+
+/**
+ * Conta, por campanha, quantos anúncios responsivos têm cada nível de força
+ * (EXCELLENT, GOOD, AVERAGE, POOR, PENDING...). Só o que a API devolveu.
+ */
+function aggregateAdStrength(rows) {
+  const out = {};
+  for (const r of rows) {
+    const name = r.campaign?.name;
+    const level = r.adGroupAd?.adStrength;
+    if (!name || !level) continue;
+    out[name] = out[name] || {};
+    out[name][level] = (out[name][level] || 0) + 1;
+  }
+  return out;
 }
 
 /**
