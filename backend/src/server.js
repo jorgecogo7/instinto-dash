@@ -38,6 +38,7 @@ const alertsRoutes = require('./routes/alerts');
 const campaignsRoutes = require('./routes/campaigns');
 const adStatusRoutes = require('./routes/adStatus');
 const gtmRoutes = require('./routes/gtm');
+const gestorRoutes = require('./routes/gestor');
 const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
 const { requireClientAuth } = require('./middleware/clientAuth');
@@ -109,6 +110,11 @@ app.use('/api/campaigns/:clientId', requireAdminAuth, campaignsRoutes);
 app.use('/api/ad-status/:clientId', requireAdminAuth, adStatusRoutes);
 // Google Tag Manager por cliente: só a agência (cliente recebe 403).
 app.use('/api/gtm', requireAdminAuth, gtmRoutes.adminRouter);
+// Análise do gestor: só a agência (login de cliente recebe 403).
+app.use('/api/analyses', requireAdminAuth, gestorRoutes.adminRouter);
+app.use('/api/gestor-access', requireAdminAuth, gestorRoutes.keysRouter);
+// API dos gestores (IA): chave própria, só ler métricas e gravar análises.
+app.use('/api/gestor', gestorRoutes.machineRouter);
 // Área do cliente (login próprio de cada cliente).
 app.use('/api/client/crm', requireClientAuth, crmRoutes.clientRouter);
 app.use('/api/client', requireClientAuth, clientRoutes);

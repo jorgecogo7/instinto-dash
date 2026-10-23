@@ -792,6 +792,8 @@
   body.public-mode #cdTabBtnIntegrations,
   body.public-mode #cdTabBtnCampaigns,
   body.public-mode #cdPaneCampaigns,
+  body.public-mode #cdTabBtnAnalysis,
+  body.public-mode #cdPaneAnalysis,
   body.public-mode #cdWeeklyBtn,
   body.public-mode #wkModal,
   body.public-mode #cdMetricsBtn,
@@ -1032,6 +1034,65 @@
 
   /* ---- Aba "Observações" (sugestões de melhoria por IA) ---- */
   .insight-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  /* Análise do gestor (só a agência) */
+  .an-lock{ font-size:12px; color:var(--text-dim); background:var(--bg-panel-2); border:1px dashed var(--line); border-radius:10px; padding:8px 12px; margin-bottom:14px; }
+  .an-empty{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); padding:22px; font-size:13.5px; line-height:1.6; color:var(--text-dim); margin-bottom:14px; }
+  .an-empty b{ color:var(--text); }
+  .an-card{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); padding:20px 22px; margin-bottom:16px; box-shadow:var(--card-shadow); }
+  .an-card-top{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .an-tag{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:3px 10px; border-radius:999px; background:linear-gradient(90deg, rgba(255,90,30,.16), rgba(255,176,32,.12)); color:var(--amber); }
+  .an-chip{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; }
+  .an-title{ font-size:18px; font-weight:800; line-height:1.3; margin-bottom:6px; }
+  .an-meta{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .an-sec{ border-top:1px solid var(--line); padding-top:12px; margin-top:12px; }
+  .an-sec-title{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); margin-bottom:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .an-count{ text-transform:none; letter-spacing:0; font-weight:600; font-size:11.5px; background:var(--bg-panel-2); border-radius:999px; padding:2px 9px; }
+  .an-md{ font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
+  .an-md p{ margin:0 0 8px; }
+  .an-md ul, .an-md ol{ margin:0 0 8px; padding-left:20px; }
+  .an-md li{ margin-bottom:3px; }
+  .an-md code{ background:var(--bg-panel-2); padding:1px 5px; border-radius:4px; font-size:12.5px; }
+  .an-md-h{ font-weight:700; margin:10px 0 4px; }
+  .an-sug{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; background:var(--bg-panel-2); }
+  .an-sug-aprovada{ border-color: rgba(53,196,138,.5); }
+  .an-sug-descartada{ opacity:.6; }
+  .an-sug-head{ display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .an-area{ font-size:11.5px; color:var(--text-dim); }
+  .an-sug-title{ font-weight:700; font-size:14.5px; margin-bottom:4px; }
+  .an-impact{ font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+  .an-sug-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .an-btn{ font-family:inherit; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:9px; border:1px solid var(--line); background:var(--bg-panel); color:var(--text); cursor:pointer; min-height:34px; }
+  .an-btn:hover{ border-color: rgba(255,176,32,.55); }
+  .an-ok{ border-color: rgba(53,196,138,.55); color: var(--green); }
+  .an-no, .an-del{ color: var(--red); }
+  .an-undo{ font-weight:500; color:var(--text-dim); }
+  .an-status{ font-size:12.5px; font-weight:700; }
+  .an-status-aprovada{ color:var(--green); }
+  .an-status-descartada{ color:var(--text-dim); }
+  .an-card-foot{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; display:flex; justify-content:flex-end; }
+  .an-back{ margin-bottom:10px; }
+  .an-hist{ margin-bottom:16px; }
+  .an-hist-row{ display:block; width:100%; text-align:left; font-family:inherit; background:var(--bg-panel); border:1px solid var(--card-border); border-radius:12px; padding:10px 14px; margin-bottom:8px; cursor:pointer; color:var(--text); }
+  .an-hist-row.active{ border-color: rgba(255,176,32,.6); }
+  .an-hist-date{ font-size:11.5px; color:var(--text-dim); display:block; }
+  .an-hist-title{ font-weight:700; font-size:13.5px; display:block; margin:2px 0; }
+  .an-hist-sub{ font-size:12px; color:var(--text-dim); display:block; }
+  .an-keys-box{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); padding:12px 16px; }
+  .an-keys-box summary{ cursor:pointer; font-weight:700; font-size:13.5px; }
+  .an-keys-body{ margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .an-key-help{ font-size:12.5px; line-height:1.55; color:var(--text-dim); }
+  .an-key-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
+  .an-key-hint{ font-family:monospace; font-size:12px; color:var(--text-dim); }
+  .an-key-sub{ font-size:11.5px; color:var(--text-dim); }
+  .an-newkey{ border:1px solid rgba(255,176,32,.6); border-radius:10px; padding:10px 12px; font-size:13px; display:flex; flex-direction:column; gap:8px; }
+  .an-newkey-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .an-newkey-row input{ flex:1 1 220px; min-width:0; font-family:monospace; font-size:12.5px; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--bg-panel-2); color:var(--text); }
+  @media (max-width: 600px){
+    .an-card{ padding:16px 14px; }
+    .an-title{ font-size:16.5px; }
+    .an-md{ font-size:14.5px; }
+    .an-sug-actions .an-btn{ flex:1 1 auto; }
+  }
   .insight-card{
     background: var(--bg-panel); border:1px solid var(--card-border); border-radius: var(--radius-lg);
     padding:18px 20px; margin-bottom:12px; box-shadow: var(--card-shadow);
@@ -2131,6 +2192,7 @@
       <nav class="nav">
         <div class="nav-item cnav cnav-admin" data-ctab="campaigns" onclick="wsGo('campaigns')">🚀 Campanhas</div>
         <div class="nav-item cnav cnav-admin" data-ctab="insights" onclick="wsGo('insights')">💡 Observações</div>
+        <div class="nav-item cnav cnav-admin" data-ctab="analysis" onclick="wsGo('analysis')">🧠 Análise do gestor</div>
         <div class="nav-item cnav cnav-admin" data-ctab="contract" onclick="wsGo('contract')">📄 Contrato</div>
         <div class="nav-item cnav cnav-admin" data-ctab="history" onclick="wsGo('history')">🕘 Histórico</div>
         <div class="nav-item cnav cnav-admin" data-ctab="reports" onclick="wsGo('reports')">📨 Relatório automático</div>
@@ -3151,6 +3213,7 @@
         <button type="button" class="g-tab" id="cdTabBtnAccess" onclick="setClientDetailTab('access')">Acesso do cliente</button>
         <button type="button" class="g-tab" id="cdTabBtnReports" onclick="setClientDetailTab('reports')">Relatório automático</button>
         <button type="button" class="g-tab cnav-admin" id="cdTabBtnCampaigns" onclick="setClientDetailTab('campaigns')">Campanhas</button>
+        <button type="button" class="g-tab cnav-admin" id="cdTabBtnAnalysis" onclick="setClientDetailTab('analysis')">Análise do gestor</button>
       </div>
 
       <div class="cd-toolbar" id="cdToolbar">
@@ -3404,6 +3467,8 @@
       <!-- ===== Aba: Integrações ===== -->
       <div class="cd-pane" id="cdPaneAccess"><div id="cdAccessContent"></div></div>
       <div class="cd-pane" id="cdPaneReports"><div id="cdReportsContent"></div></div>
+      <!-- ===== Aba: Análise do gestor (só a agência; o servidor recusa login de cliente e nada daqui vai pra relatório/PDF/link) ===== -->
+      <div class="cd-pane cnav-admin" id="cdPaneAnalysis"><div id="anContent"></div></div>
       <!-- ===== Aba: Campanhas (só a agência; nunca renderiza no login de cliente nem no link) ===== -->
       <div class="cd-pane cnav-admin" id="cdPaneCampaigns">
         <div class="mg-switch">
@@ -5606,7 +5671,7 @@
   // público (?share=) nunca usam "c" e só aceitam as abas liberadas para eles.
   const NAV_PERIOD_KEY = 'instintoDashPeriodo';
   const NAV_AGENCY_VIEWS = ['today', 'overview', 'alerts', 'meta', 'google', 'instagram', 'connections', 'clients', 'crm', 'forms', 'reports'];
-  const NAV_CLIENT_TABS = ['overview', 'social', 'insights', 'contract', 'history', 'integrations', 'access', 'reports', 'campaigns',
+  const NAV_CLIENT_TABS = ['overview', 'social', 'insights', 'contract', 'history', 'integrations', 'access', 'reports', 'campaigns', 'analysis',
     'forms', 'crm', 'crm-conversas', 'crm-contatos', 'crm-etiquetas', 'crm-relatorios'];
   const NAV_PRESETS = [7, 14, 30, 90];
   const NAV = { ready: false, timer: null, replaceNext: true, period: null, metaPeriod: null, cdTab: 'overview', allowed: [], defaultTab: 'overview', boot: null, lastHash: '', lastApplied: null };
@@ -8746,6 +8811,10 @@
     document.getElementById('cdTabBtnCampaigns').classList.toggle('active', isCamp);
     document.getElementById('cdPaneCampaigns').classList.toggle('active', isCamp);
     if (isCamp) { loadCampaigns(); if (CP.view === 'manage') loadManage(); }
+    const isAn = tab === 'analysis' && !CLIENT_MODE && !PUBLIC_TOKEN;
+    document.getElementById('cdTabBtnAnalysis').classList.toggle('active', isAn);
+    document.getElementById('cdPaneAnalysis').classList.toggle('active', isAn);
+    if (isAn) loadAnalyses();
     document.getElementById('cdToolbar').style.display = (tab === 'overview' || tab === 'social') ? 'flex' : 'none';
     document.getElementById('cdPlatformTabs').style.visibility = tab === 'overview' ? 'visible' : 'hidden';
     if (tab === 'overview') applyPlatformView();
@@ -12496,6 +12565,220 @@
   ];
   let allLeads = [];
   let currentLeadId = null;
+
+  /* ===== Análise do gestor (só a agência) =====
+     Comentário dos gestores (IA ou o Jorge) sobre cada cliente. O servidor só
+     entrega pra login da agência (cliente recebe 403) e nada daqui entra em
+     relatório, PDF, link público ou login de cliente. */
+  const AN = { clientId: null, list: [], viewId: null, seq: 0, keys: null, newKey: null };
+  const AN_PRIO = { alta: 0, media: 1, baixa: 2 };
+  const AN_PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+  const AN_AREA_LABEL = { copy: 'Texto do anúncio', criativo: 'Criativo', publico: 'Público', objetivo: 'Objetivo', lance: 'Lance', orcamento: 'Orçamento', posicionamento: 'Posicionamento', formulario: 'Formulário', pagina: 'Página / destino', 'palavras-chave': 'Palavras-chave', rastreamento: 'Rastreamento', outro: 'Geral' };
+
+  function anDate(iso){ if (!iso) return ''; const [y, m, d] = String(iso).slice(0, 10).split('-'); return `${d}/${m}/${y}`; }
+  function anDateTime(iso){
+    const d = new Date(iso); if (isNaN(d)) return '';
+    return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  // Markdown simples e seguro: escapa tudo primeiro, depois aplica títulos, listas, negrito e itálico.
+  function anInline(s){
+    return s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
+  function anMd(text){
+    if (!text) return '';
+    const lines = escapeHtml(text).split('\n');
+    let html = '', list = null, para = [];
+    const flushPara = () => { if (para.length) { html += `<p>${anInline(para.join('<br>'))}</p>`; para = []; } };
+    const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+    for (const raw of lines) {
+      const line = raw.trim();
+      let m;
+      if (!line) { flushPara(); closeList(); continue; }
+      if ((m = line.match(/^#{1,4}\s+(.*)$/))) { flushPara(); closeList(); html += `<div class="an-md-h">${anInline(m[1])}</div>`; continue; }
+      if ((m = line.match(/^[-*•]\s+(.*)$/)) || (m = line.match(/^\d+[.)]\s+(.*)$/))) {
+        flushPara();
+        const kind = /^\d/.test(line) ? 'ol' : 'ul';
+        if (list !== kind) { closeList(); html += `<${kind}>`; list = kind; }
+        html += `<li>${anInline(m[1])}</li>`; continue;
+      }
+      closeList(); para.push(line);
+    }
+    flushPara(); closeList();
+    return html;
+  }
+
+  async function anApi(path, opts){
+    const res = await fetch(`${API_BASE_URL}${path}`, { ...(opts || {}), headers: { ...authHeaders(), ...(opts && opts.body ? { 'Content-Type': 'application/json' } : {}) } });
+    if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  async function loadAnalyses(){
+    if (CLIENT_MODE || PUBLIC_TOKEN) return;
+    const box = document.getElementById('anContent');
+    if (!box) return;
+    const id = currentClientId, seq = ++AN.seq;
+    if (AN.clientId !== id) { AN.clientId = id; AN.list = []; AN.viewId = null; AN.newKey = null; box.innerHTML = '<div class="an-empty">Carregando análises…</div>'; }
+    try {
+      const data = await anApi(`/api/analyses/${encodeURIComponent(id)}`);
+      if (seq !== AN.seq || id !== currentClientId) return;
+      AN.list = data.analyses || [];
+      renderAnalyses();
+    } catch (e) {
+      if (seq !== AN.seq) return;
+      box.innerHTML = `<div class="an-empty">Não consegui carregar as análises: ${escapeHtml(e.message)}</div>`;
+    }
+    if (!AN.keys) anLoadKeys();
+  }
+
+  function anSection(title, md, icon){
+    if (!md) return '';
+    return `<div class="an-sec"><div class="an-sec-title">${icon} ${title}</div><div class="an-md">${anMd(md)}</div></div>`;
+  }
+
+  function anSuggestionHtml(a, s){
+    const st = s.status || 'pendente';
+    const btns = st === 'pendente'
+      ? `<button type="button" class="an-btn an-ok" onclick="anDecide('${a.id}','${s.id}','aprovada')">✓ Aprovar</button><button type="button" class="an-btn an-no" onclick="anDecide('${a.id}','${s.id}','descartada')">✕ Descartar</button>`
+      : `<span class="an-status an-status-${st}">${st === 'aprovada' ? '✓ Aprovada' : '✕ Descartada'}${s.decidedAt ? ' em ' + anDate(s.decidedAt.slice(0,10)) : ''}</span><button type="button" class="an-btn an-undo" onclick="anDecide('${a.id}','${s.id}','pendente')">Desfazer</button>`;
+    return `<div class="an-sug an-sug-${st}">
+      <div class="an-sug-head"><span class="insight-priority ${s.priority}">${AN_PRIO_LABEL[s.priority] || 'Média'}</span><span class="an-area">${escapeHtml(AN_AREA_LABEL[s.area] || 'Geral')}</span></div>
+      <div class="an-sug-title">${escapeHtml(s.title)}</div>
+      ${s.detail ? `<div class="an-md">${anMd(s.detail)}</div>` : ''}
+      ${s.expectedImpact ? `<div class="an-impact">Impacto esperado: ${escapeHtml(s.expectedImpact)}</div>` : ''}
+      <div class="an-sug-actions">${btns}</div>
+    </div>`;
+  }
+
+  function anCardHtml(a, isLatest){
+    const sugs = (a.suggestions || []).slice().sort((x, y) => (AN_PRIO[x.priority] ?? 1) - (AN_PRIO[y.priority] ?? 1));
+    const pend = sugs.filter(s => (s.status || 'pendente') === 'pendente').length;
+    const plat = (a.platforms || []).map(p => p === 'meta' ? '<span class="chip-meta an-chip">Meta</span>' : '<span class="chip-google an-chip">Google</span>').join('');
+    return `<div class="an-card">
+      <div class="an-card-top">
+        <span class="an-tag">${isLatest ? 'Mais recente' : 'Análise anterior'}</span>${plat}
+      </div>
+      <div class="an-title">${escapeHtml(a.title || 'Análise das campanhas')}</div>
+      <div class="an-meta">
+        ${a.period ? `<span>📅 Período: ${anDate(a.period.from)} a ${anDate(a.period.to)}</span>` : '<span>📅 Período não informado</span>'}
+        <span>✍️ ${escapeHtml(a.author || 'Gestor')}</span>
+        <span>🕘 ${anDateTime(a.createdAt)}</span>
+      </div>
+      ${anSection('Resumo', a.summary, '📝')}
+      ${anSection('O que funcionou', a.worked, '✅')}
+      ${anSection('O que não funcionou', a.notWorked, '⚠️')}
+      ${anSection('Diagnóstico dos leads', a.leadDiagnosis, '🔎')}
+      ${sugs.length ? `<div class="an-sec"><div class="an-sec-title">💡 Sugestões de melhoria <span class="an-count">${pend ? pend + ' pendente' + (pend > 1 ? 's' : '') : 'todas decididas'}</span></div>${sugs.map(s => anSuggestionHtml(a, s)).join('')}</div>` : ''}
+      ${anSection('Próximos passos', a.nextSteps, '➡️')}
+      <div class="an-card-foot"><button type="button" class="an-btn an-del" onclick="anDelete('${a.id}')">Apagar esta análise</button></div>
+    </div>`;
+  }
+
+  function renderAnalyses(){
+    const box = document.getElementById('anContent');
+    if (!box) return;
+    const list = AN.list;
+    const lock = '<div class="an-lock">🔒 Só você vê esta aba. O cliente nunca vê (nem no login dele, no link, no PDF ou no relatório automático).</div>';
+    let main;
+    if (!list.length) {
+      main = `<div class="an-empty"><b>Nenhuma análise ainda.</b><br>Os gestores (IA) mandam as análises pela API usando uma chave de acesso. Gere a chave em "Acesso dos gestores", logo abaixo.</div>`;
+    } else {
+      const cur = list.find(a => a.id === AN.viewId) || list[0];
+      const isLatest = cur.id === list[0].id;
+      main = (isLatest ? '' : `<div class="an-back"><button type="button" class="an-btn" onclick="anView(null)">← Voltar para a mais recente</button></div>`) + anCardHtml(cur, isLatest);
+      if (list.length > 1) {
+        main += `<div class="an-hist"><div class="an-sec-title">🕘 Histórico (${list.length})</div>${list.map(a => {
+          const n = (a.suggestions || []).length, ok = (a.suggestions || []).filter(s => s.status === 'aprovada').length;
+          return `<button type="button" class="an-hist-row${a.id === cur.id ? ' active' : ''}" onclick="anView('${a.id}')">
+            <span class="an-hist-date">${anDateTime(a.createdAt)}</span>
+            <span class="an-hist-title">${escapeHtml(a.title || 'Análise das campanhas')}</span>
+            <span class="an-hist-sub">${escapeHtml(a.author || 'Gestor')} · ${a.period ? anDate(a.period.from) + ' a ' + anDate(a.period.to) : 'sem período'} · ${n} sugest${n === 1 ? 'ão' : 'ões'}${ok ? ', ' + ok + ' aprovada' + (ok > 1 ? 's' : '') : ''}</span>
+          </button>`;
+        }).join('')}</div>`;
+      }
+    }
+    box.innerHTML = lock + main + `<div id="anKeys" class="an-keys"></div>`;
+    renderAnKeys();
+  }
+
+  function anView(id){ AN.viewId = id; renderAnalyses(); document.getElementById('cdPaneAnalysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+  async function anDecide(analysisId, suggestionId, status){
+    try {
+      const upd = await anApi(`/api/analyses/${encodeURIComponent(AN.clientId)}/${encodeURIComponent(analysisId)}/suggestions/${encodeURIComponent(suggestionId)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      AN.list = AN.list.map(a => a.id === upd.id ? upd : a);
+      renderAnalyses();
+    } catch (e) { alert('Não consegui salvar: ' + e.message); }
+  }
+
+  async function anDelete(analysisId){
+    if (!confirm('Apagar esta análise? Não dá pra desfazer.')) return;
+    try {
+      await anApi(`/api/analyses/${encodeURIComponent(AN.clientId)}/${encodeURIComponent(analysisId)}`, { method: 'DELETE' });
+      AN.list = AN.list.filter(a => a.id !== analysisId);
+      if (AN.viewId === analysisId) AN.viewId = null;
+      renderAnalyses();
+    } catch (e) { alert('Não consegui apagar: ' + e.message); }
+  }
+
+  // ---- Chaves de acesso dos gestores (API) ----
+  async function anLoadKeys(){
+    try { AN.keys = (await anApi('/api/gestor-access/keys')).keys || []; }
+    catch (e) { AN.keys = null; AN.keysError = e.message; }
+    renderAnKeys();
+  }
+
+  function renderAnKeys(){
+    const box = document.getElementById('anKeys');
+    if (!box) return;
+    const keys = AN.keys || [];
+    const active = keys.filter(k => !k.revokedAt);
+    const rows = active.map(k => `<div class="an-key-row">
+        <div><b>${escapeHtml(k.label)}</b> <span class="an-key-hint">${escapeHtml(k.hint || '')}</span><div class="an-key-sub">Criada em ${anDateTime(k.createdAt)} · ${k.lastUsedAt ? 'último uso ' + anDateTime(k.lastUsedAt) : 'nunca usada'}</div></div>
+        <button type="button" class="an-btn an-del" onclick="anRevokeKey('${k.id}')">Revogar</button>
+      </div>`).join('');
+    const fresh = AN.newKey ? `<div class="an-newkey">
+        <div><b>Chave de "${escapeHtml(AN.newKey.label)}" criada.</b> Copie agora e entregue só pro gestor: ela não aparece de novo.</div>
+        <div class="an-newkey-row"><input type="text" readonly id="anNewKeyVal" value="${escapeAttr(AN.newKey.key)}" onclick="this.select()"><button type="button" class="an-btn an-ok" onclick="anCopyKey()">Copiar</button><button type="button" class="an-btn" onclick="anHideKey()">Já copiei</button></div>
+      </div>` : '';
+    box.innerHTML = `<details class="an-keys-box"${AN.newKey ? ' open' : ''}>
+      <summary>🔑 Acesso dos gestores (API) · ${active.length} chave${active.length === 1 ? '' : 's'} ativa${active.length === 1 ? '' : 's'}</summary>
+      <div class="an-keys-body">
+        <div class="an-key-help">A chave deixa o gestor (IA) <b>ler os números</b> dos clientes e <b>gravar análises</b> aqui. Ela não publica, não pausa e não edita campanha nenhuma, e não abre o painel. Vale pra todos os clientes. Como usar: backend/docs/API-GESTORES.md.</div>
+        ${AN.keys === null && AN.keysError ? `<div class="an-key-sub">Não consegui listar as chaves: ${escapeHtml(AN.keysError)}</div>` : ''}
+        ${fresh}
+        ${rows || '<div class="an-key-sub">Nenhuma chave ativa.</div>'}
+        <div class="an-newkey-row"><input type="text" id="anKeyLabel" maxlength="60" placeholder="Nome do gestor (ex.: Gestor IA Meta)"><button type="button" class="btn-add" onclick="anCreateKey()">Gerar chave</button></div>
+      </div>
+    </details>`;
+  }
+
+  async function anCreateKey(){
+    const inp = document.getElementById('anKeyLabel');
+    const label = (inp?.value || '').trim();
+    if (!label) { inp?.focus(); return; }
+    try {
+      const k = await anApi('/api/gestor-access/keys', { method: 'POST', body: JSON.stringify({ label }) });
+      AN.newKey = { label: k.label, key: k.key };
+      const { key, ...meta } = k;
+      AN.keys = [meta, ...(AN.keys || [])];
+      renderAnKeys();
+    } catch (e) { alert('Não consegui gerar a chave: ' + e.message); }
+  }
+  function anCopyKey(){
+    const el = document.getElementById('anNewKeyVal'); if (!el) return;
+    const done = () => { const b = el.nextElementSibling; if (b) { b.textContent = 'Copiada ✓'; setTimeout(() => { b.textContent = 'Copiar'; }, 1800); } };
+    if (navigator.clipboard) navigator.clipboard.writeText(el.value).then(done, () => { el.select(); document.execCommand('copy'); done(); });
+    else { el.select(); document.execCommand('copy'); done(); }
+  }
+  function anHideKey(){ AN.newKey = null; renderAnKeys(); }
+  async function anRevokeKey(id){
+    if (!confirm('Revogar esta chave? O gestor que usa ela perde o acesso na hora.')) return;
+    try { await anApi(`/api/gestor-access/keys/${encodeURIComponent(id)}`, { method: 'DELETE' }); AN.keys = (AN.keys || []).map(k => k.id === id ? { ...k, revokedAt: new Date().toISOString() } : k); renderAnKeys(); }
+    catch (e) { alert('Não consegui revogar: ' + e.message); }
+  }
 
   function escapeHtml(s){
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
