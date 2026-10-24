@@ -1035,6 +1035,16 @@
   /* ---- Aba "Observações" (sugestões de melhoria por IA) ---- */
   .insight-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
   /* Análise do gestor (só a agência) */
+  .obs-card{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:16px; box-shadow:var(--card-shadow); }
+  .obs-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+  .obs-kicker .an-chip{ margin-left:4px; }
+  .obs-kicker{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--amber); margin-bottom:4px; }
+  .obs-sug{ display:flex; align-items:flex-start; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); font-size:13.5px; line-height:1.45; }
+  .obs-sug:last-child{ border-bottom:none; }
+  .obs-sug .insight-priority{ flex:0 0 auto; margin-top:1px; }
+  .obs-more{ font-size:12px; color:var(--text-dim); margin-top:6px; }
+  .obs-ai-title{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); margin:6px 0 10px; }
+  @media (max-width: 600px){ .obs-card{ padding:16px 14px; } .obs-head .an-btn{ width:100%; } }
   .an-lock{ font-size:12px; color:var(--text-dim); background:var(--bg-panel-2); border:1px dashed var(--line); border-radius:10px; padding:8px 12px; margin-bottom:14px; }
   .an-empty{ background:var(--bg-panel); border:1px solid var(--card-border); border-radius:var(--radius-lg); padding:22px; font-size:13.5px; line-height:1.6; color:var(--text-dim); margin-bottom:14px; }
   .an-empty b{ color:var(--text); }
@@ -3433,20 +3443,24 @@
         </div>
       </div>
 
-      <!-- ===== Aba: Observações (sugestões de melhoria por IA) ===== -->
+      <!-- ===== Aba: Observações (resumo da análise do gestor + sugestões por IA, se a chave existir) ===== -->
       <div class="cd-pane" id="cdPaneInsights">
-        <div class="insight-toolbar">
-          <div class="fb-platform-toggle">
-            <button class="fb-toggle-btn active" id="insightsToggleMeta" onclick="setInsightsPlatform('meta')">Meta Ads</button>
-            <button class="fb-toggle-btn" id="insightsToggleGoogle" onclick="setInsightsPlatform('google')">Google Ads</button>
+        <div id="obsGestor"></div>
+        <div id="insightsAi" style="display:none;">
+          <div class="obs-ai-title">💡 Sugestões automáticas por IA</div>
+          <div class="insight-toolbar">
+            <div class="fb-platform-toggle">
+              <button class="fb-toggle-btn active" id="insightsToggleMeta" onclick="setInsightsPlatform('meta')">Meta Ads</button>
+              <button class="fb-toggle-btn" id="insightsToggleGoogle" onclick="setInsightsPlatform('google')">Google Ads</button>
+            </div>
+            <button type="button" class="btn-add" onclick="generateClientInsights()" id="generateInsightsBtn">💡 Gerar sugestões</button>
           </div>
-          <button type="button" class="btn-add" onclick="generateClientInsights()" id="generateInsightsBtn">💡 Gerar sugestões</button>
+          <div id="insightsError" class="modal-error" style="display:none;"></div>
+          <div id="insightsContent">
+            <div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>
+          </div>
         </div>
-        <div id="insightsError" class="modal-error" style="display:none;"></div>
-        <div id="insightsContent">
-          <div class="cd-empty">Clique em "Gerar sugestões" pra a IA analisar os dados reais dessa conta e apontar o que dá pra melhorar.</div>
-        </div>
-        <div class="footnote">Gerado por IA a partir dos dados reais da conta: só aparece aqui, no seu painel; o cliente não vê essa aba.</div>
+        <div class="footnote">Só aparece aqui, no seu painel: o cliente não vê essa aba.</div>
       </div>
 
       <!-- ===== Aba: Contrato (vigência, renovação automática, alertas) ===== -->
@@ -8815,6 +8829,7 @@
     document.getElementById('cdTabBtnAnalysis').classList.toggle('active', isAn);
     document.getElementById('cdPaneAnalysis').classList.toggle('active', isAn);
     if (isAn) loadAnalyses();
+    if (tab === 'insights' && !CLIENT_MODE && !PUBLIC_TOKEN) loadObservacoes();
     document.getElementById('cdToolbar').style.display = (tab === 'overview' || tab === 'social') ? 'flex' : 'none';
     document.getElementById('cdPlatformTabs').style.visibility = tab === 'overview' ? 'visible' : 'hidden';
     if (tab === 'overview') applyPlatformView();
@@ -11250,6 +11265,57 @@
     }
     btn.disabled = false;
     btn.textContent = '💡 Gerar sugestões';
+  }
+
+  // Observações: mostra o resumo da última análise do gestor (mesmos dados da aba
+  // "Análise do gestor"). As sugestões por IA só aparecem se a API tiver a chave.
+  const OBS = { seq: 0, aiEnabled: null };
+  async function loadObservacoes(){
+    if (CLIENT_MODE || PUBLIC_TOKEN) return;
+    const box = document.getElementById('obsGestor');
+    if (!box) return;
+    const id = currentClientId, seq = ++OBS.seq;
+    box.innerHTML = '<div class="an-empty">Carregando a análise do gestor…</div>';
+    if (OBS.aiEnabled === null) {
+      anApi('/api/insights/status').then(d => { OBS.aiEnabled = !!d.aiEnabled; obsApplyAi(); }).catch(() => { OBS.aiEnabled = false; obsApplyAi(); });
+    } else obsApplyAi();
+    try {
+      const data = await anApi(`/api/analyses/${encodeURIComponent(id)}`);
+      if (seq !== OBS.seq || id !== currentClientId) return;
+      box.innerHTML = obsHtml((data.analyses || [])[0]);
+    } catch (e) {
+      if (seq !== OBS.seq) return;
+      box.innerHTML = `<div class="an-empty">Não consegui carregar a análise do gestor agora. Tente de novo em instantes.</div>`;
+    }
+  }
+  function obsApplyAi(){
+    const el = document.getElementById('insightsAi');
+    if (el) el.style.display = OBS.aiEnabled ? '' : 'none';
+  }
+  function obsHtml(a){
+    const btn = `<button type="button" class="an-btn" onclick="setClientDetailTab('analysis')">🧠 Abrir Análise do gestor</button>`;
+    if (!a) {
+      return `<div class="obs-card"><div class="obs-head"><div><div class="obs-kicker">🧠 Análise do gestor</div><div class="an-title">Ainda não tem análise pra esse cliente</div></div>${btn}</div>
+        <div class="an-md" style="color:var(--text-dim)">Assim que o gestor escrever a análise das campanhas, o resumo aparece aqui. Fica tudo só no seu painel.</div></div>`;
+    }
+    const sugs = (a.suggestions || []).filter(s => (s.status || 'pendente') === 'pendente')
+      .sort((x, y) => (AN_PRIO[x.priority] ?? 1) - (AN_PRIO[y.priority] ?? 1));
+    const top = sugs.slice(0, 3);
+    const plat = (a.platforms || []).map(p => p === 'meta' ? '<span class="chip-meta an-chip">Meta</span>' : '<span class="chip-google an-chip">Google</span>').join('');
+    return `<div class="obs-card">
+      <div class="obs-head"><div><div class="obs-kicker">🧠 Última análise do gestor ${plat}</div><div class="an-title">${escapeHtml(a.title || 'Análise das campanhas')}</div></div>${btn}</div>
+      <div class="an-meta">
+        ${a.period ? `<span>📅 Período: ${anDate(a.period.from)} a ${anDate(a.period.to)}</span>` : ''}
+        <span>✍️ ${escapeHtml(a.author || 'Gestor')}</span>
+        <span>🕘 ${anDateTime(a.createdAt)}</span>
+      </div>
+      ${anSection('Resumo', a.summary, '📝')}
+      ${top.length ? `<div class="an-sec"><div class="an-sec-title">💡 Sugestões pendentes <span class="an-count">${sugs.length}</span></div>
+        ${top.map(s => `<div class="obs-sug"><span class="insight-priority ${s.priority}">${AN_PRIO_LABEL[s.priority] || 'Média'}</span><span>${escapeHtml(s.title)}</span></div>`).join('')}
+        ${sugs.length > top.length ? `<div class="obs-more">E mais ${sugs.length - top.length}. Veja todas e aprove ou descarte na Análise do gestor.</div>` : ''}</div>`
+        : ((a.suggestions || []).length ? `<div class="an-sec"><div class="an-sec-title">💡 Sugestões</div><div class="an-md" style="color:var(--text-dim)">Todas as sugestões dessa análise já foram decididas.</div></div>` : '')}
+      ${anSection('Próximos passos', a.nextSteps, '➡️')}
+    </div>`;
   }
 
   function renderInsights(list){
