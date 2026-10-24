@@ -4,8 +4,14 @@ const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
 const insightsService = require('../services/insightsService');
 const { generateReportAnalysis } = require('../services/reportAnalysisService');
+const config = require('../config');
 
 const router = express.Router();
+
+// GET /api/insights/status: diz se as sugestões por IA estão ativas (sem expor a chave).
+router.get('/status', (req, res) => {
+  res.json({ aiEnabled: !!(config.anthropic && config.anthropic.apiKey) });
+});
 
 // GET /api/insights/:clientId?platform=meta|google
 // Busca os dados reais da conta (via metaService/googleService, que já
