@@ -2732,6 +2732,26 @@
       </div>
     </section>
 
+    <!-- Novo formulário: o cliente é escolhido aqui, antes de criar -->
+    <div class="drawer-overlay" id="fmCreateModal" onclick="if(event.target===this) fmCloseCreate()">
+      <div class="modal-box" style="width:440px;">
+        <div class="modal-head">
+          <h3>Novo formulário</h3>
+          <button type="button" class="modal-close" onclick="fmCloseCreate()" aria-label="Fechar">✕</button>
+        </div>
+        <div id="fmCreateError" class="modal-error" style="display:none;"></div>
+        <form id="fmCreateForm" onsubmit="fmSubmitCreate(event)" novalidate>
+          <label class="modal-label" for="fmCreateClient">Cliente</label>
+          <select class="modal-input" id="fmCreateClient" onchange="fmUpdateCreateHint()"></select>
+          <p class="footnote" id="fmCreateHint" style="border:none; padding:0; margin:10px 0 0;"></p>
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="fmCloseCreate()">Cancelar</button>
+            <button type="submit" class="btn-add" id="fmCreateBtn">Criar formulário</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- ================= RELATÓRIOS AUTOMÁTICOS ================= -->
     <!-- ================= CRM DO CLIENTE ================= -->
     <section class="view" id="view-ccrm">
@@ -4165,7 +4185,7 @@
 
   function fmTemplate(){
     return {
-      name: 'Novo formulário', status: 'draft', clientId: (typeof WS !== 'undefined' && WS !== 'agency') ? WS : null,
+      name: 'Novo formulário', status: 'draft', clientId: null,
       welcome: { enabled: true, title: 'Responda rapidinho e a gente te chama no WhatsApp', text: 'Leva menos de 1 minuto.', imageUrl: '', buttonText: 'Começar' },
       theme: { mode: 'dark', accent: '#FF5A1E', logoUrl: '' },
       fields: [
@@ -4259,12 +4279,91 @@
     }).join('');
   }
 
-  async function fmCreate(){
+  // Opções do seletor de criação. presetId vazio = nada marcado (visão da agência).
+  function fmBuildCreateOptions(accounts, presetId){
+    const list = Array.isArray(accounts) ? accounts : [];
+    const preset = presetId && list.some(a => a.id === presetId) ? presetId : '';
+    return {
+      preset,
+      options: [
+        { value: '', label: 'Selecione o cliente', disabled: true, selected: !preset },
+        { value: '__agency__', label: 'Instinto Digital (agência)', disabled: false, selected: false },
+        ...list.map(a => ({ value: a.id, label: a.name, disabled: false, selected: a.id === preset })),
+      ],
+    };
+  }
+  function fmClientIdFromChoice(value){
+    if (!value || value === '__agency__') return null;
+    return value;
+  }
+  function fmCreateHintText(value, ctx){
+    const names = (ctx && ctx.names) || {};
+    const workspace = ctx && ctx.workspace;
+    const inClient = workspace && workspace !== 'agency';
+    if (!value) return 'Escolha para qual cliente este formulário vai ser criado. Dá para trocar depois, na aba Geral.';
+    if (value === '__agency__') return 'Formulário da agência: as respostas entram no funil da agência, sem ir para o CRM de um cliente.';
+    const name = names[value] || 'este cliente';
+    if (inClient && value !== workspace) {
+      const here = names[workspace] || 'o cliente aberto agora';
+      return `O formulário fica em ${name}. Nesta lista (${here}) ele não aparece: você abre ele agora e depois encontra em ${name} ou na visão da agência.`;
+    }
+    return `As respostas entram no CRM de ${name}.`;
+  }
+  function fmClientNames(){
+    return Object.fromEntries(Object.entries(rawAccountsById).map(([id, a]) => [id, a && a.name]));
+  }
+  function fmUpdateCreateHint(){
+    const sel = document.getElementById('fmCreateClient');
+    const hint = document.getElementById('fmCreateHint');
+    if (!sel || !hint) return;
+    hint.textContent = fmCreateHintText(sel.value, { workspace: WS, names: fmClientNames() });
+  }
+  function fmCreate(){
+    const sel = document.getElementById('fmCreateClient');
+    const built = fmBuildCreateOptions(ovActiveAccounts(), WS);
+    sel.innerHTML = built.options.map(o => `<option value="${escapeAttr(o.value)}"${o.disabled ? ' disabled' : ''}${o.selected ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('');
+    fmUpdateCreateHint();
+    const err = document.getElementById('fmCreateError');
+    err.style.display = 'none';
+    err.textContent = '';
+    const btn = document.getElementById('fmCreateBtn');
+    btn.disabled = false;
+    btn.textContent = 'Criar formulário';
+    const overlay = document.getElementById('fmCreateModal');
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
+  }
+  function fmCloseCreate(){
+    const overlay = document.getElementById('fmCreateModal');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    setTimeout(() => { if (!overlay.classList.contains('open')) overlay.style.display = 'none'; }, 280);
+  }
+  async function fmSubmitCreate(ev){
+    ev.preventDefault();
+    const err = document.getElementById('fmCreateError');
+    const btn = document.getElementById('fmCreateBtn');
+    const raw = document.getElementById('fmCreateClient').value;
+    if (!raw) {
+      err.style.display = 'block';
+      err.textContent = 'Escolha o cliente deste formulário.';
+      document.getElementById('fmCreateClient').focus();
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Criando…';
+    err.style.display = 'none';
     try {
-      const created = await fmApi('', { method:'POST', body: JSON.stringify(fmTemplate()) });
+      const created = await fmApi('', { method:'POST', body: JSON.stringify({ ...fmTemplate(), clientId: fmClientIdFromChoice(raw) }) });
+      fmCloseCreate();
       await loadForms();
       fmOpen(created.id);
-    } catch (e) { alert(`Não consegui criar: ${e.message}`); }
+    } catch (e) {
+      err.style.display = 'block';
+      err.textContent = e.message;
+      btn.disabled = false;
+      btn.textContent = 'Criar formulário';
+    }
   }
   async function fmDuplicate(id){
     try { await fmApi(`/${id}/duplicate`, { method:'POST' }); await loadForms(); }
@@ -4312,7 +4411,7 @@
   }
   function renderFmHead(){
     const f = fmCurrent;
-    document.getElementById('fmSub').innerHTML = `${f.status === 'published' ? '<b style="color:var(--green)">Publicado</b>' : 'Rascunho'} · <code>/f/${escapeHtml(f.slug)}</code>`;
+    document.getElementById('fmSub').innerHTML = `${f.status === 'published' ? '<b style="color:var(--green)">Publicado</b>' : 'Rascunho'} · ${escapeHtml(fmClientName(f.clientId))} · <code>/f/${escapeHtml(f.slug)}</code>`;
     document.getElementById('fmStatusToggle').innerHTML =
       `<button type="button" class="${f.status === 'draft' ? 'active' : ''}" onclick="fmSetStatus('draft')">Rascunho</button><button type="button" class="${f.status === 'published' ? 'active' : ''}" onclick="fmSetStatus('published')">Publicado</button>`;
     const tabs = CLIENT_MODE ? [['responses','📊 Respostas']] : [['general','⚙ Geral'],['fields','☰ Perguntas'],['scoring','🎯 Qualificação'],['endings','🏁 Telas finais'],['tracking','📡 Pixel e eventos'],['share','🔗 Compartilhar'],['responses','📊 Respostas']];
@@ -4345,6 +4444,24 @@
 
   // Liga um campo da tela a um caminho do formulário (ex.: "welcome.title").
   function fmGet(path){ return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), fmCurrent); }
+  function fmClientName(id){
+    if (!id) return 'Instinto Digital (agência)';
+    return (rawAccountsById[id] && rawAccountsById[id].name) || 'Cliente não encontrado';
+  }
+  function fmClientChoices(selectedId){
+    const opts = [['', 'Instinto Digital (agência)'], ...ovActiveAccounts().map(a => [a.id, a.name])];
+    if (selectedId && !opts.some(([id]) => id === selectedId)) opts.push([selectedId, fmClientName(selectedId)]);
+    return opts;
+  }
+  function fmClientSelectHtml(){
+    const v = fmCurrent.clientId || '';
+    return `<select class="modal-input" onchange="fmSetClient(this.value)">${fmClientChoices(fmCurrent.clientId).map(([val, l]) => `<option value="${escapeAttr(val)}" ${String(v) === String(val) ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
+  }
+  function fmSetClient(value){
+    fmCurrent.clientId = value || null;
+    fmDirty();
+    renderFmHead();
+  }
   function fmSetPath(path, value){
     const keys = path.split('.');
     let o = fmCurrent;
@@ -4369,7 +4486,6 @@
     const body = document.getElementById('fmTabBody');
     const f = fmCurrent;
     if (fmTab === 'general') {
-      const clients = [['', 'Instinto Digital (agência)'], ...ovActiveAccounts().map(a => [a.id, a.name])];
       body.innerHTML = `
         <div class="panel fm-panel">
           <div class="panel-head"><h3>Tela de apresentação</h3></div>
@@ -4392,7 +4508,7 @@
         </div>
         <div class="panel fm-panel">
           <div class="panel-head"><h3>Organização</h3></div>
-          ${fmRow('Cliente', fmInput('clientId', { type:'select', options: clients }), 'Só pra organizar a lista. Não muda nada no formulário.')}
+          ${fmRow('Cliente', fmClientSelectHtml(), 'As respostas entram no CRM deste cliente. “Instinto Digital (agência)” deixa o lead só no funil da agência.')}
           ${fmRow('Política de privacidade (link)', fmInput('privacyUrl', { placeholder:'https://…/privacidade' }), 'Recomendado pela LGPD quando o formulário pede contato.')}
         </div>`;
     } else if (fmTab === 'fields') {
