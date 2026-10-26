@@ -794,6 +794,10 @@
   body.public-mode #cdPaneCampaigns,
   body.public-mode #cdTabBtnAnalysis,
   body.public-mode #cdPaneAnalysis,
+  body.public-mode .client-detail-tabs .g-tab:not(#cdTabBtnOverview):not(#cdTabBtnSocial),
+  body.public-mode .cd-pane:not(#cdPaneOverview):not(#cdPaneSocial),
+  body.public-mode .cnav-admin,
+  body.public-mode #cdShareBar,
   body.public-mode #cdWeeklyBtn,
   body.public-mode #wkModal,
   body.public-mode #cdMetricsBtn,
@@ -801,7 +805,7 @@
   body.public-mode #cdModelWarning,
   body.public-mode #backendOfflineBanner,
   body.public-mode .kpi-hint{ display:none !important; }
-  body.public-mode .main{ max-width:1180px; margin:0 auto; }
+  body.public-mode .main{ max-width:1180px; width:100%; margin:0 auto; }
   body.public-mode .kpi-clickable{ cursor:default; }
 
   /* ---- Meta: funil e dia da semana ---- */
@@ -1131,6 +1135,14 @@
     color: var(--text-dim); margin-top:10px;
   }
   .share-link-row code{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color: var(--text); }
+  /* Link do cliente no topo da aba Anúncios (só agência) */
+  .cd-share-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:12.5px; }
+  .cd-share-bar .csb-label{ font-weight:700; color:var(--text); white-space:nowrap; }
+  .cd-share-bar code{ flex:1 1 220px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-dim); background:var(--bg-panel-2); border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:12px; }
+  .cd-share-bar .csb-actions{ display:flex; gap:8px; }
+  .cd-share-bar .csb-help{ flex-basis:100%; color:var(--text-dim); font-size:11.5px; }
+  /* Gráficos: arrastar o dedo na horizontal mostra o dia; na vertical continua rolando a página */
+  #cdDailyChart svg, .dual-chart svg{ touch-action: pan-y; }
 
   /* ---- Feedback semanal ---- */
   .fb-platform-toggle{ display:flex; gap:4px; background: var(--bg-panel-2); border-radius:8px; padding:3px; }
@@ -3296,6 +3308,15 @@
 
       <!-- ===== Aba: Anúncios (dashboard real do cliente) ===== -->
       <div class="cd-pane active" id="cdPaneOverview">
+        <div class="cd-share-bar cnav-admin" id="cdShareBar" style="display:none;">
+          <span class="csb-label">🔗 Link do cliente</span>
+          <code id="cdShareLinkText"></code>
+          <span class="csb-actions">
+            <button type="button" class="btn-add" onclick="copyShareLink(event, 'cdShareLinkText')">Copiar link</button>
+            <button type="button" class="btn-cancel" onclick="openShareLink()">Abrir</button>
+          </span>
+          <span class="csb-help">O cliente abre sem login e vê só Anúncios e Redes Sociais, com os números do dia a dia. Os dados se atualizam sozinhos a cada 20 minutos.</span>
+        </div>
         <div id="cdAlertBanner"></div>
         <div id="cdGoogleNotConnected" class="offline-banner" style="display:none;"></div>
         <div id="cdLoading" class="footnote" style="display:none; border:none; padding:0;">Carregando dados do período…</div>
@@ -3332,7 +3353,7 @@
                 <div class="chart-legend" id="cdChartLegend"></div>
               </div>
             </div>
-            <div class="footnote" style="border:none; padding:0 0 10px;">Clique numa métrica no resumo acima pra plotar ela aqui, em outra cor.</div>
+            <div class="footnote" style="border:none; padding:0 0 10px;">Toque numa métrica do resumo acima pra ver ela no gráfico. Passe o dedo ou o mouse no gráfico pra ver o resultado de cada dia.</div>
             <div id="cdDailyChart"></div>
           </div>
 
@@ -3634,7 +3655,7 @@
         <div class="integration-sub">O cliente abre isso sem precisar de usuário nem senha: só visualização, só dos dados dele.</div>
         <div class="share-link-row">
           <code id="shareLinkText">—</code>
-          <button class="btn-cancel" onclick="copyShareLink()">Copiar link</button>
+          <button class="btn-cancel" onclick="copyShareLink(event)">Copiar link</button>
         </div>
       </div>
 
@@ -7695,8 +7716,13 @@
           <button type="button" class="integ-card-btn" disabled>—</button>
         </div>`).join('');
 
-    const shareUrl = `${location.origin}${location.pathname}?share=${account.shareToken}`;
-    document.getElementById('shareLinkText').textContent = shareUrl;
+    const shareUrl = account.shareToken ? `${location.origin}${location.pathname}?share=${account.shareToken}` : '';
+    document.getElementById('shareLinkText').textContent = shareUrl || 'Sem link gerado para este cliente.';
+    const shareBar = document.getElementById('cdShareBar');
+    if (shareBar) {
+      document.getElementById('cdShareLinkText').textContent = shareUrl;
+      shareBar.style.display = (shareUrl && !CLIENT_MODE && !PUBLIC_TOKEN) ? '' : 'none';
+    }
 
     setFeedbackPlatform('meta');
     cdSocialLoaded = false;
@@ -8803,6 +8829,8 @@
   }
 
   function setClientDetailTab(tab){
+    // Link do cliente (?share=): só Anúncios e Redes Sociais, nunca as abas internas.
+    if (PUBLIC_TOKEN && tab !== 'overview' && tab !== 'social') tab = 'overview';
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
     document.getElementById('cdTabBtnSocial').classList.toggle('active', tab === 'social');
     document.getElementById('cdTabBtnInsights').classList.toggle('active', tab === 'insights');
@@ -10014,6 +10042,12 @@
     });
   }
 
+  // Celular: tocar fora de um gráfico fecha o balão do dia.
+  document.addEventListener('touchstart', (e) => {
+    if (e.target.closest && e.target.closest('#cdDailyChart, .dual-chart, .chart-tooltip')) return;
+    document.querySelectorAll('#cdDailyChart .chart-tooltip, .dual-chart .chart-tooltip').forEach(t => { t.style.display = 'none'; });
+  }, { passive: true });
+
   function renderDailyChart(daily, activeMetrics){
     const chartEl = document.getElementById('cdDailyChart');
     const legendEl = document.getElementById('cdChartLegend');
@@ -10143,6 +10177,8 @@
       hoverLine.setAttribute('opacity', '0');
       tooltip.style.display = 'none';
     });
+    hoverRect.addEventListener('touchstart', (e) => onMove(e.touches[0].clientX), { passive: true });
+    hoverRect.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX), { passive: true });
     cdBindMarkers(chartEl, daily, mkByIdx, tooltip, () => hoverLine.setAttribute('opacity', '0'));
   }
 
@@ -10743,14 +10779,29 @@
     }
   }
 
-  function copyShareLink(){
-    const text = document.getElementById('shareLinkText').textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = event.target;
+  function copyShareLink(ev, srcId){
+    const btn = (ev || window.event || {}).target;
+    const text = document.getElementById(srcId || 'shareLinkText').textContent.trim();
+    if (!/^https?:\/\//.test(text)) return;
+    const done = () => {
+      if (!btn) return;
       const original = btn.textContent;
       btn.textContent = 'Copiado!';
       setTimeout(() => { btn.textContent = original; }, 1500);
-    });
+    };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { prompt('Copie o link:', text); }
+      ta.remove();
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
+  function openShareLink(){
+    const text = document.getElementById('cdShareLinkText').textContent.trim();
+    if (/^https?:\/\//.test(text)) window.open(text, '_blank', 'noopener');
   }
 
   /* ---------- Feedback semanal (mensagem pronta pra WhatsApp) ---------- */
@@ -11361,6 +11412,11 @@
       document.getElementById('clientDetailSub').textContent = `Relatório de resultados${info.niche ? ' · ' + info.niche : ''}`;
       if (noAds) document.getElementById('cdTabBtnOverview').style.display = 'none';
       navStartDone();
+      // Link aberto num celular/TV o dia todo: recarrega os números a cada 20 min
+      // (mesmo intervalo do cache da API), só com a aba Anúncios visível.
+      setInterval(() => {
+        if (document.visibilityState === 'visible' && document.getElementById('cdPaneOverview').classList.contains('active')) loadClientDashboard();
+      }, 20 * 60 * 1000);
     } catch (err) {
       document.getElementById('publicView').style.display = 'flex';
       document.getElementById('publicClientName').textContent = 'Não foi possível abrir o relatório';
