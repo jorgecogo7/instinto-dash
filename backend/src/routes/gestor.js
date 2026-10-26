@@ -23,7 +23,7 @@ async function findClient(id) {
   return accountsStore.getById(id);
 }
 
-// Período pedido. Sem from/to = últimos 30 dias. Máx. 400 dias.
+// Período pedido. Sem from/to = últimos 30 dias completos até ontem (America/Sao_Paulo). Máx. 400 dias.
 function readRange(q) {
   const ok = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d || '') && !Number.isNaN(Date.parse(d));
   if (q.from || q.to) {

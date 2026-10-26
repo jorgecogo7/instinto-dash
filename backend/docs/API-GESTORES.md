@@ -33,7 +33,7 @@ A chave não funciona em nenhuma outra rota do sistema (todas respondem 401). Li
 
 ## 2. Endpoints
 
-Datas sempre `AAAA-MM-DD`. Sem `from`/`to` = últimos 30 dias. Período máximo: 400 dias.
+Datas sempre `AAAA-MM-DD`. Sem `from`/`to` = últimos 30 dias calendário completos, terminando ontem (fuso America/Sao_Paulo; hoje não entra). Período máximo: 400 dias.
 
 ### `GET /me`
 Confere a chave. Resposta: `{ "label": "Gestor IA Meta", "scopes": ["ler-metricas", "escrever-analises"] }`
@@ -64,7 +64,7 @@ Meta Ads + Google Ads do período, de uma vez:
 Só uma plataforma (mesmo conteúdo de `report` acima). `409` se a plataforma não estiver conectada, `502` se a Meta/Google recusar.
 
 ### `GET /clients/:id/diagnostics?from=&to=` (diagnóstico de leads, só leitura)
-Explica **por que os leads chegam desqualificados ou em pouca quantidade**: mostra como cada campanha está montada e o que cada anúncio entregou no período. Também existe só uma plataforma: `/clients/:id/diagnostics/meta` e `/clients/:id/diagnostics/google`. Mesmo `from`/`to` (padrão: últimos 30 dias). Resposta guardada por 5 minutos.
+Explica **por que os leads chegam desqualificados ou em pouca quantidade**: mostra como cada campanha está montada e o que cada anúncio entregou no período. Também existe só uma plataforma: `/clients/:id/diagnostics/meta` e `/clients/:id/diagnostics/google`. Mesmo `from`/`to` (padrão: últimos 30 dias completos até ontem, America/Sao_Paulo). Resposta guardada por 5 minutos.
 
 Cada plataforma volta assim:
 - `connected: false`: plataforma não conectada nesse cliente.

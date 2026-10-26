@@ -1,6 +1,7 @@
 const config = require('../config');
 const mockGoogle = require('../data/mockGoogle');
 const cache = require('../lib/cache');
+const period = require('../lib/period');
 
 const API_VERSION = 'v25'; // Google Ads API — atualizar quando o Google anunciar sunset desta versão
 
@@ -77,12 +78,9 @@ function toISODate(d) {
   return d.toISOString().slice(0, 10);
 }
 
-// Sem período informado, mantém o comportamento de antes: últimos 30 dias.
+// Sem período informado: últimos 30 dias completos, até ontem (America/Sao_Paulo).
 function defaultRange() {
-  const to = new Date();
-  const from = new Date();
-  from.setUTCDate(from.getUTCDate() - 29);
-  return { from: toISODate(from), to: toISODate(to) };
+  return period.defaultRange(30);
 }
 
 function normalizeRange(from, to) {
@@ -470,7 +468,7 @@ function aggregateImpressionShare(rows) {
  * Campanhas, palavras-chave, termos de pesquisa, dispositivo e evolução
  * diária para uma conta de cliente (customerId, formato XXX-XXX-XXXX)
  * vinculada à sua MCC, num período (from/to, formato YYYY-MM-DD). Sem
- * período informado, usa os últimos 30 dias — mesmo comportamento de antes.
+ * período informado, usa os últimos 30 dias completos até ontem (America/Sao_Paulo).
  */
 // 20 min: dado de performance de anúncio não precisa ser em tempo real pra
 // esse painel, e cada carregamento "frio" custa vários segundos (token +
