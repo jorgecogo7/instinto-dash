@@ -6284,9 +6284,7 @@
     const el = document.getElementById('hjAlerts');
     if (!el) return;
     if (CLIENT_MODE || PUBLIC_TOKEN || typeof ALERTS === 'undefined' || !ALERTS) { el.innerHTML = ''; return; }
-    const sevOrder = { critical:0, warning:1, info:2 };
-    const items = ALERTS.clients.flatMap(rec => openAlerts(rec).map(a => ({ rec, a })))
-      .sort((x, y) => (sevOrder[x.a.severity] - sevOrder[y.a.severity]) || (new Date(y.a.since) - new Date(x.a.since)));
+    const items = orderedTodayAlertItems();
     if (!items.length) {
       el.innerHTML = `<div class="hj-al-box ok">✓ Nenhum alerta aberto nas contas${ALERTS.checkedAt ? ` · conferido ${sinceText(ALERTS.checkedAt)}` : ''}</div>`;
       return;
@@ -6303,7 +6301,7 @@
           <div class="hj-al-t"><b>${escapeHtml(rec.name)}</b> · ${escapeHtml(a.title)} <span class="hj-al-pf">${pfName(a.platform)}</span>${a.isNew ? '<span class="al-new">novo</span>' : ''}</div>
           <div class="hj-al-d">${escapeHtml(a.detail)}</div>
         </div>
-        <button type="button" class="al-btn" onclick="event.stopPropagation(); snoozeAlert('${rec.clientId}','${a.id}',24)" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi</button>
+        <button type="button" class="al-btn" onclick="event.preventDefault(); event.stopPropagation(); snoozeAlert('${rec.clientId}','${a.id}',24); return false;" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi</button>
       </div>`).join('')}
       ${items.length > HJ_ALERTS_MAX ? `<button type="button" class="hj-al-more" onclick="hjAlertsAll=!hjAlertsAll; renderTodayAlerts()">${hjAlertsAll ? 'Mostrar menos' : `Mostrar mais ${items.length - HJ_ALERTS_MAX}`}</button>` : ''}
     </div>`;
@@ -9830,6 +9828,91 @@
   // Saldo Pix acabando, pagamento recusado, anúncios reprovados, conta sem veicular.
   let ALERTS = null;           // { checkedAt, clients:[{ clientId, name, alerts, snoozed, errors }] }
   let alertsFilter = 'open';   // open | critical | snoozed
+  // Ordem estável do que está em destaque. null = ordenar de novo (carga ou filtro).
+  // "Já vi" não recalcula essa ordem: senão um cliente do meio (nome ou data) sobe pro topo.
+  let hjAlertOrder = null;     // chaves clientId\talertId da tela Hoje
+  let alertsClientOrder = null; // clientIds da central de Alertas
+
+  /* ALERT_ORDER_START */
+  function alertItemKey(clientId, alertId){
+    return String(clientId) + '\t' + String(alertId);
+  }
+  function alertKeyClient(key){
+    const s = String(key);
+    const i = s.indexOf('\t');
+    return i === -1 ? s : s.slice(0, i);
+  }
+  // Mantém a ordem anterior. Se o cliente que estava em primeiro ainda tem item, ele continua em primeiro.
+  // Se ele saiu da lista, o próximo da ordem anterior assume o topo — sem promover alguém do meio.
+  function stabilizeAlertOrder(prevKeys, nextKeys, focusClientId){
+    const next = Array.isArray(nextKeys) ? nextKeys.map(String) : [];
+    const prev = Array.isArray(prevKeys) ? prevKeys.map(String) : [];
+    const focus = String(focusClientId);
+    const nextSet = new Set(next);
+    const kept = prev.filter(k => nextSet.has(k));
+    const keptSet = new Set(kept);
+    const added = next.filter(k => !keptSet.has(k));
+    let order = kept.concat(added);
+    const wasDestaque = prev.length > 0 && alertKeyClient(prev[0]) === focus;
+    if (wasDestaque && order.some(k => alertKeyClient(k) === focus)) {
+      order = order.filter(k => alertKeyClient(k) === focus).concat(order.filter(k => alertKeyClient(k) !== focus));
+    }
+    return order;
+  }
+  function orderByKeys(items, keys, keyFn){
+    const by = new Map();
+    items.forEach(it => {
+      const k = String(keyFn(it));
+      if (!by.has(k)) by.set(k, []);
+      by.get(k).push(it);
+    });
+    const out = [];
+    (keys || []).forEach(k => {
+      const list = by.get(String(k));
+      if (list && list.length) out.push(list.shift());
+    });
+    items.forEach(it => {
+      const k = String(keyFn(it));
+      const list = by.get(k);
+      if (list && list.length) out.push(list.shift());
+    });
+    return out;
+  }
+  /* ALERT_ORDER_END */
+
+  function naturalTodayAlertItems(){
+    const sevOrder = { critical:0, warning:1, info:2 };
+    return ALERTS.clients.flatMap(rec => openAlerts(rec).map(a => ({ rec, a })))
+      .sort((x, y) => (sevOrder[x.a.severity] - sevOrder[y.a.severity]) || (new Date(y.a.since) - new Date(x.a.since)));
+  }
+  function orderedTodayAlertItems(){
+    const natural = naturalTodayAlertItems();
+    const keyFn = it => alertItemKey(it.rec.clientId, it.a.id);
+    const items = hjAlertOrder ? orderByKeys(natural, hjAlertOrder, keyFn) : natural;
+    hjAlertOrder = items.map(keyFn);
+    return items;
+  }
+  function naturalAlertsViewRecs(){
+    const pick = (rec) => (rec.alerts || []).filter(a => alertsFilter === 'snoozed' ? alertIsSnoozed(rec, a)
+      : !alertIsSnoozed(rec, a) && (alertsFilter === 'open' || a.severity === 'critical'));
+    return ALERTS.clients.map(rec => ({ rec, items: pick(rec) })).filter(x => x.items.length)
+      .sort((a, b) => (b.items.filter(i => i.severity === 'critical').length - a.items.filter(i => i.severity === 'critical').length) || a.rec.name.localeCompare(b.rec.name, 'pt-BR'));
+  }
+  function orderedAlertsViewRecs(){
+    const natural = naturalAlertsViewRecs();
+    const recs = alertsClientOrder ? orderByKeys(natural, alertsClientOrder, x => x.rec.clientId) : natural;
+    alertsClientOrder = recs.map(x => x.rec.clientId);
+    return recs;
+  }
+  function resetAlertOrder(){
+    hjAlertOrder = null;
+    alertsClientOrder = null;
+  }
+  // Depois de "já vi": a ordem de quem está em destaque não muda de cliente.
+  function holdAlertOrderAfterSeen(clientId){
+    if (hjAlertOrder) hjAlertOrder = stabilizeAlertOrder(hjAlertOrder, naturalTodayAlertItems().map(it => alertItemKey(it.rec.clientId, it.a.id)), clientId);
+    if (alertsClientOrder) alertsClientOrder = stabilizeAlertOrder(alertsClientOrder, naturalAlertsViewRecs().map(x => x.rec.clientId), clientId);
+  }
   const ALERT_TYPE_ICON = { balance:'💰', status:'⛔', spendcap:'🧱', rejected:'🚫', nodelivery:'⏸', nocampaign:'💤', billing:'💳', cpa:'📈', integration:'🔌' };
 
   function alertIsSnoozed(rec, a){ const u = (rec.snoozed || {})[a.id]; return u && new Date(u) > new Date(); }
@@ -9852,6 +9935,7 @@
       ALERTS = await res.json();
       // Ainda não houve verificação (sistema acabou de subir): roda uma agora.
       if (!ALERTS.checkedAt && Object.keys(rawAccountsById).length) { runAlertsCheck(true); return; }
+      resetAlertOrder();
       renderAlertsEverywhere();
     } catch (e) { /* silencioso: alertas são complemento */ }
   }
@@ -9871,6 +9955,7 @@
       } else {
         ALERTS = { checkedAt: new Date().toISOString(), clients: data.clients };
       }
+      resetAlertOrder();
       renderAlertsEverywhere();
     } catch (e) { if (!silent) alert(e.message); }
     if (btn) { btn.disabled = false; btn.textContent = '↻ Verificar agora'; }
@@ -9883,8 +9968,14 @@
       });
       const rec = await res.json();
       if (!res.ok) throw new Error(rec.error || 'Não consegui salvar.');
+      const wsBefore = typeof WS === 'undefined' ? null : WS;
+      const clientBefore = typeof currentClientId === 'undefined' ? null : currentClientId;
       ALERTS.clients = ALERTS.clients.map(c => c.clientId === clientId ? rec : c);
+      holdAlertOrderAfterSeen(clientId);
       renderAlertsEverywhere();
+      // Marcar como visto não troca o cliente aberto. A lista só perde o alerta.
+      if (wsBefore && WS !== wsBefore) wsApplyUi(wsBefore);
+      if (clientBefore && currentClientId !== clientBefore) currentClientId = clientBefore;
     } catch (e) { alert(e.message); }
   }
 
@@ -9907,8 +9998,8 @@
     const snoozed = alertIsSnoozed(rec, a);
     const pf = a.platform === 'google' ? '<span class="al-pf google">Google</span>' : a.platform === 'instagram' ? '<span class="al-pf instagram">Instagram</span>' : '<span class="al-pf meta">Meta</span>';
     const actions = opts.noActions ? '' : snoozed
-      ? `<button type="button" class="al-btn" onclick="snoozeAlert('${rec.clientId}','${a.id}',0)">Reativar</button>`
-      : `<button type="button" class="al-btn" onclick="snoozeAlert('${rec.clientId}','${a.id}',24)" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi (24h)</button>`;
+      ? `<button type="button" class="al-btn" onclick="event.preventDefault(); event.stopPropagation(); snoozeAlert('${rec.clientId}','${a.id}',0); return false;">Reativar</button>`
+      : `<button type="button" class="al-btn" onclick="event.preventDefault(); event.stopPropagation(); snoozeAlert('${rec.clientId}','${a.id}',24); return false;" title="Some daqui por 24h; volta se continuar acontecendo">✓ Já vi (24h)</button>`;
     return `<div class="al-row ${a.severity}${snoozed ? ' snoozed' : ''}">
       <div class="al-ico">${ALERT_TYPE_ICON[a.type] || '⚠'}</div>
       <div class="al-main">
@@ -9932,11 +10023,8 @@
       if (alertIsSnoozed(rec, a)) counts.snoozed++; else { counts.open++; if (a.severity === 'critical') counts.critical++; }
     }));
     document.getElementById('alChips').innerHTML = [['open', 'Abertos'], ['critical', 'Críticos'], ['snoozed', 'Silenciados']].map(([id, label]) =>
-      `<button type="button" class="chip${alertsFilter === id ? ' active' : ''}" onclick="alertsFilter='${id}'; renderAlertsView()">${label} <b>${counts[id]}</b></button>`).join('');
-    const pick = (rec) => (rec.alerts || []).filter(a => alertsFilter === 'snoozed' ? alertIsSnoozed(rec, a)
-      : !alertIsSnoozed(rec, a) && (alertsFilter === 'open' || a.severity === 'critical'));
-    const recs = ALERTS.clients.map(rec => ({ rec, items: pick(rec) })).filter(x => x.items.length)
-      .sort((a, b) => (b.items.filter(i => i.severity === 'critical').length - a.items.filter(i => i.severity === 'critical').length) || a.rec.name.localeCompare(b.rec.name, 'pt-BR'));
+      `<button type="button" class="chip${alertsFilter === id ? ' active' : ''}" onclick="alertsFilter='${id}'; alertsClientOrder=null; renderAlertsView()">${label} <b>${counts[id]}</b></button>`).join('');
+    const recs = orderedAlertsViewRecs();
     const okCount = ALERTS.clients.filter(rec => !openAlerts(rec).length).length;
     const errs = ALERTS.clients.filter(rec => (rec.errors || []).length);
     list.innerHTML = (recs.length ? recs.map(({ rec, items }) => `
