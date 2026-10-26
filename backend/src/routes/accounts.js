@@ -8,6 +8,8 @@ const { hashPassword } = require('../lib/auth');
 const clientAccess = require('../lib/clientAccess');
 const metaSync = require('../lib/metaSync');
 const integrationHealth = require('../services/integrationHealthService');
+const integrationLink = require('../lib/integrationLink');
+const cache = require('../lib/cache');
 
 const router = express.Router();
 
@@ -239,6 +241,8 @@ router.post('/:id/meta-connection', async (req, res) => {
       ...(account.instagramApi || {}),
       status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null,
       error: ig.error || null, checkedAt: ig.checkedAt,
+      // Salvar é o jeito explícito de ligar de novo depois de "Remover conta".
+      unlinked: false,
     };
 
     if (!syncEnabled || meta.status !== 'connected') meta.sync.nextSyncAt = null;
@@ -301,6 +305,38 @@ router.post('/:id/meta-sync-settings', async (req, res) => {
     metaSync.syncAccount(req.params.id, { trigger: 'salvar' }).catch((e) => console.error('Sync inicial falhou:', e));
   }
   res.json(stripSecrets(updated));
+});
+
+// POST /api/accounts/:id/disconnect — tira UMA conta conectada (Google Ads,
+// Meta Ads ou Instagram). Não apaga o cliente, o link de compartilhamento,
+// a visibilidade nem as outras integrações. O Tag Manager tem a rota dele.
+router.post('/:id/disconnect', async (req, res) => {
+  const platform = sanitizeString(req.body && req.body.platform, 20);
+  if (!integrationLink.PLATFORMS.includes(platform)) {
+    return res.status(400).json({ error: 'Escolha Google Ads, Meta Ads ou Instagram.' });
+  }
+  try {
+    const account = await accountsStore.getById(req.params.id);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    if (!integrationLink.integrationIsLinked(account, platform)) {
+      return res.json(stripSecrets(account));
+    }
+    const patch = integrationLink.disconnectPatch(account, platform);
+    const entry = {
+      id: crypto.randomBytes(6).toString('hex'),
+      text: integrationLink.disconnectLogText(account, platform),
+      author: 'Sistema',
+      at: new Date().toISOString(),
+    };
+    patch.activityLog = [...(account.activityLog || []), entry];
+    const updated = await accountsStore.update(req.params.id, patch);
+    cache.del(`integration-health:${req.params.id}`);
+    cache.del('integration-health:all');
+    res.json(stripSecrets(updated));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/accounts/:id/client-access — cria (ou troca) o login do cliente.

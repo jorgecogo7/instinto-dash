@@ -5,6 +5,7 @@ const googleService = require('../services/googleService');
 const instagramService = require('../services/instagramService');
 const accountsStore = require('../data/accountsStore');
 const { visibilityOf } = require('../lib/clientAccess');
+const { hasInstagramLink, instagramUnlinked } = require('../lib/integrationLink');
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get('/me', (req, res) => {
     visibility: vis,
     platforms: platformsOf(a, vis),
     goals: vis.ads_goals ? (a.goals || {}) : {},
-    hasInstagram: Boolean(a.instagramApi?.igUserId || a.meta?.igBusinessId || a.meta?.pageId),
+    hasInstagram: hasInstagramLink(a),
   });
 });
 
@@ -42,8 +43,8 @@ router.get('/:kind(meta|google|instagram)', async (req, res) => {
   try {
     if (req.params.kind === 'instagram') {
       if (!vis.social) return res.status(403).json({ error: 'Esta seção não está liberada para você.' });
-      let igUserId = a.instagramApi?.igUserId || a.meta?.igBusinessId || null;
-      if (!igUserId && a.meta?.pageId) {
+      let igUserId = instagramUnlinked(a) ? null : (a.instagramApi?.igUserId || a.meta?.igBusinessId || null);
+      if (!igUserId && a.meta?.pageId && !instagramUnlinked(a)) {
         const ig = await metaService.findInstagramForPage(a.meta.pageId);
         if (ig) { igUserId = ig.id; await accountsStore.update(a.id, { meta: { ...a.meta, igBusinessId: ig.id } }); }
       }

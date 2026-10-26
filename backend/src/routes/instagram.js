@@ -2,6 +2,7 @@ const express = require('express');
 const accountsStore = require('../data/accountsStore');
 const instagramService = require('../services/instagramService');
 const metaService = require('../services/metaService');
+const { instagramUnlinked } = require('../lib/integrationLink');
 
 const router = express.Router();
 
@@ -17,9 +18,14 @@ router.get('/:clientId/report', async (req, res) => {
   try {
     let igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
     let igError = account.instagramApi?.status === 'error' ? account.instagramApi.error : null;
+    // Conta removida de propósito: não descobre de novo pela Página.
+    if (instagramUnlinked(account)) {
+      igUserId = null;
+      igError = null;
+    }
     // Só a Página do Facebook cadastrada? Descobre o Instagram ligado a ela
     // e guarda no cliente — ou guarda o MOTIVO de não ter achado.
-    if (!igUserId && account.meta?.pageId && metaService.hasRealCredentials()) {
+    if (!igUserId && !instagramUnlinked(account) && account.meta?.pageId && metaService.hasRealCredentials()) {
       const ig = await metaService.resolveInstagram({ pageId: account.meta.pageId });
       await accountsStore.update(account.id, {
         instagramApi: { ...(account.instagramApi || {}), status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null, error: ig.error || null, checkedAt: ig.checkedAt },
@@ -34,7 +40,9 @@ router.get('/:clientId/report', async (req, res) => {
       res.json({ ...report, igConfigured: Boolean(igUserId), igError });
     } catch (e) {
       // Tinha ID mas a Meta recusou a leitura: registra o motivo pra aparecer em Integrações.
-      await accountsStore.update(account.id, { instagramApi: { ...(account.instagramApi || {}), status: 'error', error: `Não consegui ler o Instagram: ${e.message}`, checkedAt: new Date().toISOString() } });
+      if (!instagramUnlinked(account)) {
+        await accountsStore.update(account.id, { instagramApi: { ...(account.instagramApi || {}), status: 'error', error: `Não consegui ler o Instagram: ${e.message}`, checkedAt: new Date().toISOString() } });
+      }
       throw e;
     }
   } catch (err) {

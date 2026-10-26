@@ -353,6 +353,7 @@
   .platform-icon{ width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;}
   .icon-meta{ background:#1a2b57; color:#7d9fff; }
   .icon-google{ background:#4a3714; color: var(--amber); }
+  .icon-gtm{ background:#1c3a32; color:#7dcea0; }
   .icon-ig{ background:#4a1f34; color: var(--pink); }
   .connect-name{ font-size:13px; font-weight:600; }
   .connect-sub{ font-size:11px; color:var(--text-dim); }
@@ -532,6 +533,9 @@
   .conn-table tr:last-child td{ border-bottom:none; }
   .conn-account-name{ display:flex; align-items:center; gap:10px; font-weight:600; }
   .conn-empty-row td{ color:var(--text-dim); text-align:center; padding:22px; }
+  .conn-table td:last-child{ text-align:right; white-space:nowrap; }
+  .conn-remove{ padding:6px 10px; font-size:12px; }
+  .conn-footnote{ margin:0; border-top:none; padding:4px 16px 14px; }
 
   .integ-overview-label{ font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.4px; margin:0 0 10px; }
   .integ-overview-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:26px; }
@@ -2033,7 +2037,7 @@
     .g-tabs{ flex-wrap:wrap; }
     .cd-toolbar-right{ flex-wrap:wrap; max-width:100%; }
     .conn-table th, .conn-table td{ padding-left:10px; padding-right:10px; }
-    .conn-table th:last-child, .conn-table td:last-child:empty{ display:none; }
+    .conn-table th:last-child:empty, .conn-table td:last-child:empty{ display:none; }
     .crm-kpi-row{ grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px; }
     .creative-metrics{ grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:6px 8px; }
     .creative-metrics .m-label{ font-size:9px; letter-spacing:.2px; overflow-wrap:anywhere; }
@@ -3559,9 +3563,22 @@
       </div>
       <div class="conn-table-wrap">
         <table class="conn-table">
-          <thead><tr><th>Conta</th><th>Status</th><th>Identificador</th><th></th></tr></thead>
+          <thead><tr><th>Conta</th><th>Status</th><th>Identificador</th><th>Ação</th></tr></thead>
           <tbody id="cdConnAccountsTable"></tbody>
         </table>
+        <div class="footnote conn-footnote cnav-admin">Remover conta tira só essa conexão do sistema. O cliente continua cadastrado e as outras integrações não mudam. Nada é apagado na Meta, no Google ou no Instagram.</div>
+      </div>
+
+      <div class="rp-modal cnav-admin" id="unlinkModal" onclick="if (event.target === this) unlinkClose()">
+        <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="unlinkModalTitle">
+          <h3 id="unlinkModalTitle">Remover conta</h3>
+          <div id="unlinkModalBody" style="font-size:13.5px; line-height:1.55;"></div>
+          <div class="rp-modal-actions">
+            <span class="rp-status" id="unlinkModalStatus"></span>
+            <button type="button" class="btn-cancel" id="unlinkModalCancel" onclick="unlinkClose()">Cancelar</button>
+            <button type="button" class="btn-danger-soft" id="unlinkModalOk" onclick="unlinkConfirm()">Remover conta</button>
+          </div>
+        </div>
       </div>
 
       <div class="integ-overview-label">Visão geral das integrações</div>
@@ -3584,6 +3601,7 @@
         <div id="googleConnectError" class="modal-error" style="display:none;"></div>
         <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px;">
           <button class="btn-add" onclick="connectGoogle()" id="connectGoogleBtn">Conectar e verificar</button>
+          <button type="button" class="btn-danger-soft conn-remove cnav-admin" id="disconnectGoogleBtn" style="display:none;" onclick="unlinkAsk('google')">Remover conta</button>
         </div>
         <div class="footnote" style="margin-top:4px;">Isso testa o ID de verdade contra a API do Google: só marca como conectado se a conta responder.</div>
       </div>
@@ -3622,6 +3640,8 @@
         <div class="modal-actions" style="justify-content:flex-start; border-top:none; padding-top:8px; margin-top:8px; gap:8px;">
           <button class="btn-add" id="metaSaveBtn" onclick="saveMetaConnection()">Salvar</button>
           <button class="btn-cancel" id="metaSyncNowBtn" onclick="syncMetaNow()">Sincronizar agora</button>
+          <button type="button" class="btn-danger-soft conn-remove cnav-admin" id="disconnectMetaBtn" style="display:none;" onclick="unlinkAsk('meta')">Remover conta de anúncios</button>
+          <button type="button" class="btn-danger-soft conn-remove cnav-admin" id="disconnectIgBtn" style="display:none;" onclick="unlinkAsk('instagram')">Remover Instagram</button>
         </div>
         <div class="footnote" style="margin-top:4px;">"Salvar" confirma a conta de anúncios direto na Meta e só marca como "conectado" se ela responder. E você continua nesta tela. "Sincronizar agora" consulta a Meta na hora; se der erro, o motivo aparece aqui. Se o token da Meta ainda não estiver configurado no servidor, os IDs ficam salvos como "pendente".</div>
       </div>
@@ -5332,7 +5352,8 @@
     const m = document.getElementById('rpModal');
     const vis = visOf(rawAccountsById[currentClientId]);
     const hasMeta = cdAvailable.meta, hasGoogle = cdAvailable.google;
-    const hasIg = document.getElementById('cdTabBtnSocial').style.display !== 'none' && !!(rawAccountsById[currentClientId]?.meta?.igBusinessId || rawAccountsById[currentClientId]?.meta?.pageId || rawAccountsById[currentClientId]?.instagramApi?.igUserId);
+    const accIg = rawAccountsById[currentClientId];
+    const hasIg = !(accIg && accIg.instagramApi && accIg.instagramApi.unlinked) && document.getElementById('cdTabBtnSocial').style.display !== 'none' && !!(accIg?.meta?.igBusinessId || accIg?.meta?.pageId || accIg?.instagramApi?.igUserId);
     const lockedByVis = CLIENT_MODE || PUBLIC_TOKEN;
     const opt = (key, label, on, show = true) => show ? `<label class="vis-row"><input type="checkbox" data-rp="${key}" ${on ? 'checked' : ''}><span><b>${label}</b></span></label>` : '';
     document.getElementById('rpOptions').innerHTML =
@@ -7173,6 +7194,7 @@
     meta: { cls:'icon-meta', label:'M', title:'Meta Ads' },
     google: { cls:'icon-google', label:'G', title:'Google Ads' },
     ig: { cls:'icon-ig', label:'IG', title:'Instagram' },
+    gtm: { cls:'icon-gtm', label:'GTM', title:'Google Tag Manager' },
   };
   function platformIconBadge(p, size){
     const m = PLATFORM_ICON_META[p];
@@ -7635,6 +7657,117 @@
   /* ---------- Detalhe do cliente: Integrações ---------- */
   let currentClientId = null;
 
+  // Tabela de contas conectadas + botões de remover (só a agência).
+  // O Tag Manager entra quando o card dele já carregou; a confirmação é a que já existia.
+  function renderConnectedAccounts(){
+    const account = rawAccountsById[currentClientId];
+    const connTbody = document.getElementById('cdConnAccountsTable');
+    if (!account || !connTbody) return;
+    const canUnlink = !CLIENT_MODE && !PUBLIC_TOKEN;
+    const googleConnected = account.google?.status === 'connected';
+    const metaStatus = account.meta?.status || 'not_connected';
+    const igApi = account.instagramApi || {};
+    const igConnected = !igApi.unlinked && (igApi.status === 'connected' || (igApi.status !== 'error' && !!account.meta?.igBusinessId));
+    const show = (id, on) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = (canUnlink && on) ? '' : 'none';
+    };
+    show('disconnectGoogleBtn', googleConnected || !!account.google?.customerId);
+    show('disconnectMetaBtn', !!account.meta?.adAccountId || metaStatus === 'connected' || metaStatus === 'pending');
+    show('disconnectIgBtn', !igApi.unlinked && (igConnected || igApi.status === 'error' || !!account.meta?.igBusinessId));
+
+    const connRows = [];
+    if (googleConnected) connRows.push({ kind:'google', p:'google', name:'Google Ads', sub: account.google?.customerId || '—', status:'ativo' });
+    if (metaStatus === 'connected' || metaStatus === 'pending') connRows.push({ kind:'meta', p:'meta', name:'Meta Ads', sub: account.meta?.adAccountId || '—', status: metaStatus === 'connected' ? 'ativo' : 'onboarding' });
+    if (igConnected) connRows.push({ kind:'instagram', p:'ig', name:'Instagram', sub: igApi.username ? '@' + igApi.username : (account.meta?.igBusinessId || '—'), status:'ativo' });
+    else if (!igApi.unlinked && igApi.status === 'error') connRows.push({ kind:'instagram', p:'ig', name:'Instagram', sub: 'não conectado: veja o motivo no card da Meta', status:'pausado' });
+    if (canUnlink && GT.linked && GT.clientId === currentClientId) {
+      connRows.push({ kind:'gtm', p:'gtm', name:'Google Tag Manager', sub: GT.linked.publicId || '—', status:'ativo' });
+    }
+    const action = (kind) => {
+      if (!canUnlink) return '<td></td>';
+      const click = kind === 'gtm' ? 'gtmOpenDisconnect()' : `unlinkAsk('${kind}')`;
+      return `<td><button type="button" class="btn-danger-soft conn-remove cnav-admin" onclick="${click}">Remover conta</button></td>`;
+    };
+    connTbody.innerHTML = connRows.length
+      ? connRows.map(r => `
+        <tr>
+          <td><div class="conn-account-name">${platformIconBadge(r.p, 26)}${escapeHtml(r.name)}</div></td>
+          <td>${statusChip(r.status)}</td>
+          <td style="color:var(--text-dim);">${escapeHtml(String(r.sub))}</td>
+          ${action(r.kind)}
+        </tr>`).join('')
+      : `<tr class="conn-empty-row"><td colspan="4">Nenhuma conta conectada ainda: use os cards abaixo pra conectar.</td></tr>`;
+  }
+
+  const UNLINK_COPY = {
+    google: {
+      title: 'Remover conta do Google Ads',
+      ok: 'Remover conta',
+      body: 'A conta do Google Ads deixa de aparecer neste cliente. O ID da conta sai daqui do sistema. O cliente continua cadastrado, e Meta, Instagram e Tag Manager não mudam. Nada é apagado na conta do Google.',
+    },
+    meta: {
+      title: 'Remover conta da Meta Ads',
+      ok: 'Remover conta',
+      body: 'A conta de anúncios da Meta deixa de aparecer neste cliente. O ID da conta (act_...) sai daqui e a sincronização automática é desligada. A Página do Facebook, o Instagram e o cliente continuam. Nada é apagado na Meta.',
+    },
+    instagram: {
+      title: 'Remover conta do Instagram',
+      ok: 'Remover conta',
+      body: 'O Instagram deixa de aparecer neste cliente. O ID do perfil e o status da conexão saem daqui do sistema. A conta de anúncios da Meta, a Página do Facebook e o cliente continuam. Nada é apagado no Instagram. Para conectar de novo, clique em Salvar na integração Meta.',
+    },
+  };
+  const UNLINK = { platform: null, busy: false };
+
+  function unlinkAsk(platform){
+    if (CLIENT_MODE || PUBLIC_TOKEN) return;
+    const copy = UNLINK_COPY[platform];
+    if (!copy || !currentClientId) return;
+    UNLINK.platform = platform;
+    UNLINK.busy = false;
+    document.getElementById('unlinkModalTitle').textContent = copy.title;
+    document.getElementById('unlinkModalBody').textContent = copy.body;
+    const ok = document.getElementById('unlinkModalOk');
+    ok.disabled = false;
+    ok.textContent = copy.ok;
+    document.getElementById('unlinkModalStatus').textContent = '';
+    document.getElementById('unlinkModal').classList.add('open');
+  }
+  function unlinkClose(){
+    if (UNLINK.busy) return;
+    document.getElementById('unlinkModal').classList.remove('open');
+    UNLINK.platform = null;
+  }
+  async function unlinkConfirm(){
+    if (CLIENT_MODE || PUBLIC_TOKEN || !UNLINK.platform || !currentClientId || UNLINK.busy) return;
+    const platform = UNLINK.platform;
+    const id = currentClientId;
+    UNLINK.busy = true;
+    const ok = document.getElementById('unlinkModalOk');
+    const st = document.getElementById('unlinkModalStatus');
+    ok.disabled = true;
+    st.textContent = 'Removendo…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${encodeURIComponent(id)}/disconnect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ platform }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Não foi possível remover a conta.');
+      if (data && data.id) rawAccountsById[data.id] = data;
+      UNLINK.busy = false;
+      unlinkClose();
+      await loadClientsFromBackend();
+      if (currentClientId === id && rawAccountsById[id]) openClientDetail(id, 'integrations');
+    } catch (err) {
+      UNLINK.busy = false;
+      ok.disabled = false;
+      st.textContent = err.message;
+    }
+  }
+
   function openClientDetail(id, initialTab){
     const account = rawAccountsById[id];
     if (!account) return;
@@ -7668,7 +7801,7 @@
     if (account.meta?.sync?.lastStatus === 'running') metaSyncPollStart();
 
     const igApi = account.instagramApi || {};
-    const igConnected = igApi.status === 'connected' || (igApi.status !== 'error' && !!account.meta?.igBusinessId);
+    const igConnected = !igApi.unlinked && (igApi.status === 'connected' || (igApi.status !== 'error' && !!account.meta?.igBusinessId));
     renderIgStatus(account);
     const headerPlatforms = [];
     if (googleConnected) headerPlatforms.push('google');
@@ -7678,21 +7811,7 @@
       ? headerPlatforms.map(p => platformIconBadge(p, 26)).join('')
       : `<span style="font-size:11.5px; color:var(--text-dim);">Nenhuma integração ativa</span>`;
 
-    const connRows = [];
-    if (googleConnected) connRows.push({ p:'google', name:'Google Ads', sub: account.google?.customerId || '—', status:'ativo' });
-    if (metaStatus === 'connected' || metaStatus === 'pending') connRows.push({ p:'meta', name:'Meta Ads', sub: account.meta?.adAccountId || '—', status: metaStatus === 'connected' ? 'ativo' : 'onboarding' });
-    if (igConnected) connRows.push({ p:'ig', name:'Instagram', sub: igApi.username ? '@' + igApi.username : (account.meta?.igBusinessId || '—'), status:'ativo' });
-    else if (igApi.status === 'error') connRows.push({ p:'ig', name:'Instagram', sub: 'não conectado: veja o motivo no card da Meta', status:'pausado' });
-    const connTbody = document.getElementById('cdConnAccountsTable');
-    connTbody.innerHTML = connRows.length
-      ? connRows.map(r => `
-        <tr>
-          <td><div class="conn-account-name">${platformIconBadge(r.p, 26)}${r.name}</div></td>
-          <td>${statusChip(r.status)}</td>
-          <td style="color:var(--text-dim);">${r.sub}</td>
-          <td></td>
-        </tr>`).join('')
-      : `<tr class="conn-empty-row"><td colspan="4">Nenhuma conta conectada ainda: use os cards abaixo pra conectar.</td></tr>`;
+    renderConnectedAccounts();
 
     const integItems = [
       { p:'google', name:'Google Ads', connected: googleConnected, field:'googleCustomerIdInput' },
@@ -8600,6 +8719,7 @@
 
   function renderGtm(){
     const body = document.getElementById('gtmBody'); if (!body) return;
+    if (typeof renderConnectedAccounts === 'function') renderConnectedAccounts();
     const badge = document.getElementById('gtmStatusBadge');
     badge.textContent = GT.linked ? 'Conectado' : 'Não conectado';
     badge.className = 'integration-status ' + (GT.linked ? 'status-ativo' : 'status-pausado');
@@ -8831,6 +8951,8 @@
   function setClientDetailTab(tab){
     // Link do cliente (?share=): só Anúncios e Redes Sociais, nunca as abas internas.
     if (PUBLIC_TOKEN && tab !== 'overview' && tab !== 'social') tab = 'overview';
+    // Login de cliente não entra em Integrações (conectar e remover conta é só da agência).
+    if (CLIENT_MODE && tab === 'integrations') tab = 'overview';
     document.getElementById('cdTabBtnOverview').classList.toggle('active', tab === 'overview');
     document.getElementById('cdTabBtnSocial').classList.toggle('active', tab === 'social');
     document.getElementById('cdTabBtnInsights').classList.toggle('active', tab === 'insights');
@@ -10643,6 +10765,7 @@
     if (!box) return;
     const ig = account.instagramApi || {};
     const when = ig.checkedAt ? ` · conferido em ${new Date(ig.checkedAt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}` : '';
+    if (ig.unlinked) { box.style.display = 'none'; return; }
     if (ig.status === 'connected') {
       box.className = 'meta-sync-box ok';
       box.innerHTML = `<div><b>Instagram conectado</b>${ig.username ? `: @${escapeHtml(ig.username)}` : ''}${escapeHtml(when)}</div>`;

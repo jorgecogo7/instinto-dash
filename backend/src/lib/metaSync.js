@@ -71,9 +71,11 @@ async function readAccount(id) {
 
 // Grava só o bloco meta.sync, partindo do cadastro mais recente (não sobrescreve
 // o que foi editado enquanto a sincronização rodava).
-async function writeSync(id, patch, extraMeta = {}) {
+async function writeSync(id, patch, extraMeta = {}, expectedAdAccountId) {
   const fresh = await readAccount(id);
   if (!fresh) return null;
+  // A conta foi removida ou trocada no meio da rodada: não regrava o vínculo.
+  if (expectedAdAccountId && (fresh.meta || {}).adAccountId !== expectedAdAccountId) return fresh;
   const meta = { ...(fresh.meta || {}), ...extraMeta, sync: { ...((fresh.meta || {}).sync || {}), ...patch } };
   return accountsStore.update(id, { meta });
 }
@@ -97,8 +99,9 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
     const prev = meta.sync || {};
     const enabled = !!prev.enabled;
     const startedAt = new Date().toISOString();
+    const expectedAdAccountId = meta.adAccountId || null;
 
-    await writeSync(accountId, { lastStatus: 'running', startedAt, lastTrigger: trigger });
+    await writeSync(accountId, { lastStatus: 'running', startedAt, lastTrigger: trigger }, {}, expectedAdAccountId);
 
     const fail = async (message) => {
       const c = classifyError(message);
@@ -111,7 +114,7 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
         lastErrorHint: c.hint,
         consecutiveFailures: failures,
         nextSyncAt: enabled ? new Date(Date.now() + INTERVAL_MS).toISOString() : null,
-      });
+      }, {}, expectedAdAccountId);
     };
 
     if (!meta.adAccountId) return fail('Este cliente ainda não tem um ID de conta de anúncios da Meta. Preencha e clique em Salvar.');
@@ -124,14 +127,23 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
       const campaigns = await metaService.getCampaignsWithAds(meta.adAccountId, 'last_7d', null, { force: true });
       const now = new Date().toISOString();
       // Aproveita a rodada pra reconferir o Instagram (e registrar o motivo se falhar).
+      // Se a agência removeu a conta no meio da rodada, não liga de novo.
       try {
-        const ig = await metaService.resolveInstagram({ pageId: meta.pageId, igBusinessId: meta.igBusinessId });
-        if (ig.status !== 'not_connected') {
-          const fresh = await readAccount(accountId);
-          await accountsStore.update(accountId, {
-            instagramApi: { ...((fresh && fresh.instagramApi) || {}), status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null, error: ig.error || null, checkedAt: ig.checkedAt },
-            ...(ig.status === 'connected' && ig.igUserId !== meta.igBusinessId ? { meta: { ...((fresh && fresh.meta) || meta), igBusinessId: ig.igUserId } } : {}),
-          });
+        const freshBefore = await readAccount(accountId);
+        const freshMeta = (freshBefore && freshBefore.meta) || {};
+        const igOff = !!(freshBefore && freshBefore.instagramApi && freshBefore.instagramApi.unlinked);
+        if (freshBefore && freshMeta.adAccountId === meta.adAccountId && !igOff) {
+          const ig = await metaService.resolveInstagram({ pageId: freshMeta.pageId, igBusinessId: freshMeta.igBusinessId });
+          if (ig.status !== 'not_connected') {
+            const fresh = await readAccount(accountId);
+            const still = fresh && (fresh.meta || {}).adAccountId === meta.adAccountId && !(fresh.instagramApi || {}).unlinked;
+            if (still) {
+              await accountsStore.update(accountId, {
+                instagramApi: { ...(fresh.instagramApi || {}), status: ig.status, igUserId: ig.igUserId || null, username: ig.username || null, error: ig.error || null, checkedAt: ig.checkedAt },
+                ...(ig.status === 'connected' && ig.igUserId !== (fresh.meta || {}).igBusinessId ? { meta: { ...(fresh.meta || {}), igBusinessId: ig.igUserId } } : {}),
+              });
+            }
+          }
         }
       } catch (e) { console.warn('Sync: conferência do Instagram falhou:', e.message); }
       const extraMeta = verified
@@ -151,7 +163,7 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
         consecutiveFailures: 0,
         summary: summarize(campaigns),
         nextSyncAt: enabled ? new Date(Date.now() + INTERVAL_MS).toISOString() : null,
-      }, extraMeta);
+      }, extraMeta, expectedAdAccountId);
     } catch (err) {
       return fail(err && err.message ? err.message : 'Erro desconhecido ao falar com a Meta.');
     }
