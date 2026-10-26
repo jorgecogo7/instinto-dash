@@ -109,7 +109,9 @@ async function checkAccount(account, { live }) {
 
     // Instagram
     const pageIg = L && L.page && L.page.ok ? L.page.ig : undefined;
-    if (L) {
+    if (igApi.unlinked) {
+      items.push(item('instagram', 'Instagram profissional', 'optional', 'Desconectado neste cliente. Para voltar, preencha o ID na integração Meta e clique em Salvar.'));
+    } else if (L) {
       if (L.ig && L.ig.ok) {
         items.push(item('instagram', 'Instagram profissional', 'ok', `@${L.ig.username}`));
       } else if (pageIg && pageIg.id) {

@@ -9,6 +9,7 @@ const formsStore = require('../data/formsStore');
 const formService = require('../services/formService');
 const crmService = require('../services/crmService');
 const { visibilityOf } = require('../lib/clientAccess');
+const { hasInstagramLink, instagramUnlinked } = require('../lib/integrationLink');
 
 const router = express.Router();
 
@@ -156,7 +157,7 @@ router.get('/:token/info', async (req, res) => {
     niche: account.niche,
     platforms: wantedPlatforms(account),
     dashboardModel: account.dashboardModel || 'auto',
-    hasInstagram: visibilityOf(account).social && Boolean(account.instagramApi?.igUserId || account.meta?.igBusinessId || account.meta?.pageId),
+    hasInstagram: visibilityOf(account).social && hasInstagramLink(account),
     visibility: visibilityOf(account),
     goals: visibilityOf(account).ads_goals ? (account.goals || {}) : {},
   });
@@ -179,8 +180,8 @@ router.get('/:token/:kind(meta|google|instagram)', async (req, res) => {
       return res.json(await googleService.getAccountReport(account.google.customerId, range));
     }
     if (!visibilityOf(account).social) return res.status(403).json({ error: 'Esta seção não está liberada.' });
-    let igUserId = account.instagramApi?.igUserId || account.meta?.igBusinessId || null;
-    if (!igUserId && account.meta?.pageId) {
+    let igUserId = instagramUnlinked(account) ? null : (account.instagramApi?.igUserId || account.meta?.igBusinessId || null);
+    if (!igUserId && account.meta?.pageId && !instagramUnlinked(account)) {
       const ig = await metaService.findInstagramForPage(account.meta.pageId);
       if (ig) {
         igUserId = ig.id;
