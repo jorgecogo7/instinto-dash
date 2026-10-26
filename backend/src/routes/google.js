@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET /api/google/:clientId/report?from=YYYY-MM-DD&to=YYYY-MM-DD — campanhas,
 // palavras-chave, termos de pesquisa e dispositivo de um cliente, num período
-// escolhido (sem from/to, usa os últimos 30 dias).
+// escolhido (sem from/to, usa os últimos 30 dias completos até ontem, em America/Sao_Paulo).
 router.get('/:clientId/report', async (req, res) => {
   const account = (await accountsStore.getAll()).find((a) => a.id === req.params.clientId);
   if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });

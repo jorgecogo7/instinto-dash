@@ -5358,7 +5358,7 @@
   async function writeReportAnalysis(){
     const btn = document.getElementById('rpAiBtn');
     const box = document.getElementById('rpAi');
-    const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+    const range = cdCurrentRange || lastCompleteDaysRange(30);
     btn.disabled = true; btn.textContent = '✨ Escrevendo…';
     try {
       const res = await fetch(`${API_BASE_URL}/api/insights/${currentClientId}/report-analysis`, {
@@ -5395,7 +5395,7 @@
       st.textContent = 'Juntando os dados…';
       let ig = null;
       if (sections.instagram) {
-        const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+        const range = cdCurrentRange || lastCompleteDaysRange(30);
         if (igLastData && igLastData.range && igLastData.range.from === range.from && igLastData.range.to === range.to) ig = igLastData;
         else {
           const r = await fetch(cdReportUrl('instagram', new URLSearchParams(range).toString()), { headers: authHeaders() });
@@ -5738,7 +5738,7 @@
     return NAV.period = per || { p: 30 };
   }
   function navRangeOf(per) {
-    return per && per.de ? { from: per.de, to: per.ate } : { from: isoDaysAgo(((per && per.p) || 30) - 1), to: isoDaysAgo(0) };
+    return per && per.de ? { from: per.de, to: per.ate } : lastCompleteDaysRange((per && per.p) || 30);
   }
   function navApplyClientPeriod(per) {
     per = per || { p: 30 };
@@ -6017,7 +6017,7 @@
     if (!document.getElementById('ovKpis')) return;
     const seq = ++ovSeq;
     const days = Number(document.getElementById('ovRange').value) || 30;
-    const range = { from: isoDaysAgo(days - 1), to: isoDaysAgo(0) };
+    const range = lastCompleteDaysRange(days);
     const accounts = ovSelectedAccounts();
     const sub = document.getElementById('ovSub');
     const qs = new URLSearchParams(range).toString();
@@ -6152,7 +6152,7 @@
   let hjSeq = 0;
   let hjLast = null;
   // Data local (fuso do aparelho) N dias atrás, em AAAA-MM-DD.
-  function hjDay(n){ const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('en-CA'); }
+  function hjDay(n){ return isoDaysAgo(n); }
 
   async function hjFetchReports(jobs, range, force){
     const key = `${range.from}|${range.to}`;
@@ -6876,7 +6876,7 @@
   }
 
   // ---- Período da tela Meta Ads (valendo de verdade pro cliente selecionado) ----
-  let metaRange = { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+  let metaRange = lastCompleteDaysRange(30);
   function toggleMetaRangeMenu(){ document.getElementById('metaRangeMenu').classList.toggle('open'); }
   document.addEventListener('click', (ev) => {
     const picker = document.getElementById('metaRangePicker');
@@ -6884,7 +6884,7 @@
   });
   function applyMetaRangePreset(days){
     document.querySelectorAll('.range-preset[data-mdays]').forEach(b => b.classList.toggle('active', Number(b.dataset.mdays) === days));
-    metaRange = { from: isoDaysAgo(days - 1), to: isoDaysAgo(0) };
+    metaRange = lastCompleteDaysRange(days);
     document.getElementById('metaRangeFrom').value = metaRange.from;
     document.getElementById('metaRangeTo').value = metaRange.to;
     document.getElementById('metaRangeLabel').textContent = `Últimos ${days} dias`;
@@ -7905,16 +7905,16 @@
     renderManage();
   }
 
-  // Período das métricas. Padrão: últimos 7 dias (hoje incluído), no fuso de São Paulo.
-  function mgToday(){ return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Sao_Paulo' }).format(new Date()); }
+  // Período das métricas no fuso de São Paulo. "Últimos N dias" = N dias
+  // completos até ontem (hoje fica de fora). Hoje e ontem são o dia cheio.
+  function mgToday(){ return spToday(); }
   function mgAddDays(iso, n){ const d = new Date(`${iso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
   function mgRange(){
     const t = mgToday(), p = MG.period;
     if (p === 'panel' && cdCurrentRange) return { from:cdCurrentRange.from, to:cdCurrentRange.to };
     if (p === 'today') return { from:t, to:t };
     if (p === 'yesterday') { const y = mgAddDays(t, -1); return { from:y, to:y }; }
-    const n = Number(p) || 7;
-    return { from:mgAddDays(t, -(n - 1)), to:t };
+    return lastCompleteDaysRange(Number(p) || 7);
   }
   function mgSetPeriod(v){ MG.period = v; mgLoadTree(); }
   function mgPeriodSelect(){
@@ -8876,9 +8876,22 @@
     if (picker && !picker.contains(ev.target)) document.getElementById('cdRangeMenu')?.classList.remove('open');
   });
 
-  function isoDaysAgo(n){
-    const d = new Date(); d.setDate(d.getDate() - n);
-    return d.toISOString().slice(0,10);
+  // Calendário de São Paulo. Não usa o fuso do navegador nem o UTC do toISOString:
+  // depois das 21h em SP o dia UTC já virou, e o período ia um dia pra frente.
+  function spToday(date){
+    return new Intl.DateTimeFormat('en-CA', { timeZone:'America/Sao_Paulo' }).format(date || new Date());
+  }
+  function isoDaysAgo(n, today){
+    const d = new Date(`${today || spToday()}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().slice(0, 10);
+  }
+  // Últimos N dias calendário completos: D-N até D-1. Hoje fica de fora.
+  // Ex.: hoje 2026-10-26 e N=7 → 2026-10-19 a 2026-10-25. Mesma regra de period.defaultRange.
+  function lastCompleteDaysRange(days, today){
+    const n = Number(days) || 7;
+    const base = today || spToday();
+    return { from: isoDaysAgo(n, base), to: isoDaysAgo(1, base) };
   }
 
   function onClientRangeChange(){
@@ -8889,8 +8902,7 @@
 
   function applyRangePreset(days){
     document.querySelectorAll('.range-preset[data-days]').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
-    const to = isoDaysAgo(0);
-    const from = isoDaysAgo(days - 1);
+    const { from, to } = lastCompleteDaysRange(days);
     document.getElementById('cdRangeFrom').value = from;
     document.getElementById('cdRangeTo').value = to;
     document.getElementById('cdRangeLabel').textContent = `Últimos ${days} dias`;
@@ -9053,7 +9065,7 @@
   async function loadClientGoogle(seq){
     const banner = document.getElementById('cdGoogleNotConnected');
     try {
-      const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+      const range = cdCurrentRange || lastCompleteDaysRange(30);
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
       const res = await fetch(cdReportUrl('google', qs), { headers: authHeaders() });
       if (res.status === 401) { logout(); return null; }
@@ -9078,7 +9090,7 @@
     const body = document.getElementById('cdMetaBody');
     const sub = document.getElementById('cdMetaSub');
     const id = currentClientId;
-    const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+    const range = cdCurrentRange || lastCompleteDaysRange(30);
     sub.textContent = `${dateBr(range.from)} – ${dateBr(range.to)}`;
     body.innerHTML = '<div class="footnote" style="border:none; padding:0; text-align:center;">Carregando dados da Meta…</div>';
     try {
@@ -10879,7 +10891,7 @@
     loading.textContent = 'Carregando dados do Instagram…';
     content.style.display = 'none';
     try {
-      const range = cdCurrentRange || { from: isoDaysAgo(29), to: isoDaysAgo(0) };
+      const range = cdCurrentRange || lastCompleteDaysRange(30);
       const qs = new URLSearchParams({ from: range.from, to: range.to }).toString();
       const res = await fetch(cdReportUrl('instagram', qs), { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }

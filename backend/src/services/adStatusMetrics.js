@@ -9,6 +9,7 @@
  * painel mostra "-".
  */
 const cache = require('../lib/cache');
+const period = require('../lib/period');
 const metaService = require('./metaService');
 const googleService = require('./googleService');
 const { PURCHASE_TYPES } = require('../lib/metaExtras');
@@ -19,24 +20,16 @@ const MAX_DAYS = 400;
 
 /* ===================== Período ===================== */
 
-function todaySP() {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
-}
-function addDays(iso, n) {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
 function daysBetween(from, to) {
   return Math.round((new Date(`${to}T00:00:00Z`) - new Date(`${from}T00:00:00Z`)) / 86400000) + 1;
 }
 
-// Padrão: últimos 7 dias (hoje incluído), no fuso de São Paulo.
+// Padrão: últimos 7 dias completos (termina ontem), no fuso de São Paulo.
 function resolveRange(from, to) {
   const ok = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d || '') && !Number.isNaN(Date.parse(d));
   if (!from && !to) {
-    const t = todaySP();
-    return { from: addDays(t, -6), to: t, days: 7, isDefault: true };
+    const range = period.defaultRange(7);
+    return { from: range.from, to: range.to, days: 7, isDefault: true };
   }
   if (!ok(from) || !ok(to) || from > to) {
     const e = new Error('Período inválido. Use from e to no formato AAAA-MM-DD, com from antes de to.');

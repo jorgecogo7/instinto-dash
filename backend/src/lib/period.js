@@ -1,16 +1,33 @@
 // Datas de relatório compartilhadas pelo Meta Ads e pelo Instagram:
 // período pedido (from/to em AAAA-MM-DD), período anterior equivalente
-// e variação percentual. Mesmo comportamento do googleService.
+// e variação percentual. O padrão "últimos N dias" é o mesmo do painel
+// e do googleService: N dias calendário completos, terminando ontem.
+
+const TZ = 'America/Sao_Paulo';
 
 function toISODate(d) {
   return d.toISOString().slice(0, 10);
 }
 
-function defaultRange(days = 30) {
-  const to = new Date();
-  const from = new Date();
-  from.setUTCDate(from.getUTCDate() - (days - 1));
-  return { from: toISODate(from), to: toISODate(to) };
+// Dia calendário em America/Sao_Paulo (AAAA-MM-DD), independente do fuso do servidor.
+function todaySP(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(date);
+}
+
+function addCalendarDays(iso, n) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Últimos N dias calendário completos: de (hoje - N) até ontem, inclusive.
+// Hoje fica de fora — o dia ainda não fechou. Ex.: hoje 2026-10-26 e N=7
+// → 2026-10-19 a 2026-10-25. `now` só existe para teste.
+function defaultRange(days = 30, now = new Date()) {
+  const n = Number(days);
+  const span = Number.isFinite(n) && n > 0 ? Math.floor(n) : 30;
+  const today = todaySP(now);
+  return { from: addCalendarDays(today, -span), to: addCalendarDays(today, -1) };
 }
 
 function normalizeRange(from, to) {
@@ -61,4 +78,4 @@ function pctDelta(curr, prev) {
   return ((curr - prev) / prev) * 100;
 }
 
-module.exports = { toISODate, defaultRange, normalizeRange, daysInRange, previousRange, eachDay, chunkRange, pctDelta };
+module.exports = { toISODate, todaySP, addCalendarDays, defaultRange, normalizeRange, daysInRange, previousRange, eachDay, chunkRange, pctDelta };
