@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const {
-  pickCreativeMedia, pendingLookups, extraIgIds, parseStory, parseIgMedia, absPermalink,
+  pickCreativeMedia, pendingLookups, extraIgIds, parseStory, parseIgMedia, absPermalink, clientCreative,
 } = require('../src/lib/metaCreative');
 const { mockEnrichMeta } = require('../src/services/adStatusMetrics');
 
@@ -260,6 +260,42 @@ function loadPanel(names) {
   return ctx;
 }
 
+test('a aba Anúncios só recebe vídeo e carrossel, sem link inseguro', () => {
+  assert.strictEqual(clientCreative({ format: 'image', imageUrl: img('a') }), null);
+  const video = clientCreative({ format: 'video', imageUrl: img('capa'), videoUrl: mp4('ok'), videoPermalink: '/reel/2/', title: 'T', body: 'B' });
+  assert.strictEqual(video.format, 'video');
+  assert.strictEqual(video.videoUrl, mp4('ok'));
+  assert.strictEqual(video.videoPermalink, 'https://www.facebook.com/reel/2/');
+  assert.strictEqual(video.slides, null);
+  const bad = clientCreative({ format: 'video', videoUrl: 'javascript:alert(1)', imageUrl: 'http://insecure/a.jpg' });
+  assert.strictEqual(bad.videoUrl, null);
+  assert.strictEqual(bad.imageUrl, null);
+  const car = clientCreative({
+    format: 'carousel',
+    slides: [{ imageUrl: img('a'), kind: 'image' }, { imageUrl: img('b'), videoUrl: mp4('c'), kind: 'video' }],
+  });
+  assert.strictEqual(car.cards, 2);
+  assert.strictEqual(car.videoUrl, null);
+  assert.strictEqual(car.slides[1].kind, 'video');
+  assert.strictEqual(car.slides[1].videoUrl, mp4('c'));
+});
+
+test('relatório de exemplo da aba Anúncios traz vídeo e carrossel', () => {
+  const report = require('../src/data/mockMetaReport').build({ from: '2026-10-01', to: '2026-10-07' });
+  const video = report.ads.find((a) => a.name.startsWith('video_'));
+  const carousel = report.ads.find((a) => a.name.startsWith('carrossel_'));
+  const image = report.ads.find((a) => a.name.startsWith('estatico_'));
+  assert.strictEqual(video.creative.format, 'video');
+  assert.match(video.creative.videoUrl, /^data:video\/mp4;base64,/);
+  assert.strictEqual(video.creative.slides, null);
+  assert.match(video.thumbnailUrl, /^data:image\//);
+  assert.strictEqual(carousel.creative.format, 'carousel');
+  assert.strictEqual(carousel.creative.slides.length, 4);
+  assert.match(carousel.creative.slides[1].videoUrl, /^data:video\/mp4;base64,/);
+  assert.strictEqual(image.creative, undefined);
+  assert.strictEqual(image.thumbnailUrl, null);
+});
+
 test('a prévia monta player, carrossel e trata link expirado', () => {
   const ui = loadPanel(['escapeHtml', 'escapeAttr', 'mgIdAttr', 'mgSafeMediaUrl', 'mgLinkExpired', 'mgRetryBtn', 'mgVideoHtml', 'mgCarouselHtml', 'mgStageHtml']);
   const future = 'FFFFFFFF';
@@ -317,4 +353,27 @@ test('a prévia monta player, carrossel e trata link expirado', () => {
   const google = ui.mgStageHtml({ format: 'video', imageUrl: img('g'), videoUrl: mp4('g'), headlines: ['A'] }, '16', true);
   assert.match(google, /<img /);
   assert.doesNotMatch(google, /<video/);
+});
+
+test('na aba Anúncios, vídeo e carrossel abrem a prévia e imagem continua miniatura', () => {
+  const ui = loadPanel(['escapeHtml', 'escapeAttr', 'mgIdAttr', 'mgSafeMediaUrl', 'mgLinkExpired', 'mgRetryBtn', 'mgVideoHtml', 'mgCarouselHtml', 'mgStageHtml', 'adPreviewable', 'adPlayThumbHtml', 'adThumbHtml2', 'adPreviewBodyHtml']);
+  const imageAd = { id: '1', name: 'Foto', thumbnailUrl: img('foto') };
+  const videoAd = { id: '2', name: 'Filme', thumbnailUrl: img('capa'), creative: { format: 'video', imageUrl: img('capa'), videoUrl: mp4('ok'), title: 'Olá', body: 'Texto' } };
+  const carAd = { id: '3', name: 'Cards', thumbnailUrl: img('a'), creative: { format: 'carousel', slides: [{ kind: 'image', imageUrl: img('a'), title: 'Um' }, { kind: 'video', imageUrl: img('b'), videoUrl: mp4('card'), title: 'Dois' }] } };
+  assert.strictEqual(ui.adPreviewable(imageAd), false);
+  assert.strictEqual(ui.adPreviewable(videoAd), true);
+  const still = ui.adThumbHtml2(imageAd);
+  assert.match(still, /<img /);
+  assert.doesNotMatch(still, /adOpenPreview/);
+  assert.match(still, /ad-preview/);
+  const play = ui.adThumbHtml2(videoAd);
+  assert.match(play, /adOpenPreview\('2'\)/);
+  assert.match(play, /Assistir vídeo/);
+  assert.doesNotMatch(play, /ad-preview/);
+  const body = ui.adPreviewBodyHtml(videoAd);
+  assert.match(body, /<video[^>]*playsinline/);
+  assert.match(body, /Buscar de novo/);
+  const cards = ui.adPreviewBodyHtml(carAd);
+  assert.strictEqual((cards.match(/class="mg-slide"/g) || []).length, 2);
+  assert.match(ui.adPlayThumbHtml(carAd), /Ver cards do carrossel/);
 });

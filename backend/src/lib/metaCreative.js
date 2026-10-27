@@ -13,7 +13,7 @@
 // Campos pedidos para cada criativo (servem para /ads?fields=creative{...}).
 const CREATIVE_FIELDS = 'id,object_type,thumbnail_url,image_url,image_hash,title,body,video_id,effective_object_story_id,object_story_spec,asset_feed_spec';
 
-// Só na prévia do Gerenciar. Se a Meta recusar algum, a leitura cai no conjunto acima.
+// Prévia de vídeo e carrossel (Gerenciar e Anúncios). Se a Meta recusar algum, a leitura cai no conjunto acima.
 const CREATIVE_PLAYBACK_FIELDS = `${CREATIVE_FIELDS},object_story_id,effective_instagram_media_id,source_instagram_media_id`;
 
 const STORY_FIELDS = 'full_picture,attachments{media_type,type,title,description,target{id},media{image,source},subattachments{media_type,type,title,description,target{id},media{image,source}}}';
@@ -343,6 +343,40 @@ function pickCreativeMedia(c, lookups = {}) {
   };
 }
 
+// O que a aba Anúncios (e o link do cliente) pode receber. Imagem fica de fora:
+// a miniatura que já existia continua igual. Só entra https ou o vídeo de exemplo.
+function safeMediaUrl(s) {
+  const c = clean(s);
+  if (!c) return null;
+  if (/^https:\/\//i.test(c)) return c;
+  if (/^data:image\/[a-z0-9.+-]+;base64,/i.test(c)) return c;
+  if (/^data:video\/mp4;base64,/i.test(c)) return c;
+  return null;
+}
+
+function clientCreative(media) {
+  if (!media || (media.format !== 'video' && media.format !== 'carousel')) return null;
+  const slide = (s) => ({
+    imageUrl: safeMediaUrl(s && s.imageUrl),
+    videoUrl: safeMediaUrl(s && s.videoUrl),
+    title: clip(s && s.title, 160),
+    body: clip(s && s.body, 400),
+    kind: s && (s.kind === 'video' || safeMediaUrl(s.videoUrl)) ? 'video' : 'image',
+  });
+  const slides = media.format === 'carousel' && Array.isArray(media.slides) ? media.slides.slice(0, 10).map(slide) : null;
+  return {
+    format: media.format,
+    imageUrl: safeMediaUrl(media.imageUrl),
+    videoUrl: media.format === 'video' ? safeMediaUrl(media.videoUrl) : null,
+    videoPermalink: media.format === 'video' ? absPermalink(media.videoPermalink) : null,
+    title: clip(media.title, 160),
+    body: clip(media.body, 400),
+    cards: media.format === 'carousel' ? (slides ? slides.length : (Number(media.cards) || null)) : null,
+    dynamic: !!media.dynamic,
+    slides,
+  };
+}
+
 module.exports = {
   CREATIVE_FIELDS,
   CREATIVE_PLAYBACK_FIELDS,
@@ -356,4 +390,5 @@ module.exports = {
   parseStory,
   parseIgMedia,
   absPermalink,
+  clientCreative,
 };

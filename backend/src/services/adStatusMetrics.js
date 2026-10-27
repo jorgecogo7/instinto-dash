@@ -191,7 +191,7 @@ async function fetchIdMap(publisher, ids, fields) {
   return r || {};
 }
 
-async function metaLookups(publisher, act, creatives) {
+async function metaLookups(publisher, act, creatives, label = 'Gerenciar') {
   const need = { hashes: new Set(), videos: new Set(), posts: new Set(), ig: new Set() };
   creatives.forEach((c) => {
     const p = pendingLookups(c);
@@ -202,7 +202,7 @@ async function metaLookups(publisher, act, creatives) {
   });
   const out = { hashes: {}, videos: {}, sources: {}, permalinks: {}, posts: {}, stories: {}, ig: {} };
   const chunks = (set, n = 50) => { const a = [...set]; const r = []; for (let i = 0; i < a.length; i += n) r.push(a.slice(i, i + n)); return r.slice(0, 6); };
-  const safe = async (fn) => { try { await fn(); } catch (e) { console.warn('Gerenciar: prévia do criativo incompleta:', e.message); } };
+  const safe = async (fn) => { try { await fn(); } catch (e) { console.warn(`${label}: prévia do criativo incompleta:`, e.message); } };
 
   const pullPosts = async (fields) => {
     for (const part of chunks(need.posts)) {
@@ -236,7 +236,7 @@ async function metaLookups(publisher, act, creatives) {
       try {
         await pullPosts(STORY_FIELDS);
       } catch (e) {
-        console.warn('Gerenciar: publicação sem os cards, lendo só a imagem:', e.message);
+        console.warn(`${label}: publicação sem os cards, lendo só a imagem:`, e.message);
         await pullPosts('full_picture');
       }
     }),
@@ -259,7 +259,7 @@ async function metaLookups(publisher, act, creatives) {
     try {
       await load(VIDEO_FIELDS);
     } catch (e) {
-      console.warn('Gerenciar: vídeo sem arquivo, lendo só a capa:', e.message);
+      console.warn(`${label}: vídeo sem arquivo, lendo só a capa:`, e.message);
       await load(VIDEO_FIELDS_SAFE);
     }
   });
@@ -548,4 +548,4 @@ function mockEnrichGoogle(tree, range) {
   return { metricsError: null };
 }
 
-module.exports = { resolveRange, enrichMeta, enrichGoogle, mockEnrichMeta, mockEnrichGoogle, metaAdsetKind, metaMetrics, mockImage, META_KINDS };
+module.exports = { resolveRange, enrichMeta, enrichGoogle, mockEnrichMeta, mockEnrichGoogle, metaAdsetKind, metaMetrics, metaLookups, mockImage, META_KINDS };

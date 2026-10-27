@@ -4,7 +4,7 @@ const mockMeta = require('../data/mockMeta');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
 const mockMetaReport = require('../data/mockMetaReport');
-const { CREATIVE_FIELDS, pickCreativeMedia } = require('../lib/metaCreative');
+const { CREATIVE_FIELDS, CREATIVE_PLAYBACK_FIELDS, pickCreativeMedia, clientCreative } = require('../lib/metaCreative');
 
 // META_GRAPH_BASE existe só pra testes locais (servidor falso da Graph API).
 // Em produção fica vazio e usa o endereço oficial da Meta.
@@ -153,23 +153,43 @@ function mapMetaResponse(campaigns) {
 // Miniaturas dos criativos (imagem/vídeo do anúncio). Vem de uma consulta à
 // parte e é "melhor esforço": se a Meta recusar ou falhar, o relatório continua
 // funcionando, só que sem as imagens.
-async function fetchCreativeThumbs(accountId) {
+// O publisher do Gerenciar e o graphGet daqui falam a mesma Graph API.
+function graphPublisher() {
+  return {
+    async metaRequest(_method, graphPath, params = {}) {
+      const flat = {};
+      Object.entries(params).forEach(([k, v]) => {
+        if (v == null) return;
+        flat[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+      });
+      const p = graphPath ? String(graphPath).replace(/^\//, '') : '';
+      return graphGet(p, flat);
+    },
+  };
+}
+
+async function fetchCreativeThumbs(accountId, opts = {}) {
   const cacheKey = `meta:thumbs:${accountId}`;
-  const cached = cache.get(cacheKey);
+  const cached = opts.fresh ? null : cache.get(cacheKey);
   if (cached) return cached;
 
   const statuses = JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'ARCHIVED']);
   // Primeiro tenta o criativo completo: thumbnail_url sozinho costuma vir
   // pequeno ou preto em vídeo, criativo dinâmico e anúncio de publicação.
+  // O primeiro conjunto inclui os campos da prévia (vídeo e cards). Se a Meta
+  // recusar, cai no que já servia para a miniatura.
   const attempts = [
-    `effective_status,creative.thumbnail_width(480).thumbnail_height(480){${CREATIVE_FIELDS}}`,
-    'effective_status,creative.thumbnail_width(480).thumbnail_height(480){thumbnail_url,image_url}',
-    'effective_status,creative{thumbnail_url,image_url}',
+    { fields: `effective_status,creative.thumbnail_width(600).thumbnail_height(600){${CREATIVE_PLAYBACK_FIELDS}}`, playback: true },
+    { fields: `effective_status,creative.thumbnail_width(480).thumbnail_height(480){${CREATIVE_FIELDS}}`, playback: true },
+    { fields: 'effective_status,creative.thumbnail_width(480).thumbnail_height(480){thumbnail_url,image_url}', playback: false },
+    { fields: 'effective_status,creative{thumbnail_url,image_url}', playback: false },
   ];
   let ads = null;
-  for (const creativeField of attempts) {
+  let playback = false;
+  for (const attempt of attempts) {
     try {
-      ads = await graphGetAll(`${accountId}/ads`, { fields: creativeField, limit: '100', effective_status: statuses }, 10);
+      ads = await graphGetAll(`${accountId}/ads`, { fields: attempt.fields, limit: '100', effective_status: statuses }, 10);
+      playback = attempt.playback;
       break;
     } catch (e) {
       console.warn('Meta: não consegui buscar miniaturas dos criativos:', e.message);
@@ -177,16 +197,29 @@ async function fetchCreativeThumbs(accountId) {
   }
   const map = {};
   const statusMap = {};
+  const media = {};
+  let lookups = null;
+  if (playback && ads && ads.length) {
+    try {
+      const { metaLookups } = require('./adStatusMetrics');
+      lookups = await metaLookups(graphPublisher(), accountId, ads.map((a) => a.creative).filter(Boolean), 'Anúncios');
+    } catch (e) {
+      console.warn('Anúncios: prévia de vídeo/carrossel incompleta:', e.message);
+    }
+  }
   (ads || []).forEach((a) => {
     const c = a.creative || {};
-    const picked = pickCreativeMedia(c);
+    const picked = pickCreativeMedia(c, lookups || undefined);
     const url = (picked && picked.imageUrl) || c.image_url || c.thumbnail_url;
     if (a.id && url) map[a.id] = url;
     if (a.id && a.effective_status) statusMap[a.id] = a.effective_status;
+    const play = a.id && picked ? clientCreative(picked) : null;
+    if (play) media[a.id] = play;
   });
-  // O mapa de status vai "pendurado" no de miniaturas pra não quebrar quem
-  // já usa fetchCreativeThumbs só pelas imagens.
+  // Status e prévia ficam fora da enumeração: quem só lê a miniatura continua
+  // recebendo adId -> url.
   Object.defineProperty(map, '__status', { value: statusMap, enumerable: false });
+  Object.defineProperty(map, '__media', { value: media, enumerable: false });
   cache.set(cacheKey, map, ads ? 60 * 30 : 120);
   return map;
 }
@@ -439,7 +472,7 @@ async function fetchBreakdowns(accountId, range) {
   };
 }
 
-async function fetchRealReport(accountId, range) {
+async function fetchRealReport(accountId, range, opts = {}) {
   const prev = period.previousRange(range);
   const [accCur, accPrev, adsCur, adsPrev, adsDaily, thumbs, breakdowns] = await Promise.all([
     graphGetAll(`${accountId}/insights`, insightsParams(range, { fields: ACCOUNT_FIELDS })),
@@ -449,15 +482,17 @@ async function fetchRealReport(accountId, range) {
     graphGetAll(`${accountId}/insights`, insightsParams(range, {
       level: 'ad', time_increment: '1', fields: 'ad_id,spend,impressions,clicks,actions',
     }), 20),
-    fetchCreativeThumbs(accountId),
+    fetchCreativeThumbs(accountId, { fresh: !!opts.fresh }),
     fetchBreakdowns(accountId, range),
   ]);
 
   const ads = adsCur.map(mapAdRow).filter((a) => a.spend > 0);
   const statusMap = thumbs.__status || {};
+  const media = thumbs.__media || {};
   ads.forEach((a) => {
     if (thumbs[a.id]) a.thumbnailUrl = thumbs[a.id];
     if (statusMap[a.id]) a.status = statusMap[a.id];
+    if (media[a.id]) a.creative = media[a.id];
   });
   ads.sort((x, y) => (y.results - x.results) || (y.spend - x.spend));
 
@@ -516,7 +551,8 @@ async function getAccountReport(adAccountId, options = {}) {
   const range = period.normalizeRange(options.from, options.to);
   const accountId = normalizeAdAccountId(adAccountId);
   const cacheKey = `meta:report:${accountId || 'mock'}:${range.from}:${range.to}`;
-  const cached = cache.get(cacheKey);
+  // fresh: o link do vídeo expira. "Buscar de novo" na aba Anúncios ignora o cache.
+  const cached = options.fresh ? null : cache.get(cacheKey);
   if (cached) return cached;
 
   let result;
@@ -524,7 +560,7 @@ async function getAccountReport(adAccountId, options = {}) {
     result = withDeltas(mockMetaReport.build(range, accountId));
   } else {
     if (!accountId) throw new Error('Este cliente ainda não tem um ID de conta de anúncios da Meta.');
-    result = withDeltas(await fetchRealReport(accountId, range));
+    result = withDeltas(await fetchRealReport(accountId, range, { fresh: !!options.fresh }));
   }
   cache.set(cacheKey, result, 60 * 20);
   return result;
