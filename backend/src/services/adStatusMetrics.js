@@ -13,7 +13,12 @@ const period = require('../lib/period');
 const metaService = require('./metaService');
 const googleService = require('./googleService');
 const { PURCHASE_TYPES } = require('../lib/metaExtras');
-const { CREATIVE_FIELDS, pickCreativeMedia, pendingLookups } = require('../lib/metaCreative');
+const fs = require('fs');
+const path = require('path');
+const {
+  CREATIVE_FIELDS, CREATIVE_PLAYBACK_FIELDS, STORY_FIELDS, IG_FIELDS, VIDEO_FIELDS, VIDEO_FIELDS_SAFE,
+  pickCreativeMedia, pendingLookups, extraIgIds, parseStory, parseIgMedia, absPermalink,
+} = require('../lib/metaCreative');
 
 const TTL = 5 * 60;
 const MAX_DAYS = 400;
@@ -170,17 +175,56 @@ async function metaAllInsights(publisher, act, level, range) {
   return map;
 }
 
+function rememberVideo(out, id, v) {
+  if (!v || v.error) return;
+  const th = (v.thumbnails && v.thumbnails.data) || [];
+  const best = th.find((t) => t.is_preferred) || th.slice().sort((a, b) => (b.width || 0) - (a.width || 0))[0];
+  const cover = (best && best.uri) || v.picture;
+  if (cover) out.videos[id] = cover;
+  if (typeof v.source === 'string' && /^https:\/\//i.test(v.source)) out.sources[id] = v.source;
+  const perm = absPermalink(v.permalink_url);
+  if (perm) out.permalinks[id] = perm;
+}
+
+async function fetchIdMap(publisher, ids, fields) {
+  const r = await publisher.metaRequest('GET', '', { ids: ids.join(','), fields });
+  return r || {};
+}
+
 async function metaLookups(publisher, act, creatives) {
-  const need = { hashes: new Set(), videos: new Set(), posts: new Set() };
+  const need = { hashes: new Set(), videos: new Set(), posts: new Set(), ig: new Set() };
   creatives.forEach((c) => {
     const p = pendingLookups(c);
     p.hashes.forEach((h) => need.hashes.add(h));
     p.videos.forEach((v) => need.videos.add(v));
     p.posts.forEach((x) => need.posts.add(x));
+    (p.ig || []).forEach((x) => need.ig.add(x));
   });
-  const out = { hashes: {}, videos: {}, posts: {} };
+  const out = { hashes: {}, videos: {}, sources: {}, permalinks: {}, posts: {}, stories: {}, ig: {} };
   const chunks = (set, n = 50) => { const a = [...set]; const r = []; for (let i = 0; i < a.length; i += n) r.push(a.slice(i, i + n)); return r.slice(0, 6); };
   const safe = async (fn) => { try { await fn(); } catch (e) { console.warn('Gerenciar: prévia do criativo incompleta:', e.message); } };
+
+  const pullPosts = async (fields) => {
+    for (const part of chunks(need.posts)) {
+      const r = await fetchIdMap(publisher, part, fields);
+      Object.entries(r).forEach(([id, v]) => {
+        if (!v || v.error) return;
+        if (v.full_picture) out.posts[id] = v.full_picture;
+        const story = parseStory(v);
+        if (story) out.stories[id] = story;
+      });
+    }
+  };
+  const pullIg = async (ids) => {
+    for (const part of chunks(ids)) {
+      const r = await fetchIdMap(publisher, part, IG_FIELDS);
+      Object.entries(r).forEach(([id, v]) => {
+        const parsed = parseIgMedia(v);
+        if (parsed) out.ig[id] = parsed;
+      });
+    }
+  };
+
   await Promise.all([
     safe(async () => {
       for (const part of chunks(need.hashes)) {
@@ -189,29 +233,50 @@ async function metaLookups(publisher, act, creatives) {
       }
     }),
     safe(async () => {
-      for (const part of chunks(need.videos)) {
-        const r = await publisher.metaRequest('GET', '', { ids: part.join(','), fields: 'picture,thumbnails{uri,is_preferred,width}' });
-        Object.entries(r || {}).forEach(([id, v]) => {
-          const th = (v && v.thumbnails && v.thumbnails.data) || [];
-          const best = th.find((t) => t.is_preferred) || th.sort((a, b) => (b.width || 0) - (a.width || 0))[0];
-          const url = (best && best.uri) || (v && v.picture);
-          if (url) out.videos[id] = url;
-        });
+      try {
+        await pullPosts(STORY_FIELDS);
+      } catch (e) {
+        console.warn('Gerenciar: publicação sem os cards, lendo só a imagem:', e.message);
+        await pullPosts('full_picture');
       }
     }),
-    safe(async () => {
-      for (const part of chunks(need.posts)) {
-        const r = await publisher.metaRequest('GET', '', { ids: part.join(','), fields: 'full_picture' });
-        Object.entries(r || {}).forEach(([id, v]) => { if (v && v.full_picture) out.posts[id] = v.full_picture; });
-      }
-    }),
+    safe(async () => { if (need.ig.size) await pullIg(need.ig); }),
   ]);
+
+  Object.values(out.stories).forEach((story) => {
+    if (!story) return;
+    if (story.videoId) need.videos.add(String(story.videoId));
+    (story.slides || []).forEach((s) => { if (s.videoId) need.videos.add(String(s.videoId)); });
+  });
+
+  await safe(async () => {
+    const load = async (fields) => {
+      for (const part of chunks(need.videos, 40)) {
+        const r = await fetchIdMap(publisher, part, fields);
+        Object.entries(r).forEach(([id, v]) => rememberVideo(out, id, v));
+      }
+    };
+    try {
+      await load(VIDEO_FIELDS);
+    } catch (e) {
+      console.warn('Gerenciar: vídeo sem arquivo, lendo só a capa:', e.message);
+      await load(VIDEO_FIELDS_SAFE);
+    }
+  });
+
+  const moreIg = new Set();
+  creatives.forEach((c) => { extraIgIds(c, out).forEach((id) => moreIg.add(id)); });
+  if (moreIg.size) await safe(async () => { await pullIg(moreIg); });
   return out;
 }
 
 async function metaCreatives(publisher, act, adIds) {
   if (!adIds.length) return {};
-  const attempts = [`id,creative.thumbnail_width(600).thumbnail_height(600){${CREATIVE_FIELDS}}`, `id,creative{${CREATIVE_FIELDS}}`];
+  const attempts = [
+    `id,creative.thumbnail_width(600).thumbnail_height(600){${CREATIVE_PLAYBACK_FIELDS}}`,
+    `id,creative.thumbnail_width(600).thumbnail_height(600){${CREATIVE_FIELDS}}`,
+    `id,creative{${CREATIVE_FIELDS}}`,
+  ];
   let ads = null;
   let lastErr = null;
   for (const fields of attempts) {
@@ -237,10 +302,11 @@ async function metaCreatives(publisher, act, adIds) {
  * Pendura metrics em cada nó (e creative nos anúncios) da árvore crua da Meta.
  * tree: [{ id, objective, children:[{ id, optimizationGoal, promotedObject, destinationType, children:[{ id }] }] }]
  */
-async function enrichMeta(publisher, account, tree, range) {
+async function enrichMeta(publisher, account, tree, range, opts = {}) {
   const act = metaService.normalizeAdAccountId(account.meta.adAccountId);
   const key = `adstatus:meta:${act}:${range.from}:${range.to}`;
-  let data = cache.get(key);
+  // fresh: o link do vídeo expira. "Buscar de novo" ignora o cache e pede outro.
+  let data = opts.fresh ? null : cache.get(key);
   if (!data) {
     const errors = [];
     const adIds = tree.flatMap((c) => (c.children || []).flatMap((s) => (s.children || []).map((a) => a.id)));
@@ -364,6 +430,32 @@ function mockImage(label, hue, kind) {
 
 const MOCK_KIND_RATE = { messages: [9, 22], leads: [18, 45], purchases: [45, 120], landing_page_views: [0.6, 1.6], link_clicks: [0.4, 1.2] };
 
+// Vídeo curtinho de exemplo, só no modo de teste, para o player ter o que reproduzir.
+let mockVideoUrl = null;
+function mockVideo() {
+  if (!mockVideoUrl) {
+    const buf = fs.readFileSync(path.join(__dirname, '../data/mock-ad-video.mp4'));
+    mockVideoUrl = `data:video/mp4;base64,${buf.toString('base64')}`;
+  }
+  return mockVideoUrl;
+}
+
+function mockSlides(id, n) {
+  const hue = Math.round(hash(id) * 360);
+  const total = Math.max(2, Math.min(10, n || 3));
+  return Array.from({ length: total }, (_, i) => {
+    const video = i === 1;
+    return {
+      imageUrl: mockImage(video ? 'Card de vídeo' : `Card ${i + 1}`, (hue + i * 36) % 360, video ? 'video' : 'carousel'),
+      videoId: null,
+      videoUrl: video ? mockVideo() : null,
+      title: `[TESTE] Card ${i + 1}`,
+      body: video ? '[TESTE] Dê play neste card.' : `[TESTE] Imagem ${i + 1} do carrossel.`,
+      kind: video ? 'video' : 'image',
+    };
+  });
+}
+
 function mockMetaRow(id, kind, days, status) {
   const r = hash(id);
   if (status === 'PAUSED' && r < 0.5) return null; // pausado e sem entrega no período
@@ -406,9 +498,17 @@ function mockEnrichMeta(tree, range) {
         if (row) data.ad[a.id] = row;
         const m = a.mockCreative || {};
         const hue = Math.round(hash(a.id) * 360);
+        const slides = m.format === 'carousel' ? mockSlides(a.id, m.cards || 3) : null;
         data.creatives[a.id] = {
-          format: m.format || 'image', imageUrl: mockImage(m.format === 'video' ? 'Capa do vídeo' : m.format === 'carousel' ? 'Card 1 do carrossel' : 'Imagem do anúncio', hue, m.format),
-          thumbUrl: null, source: 'imagem de exemplo', title: m.title || null, body: m.body || null, cards: m.cards || null, dynamic: false,
+          format: m.format || 'image',
+          imageUrl: slides ? slides[0].imageUrl : mockImage(m.format === 'video' ? 'Capa do vídeo' : 'Imagem do anúncio', hue, m.format),
+          thumbUrl: null, source: 'imagem de exemplo', title: m.title || null, body: m.body || null,
+          cards: m.format === 'carousel' ? (slides ? slides.length : m.cards || null) : null,
+          dynamic: false,
+          videoId: null,
+          videoUrl: m.format === 'video' ? mockVideo() : null,
+          videoPermalink: null,
+          slides,
         };
         return row;
       });
