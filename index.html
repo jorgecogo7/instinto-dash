@@ -1673,11 +1673,28 @@
   .mg-snip{ font-size:12px; color:var(--text-dim); margin-top:4px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
   .mg-snip b{ color:var(--text); font-weight:600; }
   .mg-pv-img{ display:block; width:100%; max-height:62vh; object-fit:contain; border-radius:12px; background:rgba(127,127,127,.12); margin-bottom:12px; }
+  .mg-pv-video{ display:block; width:100%; max-height:62vh; border-radius:12px; background:#111; margin-bottom:12px; }
   .mg-pv-ph{ border-radius:12px; padding:28px 14px; text-align:center; font-size:13px; color:var(--text-dim); background:linear-gradient(135deg, rgba(255,122,26,.18), rgba(255,176,32,.06)); margin-bottom:12px; }
+  .mg-pv-ph a{ color:inherit; font-weight:700; }
   .mg-pv-t{ font-weight:700; font-size:14px; margin-bottom:6px; word-break:break-word; }
   .mg-pv-b{ font-size:13px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
   .mg-pv-note{ font-size:11.5px; color:var(--text-dim); margin-top:10px; }
   .mg-pv-list{ margin:0 0 8px; padding-left:18px; font-size:13px; line-height:1.5; }
+  .mg-prev-box{ width:min(640px, 100%); }
+  .mg-retry{ display:inline-flex; align-items:center; justify-content:center; margin-top:10px; min-height:44px; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .mg-retry:disabled{ opacity:.6; cursor:default; }
+  .mg-carousel{ margin-bottom:4px; }
+  .mg-car-scroll{ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; scrollbar-width:none; border-radius:12px; background:rgba(127,127,127,.08); }
+  .mg-car-scroll::-webkit-scrollbar{ display:none; }
+  .mg-slide{ flex:0 0 100%; min-width:100%; scroll-snap-align:start; scroll-snap-stop:always; }
+  .mg-slide .mg-pv-img, .mg-slide .mg-pv-video{ margin-bottom:0; max-height:52vh; border-radius:0; }
+  .mg-slide .mg-pv-ph{ margin-bottom:0; border-radius:0; }
+  .mg-slide-cap{ font-size:12.5px; line-height:1.4; padding:8px 2px 0; word-break:break-word; }
+  .mg-slide-cap b{ font-weight:700; }
+  .mg-car-nav{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; }
+  .mg-car-btn{ width:44px; height:44px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--text); font-size:22px; line-height:1; cursor:pointer; }
+  .mg-car-btn:disabled{ opacity:.35; cursor:default; }
+  .mg-car-pos{ font-size:13px; font-weight:700; }
   @media (max-width: 760px){
     .mg-row{ padding:9px 10px; gap:8px; }
     .mg-children{ padding:0 6px 8px 14px; }
@@ -3553,7 +3570,7 @@
 
       <!-- Prévia do criativo (Gerenciar) -->
       <div class="rp-modal" id="mgPrevModal" onclick="if (event.target === this) mgClosePreview()">
-        <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="mgPrevTitle">
+        <div class="rp-modal-box mg-prev-box" role="dialog" aria-modal="true" aria-labelledby="mgPrevTitle">
           <h3 id="mgPrevTitle"></h3>
           <div class="rp-modal-sub" id="mgPrevSub"></div>
           <div id="mgPrevBody"></div>
@@ -8177,13 +8194,78 @@
     return `<div class="mg-mets">${items.join('')}</div>${mixedNote}`;
   }
 
-  // Miniatura do anúncio (toque para ampliar). Sem imagem: quadro laranja com ícone, nunca preto.
+  // Miniatura do anúncio (toque para ampliar, assistir ou ver os cards). Sem imagem: quadro laranja, nunca preto.
   const MG_FMT = { video:'Vídeo', carousel:'Carrossel', image:'', text:'' };
+  function mgIdAttr(id){ return String(id == null ? '' : id).replace(/[^0-9A-Za-z_-]/g, ''); }
+  function mgSafeMediaUrl(u){
+    const s = String(u || '');
+    if (/^https:\/\//i.test(s)) return s;
+    if (/^data:image\/[a-z0-9.+-]+;base64,/i.test(s)) return s;
+    if (/^data:video\/mp4;base64,/i.test(s)) return s;
+    return '';
+  }
+  // A Meta marca a validade do arquivo no parâmetro oe (unix em hexadecimal).
+  function mgLinkExpired(url){
+    try {
+      const oe = new URL(url).searchParams.get('oe');
+      if (!oe || !/^[0-9a-f]+$/i.test(oe)) return false;
+      const exp = parseInt(oe, 16) * 1000;
+      return Number.isFinite(exp) && exp < Date.now();
+    } catch (e) { return false; }
+  }
+  function mgRetryBtn(adId){
+    return `<button type="button" class="mg-retry" onclick="mgRefreshPreview('${mgIdAttr(adId)}')">Buscar de novo</button>`;
+  }
+  function mgVideoHtml(url, poster, adId, permalink, preload){
+    const src = mgSafeMediaUrl(url);
+    const post = mgSafeMediaUrl(poster);
+    const link = mgSafeMediaUrl(permalink);
+    const posterImg = post ? `<img class="mg-pv-img" src="${escapeAttr(post)}" alt="" referrerpolicy="no-referrer">` : '';
+    const open = link ? `<div style="margin-top:8px"><a href="${escapeAttr(link)}" target="_blank" rel="noopener noreferrer">Abrir o vídeo na Meta</a></div>` : '';
+    if (!src || mgLinkExpired(src)) {
+      const why = src && mgLinkExpired(src) ? 'O link deste vídeo expirou.' : 'A Meta não liberou o arquivo deste vídeo, só a capa.';
+      return `<div class="mg-pv-ph">${posterImg}${why}${open}<br>${mgRetryBtn(adId)}</div>`;
+    }
+    const pre = preload === 'none' ? 'none' : 'metadata';
+    return `<video class="mg-pv-video" controls playsinline preload="${pre}" ${post ? `poster="${escapeAttr(post)}"` : ''} src="${escapeAttr(src)}" referrerpolicy="no-referrer" onerror="mgMediaBroken(this,'${mgIdAttr(adId)}')"></video>`;
+  }
+  function mgStageHtml(c, adId, google){
+    const carousel = c && !google && c.format === 'carousel' && Array.isArray(c.slides) && c.slides.length > 1;
+    if (carousel) return mgCarouselHtml(c, adId);
+    if (c && !google && c.format === 'video') return mgVideoHtml(c.videoUrl, c.imageUrl, adId, c.videoPermalink);
+    if (c && (mgSafeMediaUrl(c.imageUrl) || (google && c.imageUrl))) return `<img class="mg-pv-img" src="${escapeAttr(c.imageUrl)}" alt="Criativo do anúncio" referrerpolicy="no-referrer" onerror="mgMediaBroken(this,'${mgIdAttr(adId)}')">`;
+    return '';
+  }
+  function mgCarouselHtml(c, adId){
+    const slides = Array.isArray(c.slides) ? c.slides : [];
+    const anyMedia = slides.some((s) => mgSafeMediaUrl(s.imageUrl) || mgSafeMediaUrl(s.videoUrl));
+    if (!anyMedia) return `<div class="mg-pv-ph">Este carrossel não tem imagens fixas no criativo. A Meta monta os cards na hora (catálogo ou publicação dinâmica).</div>`;
+    const items = slides.map((s, i) => {
+      const video = s.kind === 'video' || mgSafeMediaUrl(s.videoUrl);
+      const media = video
+        ? mgVideoHtml(s.videoUrl, s.imageUrl, adId, '', i === 0 ? 'metadata' : 'none')
+        : (mgSafeMediaUrl(s.imageUrl)
+          ? `<img class="mg-pv-img" src="${escapeAttr(mgSafeMediaUrl(s.imageUrl))}" alt="" referrerpolicy="no-referrer" onerror="mgMediaBroken(this,'${mgIdAttr(adId)}')">`
+          : `<div class="mg-pv-ph">Este card não tem imagem.</div>`);
+      const cap = (s.title || s.body) ? `<div class="mg-slide-cap">${s.title ? `<b>${escapeHtml(s.title)}</b>` : ''}${s.body ? `<div>${escapeHtml(s.body)}</div>` : ''}</div>` : '';
+      return `<div class="mg-slide">${media}${cap}</div>`;
+    }).join('');
+    return `<div class="mg-carousel">
+      <div class="mg-car-scroll" tabindex="0" aria-label="Cards do carrossel">${items}</div>
+      <div class="mg-car-nav">
+        <button type="button" class="mg-car-btn" data-dir="-1" aria-label="Card anterior">‹</button>
+        <span class="mg-car-pos">1 de ${slides.length}</span>
+        <button type="button" class="mg-car-btn" data-dir="1" aria-label="Próximo card">›</button>
+      </div>
+      <div class="mg-pv-note">Arraste para o lado para ver os cards.</div>
+    </div>`;
+  }
   function mgThumbHtml(node){
     const c = node.creative;
     const fmt = c && c.format === 'carousel' && c.cards ? `${c.cards} cards` : (c ? MG_FMT[c.format] || '' : '');
     const badge = fmt ? `<span class="mg-fmt">${escapeHtml(fmt)}</span>` : '';
-    const label = escapeAttr(`Ver criativo de ${node.name || 'anúncio'}`);
+    const action = c && c.format === 'video' ? 'Assistir vídeo' : c && c.format === 'carousel' ? 'Ver cards do carrossel' : 'Ver criativo';
+    const label = escapeAttr(`${action} de ${node.name || 'anúncio'}`);
     if (c && c.imageUrl) {
       return `<button type="button" class="mg-thumb" onclick="mgPreview('${escapeAttr(node.id)}')" aria-label="${label}"><img src="${escapeAttr(c.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">${badge}</button>`;
     }
@@ -8195,14 +8277,86 @@
     if (!c || (!c.title && !c.body)) return '';
     return `<div class="mg-snip">${c.title ? `<b>${escapeHtml(c.title)}</b>${c.body ? ' · ' : ''}` : ''}${c.body ? escapeHtml(c.body) : ''}</div>`;
   }
+  function mgUnbindPreview(){
+    const car = document.querySelector('#mgPrevBody .mg-carousel');
+    if (car && typeof car._mgUnbind === 'function') car._mgUnbind();
+  }
+  function mgBindCarousel(root){
+    if (!root) return;
+    const scroller = root.querySelector('.mg-car-scroll');
+    const slides = [...root.querySelectorAll('.mg-slide')];
+    const pos = root.querySelector('.mg-car-pos');
+    const buttons = [...root.querySelectorAll('.mg-car-btn')];
+    if (!scroller || !slides.length) return;
+    let current = 0;
+    const show = (i) => {
+      current = Math.max(0, Math.min(slides.length - 1, i));
+      if (pos) pos.textContent = `${current + 1} de ${slides.length}`;
+      slides.forEach((s, n) => { const v = s.querySelector('video'); if (v && n !== current) v.pause(); });
+      buttons.forEach((b) => {
+        const dir = Number(b.getAttribute('data-dir'));
+        b.disabled = (dir < 0 && current <= 0) || (dir > 0 && current >= slides.length - 1);
+      });
+    };
+    const indexFromScroll = () => {
+      const w = scroller.clientWidth || 1;
+      return Math.max(0, Math.min(slides.length - 1, Math.round(scroller.scrollLeft / w)));
+    };
+    const go = (dir) => {
+      const w = scroller.clientWidth || 1;
+      show(current + dir);
+      scroller.scrollTo({ left: current * w, behavior: 'smooth' });
+    };
+    // O snap do celular termina depois do último evento de scroll. O card
+    // visível é quem manda no contador.
+    const io = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.intersectionRatio >= 0.55) show(slides.indexOf(entry.target));
+      });
+    }, { root: scroller, threshold: [0.55, 0.85] }) : null;
+    if (io) slides.forEach((s) => io.observe(s));
+    const onScroll = () => { window.clearTimeout(scroller._mgT); scroller._mgT = window.setTimeout(() => show(indexFromScroll()), 120); };
+    const onKey = (e) => {
+      const modal = document.getElementById('mgPrevModal');
+      if (!modal || !modal.classList.contains('open')) return;
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const tag = e.target && e.target.tagName;
+      if (tag === 'VIDEO' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      go(e.key === 'ArrowRight' ? 1 : -1);
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    if ('onscrollend' in scroller) scroller.addEventListener('scrollend', () => show(indexFromScroll()));
+    document.addEventListener('keydown', onKey);
+    buttons.forEach((b) => b.addEventListener('click', () => go(Number(b.getAttribute('data-dir')))));
+    root._mgUnbind = () => {
+      if (io) io.disconnect();
+      scroller.removeEventListener('scroll', onScroll);
+      document.removeEventListener('keydown', onKey);
+      window.clearTimeout(scroller._mgT);
+    };
+    show(0);
+  }
+  function mgMediaBroken(el, adId){
+    const cover = el && el.tagName === 'VIDEO' && el.poster ? el.poster : '';
+    const ph = document.createElement('div');
+    ph.className = 'mg-pv-ph';
+    const img = cover ? `<img class="mg-pv-img" src="${escapeAttr(cover)}" alt="" referrerpolicy="no-referrer">` : '';
+    const msg = (typeof MG !== 'undefined' && MG.platform === 'google') ? 'A imagem não carregou. O link pode ter expirado.' : 'Não carregou. O link da Meta pode ter expirado.';
+    ph.innerHTML = `${img}${msg}<br>${mgRetryBtn(adId)}`;
+    if (el && el.replaceWith) el.replaceWith(ph);
+  }
   function mgPreview(id){
     const hit = mgFind('ad', id);
     if (!hit) return;
+    mgUnbindPreview();
     const { node, parents } = hit, c = node.creative, google = MG.platform === 'google';
     document.getElementById('mgPrevTitle').textContent = node.name || '(sem nome)';
     document.getElementById('mgPrevSub').textContent = parents.map(p => p.name).join(' > ');
     let html = '';
-    if (c && c.imageUrl) html += `<img class="mg-pv-img" src="${escapeAttr(c.imageUrl)}" alt="Criativo do anúncio" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=&quot;mg-pv-ph&quot;>A imagem não carregou. O link da plataforma pode ter expirado: toque em Atualizar e abra de novo.</div>'">`;
+    const carousel = c && !google && c.format === 'carousel' && Array.isArray(c.slides) && c.slides.length > 1;
+    const stage = mgStageHtml(c, node.id, google);
+    if (stage) html += stage;
     else html += `<div class="mg-pv-ph">${c ? (google ? 'Anúncio só de texto: sem imagem.' : 'A Meta não devolveu imagem para este criativo.') : 'Não consegui ler o criativo deste anúncio.'}</div>`;
     if (c && google) {
       if (c.headlines && c.headlines.length) html += `<div class="mg-pv-t">Títulos</div><ul class="mg-pv-list">${c.headlines.map(h => `<li>${escapeHtml(h)}</li>`).join('')}</ul>`;
@@ -8211,19 +8365,41 @@
     } else if (c) {
       if (c.title) html += `<div class="mg-pv-t">${escapeHtml(c.title)}</div>`;
       if (c.body) html += `<div class="mg-pv-b">${escapeHtml(c.body)}</div>`;
-      if (!c.title && !c.body) html += `<div class="mg-pv-note">Sem texto no criativo.</div>`;
+      if (!c.title && !c.body && !carousel) html += `<div class="mg-pv-note">Sem texto no criativo.</div>`;
       const notes = [];
-      if (c.format === 'video') notes.push('Vídeo: a imagem é a capa.');
-      if (c.format === 'carousel') notes.push(`Carrossel${c.cards ? ` com ${c.cards} cards` : ''}: a imagem é a do primeiro card.`);
-      if (c.dynamic) notes.push('Criativo dinâmico: a Meta combina várias imagens e textos. Aqui aparece a primeira opção.');
-      if (c.source && c.imageUrl) notes.push(`Origem da imagem: ${c.source}.`);
+      if (c.format === 'video' && c.videoUrl) notes.push('O link do vídeo expira depois de um tempo. Se parar de abrir, toque em Buscar de novo.');
+      if (c.dynamic && c.format !== 'carousel') notes.push('Criativo dinâmico: a Meta combina várias imagens e textos. Aqui aparece a primeira opção.');
+      if (c.format === 'image' && c.source && c.imageUrl) notes.push(`Origem da imagem: ${c.source}.`);
       if (notes.length) html += `<div class="mg-pv-note">${escapeHtml(notes.join(' '))}</div>`;
     }
     if (node.metrics && !node.metrics.noDelivery) html += `<div style="margin-top:12px">${mgMetricsHtml(node)}</div>`;
     document.getElementById('mgPrevBody').innerHTML = html;
     document.getElementById('mgPrevModal').classList.add('open');
+    if (carousel) mgBindCarousel(document.querySelector('#mgPrevBody .mg-carousel'));
   }
-  function mgClosePreview(){ document.getElementById('mgPrevModal').classList.remove('open'); document.getElementById('mgPrevBody').innerHTML = ''; }
+  function mgClosePreview(){
+    mgUnbindPreview();
+    document.getElementById('mgPrevModal').classList.remove('open');
+    document.getElementById('mgPrevBody').innerHTML = '';
+  }
+  async function mgRefreshPreview(id){
+    if (MG.refreshing || !MG.clientId) return;
+    MG.refreshing = true;
+    document.querySelectorAll('#mgPrevBody .mg-retry').forEach((b) => { b.disabled = true; b.textContent = 'Buscando…'; });
+    try {
+      const r = mgRange();
+      const data = await mgApi(`?platform=${encodeURIComponent(MG.platform)}&from=${r.from}&to=${r.to}&fresh=1`);
+      MG.tree = data;
+      MG.err = null;
+      renderManage();
+      mgPreview(id);
+    } catch (err) {
+      document.querySelectorAll('#mgPrevBody .mg-retry').forEach((b) => { b.disabled = false; b.textContent = 'Buscar de novo'; });
+      const body = document.getElementById('mgPrevBody');
+      if (body) body.insertAdjacentHTML('afterbegin', `<div class="cp-problems cp-err">${escapeHtml(err.message || 'Não consegui buscar de novo.')}</div>`);
+    }
+    MG.refreshing = false;
+  }
 
   function mgSetPlatform(p){ if (MG.platform === p) return; MG.platform = p; MG.tree = null; MG.msg = null; mgLoadTree(); }
   function mgToggleOpen(key){ MG.open[key] = !MG.open[key]; renderManage(); }
@@ -8287,7 +8463,7 @@
     el.innerHTML = `
       ${mgBanner(MG.tree ? MG.tree.capabilities : cap)}
       <div class="panel fm-panel">
-        <div class="panel-head"><div><h3>Campanhas na conta</h3><div class="panel-head-sub">Veja o desempenho e pause ou reative campanhas, ${MG.platform === 'google' ? 'grupos de anúncios' : 'conjuntos'} e anúncios que já existem. Toque na imagem do anúncio para ampliar. Toda alteração pede confirmação e fica registrada no histórico.</div></div></div>
+        <div class="panel-head"><div><h3>Campanhas na conta</h3><div class="panel-head-sub">Veja o desempenho e pause ou reative campanhas, ${MG.platform === 'google' ? 'grupos de anúncios' : 'conjuntos'} e anúncios que já existem. Toque na imagem para ampliar. Em vídeo, dá para assistir; em carrossel, dá para ver cada card. Toda alteração pede confirmação e fica registrada no histórico.</div></div></div>
         <div class="mg-toolbar"><div class="g-tabs">${tabs}</div>${cap.linked ? mgPeriodSelect() : ''}
           <button type="button" class="btn-cancel" onclick="mgLoadTree()" ${MG.loading || !cap.linked ? 'disabled' : ''}>${MG.loading ? 'Atualizando…' : 'Atualizar'}</button></div>
         ${MG.tree && MG.tree.period ? `<div class="mg-periodline">Métricas de ${dateBr(MG.tree.period.from)} a ${dateBr(MG.tree.period.to)}${MG.tree.capabilities.mode === 'mock' ? ' · números de exemplo [TESTE]' : ''}. ${MG.platform === 'google' ? 'Conversões e custo por conversão como o Google Ads conta.' : 'Resultado conforme a meta de cada conjunto, como no Gerenciador de Anúncios.'}</div>` : ''}

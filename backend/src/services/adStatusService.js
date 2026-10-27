@@ -325,7 +325,7 @@ async function googleSetStatus(account, level, id, status, parent) {
 // Cópia rasa da árvore do mock, para as métricas não ficarem gravadas no estado.
 const cloneTree = (tree) => tree.map((c) => ({ ...c, children: (c.children || []).map((s) => ({ ...s, children: (s.children || []).map((a) => ({ ...a })) })) }));
 
-async function getTree(account, platform, { from, to } = {}) {
+async function getTree(account, platform, { from, to, fresh } = {}) {
   const range = metrics.resolveRange(from, to);
   const cap = capabilities(account, platform);
   if (!cap.canRead) throw fail(`Não dá para listar ainda. Falta: ${cap.readMissing.join(', ')}.`, 409, { capabilities: cap });
@@ -347,7 +347,7 @@ async function getTree(account, platform, { from, to } = {}) {
     }
     // Métricas e prévias são extras: se falharem, a árvore (e o liga/desliga) continua.
     try {
-      info = platform === 'meta' ? await metrics.enrichMeta(publisher, account, raw, range) : await metrics.enrichGoogle(account, raw, range);
+      info = platform === 'meta' ? await metrics.enrichMeta(publisher, account, raw, range, { fresh: !!fresh }) : await metrics.enrichGoogle(account, raw, range);
     } catch (err) {
       info = { metricsError: err.message };
     }
