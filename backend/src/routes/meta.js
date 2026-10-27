@@ -36,7 +36,7 @@ router.get('/:clientId/report', async (req, res) => {
   }
   try {
     const report = await metaService.getAccountReport(account.meta.adAccountId, {
-      from: req.query.from, to: req.query.to,
+      from: req.query.from, to: req.query.to, fresh: req.query.fresh === '1',
     });
     res.json(report);
   } catch (err) {

@@ -2,8 +2,57 @@
 // usado só sem token da Meta ou com USE_MOCK_DATA=true. Os números são
 // gerados de forma determinística a partir do período, pra tela não
 // "pular" a cada recarga.
+const fs = require('fs');
+const path = require('path');
 const period = require('../lib/period');
 const extras = require('../lib/metaExtras');
+
+let mockVideoUrl = null;
+function mockVideo() {
+  if (!mockVideoUrl) {
+    const buf = fs.readFileSync(path.join(__dirname, 'mock-ad-video.mp4'));
+    mockVideoUrl = `data:video/mp4;base64,${buf.toString('base64')}`;
+  }
+  return mockVideoUrl;
+}
+
+function mockCover(label, hue) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="hsl(${hue},62%,42%)"/><text x="300" y="300" font-family="Arial" font-size="36" font-weight="700" fill="#fff" text-anchor="middle">${label}</text></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+function mockPlayback(name, idx) {
+  if (/^video_|^reels_/.test(name)) {
+    const imageUrl = mockCover('[TESTE] Vídeo', 18 + idx * 24);
+    return {
+      thumbnailUrl: imageUrl,
+      creative: {
+        format: 'video', imageUrl, videoUrl: mockVideo(), videoPermalink: null,
+        title: '[TESTE] Vídeo', body: '[TESTE] Dê play para assistir.', cards: null, dynamic: false, slides: null,
+      },
+    };
+  }
+  if (/^carrossel_/.test(name)) {
+    const slides = [0, 1, 2, 3].map((i) => {
+      const video = i === 1;
+      return {
+        imageUrl: mockCover(video ? '[TESTE] Card vídeo' : `[TESTE] Card ${i + 1}`, 200 + i * 28),
+        videoUrl: video ? mockVideo() : null,
+        title: `[TESTE] Card ${i + 1}`,
+        body: video ? '[TESTE] Dê play neste card.' : `[TESTE] Imagem ${i + 1} do carrossel.`,
+        kind: video ? 'video' : 'image',
+      };
+    });
+    return {
+      thumbnailUrl: slides[0].imageUrl,
+      creative: {
+        format: 'carousel', imageUrl: slides[0].imageUrl, videoUrl: null, videoPermalink: null,
+        title: '[TESTE] Carrossel', body: '[TESTE] Arraste para ver os cards.', cards: slides.length, dynamic: false, slides,
+      },
+    };
+  }
+  return { thumbnailUrl: null, creative: undefined };
+}
 
 function rng(seed) {
   let s = seed % 2147483647;
@@ -45,6 +94,7 @@ function build(range, salt) {
       const clicks = impressions * (0.012 + rand() * 0.03);
       const reach = impressions / (1.05 + rand() * 0.2);
       const results = Math.round(clicks * a.conv * (3 + rand()));
+      const play = mockPlayback(a.name, idx);
       return {
         id: `ad_mock_${idx + 1}`,
         name: a.name,
@@ -67,7 +117,8 @@ function build(range, salt) {
         costPerResult: results ? spend / results : 0,
         engagement: Math.round(clicks * (2 + rand() * 2)),
         video25: Math.round(impressions * 0.06),
-        thumbnailUrl: null,
+        thumbnailUrl: play.thumbnailUrl,
+        ...(play.creative ? { creative: play.creative } : {}),
         ...(() => {
           const x = {
             conversations: results,

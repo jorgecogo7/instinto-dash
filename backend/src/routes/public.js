@@ -173,7 +173,7 @@ router.get('/:token/:kind(meta|google|instagram)', async (req, res) => {
   try {
     if (kind === 'meta') {
       if (!wantedPlatforms(account).includes('meta')) return res.status(409).json({ error: 'Meta Ads não está ativo neste painel.' });
-      return res.json(await metaService.getAccountReport(account.meta.adAccountId, range));
+      return res.json(await metaService.getAccountReport(account.meta.adAccountId, { ...range, fresh: req.query.fresh === '1' }));
     }
     if (kind === 'google') {
       if (!wantedPlatforms(account).includes('google')) return res.status(409).json({ error: 'Google Ads não está ativo neste painel.' });

@@ -52,7 +52,7 @@ router.get('/:kind(meta|google|instagram)', async (req, res) => {
       return res.json({ ...report, igConfigured: Boolean(igUserId) });
     }
     if (!platformsOf(a, vis).includes(req.params.kind)) return res.status(403).json({ error: 'Esta seção não está liberada para você.' });
-    if (req.params.kind === 'meta') return res.json(await metaService.getAccountReport(a.meta.adAccountId, range));
+    if (req.params.kind === 'meta') return res.json(await metaService.getAccountReport(a.meta.adAccountId, { ...range, fresh: req.query.fresh === '1' }));
     return res.json(await googleService.getAccountReport(a.google.customerId, range));
   } catch (err) {
     console.error(err);
