@@ -18,6 +18,7 @@ const metaService = require('./metaService');
 const googleService = require('./googleService');
 const { CREATIVE_FIELDS, pickCreativeMedia } = require('../lib/metaCreative');
 const cache = require('../lib/cache');
+const kpiPreference = require('../lib/kpiPreference');
 
 const CACHE_TTL_S = 300;
 const MAX_ITEMS = 150; // teto por lista pra resposta não explodir
@@ -169,10 +170,10 @@ function creativeTexts(c) {
 
 const RELEVANT_ACTIONS = /^(lead|onsite_conversion\.lead_grouped|offsite_conversion\.fb_pixel_lead|onsite_conversion\.messaging_conversation_started_7d|onsite_conversion\.messaging_first_reply|onsite_conversion\.total_messaging_connection|link_click|landing_page_view|omni_complete_registration|purchase|omni_purchase|offsite_conversion\.fb_pixel_purchase|contact_total|onsite_conversion\.flow_complete)$/;
 
-function insightMetrics(row) {
+function insightMetrics(row, preference) {
   if (!row) return null;
   const spend = num(row.spend);
-  const result = metaService.pickResult(row.actions);
+  const result = metaService.pickResult(row.actions, preference);
   const actions = {};
   (row.actions || []).forEach((a) => { if (RELEVANT_ACTIONS.test(a.action_type)) actions[a.action_type] = num(a.value); });
   return {
@@ -293,6 +294,7 @@ const FORM_FIELDS = 'id,name,status,locale,questions,is_optimized_for_quality,le
 const FORM_FIELDS_MIN = 'id,name,status,questions';
 
 async function fetchMetaDiagnostics(adAccountId, range, deps = {}) {
+  const preference = kpiPreference.normalize(deps.kpiPreference) || 'auto';
   const graphGet = deps.graphGet || metaService.graphGet;
   const graphGetAll = deps.graphGetAll || metaService.graphGetAll;
   const act = metaService.normalizeAdAccountId(adAccountId);
@@ -318,7 +320,7 @@ async function fetchMetaDiagnostics(adAccountId, range, deps = {}) {
   ]);
 
   const byAd = new Map();
-  (insightRows || []).forEach((r) => byAd.set(String(r.ad_id), insightMetrics(r)));
+  (insightRows || []).forEach((r) => byAd.set(String(r.ad_id), insightMetrics(r, preference)));
   const spentAd = (id) => { const m = byAd.get(String(id)); return m && (m.spend > 0 || m.impressions > 0); };
 
   // Só o que rodou no período ou está ativo agora.
@@ -558,11 +560,12 @@ async function metaFor(account, range, deps) {
   if (account.meta?.status !== 'connected' || !account.meta.adAccountId) return { connected: false, available: false, error: 'Meta Ads não conectado para este cliente.' };
   const hasReal = deps && deps.metaReal !== undefined ? deps.metaReal : metaService.hasRealCredentials();
   if (!hasReal) return { connected: true, available: false, testMode: true, error: DEMO_MSG };
-  const key = `diag:meta:${account.meta.adAccountId}:${range.from}:${range.to}`;
+  const preference = kpiPreference.effective(account);
+  const key = `diag:meta:${account.meta.adAccountId}:${range.from}:${range.to}:${preference}`;
   const hit = !deps && cache.get(key);
   if (hit) return hit;
   try {
-    const out = { connected: true, available: true, testMode: false, ...(await fetchMetaDiagnostics(account.meta.adAccountId, range, deps)) };
+    const out = { connected: true, available: true, testMode: false, ...(await fetchMetaDiagnostics(account.meta.adAccountId, range, { ...(deps || {}), kpiPreference: preference })) };
     if (!deps) cache.set(key, out, CACHE_TTL_S);
     return out;
   } catch (e) {

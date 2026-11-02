@@ -10,6 +10,7 @@ const metaSync = require('../lib/metaSync');
 const integrationHealth = require('../services/integrationHealthService');
 const integrationLink = require('../lib/integrationLink');
 const cache = require('../lib/cache');
+const kpiPreference = require('../lib/kpiPreference');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ const EDITABLE_FIELDS = [
   'name', 'niche', 'contractValue', 'dailyBudget', 'owner',
   'site', 'instagram', 'drive', 'payment', 'pixBalance', 'status',
   'dashboardModel', 'clientVisibility', 'reportSchedule', 'goals',
+  'kpiPreference',
 ];
 
 // Modelo do painel de anúncios do cliente: quais plataformas aparecem.
@@ -28,6 +30,17 @@ function stripSecrets(a) {
   if (!a || !a.clientAuth) return a;
   const { passwordHash, v, ...rest } = a.clientAuth;
   return { ...a, clientAuth: rest };
+}
+
+// O painel vê a preferência que vale de fato (campo salvo ou o padrão dos
+// clientes de Instant Form). Não grava nada: "auto" explícito continua auto.
+function presentAccount(a) {
+  if (!a) return a;
+  const base = stripSecrets(a);
+  const copy = { ...base };
+  if (base.clientAuth) copy.clientAuth = { ...base.clientAuth };
+  copy.kpiPreference = kpiPreference.effective(a);
+  return copy;
 }
 
 function sanitizeString(value, maxLength) {
@@ -46,7 +59,7 @@ function pickEditableFields(body) {
 // GET /api/accounts — lista clientes, status de conexão e dados de gestão.
 router.get('/', async (req, res) => {
   try {
-    res.json((await accountsStore.getAll()).map(stripSecrets));
+    res.json((await accountsStore.getAll()).map(presentAccount));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -129,13 +142,18 @@ router.patch('/:id', async (req, res) => {
   if (changes.dashboardModel !== undefined && !DASHBOARD_MODELS.has(changes.dashboardModel)) {
     return res.status(400).json({ error: 'Modelo de dashboard inválido.' });
   }
+  if (changes.kpiPreference !== undefined) {
+    const v = kpiPreference.normalize(changes.kpiPreference);
+    if (!v) return res.status(400).json({ error: 'Preferência de resultado inválida. Use "auto" ou "leads".' });
+    changes.kpiPreference = v;
+  }
   if (Object.keys(changes).length === 0) {
     return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
   }
   try {
     const updated = await accountsStore.update(req.params.id, changes);
     if (!updated) return res.status(404).json({ error: 'Cliente não encontrado.' });
-    res.json(stripSecrets(updated));
+    res.json(presentAccount(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -178,7 +196,7 @@ router.post('/:id/connect-google', async (req, res) => {
     const updated = await accountsStore.update(req.params.id, {
       google: { status: 'connected', customerId, accountName: verified.name },
     });
-    res.json(stripSecrets(updated));
+    res.json(presentAccount(updated));
   } catch (err) {
     console.error(err);
     res.status(400).json({
@@ -254,9 +272,9 @@ router.post('/:id/meta-connection', async (req, res) => {
     if (needsFirstSync) {
       metaSync.syncAccount(req.params.id, { trigger: 'salvar' }).catch((e) => console.error('Sync inicial falhou:', e));
       const fresh = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
-      return res.json(stripSecrets(fresh || updated));
+      return res.json(presentAccount(fresh || updated));
     }
-    res.json(stripSecrets(updated));
+    res.json(presentAccount(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -304,7 +322,7 @@ router.post('/:id/meta-sync-settings', async (req, res) => {
   if (req.body.enabled && meta.status === 'connected' && !sync.lastSyncAt) {
     metaSync.syncAccount(req.params.id, { trigger: 'salvar' }).catch((e) => console.error('Sync inicial falhou:', e));
   }
-  res.json(stripSecrets(updated));
+  res.json(presentAccount(updated));
 });
 
 // POST /api/accounts/:id/disconnect — tira UMA conta conectada (Google Ads,
@@ -319,7 +337,7 @@ router.post('/:id/disconnect', async (req, res) => {
     const account = await accountsStore.getById(req.params.id);
     if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
     if (!integrationLink.integrationIsLinked(account, platform)) {
-      return res.json(stripSecrets(account));
+      return res.json(presentAccount(account));
     }
     const patch = integrationLink.disconnectPatch(account, platform);
     const entry = {
@@ -332,7 +350,7 @@ router.post('/:id/disconnect', async (req, res) => {
     const updated = await accountsStore.update(req.params.id, patch);
     cache.del(`integration-health:${req.params.id}`);
     cache.del('integration-health:all');
-    res.json(stripSecrets(updated));
+    res.json(presentAccount(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -402,7 +420,7 @@ router.post('/:id/log', async (req, res) => {
     };
     const activityLog = [...(account.activityLog || []), entry];
     const updated = await accountsStore.update(req.params.id, { activityLog });
-    res.status(201).json(stripSecrets(updated));
+    res.status(201).json(presentAccount(updated));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

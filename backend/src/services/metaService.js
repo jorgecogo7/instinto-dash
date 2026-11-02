@@ -1,5 +1,6 @@
 const config = require('../config');
 const extras = require('../lib/metaExtras');
+const kpiPreference = require('../lib/kpiPreference');
 const mockMeta = require('../data/mockMeta');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
@@ -27,6 +28,18 @@ const RESULT_ACTIONS = [
   'onsite_conversion.messaging_conversation_started_7d',
   'omni_complete_registration',
 ];
+
+// Instant Form / lead de formulário. Ordem: o tipo mais específico primeiro,
+// e só o primeiro com valor > 0 — a Meta repete o mesmo lead em mais de uma ação.
+const LEAD_ACTIONS = [
+  'onsite_conversion.lead_grouped',
+  'lead',
+  'offsite_conversion.fb_pixel_lead',
+];
+
+function resultActionsFor(preference) {
+  return kpiPreference.normalize(preference) === 'leads' ? LEAD_ACTIONS : RESULT_ACTIONS;
+}
 
 // Aceita {from, to} no formato AAAA-MM-DD (from <= to). Qualquer outra coisa
 // vira null e a consulta cai no período pronto.
@@ -109,42 +122,37 @@ function num(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function pickResults(actions) {
-  if (!Array.isArray(actions)) return 0;
-  for (const type of RESULT_ACTIONS) {
-    const found = actions.find((a) => a.action_type === type);
-    if (found) return Math.round(num(found.value));
-  }
-  return 0;
+function pickResults(actions, preference) {
+  return pickResult(actions, preference).value;
 }
 
-function mapInsights(node) {
+function mapInsights(node, preference) {
   const row = node && node.insights && node.insights.data && node.insights.data[0];
   if (!row) return { spend: 0, ctr: 0, cpc: 0, conversions: 0 };
   return {
     spend: num(row.spend),
     ctr: num(row.ctr),
     cpc: num(row.cpc),
-    conversions: pickResults(row.actions),
+    conversions: pickResults(row.actions, preference),
   };
 }
 
 // Converte a resposta da Graph API (campaigns > adsets > ads, insights em
 // `insights.data[0]`) pro formato que a tela já espera (o mesmo do mockMeta).
-function mapMetaResponse(campaigns) {
+function mapMetaResponse(campaigns, preference) {
   return campaigns.map((c) => ({
     id: c.id,
     name: c.name,
     objective: c.objective,
     status: c.effective_status || c.status,
-    insights: mapInsights(c),
+    insights: mapInsights(c, preference),
     adsets: ((c.adsets && c.adsets.data) || []).map((s) => ({
       id: s.id,
       name: s.name,
       ads: ((s.ads && s.ads.data) || []).map((a) => ({
         id: a.id,
         name: a.name,
-        insights: mapInsights(a),
+        insights: mapInsights(a, preference),
       })),
     })),
   }));
@@ -246,7 +254,8 @@ async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d', range =
   const customRange = validRange(range);
   const periodKey = customRange ? `${customRange.since}_${customRange.until}` : preset;
   const accountId = normalizeAdAccountId(adAccountId);
-  const cacheKey = `meta:campaigns:${accountId || 'mock'}:${periodKey}`;
+  const preference = kpiPreference.normalize(opts.kpiPreference) || 'auto';
+  const cacheKey = `meta:campaigns:${accountId || 'mock'}:${periodKey}:${preference}`;
   const cached = opts.force ? null : cache.get(cacheKey);
   if (cached) return cached;
 
@@ -274,7 +283,7 @@ async function getCampaignsWithAds(adAccountId, datePreset = 'last_30d', range =
       // Só campanhas que ainda importam pro relatório (não arquivadas/apagadas).
       effective_status: JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'IN_PROCESS', 'WITH_ISSUES']),
     });
-    result = mapMetaResponse(campaigns);
+    result = mapMetaResponse(campaigns, preference);
     attachThumbs(result, await fetchCreativeThumbs(accountId));
   }
 
@@ -316,9 +325,28 @@ const RESULT_LABELS = {
   omni_complete_registration: 'Cadastros',
 };
 
-function pickResult(actions) {
-  if (!Array.isArray(actions)) return { type: null, value: 0 };
-  for (const type of RESULT_ACTIONS) {
+function pickResult(actions, preference) {
+  const leads = kpiPreference.normalize(preference) === 'leads';
+  const order = leads ? LEAD_ACTIONS : RESULT_ACTIONS;
+  if (!Array.isArray(actions)) {
+    return leads ? { type: 'onsite_conversion.lead_grouped', value: 0 } : { type: null, value: 0 };
+  }
+  // Formulário: ignora conversa e compra. Se a Meta manda o mesmo lead em
+  // mais de uma ação, fica a primeira com valor — não soma as duas.
+  // Sem nenhum lead no período, o resultado continua sendo o formulário (0),
+  // e não a conversa de uma campanha antiga de WhatsApp.
+  if (leads) {
+    let zero = null;
+    for (const type of order) {
+      const found = actions.find((a) => a.action_type === type);
+      if (!found) continue;
+      const value = Math.round(num(found.value));
+      if (value > 0) return { type, value };
+      if (!zero) zero = { type, value: 0 };
+    }
+    return zero || { type: 'onsite_conversion.lead_grouped', value: 0 };
+  }
+  for (const type of order) {
     const found = actions.find((a) => a.action_type === type);
     if (found) return { type, value: Math.round(num(found.value)) };
   }
@@ -365,8 +393,8 @@ function insightsParams(range, extra = {}) {
   };
 }
 
-function mapAdRow(r) {
-  const res = pickResult(r.actions);
+function mapAdRow(r, preference) {
+  const res = pickResult(r.actions, preference);
   const spend = num(r.spend);
   const impressions = num(r.impressions);
   const clicks = num(r.clicks);
@@ -414,9 +442,11 @@ function totalsFrom(accountRow, adRows) {
 
 // Rótulo do resultado da conta: se todos os anúncios usam o mesmo tipo,
 // usa o nome dele (ex: "Conversas iniciadas"); se mistura, "Resultados".
-function accountResultLabel(adRows) {
-  const labels = new Set(adRows.filter((r) => r.results > 0).map((r) => r.resultLabel));
-  return labels.size === 1 ? [...labels][0] : 'Resultados';
+function accountResultLabel(adRows, preference) {
+  const labels = new Set(adRows.filter((r) => r.results > 0 && r.resultLabel).map((r) => r.resultLabel));
+  if (labels.size === 1) return [...labels][0];
+  if (kpiPreference.normalize(preference) === 'leads') return labels.size ? 'Leads' : 'Leads (formulário)';
+  return 'Resultados';
 }
 
 // Rótulos dos posicionamentos (publisher_platform + platform_position).
@@ -431,7 +461,7 @@ const POSITION_LABELS = {
 };
 const GENDER_LABELS = { female: 'Feminino', male: 'Masculino', unknown: 'Não informado' };
 
-function mapBreakdownRows(rows, labelFn) {
+function mapBreakdownRows(rows, labelFn, preference) {
   const map = {};
   rows.forEach((r) => {
     const label = labelFn(r);
@@ -441,12 +471,12 @@ function mapBreakdownRows(rows, labelFn) {
     e.clicks += num(r.clicks);
     e.linkClicks += num(r.inline_link_clicks);
     e.reach += num(r.reach);
-    e.results += pickResult(r.actions).value;
+    e.results += pickResult(r.actions, preference).value;
   });
   return Object.values(map).map((e) => derive(e)).sort((a, b) => b.spend - a.spend);
 }
 
-async function fetchBreakdowns(accountId, range) {
+async function fetchBreakdowns(accountId, range, preference) {
   const fields = 'spend,impressions,clicks,inline_link_clicks,reach,actions';
   const get = async (breakdowns) => {
     try {
@@ -462,17 +492,18 @@ async function fetchBreakdowns(accountId, range) {
   return {
     ageGender: ageGender.map((r) => ({
       age: r.age, gender: GENDER_LABELS[r.gender] || r.gender,
-      spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks), results: pickResult(r.actions).value,
+      spend: num(r.spend), impressions: num(r.impressions), clicks: num(r.clicks), results: pickResult(r.actions, preference).value,
     })),
-    gender: mapBreakdownRows(ageGender, (r) => GENDER_LABELS[r.gender] || r.gender),
-    age: mapBreakdownRows(ageGender, (r) => r.age).sort((a, b) => String(a.label).localeCompare(String(b.label))),
-    placements: mapBreakdownRows(placement, (r) => `${PLATFORM_LABELS[r.publisher_platform] || r.publisher_platform} · ${POSITION_LABELS[r.platform_position] || r.platform_position}`),
-    platforms: mapBreakdownRows(placement, (r) => PLATFORM_LABELS[r.publisher_platform] || r.publisher_platform),
-    regions: mapBreakdownRows(region, (r) => r.region || 'Desconhecida').slice(0, 15),
+    gender: mapBreakdownRows(ageGender, (r) => GENDER_LABELS[r.gender] || r.gender, preference),
+    age: mapBreakdownRows(ageGender, (r) => r.age, preference).sort((a, b) => String(a.label).localeCompare(String(b.label))),
+    placements: mapBreakdownRows(placement, (r) => `${PLATFORM_LABELS[r.publisher_platform] || r.publisher_platform} · ${POSITION_LABELS[r.platform_position] || r.platform_position}`, preference),
+    platforms: mapBreakdownRows(placement, (r) => PLATFORM_LABELS[r.publisher_platform] || r.publisher_platform, preference),
+    regions: mapBreakdownRows(region, (r) => r.region || 'Desconhecida', preference).slice(0, 15),
   };
 }
 
 async function fetchRealReport(accountId, range, opts = {}) {
+  const preference = kpiPreference.normalize(opts.kpiPreference) || 'auto';
   const prev = period.previousRange(range);
   const [accCur, accPrev, adsCur, adsPrev, adsDaily, thumbs, breakdowns] = await Promise.all([
     graphGetAll(`${accountId}/insights`, insightsParams(range, { fields: ACCOUNT_FIELDS })),
@@ -483,10 +514,10 @@ async function fetchRealReport(accountId, range, opts = {}) {
       level: 'ad', time_increment: '1', fields: 'ad_id,spend,impressions,clicks,actions',
     }), 20),
     fetchCreativeThumbs(accountId, { fresh: !!opts.fresh }),
-    fetchBreakdowns(accountId, range),
+    fetchBreakdowns(accountId, range, preference),
   ]);
 
-  const ads = adsCur.map(mapAdRow).filter((a) => a.spend > 0);
+  const ads = adsCur.map((r) => mapAdRow(r, preference)).filter((a) => a.spend > 0);
   const statusMap = thumbs.__status || {};
   const media = thumbs.__media || {};
   ads.forEach((a) => {
@@ -496,7 +527,7 @@ async function fetchRealReport(accountId, range, opts = {}) {
   });
   ads.sort((x, y) => (y.results - x.results) || (y.spend - x.spend));
 
-  const prevAds = adsPrev.map(mapAdRow);
+  const prevAds = adsPrev.map((r) => mapAdRow(r, preference));
   const totals = totalsFrom(accCur[0], ads);
   const previousTotals = totalsFrom(accPrev[0], prevAds);
 
@@ -510,7 +541,7 @@ async function fetchRealReport(accountId, range, opts = {}) {
     d.spend += num(r.spend);
     d.impressions += num(r.impressions);
     d.clicks += num(r.clicks);
-    d.results += pickResult(r.actions).value;
+    d.results += pickResult(r.actions, preference).value;
   });
   const daily = Object.values(byDay).map((d) => ({
     ...d,
@@ -530,7 +561,10 @@ async function fetchRealReport(accountId, range, opts = {}) {
   });
   const campaigns = Object.values(campMap).map((c) => derive(c)).sort((x, y) => y.spend - x.spend);
 
-  return { range, previousRange: prev, resultLabel: accountResultLabel(ads), totals, previousTotals, daily, campaigns, ads, breakdowns };
+  return {
+    range, previousRange: prev, resultLabel: accountResultLabel(ads, preference), kpiPreference: preference,
+    totals, previousTotals, daily, campaigns, ads, breakdowns,
+  };
 }
 
 function withDeltas(report) {
@@ -550,7 +584,8 @@ function withDeltas(report) {
 async function getAccountReport(adAccountId, options = {}) {
   const range = period.normalizeRange(options.from, options.to);
   const accountId = normalizeAdAccountId(adAccountId);
-  const cacheKey = `meta:report:${accountId || 'mock'}:${range.from}:${range.to}`;
+  const preference = kpiPreference.normalize(options.kpiPreference) || 'auto';
+  const cacheKey = `meta:report:${accountId || 'mock'}:${range.from}:${range.to}:${preference}`;
   // fresh: o link do vídeo expira. "Buscar de novo" na aba Anúncios ignora o cache.
   const cached = options.fresh ? null : cache.get(cacheKey);
   if (cached) return cached;
@@ -560,8 +595,9 @@ async function getAccountReport(adAccountId, options = {}) {
     result = withDeltas(mockMetaReport.build(range, accountId));
   } else {
     if (!accountId) throw new Error('Este cliente ainda não tem um ID de conta de anúncios da Meta.');
-    result = withDeltas(await fetchRealReport(accountId, range, { fresh: !!options.fresh }));
+    result = withDeltas(await fetchRealReport(accountId, range, { fresh: !!options.fresh, kpiPreference: preference }));
   }
+  result.kpiPreference = preference;
   cache.set(cacheKey, result, 60 * 20);
   return result;
 }
@@ -642,6 +678,6 @@ module.exports = {
   resolveInstagram,
   getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
   hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll, friendlyError,
-  pickResult, RESULT_LABELS, RESULT_ACTIONS,
+  pickResult, RESULT_LABELS, RESULT_ACTIONS, resultActionsFor, accountResultLabel,
 };
 

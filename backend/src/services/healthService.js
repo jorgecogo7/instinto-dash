@@ -12,6 +12,7 @@ const accountsStore = require('../data/accountsStore');
 const healthStore = require('../data/healthStore');
 const metaService = require('./metaService');
 const googleService = require('./googleService');
+const kpiPreference = require('../lib/kpiPreference');
 
 const COVER_DAYS = 7;        // saldo deve cobrir pelo menos 7 dias
 const CRITICAL_DAYS = 2;     // até 2 dias de saldo = crítico
@@ -180,8 +181,9 @@ async function checkMeta(account) {
 
   const byDate = {};
   daily.forEach((r) => { byDate[r.date_start] = num(r.spend); });
-  // Resultado principal da conta: o primeiro tipo (mesma prioridade do relatório) que aparece nos 14 dias.
-  const resType = metaService.RESULT_ACTIONS.find((t) => daily.some((r) => (r.actions || []).some((a) => a.action_type === t && num(a.value) > 0)));
+  // Resultado principal da conta: a mesma preferência do painel (leads de formulário
+  // não deixam uma campanha antiga de WhatsApp virar o "resultado" do alerta).
+  const resType = metaService.resultActionsFor(kpiPreference.effective(account)).find((t) => daily.some((r) => (r.actions || []).some((a) => a.action_type === t && num(a.value) > 0)));
   const resByDate = {};
   if (resType) daily.forEach((r) => { const f = (r.actions || []).find((a) => a.action_type === resType); resByDate[r.date_start] = f ? num(f.value) : 0; });
   const avg = avgDaily(byDate, account.dailyBudget);

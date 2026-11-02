@@ -3603,6 +3603,16 @@
           <span class="cd-model-status" id="cdModelStatus"></span>
         </div>
       </div>
+      <div class="panel cd-model-panel cnav-admin" id="cdKpiPanel">
+        <div class="panel-head"><div><h3>Resultado principal da Meta</h3><div class="panel-head-sub">O que o painel, o PDF e o feedback contam como resultado. Clientes de formulário nativo (Instant Form) usam leads: campanha antiga de WhatsApp deixa de aparecer como destaque.</div></div></div>
+        <div class="cd-model-row">
+          <select class="modal-input" id="cdKpiSelect" onchange="saveKpiPreference(this.value)">
+            <option value="auto">Automático (compras, leads ou conversas)</option>
+            <option value="leads">Leads do formulário (Instant Form)</option>
+          </select>
+          <span class="cd-model-status" id="cdKpiStatus"></span>
+        </div>
+      </div>
       <div class="conn-table-wrap">
         <table class="conn-table">
           <thead><tr><th>Conta</th><th>Status</th><th>Identificador</th><th>Ação</th></tr></thead>
@@ -5271,13 +5281,14 @@
       const spend = sum('spend'), clicks = sum('clicks'), impr = sum('impressions'), conv = sum('conversions', 'results');
       const pSpend = sumP('spend'), pClicks = sumP('clicks'), pImpr = sumP('impressions'), pConv = sumP('conversions', 'results');
       const convLabel = meta && !google ? (meta.resultLabel || 'Resultados') : 'Conversões';
+      const costWord = meta && !google && meta.kpiPreference === 'leads' ? 'lead' : (meta && !google ? 'resultado' : 'conversão');
       pages.push(rpPage(`
         <h1 class="rp-h1">Resumo do período</h1>
         <p class="rp-lead">${per}${meta && google ? ' · Meta Ads + Google Ads' : meta ? ' · Meta Ads' : ' · Google Ads'}</p>
         <div class="rp-kpis k4">
           ${rpKpi('Investimento', spend, pSpend, brl2, false, true)}
           ${rpKpi(convLabel, conv, pConv, intFmt, false, true)}
-          ${rpKpi(`Custo por ${meta && !google ? 'resultado' : 'conversão'}`, conv ? spend / conv : 0, pConv ? pSpend / pConv : 0, brl2, true, true)}
+          ${rpKpi(`Custo por ${costWord}`, conv ? spend / conv : 0, pConv ? pSpend / pConv : 0, brl2, true, true)}
           ${rpKpi('Cliques', clicks, pClicks, intFmt, false, true)}
         </div>
         <div class="rp-kpis k3">
@@ -5294,12 +5305,13 @@
     // Meta Ads
     if (meta && sections.meta) {
       const t = meta.totals, p = meta.previousTotals, rl = meta.resultLabel || 'Resultados', bd = meta.breakdowns || {};
+      const focusLeads = meta.kpiPreference === 'leads';
       pages.push(rpPage(`
         <h1 class="rp-h1"><span class="rp-pf meta">∞</span> Meta Ads</h1>
         <div class="rp-kpis k5">
           ${rpKpi('Investimento', t.spend, p.spend, brl2)}
           ${rpKpi(rl, t.results, p.results, intFmt)}
-          ${rpKpi('Custo por resultado', t.costPerResult, p.costPerResult, brl2, true)}
+          ${rpKpi(focusLeads ? 'Custo por lead' : 'Custo por resultado', t.costPerResult, p.costPerResult, brl2, true)}
           ${rpKpi('Alcance', t.reach, p.reach, compactFmt)}
           ${rpKpi('Impressões', t.impressions, p.impressions, compactFmt)}
           ${rpKpi('Cliques', t.clicks, p.clicks, intFmt)}
@@ -5314,10 +5326,10 @@
           ${rpBars([
             { label:'Impressões', value:t.impressions, color:'#2F6BFF' }, { label:'Alcance', value:t.reach, color:'#5B8BFF' },
             { label:'Cliques', value:t.clicks, color:'#8B5CF6' }, { label:'Cliques no link', value:t.linkClicks || 0, color:'#B57BFF' },
-            { label:rl, value:t.results, color:RP.green }].filter(x => x.value > 0), intFmt, RP.blue, t.impressions, true)}
+            { label:rl, value:t.results, color:RP.green }].filter(x => x.value > 0 || (focusLeads && x.label === rl)), intFmt, RP.blue, t.impressions, true)}
         </div>`, client, n++, { section:'Meta Ads' }));
 
-      const hasShop = (t.purchases || 0) > 0, hasMsg = (t.conversations || 0) > 0;
+      const hasShop = (t.purchases || 0) > 0, hasMsg = !focusLeads && (t.conversations || 0) > 0;
       if (hasShop || hasMsg) {
         const shopAds = (meta.ads || []).filter(a => a.purchases > 0).sort((a, b) => b.purchaseValue - a.purchaseValue).slice(0, 8);
         pages.push(rpPage(`
@@ -7989,6 +8001,10 @@
 
     document.getElementById('cdModelSelect').value = account.dashboardModel || 'auto';
     document.getElementById('cdModelStatus').textContent = '';
+    const kpiSel = document.getElementById('cdKpiSelect');
+    if (kpiSel) kpiSel.value = account.kpiPreference === 'leads' ? 'leads' : 'auto';
+    const kpiStatus = document.getElementById('cdKpiStatus');
+    if (kpiStatus) kpiStatus.textContent = '';
     cdPlatformView = 'all';
     cdCurrentRange = navRangeOf(navStoredPeriod());
     igTypeFilter = 'all'; igPostSort = 'recent';
@@ -9825,6 +9841,7 @@
     const body = document.getElementById('cdMetaBody');
     const t = r.totals || {}, p = r.previousTotals || {};
     const rl = r.resultLabel || 'Resultados';
+    const costName = r.kpiPreference === 'leads' ? 'Custo por lead' : 'Custo por resultado';
     document.getElementById('cdMetaSub').textContent =
       `${dateBr(r.range.from)} – ${dateBr(r.range.to)} · comparado com ${dateBr(r.previousRange.from)} – ${dateBr(r.previousRange.to)}${r.mock ? ' · dados de exemplo' : ''}`;
 
@@ -9837,7 +9854,7 @@
     const kpis = [
       kpi2Html({ label:'Investimento', value:t.spend, prev:p.spend, fmt:brl2, accent:metaAccent }),
       kpi2Html({ label:rl, value:t.results, prev:p.results, fmt:intFmt, accent:metaAccent }),
-      kpi2Html({ label:'Custo por resultado', value:t.costPerResult, prev:p.costPerResult, fmt:brl2, invert:true, accent:metaAccent }),
+      kpi2Html({ label:costName, value:t.costPerResult, prev:p.costPerResult, fmt:brl2, invert:true, accent:metaAccent }),
       kpi2Html({ label:'Alcance', value:t.reach, prev:p.reach, fmt:compactFmt, accent:metaAccent, title:'Pessoas diferentes que viram os anúncios no período.' }),
       kpi2Html({ label:'Impressões', value:t.impressions, prev:p.impressions, fmt:compactFmt, accent:metaAccent }),
       kpi2Html({ label:'Cliques', value:t.clicks, prev:p.clicks, fmt:compactFmt, accent:metaAccent }),
@@ -9856,7 +9873,7 @@
     body.innerHTML = `
       ${goalsPanelHtml('meta', { spend:t.spend, results:t.results, costPerResult:t.costPerResult, roas:t.roas || 0 }, r.range, rlOne)}
       <div class="kpi2-grid">${kpis}</div>
-      ${metaExtraPanelsHtml(t, p, metaAccent)}
+      ${metaExtraPanelsHtml(t, p, metaAccent, { hideMessages: r.kpiPreference === 'leads' })}
       <div class="panel"><div class="panel-head"><h3>Investimento e ${escapeHtml(rl.toLowerCase())}</h3></div><div class="dual-chart" id="mChartSpend"></div></div>
       <div class="panel"><div class="panel-head"><h3>Cliques e CTR</h3></div><div class="dual-chart" id="mChartClicks"></div></div>
       <div class="panel" data-vis="ads_audience"><div class="panel-head"><div><h3>Funil do período</h3><div class="panel-head-sub">De quem viu o anúncio até quem virou ${escapeHtml(rl.toLowerCase())}</div></div></div><div id="mFunnel"></div></div>
@@ -9895,7 +9912,7 @@
 
     const adCols = [
       { key:'name', label:'Anúncio', sortVal:a => a.name, cell:a => `<div class="ad-cell">${adThumbHtml2(a)}<div><div class="cell-main">${escapeHtml(a.name)}</div><div class="cell-sub">${escapeHtml(a.adset || '')}</div></div></div>` },
-      { key:'results', label:'Resultados', num:true, cell:a => a.results ? `<div class="cell-main" style="color:var(--blue)">${intFmt(a.results)}</div><div class="cell-sub">${escapeHtml(a.resultLabel || '')}</div>` : '—' },
+      { key:'results', label:rl, num:true, cell:a => a.results ? `<div class="cell-main" style="color:var(--blue)">${intFmt(a.results)}</div><div class="cell-sub">${escapeHtml(a.resultLabel || '')}</div>` : '—' },
       { key:'costPerResult', label:'Custo/Result.', num:true, sortVal:a => a.results ? a.costPerResult : -1, cell:a => a.results ? brl2(a.costPerResult) : '—' },
       { key:'spend', label:'Investido', num:true, cell:a => `<b>${brl2(a.spend)}</b>` },
       { key:'reach', label:'Alcance', num:true, cell:a => compactFmt(a.reach) },
@@ -9924,7 +9941,7 @@
       { key:'clicks', label:'Cliques', num:true, cell:c => intFmt(c.clicks) },
       { key:'ctr', label:'CTR', num:true, cell:c => pct2(c.ctr) },
       { key:'cpc', label:'CPC', num:true, cell:c => brl2(c.cpc) },
-      { key:'results', label:'Resultados', num:true, cell:c => intFmt(c.results) },
+      { key:'results', label:rl, num:true, cell:c => intFmt(c.results) },
       { key:'costPerResult', label:'Custo/Result.', num:true, sortVal:c => c.results ? c.costPerResult : -1, cell:c => c.results ? brl2(c.costPerResult) : '—' },
     ];
     if ((r.campaigns || []).some(c => c.purchases > 0)) campCols.push(
@@ -10028,7 +10045,7 @@
         <div class="wd-label">${x.l}</div>
         <div class="wd-sub">${wdKey === 'results' ? (x.results ? brl2(x.spend / x.results) : '—') : ''}</div>
       </div>`).join('')}</div>
-      <div class="footnote" style="border:none; padding:8px 0 0;">${wdKey === 'results' ? `Embaixo: custo por resultado. Melhor dia: <b>${best.l}</b>.` : 'Sem resultados no período: mostrando investimento.'}</div>`;
+      <div class="footnote" style="border:none; padding:8px 0 0;">${wdKey === 'results' ? `Embaixo: custo por ${r.kpiPreference === 'leads' ? 'lead' : 'resultado'}. Melhor dia: <b>${best.l}</b>.` : 'Sem resultados no período: mostrando investimento.'}</div>`;
 
     // Posicionamentos e regiões
     const bdCols = (first) => [
@@ -10170,7 +10187,8 @@
   }
 
   // E-commerce e Mensagens (Meta) — só aparecem quando há dados.
-  function metaExtraPanelsHtml(t, p, accent){
+  function metaExtraPanelsHtml(t, p, accent, opts){
+    const hideMessages = !!(opts && opts.hideMessages);
     let html = '';
     if ((t.purchases || 0) > 0 || (p.purchases || 0) > 0) {
       html += `<div class="panel"><div class="panel-head"><div><h3>🛒 E-commerce</h3><div class="panel-head-sub">Compras rastreadas pelo pixel/API de conversões e o valor gerado</div></div></div><div class="kpi2-grid" style="margin-bottom:0;">
@@ -10181,7 +10199,7 @@
         ${kpi2Html({ label:'Custo por compra', value:t.costPerPurchase, prev:p.costPerPurchase, fmt:brl2, invert:true, accent })}
       </div></div>`;
     }
-    if ((t.conversations || 0) > 0 || (p.conversations || 0) > 0) {
+    if (!hideMessages && ((t.conversations || 0) > 0 || (p.conversations || 0) > 0)) {
       html += `<div class="panel"><div class="panel-head"><div><h3>💬 Mensagens</h3><div class="panel-head-sub">Conversas no WhatsApp, Direct e Messenger vindas dos anúncios</div></div></div><div class="kpi2-grid" style="margin-bottom:0;">
         ${kpi2Html({ label:'Conversas iniciadas', value:t.conversations, prev:p.conversations, fmt:intFmt, accent })}
         ${kpi2Html({ label:'Custo por conversa', value:t.costPerConversation, prev:p.costPerConversation, fmt:brl2, invert:true, accent })}
@@ -10440,6 +10458,26 @@
   }
 
   /* ---------- Modelo do painel (aba Integrações) ---------- */
+  async function saveKpiPreference(value){
+    const status = document.getElementById('cdKpiStatus');
+    status.textContent = 'Salvando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ kpiPreference: value }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      rawAccountsById[currentClientId] = data;
+      status.textContent = value === 'leads'
+        ? '✓ Salvo: o painel conta leads do formulário e não destaca conversas.'
+        : '✓ Salvo: o painel volta a escolher o resultado automaticamente.';
+      loadClientDashboard();
+    } catch (err) {
+      status.textContent = `⚠ ${err.message}`;
+    }
+  }
+
   async function saveDashboardModel(model){
     const status = document.getElementById('cdModelStatus');
     status.textContent = 'Salvando…';

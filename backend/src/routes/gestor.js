@@ -7,6 +7,7 @@ const period = require('../lib/period');
 const { buildAnalysis, STATUSES } = require('../lib/gestorAnalysis');
 const { requireGestorKey } = require('../middleware/gestorAuth');
 const diagnostics = require('../services/gestorDiagnostics');
+const kpiPreference = require('../lib/kpiPreference');
 
 /**
  * "Análise do gestor": comentário interno da agência sobre cada cliente.
@@ -126,7 +127,7 @@ machineRouter.get('/clients', async (req, res) => {
 async function metaPerformance(account, range) {
   if (account.meta?.status !== 'connected') return { connected: false, error: 'Meta Ads não conectado para este cliente.' };
   try {
-    return { connected: true, report: await metaService.getAccountReport(account.meta.adAccountId, range) };
+    return { connected: true, report: await metaService.getAccountReport(account.meta.adAccountId, kpiPreference.reportOptions(account, range)) };
   } catch (e) {
     return { connected: true, error: e.message };
   }

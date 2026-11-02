@@ -11,6 +11,7 @@
 const accountsStore = require('../data/accountsStore');
 const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
+const kpiPreference = require('./kpiPreference');
 
 const DELAY_MS = 400;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -24,7 +25,7 @@ async function syncAllAccounts() {
     // Contas com "Ativar sync" (a cada 3h) são tratadas por lib/metaSync.js.
     if (account.meta.status === 'connected' && !(account.meta.sync && account.meta.sync.enabled)) {
       try {
-        entry.meta = await metaService.getCampaignsWithAds(account.meta.adAccountId);
+        entry.meta = await metaService.getCampaignsWithAds(account.meta.adAccountId, undefined, null, kpiPreference.reportOptions(account));
       } catch (err) {
         entry.errors.push(`meta: ${err.message}`);
       }
