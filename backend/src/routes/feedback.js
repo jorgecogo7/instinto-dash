@@ -3,6 +3,7 @@ const accountsStore = require('../data/accountsStore');
 const metaService = require('../services/metaService');
 const googleService = require('../services/googleService');
 const insightsService = require('../services/insightsService');
+const kpiPreference = require('../lib/kpiPreference');
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get('/:clientId', async (req, res) => {
   try {
     const data =
       platform === 'meta'
-        ? await metaService.getCampaignsWithAds(account.meta.adAccountId)
+        ? await metaService.getCampaignsWithAds(account.meta.adAccountId, undefined, null, kpiPreference.reportOptions(account))
         : await googleService.getAccountReport(account.google.customerId);
 
     const message = await insightsService.generateFeedbackMessage(platform, data);

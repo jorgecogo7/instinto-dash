@@ -12,6 +12,7 @@
 
 const accountsStore = require('../data/accountsStore');
 const metaService = require('../services/metaService');
+const kpiPreference = require('./kpiPreference');
 
 const INTERVAL_MS = 3 * 60 * 60 * 1000; // 3 horas
 const STALE_RUNNING_MS = 3 * 60 * 1000; // "sincronizando" há mais que isso = travou/reiniciou
@@ -124,7 +125,7 @@ async function syncAccount(accountId, { trigger = 'manual' } = {}) {
 
     try {
       const verified = await metaService.verifyAdAccount(meta.adAccountId);
-      const campaigns = await metaService.getCampaignsWithAds(meta.adAccountId, 'last_7d', null, { force: true });
+      const campaigns = await metaService.getCampaignsWithAds(meta.adAccountId, 'last_7d', null, { force: true, ...kpiPreference.reportOptions(account) });
       const now = new Date().toISOString();
       // Aproveita a rodada pra reconferir o Instagram (e registrar o motivo se falhar).
       // Se a agência removeu a conta no meio da rodada, não liga de novo.

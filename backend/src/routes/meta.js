@@ -1,6 +1,7 @@
 const express = require('express');
 const accountsStore = require('../data/accountsStore');
 const metaService = require('../services/metaService');
+const kpiPreference = require('../lib/kpiPreference');
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.get('/:clientId/campaigns', async (req, res) => {
       account.meta.adAccountId,
       req.query.period,
       { from: req.query.from, to: req.query.to },
+      kpiPreference.reportOptions(account),
     );
     res.json(campaigns);
   } catch (err) {
@@ -35,9 +37,9 @@ router.get('/:clientId/report', async (req, res) => {
     return res.status(409).json({ error: 'Conta Meta ainda não conectada para este cliente.' });
   }
   try {
-    const report = await metaService.getAccountReport(account.meta.adAccountId, {
+    const report = await metaService.getAccountReport(account.meta.adAccountId, kpiPreference.reportOptions(account, {
       from: req.query.from, to: req.query.to, fresh: req.query.fresh === '1',
-    });
+    }));
     res.json(report);
   } catch (err) {
     console.error(err); res.status(502).json({ error: err.message });

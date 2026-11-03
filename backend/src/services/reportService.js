@@ -7,6 +7,7 @@ const googleService = require('./googleService');
 const { visibilityOf } = require('../lib/clientAccess');
 const goalsLib = require('../lib/goals');
 const adStatusLogStore = require('../data/adStatusLogStore');
+const kpiPreference = require('../lib/kpiPreference');
 
 /**
  * Relatórios automáticos: no dia agendado de cada cliente, monta a mensagem
@@ -264,7 +265,7 @@ async function generateFor(account, range, { sendMail = true, weekly = false } =
   const wantGoogle = gOn && model !== 'meta';
   const r = { from: range.from, to: range.to };
   const [meta, google] = await Promise.all([
-    wantMeta ? metaService.getAccountReport(account.meta.adAccountId, r).catch((e) => ({ error: e.message })) : null,
+    wantMeta ? metaService.getAccountReport(account.meta.adAccountId, kpiPreference.reportOptions(account, r)).catch((e) => ({ error: e.message })) : null,
     wantGoogle ? googleService.getAccountReport(account.google.customerId, r).catch((e) => ({ error: e.message })) : null,
   ]);
   const errors = [meta?.error && `Meta: ${meta.error}`, google?.error && `Google: ${google.error}`].filter(Boolean);
