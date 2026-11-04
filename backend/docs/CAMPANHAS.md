@@ -42,10 +42,65 @@ ageMax, gender, interests[], advantage }`, `placements { mode: auto|manual, posi
 `creative { assetId, primaryText, headline, description, cta, link }`, `dsa { beneficiary, payor }`
 (required if an EU country is targeted).
 
-Publishing creates: image (adimages) → campaign (CBO) → ad set → creative → ad, all PAUSED.
+Optional, for several ad sets and ads in one campaign:
+
+- `creativeEnhancements`: `"opt_out"` asks Meta to turn off Advantage+ creative enhancements
+  on every ad (`degrees_of_freedom_spec.creative_features_spec`, one `enroll_status: OPT_OUT`
+  per feature). Omit it, or send `"default"`, to leave the API default. Aliases accepted on
+  input: `advantageCreative: false`, `optOutAdvantageCreative: true`.
+- `adSets[]`: each item is `{ name, audience?, placements?, ads[] }`.
+  - `name` is sent to Meta as the ad set name (required, unique in the campaign).
+  - `audience` and `placements` are optional overrides. Missing fields inherit the campaign
+    `audience` / `placements`. An empty `interests` list inherits the campaign interests;
+    a non-empty list replaces them. `advantage: false` keeps Advantage+ audience off.
+  - `ads[]`: `{ name, creative: { assetId, primaryText, headline, description, cta?, link? }, creativeEnhancements? }`.
+    `name` is the ad name on Meta. Empty `link` / `cta` inherit `creative` at campaign level.
+    Up to 25 ad sets and 25 ads per set.
+
+Without `adSets`, publishing still creates one ad set named `<campaign> | Conjunto` and one
+ad named `<campaign> | Anúncio`. With `adSets`, those suffixes are not added: the names in
+the draft are the names Meta receives. The campaign name is always the draft `name`.
+
+Publishing creates, all **PAUSED** (never ACTIVE): one image upload per distinct asset,
+then the campaign (CBO), then each ad set, then each ad's creative and ad.
+Instagram-only delivery is `placements.mode: "manual"` with only `instagram_*` positions.
 Cities and interests are looked up by name on Meta; what isn't found shows up as a warning.
-On a partial failure, what was already created stays paused, and its IDs are stored in `publish.partialIds`.
+On a partial failure, what was already created stays paused. IDs are in `publish.ids` and
+`publish.created` (`{ type, name, id }`), and on failure also in `publish.partialIds`.
 **Retrying creates new objects**, so check the manager first.
+
+Example shape (values are the draft; nothing here is hardcoded in the product):
+
+```json
+{
+  "name": "[Rota] [Leads] [Landing Page]",
+  "platform": "meta",
+  "spec": {
+    "objective": "cadastros",
+    "pixelId": "1093864316811167",
+    "budgetType": "daily",
+    "budget": 50,
+    "startDate": "2026-11-05",
+    "creativeEnhancements": "opt_out",
+    "audience": { "countries": ["BR"], "cities": ["São Paulo"], "ageMin": 25, "ageMax": 50, "gender": "all", "advantage": false },
+    "placements": { "mode": "manual", "positions": ["instagram_feed", "instagram_stories", "instagram_reels"] },
+    "creative": { "link": "https://rotadeliveryads.com.br", "cta": "LEARN_MORE" },
+    "adSets": [
+      {
+        "name": "00 [Insta] [H/M] [25-50] [Donos de Restaurante] [Cidades]",
+        "audience": { "interests": ["Restaurant management"] },
+        "ads": [
+          { "name": "04.11.2026 AD01", "creative": { "assetId": "<id da imagem>", "primaryText": "...", "headline": "...", "description": "..." } }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Save with `POST /drafts` or `PATCH /drafts/:id`, then `POST /drafts/:id/request-approval`,
+then `POST /drafts/:id/publish` (admin). The response `publish.created` lists every
+paused campaign, ad set, creative and ad.
 
 ### Google `spec` (Search only in v1)
 `budget` (daily), `startDate`, `endDate`, `bidding` (maximize_clicks | maximize_conversions |
@@ -63,6 +118,16 @@ keywords, RSA). It either creates everything or nothing.
   `publish.requests` shows the exact calls that would be made (without the token).
 - Real: needs `USE_MOCK_DATA=false` **and** `CAMPAIGNS_PUBLISH_ENABLED=true`, plus credentials.
   Otherwise publish returns 409 listing what is missing.
+
+## Deploy
+
+No new environment variable and no database migration. Drafts stay JSON in
+`campaign_drafts.data`. Production (`api.instintodigital.com.br`) needs a redeploy
+of this Node app on hPanel. The dashboard (`index.html`, `dash.instintodigital.com.br`)
+needs a redeploy too, or the new form will not show; the API already accepts `adSets`
+before the UI is updated. Publishing still requires the existing
+`USE_MOCK_DATA=false` and `CAMPAIGNS_PUBLISH_ENABLED=true`. Do not turn objects ACTIVE
+from this module.
 
 ## For future traffic-management agents
 
