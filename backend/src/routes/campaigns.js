@@ -69,15 +69,47 @@ router.get('/', async (req, res) => {
   });
 });
 
+function adCounts(d) {
+  if (d.platform !== 'meta' || !d.spec) return {};
+  const sets = Array.isArray(d.spec.adSets) && d.spec.adSets.length ? d.spec.adSets : null;
+  if (!sets) return { adSetCount: 1, adCount: 1 };
+  return {
+    adSetCount: sets.length,
+    adCount: sets.reduce((n, s) => n + ((s.ads && s.ads.length) || 0), 0),
+  };
+}
+
 function listItem(d) {
   return {
     id: d.id, platform: d.platform, name: d.name, status: d.status, currency: d.currency,
     budget: d.spec.budget, budgetType: d.platform === 'google' ? 'daily' : d.spec.budgetType,
     objective: d.platform === 'meta' ? d.spec.objective : 'search',
     startDate: d.spec.startDate, endDate: d.spec.endDate,
+    ...adCounts(d),
     createdAt: d.createdAt, updatedAt: d.updatedAt, createdBy: d.createdBy,
     mock: d.publish ? !!d.publish.mock : undefined,
   };
+}
+
+async function loadMetaAssets(account, draft) {
+  if (draft.platform !== 'meta') return { images: null, problems: [] };
+  const ids = spec.collectAssetIds(draft.spec, draft.name);
+  const images = {};
+  const missing = [];
+  for (const id of ids) {
+    const img = await store.getAsset(account.id, id);
+    if (!img) missing.push(id);
+    else images[id] = img;
+  }
+  return { images, problems: spec.describeMissingAssets(draft.spec, draft.name, missing) };
+}
+
+function publishSummary(result) {
+  if (result.created && result.created.length) {
+    const label = { campaign: 'campanha', adset: 'conjunto', creative: 'criativo', ad: 'anúncio' };
+    return result.created.map((c) => `${label[c.type] || c.type}${c.name ? ` "${c.name}"` : ''} ${c.id}`).join(', ');
+  }
+  return Object.entries(result.ids || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
 }
 
 router.get('/drafts/:id', async (req, res) => {
@@ -154,9 +186,7 @@ router.post('/drafts/:id/request-approval', async (req, res) => {
   if (!draft) return res.status(404).json({ error: 'Rascunho não encontrado.' });
   if (!['draft', 'failed'].includes(draft.status)) return res.status(409).json({ error: `Status atual não permite pedir aprovação (${draft.status}).` });
   const problems = spec.validate(draft.platform, draft.spec, { account });
-  if (draft.platform === 'meta' && draft.spec.creative.assetId && !(await store.getAsset(account.id, draft.spec.creative.assetId))) {
-    problems.push('A imagem do anúncio não foi encontrada. Envie de novo.');
-  }
+  problems.push(...(await loadMetaAssets(account, draft)).problems);
   if (problems.length) return res.status(422).json({ error: 'O rascunho ainda tem pendências.', problems });
   const prev = draft.status;
   draft.status = 'pending_approval';
@@ -196,12 +226,11 @@ router.post('/drafts/:id/publish', async (req, res) => {
   }
   // Rechecagem com os dados atuais do cliente (as integrações podem ter mudado).
   const problems = spec.validate(draft.platform, draft.spec, { account });
+  const assets = await loadMetaAssets(account, draft);
+  problems.push(...assets.problems);
   if (problems.length) return res.status(422).json({ error: 'O rascunho tem pendências.', problems });
   const ready = publisher.readiness(draft.platform);
   if (!ready.ok) return res.status(409).json({ error: `Publicação real desligada. Falta configurar: ${ready.missing.join(', ')}.`, missing: ready.missing });
-
-  const image = draft.platform === 'meta' ? await store.getAsset(account.id, draft.spec.creative.assetId) : null;
-  if (draft.platform === 'meta' && !image) return res.status(422).json({ error: 'A imagem do anúncio não foi encontrada. Envie de novo.' });
 
   // Trava: só uma publicação por rascunho, mesmo com dois cliques simultâneos.
   const approvedAt = new Date().toISOString();
@@ -212,15 +241,17 @@ router.post('/drafts/:id/publish', async (req, res) => {
   if (!locked) return res.status(409).json({ error: 'Essa campanha já está sendo publicada.' });
 
   try {
-    const result = await publisher.publish(draft, account, { image });
+    const result = await publisher.publish(draft, account, { images: assets.images });
     draft.status = 'published';
-    draft.publish = { at: new Date().toISOString(), ...who(req), mock: result.mock, ids: result.ids, warnings: result.warnings || [], requests: result.requests };
-    draft.log.push(logEntry(req, result.mock ? 'publicou (simulação, nada enviado)' : 'publicou PAUSADA', Object.entries(result.ids).map(([k, v]) => `${k}: ${v}`).join(', ')));
+    draft.publish = { at: new Date().toISOString(), ...who(req), mock: result.mock, ids: result.ids, created: result.created, warnings: result.warnings || [], requests: result.requests };
+    draft.log.push(logEntry(req, result.mock ? 'publicou (simulação, nada enviado)' : 'publicou PAUSADA', publishSummary(result)));
   } catch (err) {
     console.error('Publicação de campanha falhou:', err.message);
     draft.status = 'failed';
-    draft.publish = { at: new Date().toISOString(), ...who(req), error: err.message, partialIds: err.partial || {} };
-    const partial = Object.entries(err.partial || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+    draft.publish = { at: new Date().toISOString(), ...who(req), error: err.message, partialIds: err.partial || {}, partialCreated: err.partialCreated || [] };
+    const partial = (err.partialCreated && err.partialCreated.length)
+      ? publishSummary({ created: err.partialCreated })
+      : Object.entries(err.partial || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
     draft.log.push(logEntry(req, 'falhou ao publicar', partial ? `${err.message} | criado (pausado): ${partial}` : err.message));
   }
   draft.updatedAt = new Date().toISOString();

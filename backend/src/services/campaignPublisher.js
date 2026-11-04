@@ -69,10 +69,55 @@ function tzSuffix(offsetHours) {
   return `${sign}${hh}${mm}`;
 }
 
+// Advantage+ creative (Marketing API v22+ / v25): cada recurso é individual
+// em degrees_of_freedom_spec.creative_features_spec, com enroll_status OPT_OUT.
+// `standard_enhancements` saiu na v22 e a Meta recusa o criativo se ele vier.
+// Fora desta lista, o padrão da API liga só `adapt_to_placement`; o rascunho
+// pede o opt-out explícito de todos estes quando creativeEnhancements = opt_out.
+const ADVANTAGE_CREATIVE_FEATURES = [
+  'adapt_to_placement',
+  'add_text_overlay',
+  'creative_stickers',
+  'description_automation',
+  'enhance_cta',
+  'generate_cta',
+  'image_animation',
+  'image_background_gen',
+  'image_brightness_and_contrast',
+  'image_templates',
+  'image_touchups',
+  'image_uncrop',
+  'inline_comment',
+  'media_type_automation',
+  'music_generation',
+  'pac_relaxation',
+  'product_extensions',
+  'profile_card',
+  'reveal_details_over_time',
+  'show_destination_blurbs',
+  'site_extensions',
+  'text_optimizations',
+  'text_overlay_translation',
+  'text_translation',
+];
+
+function creativeOptOutSpec() {
+  const features = {};
+  for (const name of ADVANTAGE_CREATIVE_FEATURES) features[name] = { enroll_status: 'OPT_OUT' };
+  return { creative_features_spec: features };
+}
+
+function imageHashOf(response) {
+  return Object.values(response.images || {})[0]?.hash;
+}
+
 /**
  * Monta, em ordem, as chamadas de criação na Meta. `ctx` traz o que depende de
- * consulta prévia (fuso da conta, chaves de cidade, interesses, hash da imagem).
+ * consulta prévia (fuso da conta, chaves de cidade, interesses).
  * Valores como {campaign_id} são trocados pelo ID real durante a execução.
+ *
+ * Tudo que tem status sai PAUSED. Rascunho sem adSets continua com um conjunto
+ * chamado "<campanha> | Conjunto" e um anúncio "<campanha> | Anúncio".
  */
 function buildMetaRequests(draft, account, ctx) {
   const s = draft.spec;
@@ -82,23 +127,156 @@ function buildMetaRequests(draft, account, ctx) {
   const name = draft.name;
   const budgetKey = s.budgetType === 'lifetime' ? 'lifetime_budget' : 'daily_budget';
   const today = spec.todaySP();
+  const plan = spec.expandMetaPlan(s, name);
+  const single = plan.adSets.length === 1 && plan.adSets[0].ads.length === 1;
+  const assetIds = [];
+  for (const set of plan.adSets) {
+    for (const ad of set.ads) {
+      const id = ad.creative.assetId;
+      if (id && !assetIds.includes(id)) assetIds.push(id);
+    }
+  }
+  const assetIndex = new Map(assetIds.map((id, i) => [id, i]));
 
+  const requests = assetIds.map((id, i) => {
+    const token = single ? 'image_base64' : `imgb64_${i}`;
+    const sets = single ? 'image_hash' : `imghash_${i}`;
+    return {
+      key: single ? 'image' : `image_${i + 1}`,
+      label: single ? 'Imagem do anúncio' : `Imagem ${i + 1}`,
+      method: 'POST',
+      path: `${act}/adimages`,
+      params: { bytes: `{${token}}` },
+      pick: imageHashOf,
+      sets,
+      assetId: id,
+    };
+  });
+
+  requests.push({
+    key: 'campaign',
+    label: 'Campanha',
+    method: 'POST',
+    path: `${act}/campaigns`,
+    params: {
+      name,
+      objective: obj.objective,
+      status: 'PAUSED',
+      buying_type: 'AUCTION',
+      special_ad_categories: s.specialAdCategory === 'NONE' ? [] : [s.specialAdCategory],
+      [budgetKey]: minorUnits(s.budget, draft.currency),
+      bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+    },
+    pick: (r) => r.id,
+    sets: 'campaign_id',
+    record: { key: 'campaign', type: 'campaign', name },
+  });
+
+  plan.adSets.forEach((set, si) => {
+    const adsetToken = single ? 'adset_id' : `adset_${si}`;
+    const targeting = targetingFor(set, ctx);
+    const adset = {
+      name: set.name,
+      campaign_id: '{campaign_id}',
+      status: 'PAUSED',
+      billing_event: 'IMPRESSIONS',
+      optimization_goal: obj.optimization,
+      targeting,
+    };
+    if (obj.destination) adset.destination_type = obj.destination;
+    if (obj.event) adset.promoted_object = { pixel_id: s.pixelId, custom_event_type: obj.event };
+    if (s.objective === 'mensagens') adset.promoted_object = { page_id: m.pageId };
+    if (s.startDate > today) adset.start_time = `${s.startDate}T00:00:00${ctx.tz}`;
+    if (s.endDate) adset.end_time = `${s.endDate}T23:59:00${ctx.tz}`;
+    if (set.audience.countries.some((c) => spec.EU.includes(c))) {
+      adset.dsa_beneficiary = s.dsa.beneficiary;
+      adset.dsa_payor = s.dsa.payor;
+    }
+    requests.push({
+      key: single ? 'adset' : `adset_${si + 1}`,
+      label: plan.legacy ? 'Conjunto de anúncios' : `Conjunto: ${set.name}`,
+      method: 'POST',
+      path: `${act}/adsets`,
+      params: adset,
+      pick: (r) => r.id,
+      sets: adsetToken,
+      record: { key: single ? 'adset' : `adset_${si + 1}`, type: 'adset', name: set.name },
+    });
+
+    set.ads.forEach((ad, ai) => {
+      const imgIdx = assetIndex.has(ad.creative.assetId) ? assetIndex.get(ad.creative.assetId) : 0;
+      const hashToken = single ? 'image_hash' : `imghash_${imgIdx}`;
+      const creativeToken = single ? 'creative_id' : `creative_${si}_${ai}`;
+      const adToken = single ? 'ad_id' : `ad_${si}_${ai}`;
+      const storySpec = storyFor(m, s.objective, ad.creative, `{${hashToken}}`);
+      const creativeParams = {
+        name: (plan.legacy ? `${name} | Criativo` : `${ad.name} | Criativo`).slice(0, 255),
+        object_story_spec: storySpec,
+      };
+      if (ad.optOutCreative) creativeParams.degrees_of_freedom_spec = creativeOptOutSpec();
+      const oneKey = single;
+      requests.push({
+        key: oneKey ? 'creative' : `creative_${si + 1}_${ai + 1}`,
+        label: plan.legacy ? 'Criativo' : `Criativo: ${ad.name}`,
+        method: 'POST',
+        path: `${act}/adcreatives`,
+        params: creativeParams,
+        pick: (r) => r.id,
+        sets: creativeToken,
+        record: { key: oneKey ? 'creative' : `creative_${si + 1}_${ai + 1}`, type: 'creative', name: plan.legacy ? `${name} | Criativo` : ad.name },
+        optOutCreative: !!ad.optOutCreative,
+      });
+      requests.push({
+        key: oneKey ? 'ad' : `ad_${si + 1}_${ai + 1}`,
+        label: plan.legacy ? 'Anúncio' : `Anúncio: ${ad.name}`,
+        method: 'POST',
+        path: `${act}/ads`,
+        params: {
+          name: ad.name,
+          adset_id: `{${adsetToken}}`,
+          creative: { creative_id: `{${creativeToken}}` },
+          status: 'PAUSED',
+        },
+        pick: (r) => r.id,
+        sets: adToken,
+        record: { key: oneKey ? 'ad' : `ad_${si + 1}_${ai + 1}`, type: 'ad', name: ad.name },
+      });
+    });
+  });
+
+  assertCreatesPaused(requests);
+  return requests;
+}
+
+function targetingFor(set, ctx) {
+  const a = set.audience;
+  const cityKeys = ctx.cityKeys || {};
+  const interestMap = ctx.interests || {};
   const targeting = {
-    geo_locations: ctx.cityKeys.length
-      ? { cities: ctx.cityKeys.map((key) => ({ key })) }
-      : { countries: s.audience.countries },
-    age_min: s.audience.ageMin,
-    age_max: s.audience.ageMax,
-    targeting_automation: { advantage_audience: s.audience.advantage ? 1 : 0 },
+    geo_locations: a.cities.length
+      ? {
+        cities: a.cities.map((city) => {
+          const key = cityKeys[city];
+          if (!key) throw publishError(`A Meta não encontrou a cidade "${city}". Confira o nome no rascunho.`);
+          return { key };
+        }),
+      }
+      : { countries: a.countries },
+    age_min: a.ageMin,
+    age_max: a.ageMax,
+    targeting_automation: { advantage_audience: a.advantage ? 1 : 0 },
   };
-  if (s.audience.gender === 'male') targeting.genders = [1];
-  if (s.audience.gender === 'female') targeting.genders = [2];
-  if (ctx.interests.length) targeting.flexible_spec = [{ interests: ctx.interests }];
-  if (s.placements.mode === 'manual') {
+  if (a.gender === 'male') targeting.genders = [1];
+  if (a.gender === 'female') targeting.genders = [2];
+  const found = (a.interests || []).map((term) => interestMap[term]).filter(Boolean);
+  if (found.length) targeting.flexible_spec = [{ interests: found }];
+  if (set.placements.mode === 'manual') {
     const platforms = new Set();
     const fb = []; const ig = [];
-    s.placements.positions.forEach((p) => {
-      const [plat, pos] = POSITION_MAP[p];
+    set.placements.positions.forEach((p) => {
+      const mapped = POSITION_MAP[p];
+      if (!mapped) return;
+      const [plat, pos] = mapped;
       platforms.add(plat);
       (plat === 'facebook' ? fb : ig).push(pos);
     });
@@ -106,70 +284,36 @@ function buildMetaRequests(draft, account, ctx) {
     if (fb.length) targeting.facebook_positions = fb;
     if (ig.length) targeting.instagram_positions = ig;
   }
+  return targeting;
+}
 
-  const adset = {
-    name: `${name} | Conjunto`,
-    campaign_id: '{campaign_id}',
-    status: 'PAUSED',
-    billing_event: 'IMPRESSIONS',
-    optimization_goal: obj.optimization,
-    targeting,
-  };
-  if (obj.destination) adset.destination_type = obj.destination;
-  if (obj.event) adset.promoted_object = { pixel_id: s.pixelId, custom_event_type: obj.event };
-  if (s.objective === 'mensagens') adset.promoted_object = { page_id: m.pageId };
-  if (s.startDate > today) adset.start_time = `${s.startDate}T00:00:00${ctx.tz}`;
-  if (s.endDate) adset.end_time = `${s.endDate}T23:59:00${ctx.tz}`;
-  if (s.audience.countries.some((c) => spec.EU.includes(c))) {
-    adset.dsa_beneficiary = s.dsa.beneficiary;
-    adset.dsa_payor = s.dsa.payor;
-  }
-
+function storyFor(meta, objective, creative, hashToken) {
   const linkData = {
-    image_hash: '{image_hash}',
-    message: s.creative.primaryText,
-    name: s.creative.headline,
+    image_hash: hashToken,
+    message: creative.primaryText,
+    name: creative.headline,
   };
-  if (s.creative.description) linkData.description = s.creative.description;
-  if (s.objective === 'mensagens') {
+  if (creative.description) linkData.description = creative.description;
+  if (objective === 'mensagens') {
     linkData.link = 'https://api.whatsapp.com/send';
     linkData.call_to_action = { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } };
   } else {
-    linkData.link = s.creative.link;
-    if (s.creative.cta) linkData.call_to_action = { type: s.creative.cta, value: { link: s.creative.link } };
+    linkData.link = creative.link;
+    if (creative.cta) linkData.call_to_action = { type: creative.cta, value: { link: creative.link } };
   }
-  const storySpec = { page_id: m.pageId, link_data: linkData };
-  if (m.igBusinessId) storySpec.instagram_user_id = m.igBusinessId;
+  const storySpec = { page_id: meta.pageId, link_data: linkData };
+  if (meta.igBusinessId) storySpec.instagram_user_id = meta.igBusinessId;
+  return storySpec;
+}
 
-  return [
-    {
-      key: 'image', label: 'Imagem do anúncio', method: 'POST', path: `${act}/adimages`,
-      params: { bytes: '{image_base64}' }, pick: (r) => Object.values(r.images || {})[0]?.hash, sets: 'image_hash',
-    },
-    {
-      key: 'campaign', label: 'Campanha', method: 'POST', path: `${act}/campaigns`,
-      params: {
-        name,
-        objective: obj.objective,
-        status: 'PAUSED',
-        buying_type: 'AUCTION',
-        special_ad_categories: s.specialAdCategory === 'NONE' ? [] : [s.specialAdCategory],
-        [budgetKey]: minorUnits(s.budget, draft.currency),
-        bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-      },
-      pick: (r) => r.id, sets: 'campaign_id',
-    },
-    { key: 'adset', label: 'Conjunto de anúncios', method: 'POST', path: `${act}/adsets`, params: adset, pick: (r) => r.id, sets: 'adset_id' },
-    {
-      key: 'creative', label: 'Criativo', method: 'POST', path: `${act}/adcreatives`,
-      params: { name: `${name} | Criativo`, object_story_spec: storySpec }, pick: (r) => r.id, sets: 'creative_id',
-    },
-    {
-      key: 'ad', label: 'Anúncio', method: 'POST', path: `${act}/ads`,
-      params: { name: `${name} | Anúncio`, adset_id: '{adset_id}', creative: { creative_id: '{creative_id}' }, status: 'PAUSED' },
-      pick: (r) => r.id, sets: 'ad_id',
-    },
-  ];
+// Campanha, conjunto e anúncio nascem pausados. Se algum status escapar, para aqui.
+function assertCreatesPaused(requests) {
+  for (const r of requests) {
+    if (!r.params || !Object.prototype.hasOwnProperty.call(r.params, 'status')) continue;
+    if (r.params.status !== 'PAUSED') {
+      throw publishError('Publicação recusada: campanha, conjunto e anúncio só podem ser criados pausados.');
+    }
+  }
 }
 
 // Troca {placeholders} pelos valores já obtidos (em qualquer profundidade).
@@ -205,14 +349,29 @@ async function metaRequest(method, path, params = {}) {
   return json;
 }
 
+function planLookups(draft) {
+  const plan = spec.expandMetaPlan(draft.spec, draft.name);
+  const cities = [];
+  const interests = [];
+  for (const set of plan.adSets) {
+    for (const city of set.audience.cities) if (!cities.includes(city)) cities.push(city);
+    for (const term of set.audience.interests) if (!interests.includes(term)) interests.push(term);
+  }
+  const countryOf = (city) => {
+    const set = plan.adSets.find((s) => s.audience.cities.includes(city));
+    return (set && set.audience.countries && set.audience.countries[0]) || 'BR';
+  };
+  return { cities, interests, countryOf };
+}
+
 async function resolveMetaContext(draft, account, live) {
-  const s = draft.spec;
   const warnings = [];
+  const { cities, interests, countryOf } = planLookups(draft);
   if (!live) {
     return {
       tz: '-0300',
-      cityKeys: s.audience.cities.map((c) => `<chave da cidade "${c}">`),
-      interests: s.audience.interests.map((i) => ({ id: `<id do interesse "${i}">`, name: i })),
+      cityKeys: Object.fromEntries(cities.map((c) => [c, `<chave da cidade "${c}">`])),
+      interests: Object.fromEntries(interests.map((i) => [i, { id: `<id do interesse "${i}">`, name: i }])),
       warnings,
     };
   }
@@ -221,63 +380,109 @@ async function resolveMetaContext(draft, account, live) {
   if (info.currency && info.currency !== draft.currency) {
     throw publishError(`A conta da Meta está em ${info.currency}, mas o rascunho foi feito em ${draft.currency}. Ajuste o orçamento antes de publicar.`);
   }
-  const cityKeys = [];
-  for (const city of s.audience.cities) {
+  const cityKeys = {};
+  for (const city of cities) {
     const r = await metaRequest('GET', 'search', {
-      type: 'adgeolocation', q: city, location_types: ['city'], country_code: s.audience.countries[0], limit: 1,
+      type: 'adgeolocation', q: city, location_types: ['city'], country_code: countryOf(city), limit: 1,
     });
     const hit = (r.data || [])[0];
     if (!hit) throw publishError(`A Meta não encontrou a cidade "${city}". Confira o nome no rascunho.`);
-    cityKeys.push(hit.key);
+    cityKeys[city] = hit.key;
   }
-  const interests = [];
-  for (const term of s.audience.interests) {
+  const interestMap = {};
+  for (const term of interests) {
     const r = await metaRequest('GET', 'search', { type: 'adinterest', q: term, limit: 1 });
     const hit = (r.data || [])[0];
-    if (hit) interests.push({ id: hit.id, name: hit.name });
+    if (hit) interestMap[term] = { id: hit.id, name: hit.name };
     else warnings.push(`Interesse "${term}" não encontrado na Meta e ficou de fora.`);
   }
   if (!account.meta.igBusinessId) warnings.push('Cliente sem Instagram vinculado: o anúncio usa a identidade da Página no Instagram.');
-  return { tz: tzSuffix(info.timezone_offset_hours_utc), cityKeys, interests, warnings };
+  return { tz: tzSuffix(info.timezone_offset_hours_utc), cityKeys, interests: interestMap, warnings };
 }
 
 function previewOf(requests, vars, base) {
+  const shown = { ...vars };
+  for (const r of requests) if (r.sets) shown[r.sets] = `{${r.sets}}`;
   return requests.map((r) => ({
     label: r.label, method: r.method, url: `${base}/${r.path}`,
-    params: fill(r.params, { ...vars, image_base64: `<imagem em base64, ${vars.image_kb} KB>` }),
+    params: fill(r.params, shown),
   }));
 }
 
-async function publishMeta(draft, account, image, live) {
+function imagePlaceholders(draft, images) {
+  const assetIds = spec.collectAssetIds(draft.spec, draft.name);
+  const plan = spec.expandMetaPlan(draft.spec, draft.name);
+  const single = plan.adSets.length === 1 && plan.adSets[0].ads.length === 1;
+  const vars = {};
+  assetIds.forEach((id, i) => {
+    const token = single ? 'image_base64' : `imgb64_${i}`;
+    const img = images && images[id];
+    const kb = img && img.size ? Math.round(img.size / 1024) : 0;
+    vars[token] = img && img.data ? Buffer.from(img.data).toString('base64') : `<imagem em base64, ${kb} KB>`;
+  });
+  return { vars, assetIds, single };
+}
+
+async function noteCreativeOptOut(creativeId, warnings) {
+  try {
+    const r = await metaRequest('GET', creativeId, { fields: 'degrees_of_freedom_spec' });
+    const features = (r.degrees_of_freedom_spec && r.degrees_of_freedom_spec.creative_features_spec) || {};
+    const on = Object.entries(features).filter(([, v]) => v && v.enroll_status === 'OPT_IN').map(([k]) => k);
+    if (on.length) warnings.push(`A Meta manteve melhorias de criativo ligadas (${on.join(', ')}). Confira o anúncio no Gerenciador.`);
+  } catch (_) {
+    warnings.push('Não consegui conferir se as melhorias de criativo ficaram desligadas. Vale olhar o anúncio no Gerenciador.');
+  }
+}
+
+async function publishMeta(draft, account, images, live) {
   const ctx = await resolveMetaContext(draft, account, live);
   const requests = buildMetaRequests(draft, account, ctx);
-  const imageKb = Math.round(image.size / 1024);
+  const { vars: imageVars } = imagePlaceholders(draft, live ? images : null);
   if (!live) {
     const ids = {};
-    const vars = { image_kb: imageKb };
-    requests.forEach((r) => {
-      const fake = r.key === 'image' ? `SIMULADO-${crypto.randomBytes(8).toString('hex')}` : `SIMULADO-${r.key}-${crypto.randomBytes(4).toString('hex')}`;
-      vars[r.sets] = fake;
-      if (r.key !== 'image') ids[r.key] = fake;
+    const created = [];
+    const vars = {};
+    const assetIds = spec.collectAssetIds(draft.spec, draft.name);
+    const plan = spec.expandMetaPlan(draft.spec, draft.name);
+    const single = plan.adSets.length === 1 && plan.adSets[0].ads.length === 1;
+    assetIds.forEach((id, i) => {
+      const token = single ? 'image_base64' : `imgb64_${i}`;
+      const img = images && images[id];
+      const kb = img && img.size ? Math.round(img.size / 1024) : 0;
+      vars[token] = `<imagem em base64, ${kb} KB>`;
     });
-    return { mock: true, platform: 'meta', ids, warnings: ctx.warnings, requests: previewOf(requests, { ...vars, image_hash: '{image_hash}', campaign_id: '{campaign_id}', adset_id: '{adset_id}', creative_id: '{creative_id}' }, META_BASE) };
+    requests.forEach((r) => {
+      const fake = String(r.key).startsWith('image') ? `SIMULADO-${crypto.randomBytes(8).toString('hex')}` : `SIMULADO-${r.key}-${crypto.randomBytes(4).toString('hex')}`;
+      vars[r.sets] = fake;
+      if (r.record) {
+        ids[r.record.key] = fake;
+        created.push({ type: r.record.type, name: r.record.name, id: fake });
+      }
+    });
+    return { mock: true, platform: 'meta', ids, created, warnings: ctx.warnings, requests: previewOf(requests, vars, META_BASE) };
   }
 
-  const vars = { image_base64: Buffer.from(image.data).toString('base64') };
+  const vars = { ...imageVars };
   const ids = {};
+  const created = [];
   try {
     for (const r of requests) {
       const out = await metaRequest('POST', r.path, fill(r.params, vars));
       const value = r.pick(out);
       if (!value) throw publishError(`Meta: resposta sem ID ao criar ${r.label.toLowerCase()}.`);
       vars[r.sets] = value;
-      if (r.key !== 'image') ids[r.key] = value;
+      if (r.record) {
+        ids[r.record.key] = value;
+        created.push({ type: r.record.type, name: r.record.name, id: value });
+      }
+      if (r.optOutCreative) await noteCreativeOptOut(value, ctx.warnings);
     }
   } catch (err) {
     err.partial = ids; // o que já foi criado (tudo PAUSADO)
+    err.partialCreated = created;
     throw err;
   }
-  return { mock: false, platform: 'meta', ids, warnings: ctx.warnings };
+  return { mock: false, platform: 'meta', ids, created, warnings: ctx.warnings };
 }
 
 /* ===================== Google (Pesquisa) ===================== */
@@ -401,13 +606,18 @@ async function publishGoogle(draft, account, live) {
 
 /* ===================== Entrada ===================== */
 
-async function publish(draft, account, { image } = {}) {
+async function publish(draft, account, { image, images } = {}) {
   const r = readiness(draft.platform);
   if (!r.ok) throw publishError(`Publicação real desligada. Falta configurar: ${r.missing.join(', ')}.`, { status: 409 });
   const live = r.mode === 'real';
   if (draft.platform === 'meta') {
-    if (!image) throw publishError('Imagem do anúncio não encontrada. Envie a imagem de novo.', { status: 400 });
-    return publishMeta(draft, account, image, live);
+    const ids = spec.collectAssetIds(draft.spec, draft.name);
+    const map = { ...(images || {}) };
+    if (image && ids.length === 1 && !map[ids[0]]) map[ids[0]] = image;
+    if (!ids.length || ids.some((id) => !map[id])) {
+      throw publishError('Imagem do anúncio não encontrada. Envie a imagem de novo.', { status: 400 });
+    }
+    return publishMeta(draft, account, map, live);
   }
   return publishGoogle(draft, account, live);
 }
@@ -424,4 +634,7 @@ async function metaWriteCheck() {
   }
 }
 
-module.exports = { publish, readiness, metaWriteCheck, buildMetaRequests, buildGoogleMutate, minorUnits, tzSuffix, metaRequest, googlePost, GOOGLE_API };
+module.exports = {
+  publish, readiness, metaWriteCheck, buildMetaRequests, buildGoogleMutate, minorUnits, tzSuffix, metaRequest, googlePost, GOOGLE_API,
+  creativeOptOutSpec, ADVANTAGE_CREATIVE_FEATURES,
+};

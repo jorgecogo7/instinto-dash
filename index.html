@@ -1630,6 +1630,10 @@
   .cp-ids{ font-family:ui-monospace, Menlo, monospace; font-size:12px; line-height:1.7; }
   .cp-pre{ font-family:ui-monospace, Menlo, monospace; font-size:11px; white-space:pre-wrap; word-break:break-all; max-height:340px; overflow:auto; background:rgba(127,127,127,.08); border-radius:8px; padding:10px; }
   .cp-status{ font-size:12.5px; color:var(--text-dim); }
+  .cp-card{ border:1px solid var(--line); border-radius:12px; padding:12px 12px 8px; margin:10px 0; background:rgba(127,127,127,.04); }
+  .cp-card-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  .cp-card-head b{ font-size:13px; }
+  .cp-ad{ border-top:1px dashed var(--line); margin-top:12px; padding-top:10px; }
   .btn-danger-soft{ font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 13px; border-radius:8px; border:1px solid rgba(232,81,79,.4); background:transparent; color:var(--red); cursor:pointer; }
 
   /* ===================== Campanhas: Gerenciar status (só agência) ===================== */
@@ -8643,7 +8647,8 @@
     const what = d.platform === 'meta' ? (CP_OBJ[d.objective] || d.objective) : 'Rede de Pesquisa';
     const budget = d.budget ? `${cpMoney(d.budget, d.currency)} ${d.budgetType === 'lifetime' ? 'no total' : 'por dia'}` : 'sem orçamento';
     const dates = d.startDate ? ` · ${cpDate(d.startDate)}${d.endDate ? ' a ' + cpDate(d.endDate) : ''}` : '';
-    return `${escapeHtml(what)} · ${budget}${dates}`;
+    const multi = d.platform === 'meta' && (d.adSetCount > 1 || d.adCount > 1) ? ` · ${d.adSetCount || 1} conjunto${d.adSetCount === 1 ? '' : 's'} · ${d.adCount || 0} anúncio${d.adCount === 1 ? '' : 's'}` : '';
+    return `${escapeHtml(what)} · ${budget}${dates}${multi}`;
   }
 
   function renderCampaigns(){
@@ -8672,11 +8677,14 @@
     if (CP.edit) cpLoadImage();
   }
 
+  const CP_MAX_SETS = 10;
+  const CP_MAX_ADS = 10;
   function cpBlank(platform){
     const today = cpToday();
     if (platform === 'meta') return { objective:'mensagens', pixelId:'', specialAdCategory:'NONE', budgetType:'daily', budget:null, startDate:today, endDate:'',
       audience:{ countries:['BR'], cities:[], ageMin:18, ageMax:65, gender:'all', interests:[], advantage:false },
-      placements:{ mode:'auto', positions:[] }, creative:{ assetId:'', primaryText:'', headline:'', description:'', cta:'LEARN_MORE', link:'' }, dsa:{ beneficiary:'', payor:'' } };
+      placements:{ mode:'auto', positions:[] }, creative:{ assetId:'', primaryText:'', headline:'', description:'', cta:'LEARN_MORE', link:'' }, dsa:{ beneficiary:'', payor:'' },
+      adSets:[{ name:'', audience:{ interests:[] }, ads:[{ name:'', creative:{} }] }] };
     return { budget:null, startDate:today, endDate:'', bidding:'maximize_clicks', cpcBid:null, country:'BR', cities:[], language:'pt', searchPartners:false,
       keywords:[], negatives:[], finalUrl:'', headlines:[], descriptions:[], path1:'', path2:'' };
   }
@@ -8699,62 +8707,152 @@
   const cpIn = (id, v, extra = '') => `<input class="modal-input" id="${id}" value="${escapeAttr(v ?? '')}" ${extra}>`;
   const cpRow = (label, inner, help) => `<div class="fm-row"><label class="modal-label">${label}</label>${inner}${help ? `<div class="fm-help">${help}</div>` : ''}</div>`;
 
+  function cpSetIsCustom(set){
+    const a = set.audience || {};
+    return Object.keys(a).some(k => k !== 'interests') || !!(set.placements && set.placements.mode);
+  }
+  function cpPosBoxes(className, extra, selected, dis){
+    return `<div class="cp-pos">${Object.entries(CP_POS).map(([k, l]) => `<label class="fm-check"><input type="checkbox" class="${className}" ${extra} value="${k}" ${(selected || []).includes(k) ? 'checked' : ''} ${dis}> ${l}</label>`).join('')}</div>`;
+  }
+  function cpMetaLegacyAdHtml(s, dis){
+    return `
+      <div class="cp-section">Anúncio</div>
+      <div class="fm-help">Este rascunho tem um conjunto e um anúncio. Os nomes na Meta saem da campanha ("${escapeHtml(CP.edit.name || 'campanha')} | Conjunto" e "| Anúncio"). Para definir vários, use o botão abaixo.</div>
+      <div class="fm-row"><label class="modal-label">Imagem (JPG ou PNG, até 5 MB)</label>
+        ${dis ? '' : `<input type="file" accept="image/jpeg,image/png" id="cpFile" onchange="cpUpload(this)">`}
+        <div class="fm-help cp-img-status" id="cpImgStatus">${s.creative.assetId ? 'Imagem enviada.' : 'Nenhuma imagem ainda. Formato quadrado (1080x1080) funciona em todos os posicionamentos.'}</div>
+        <img class="cp-img" id="cpImg" data-asset="${escapeAttr(s.creative.assetId || '')}" style="display:none;" alt="Prévia da imagem do anúncio"></div>
+      ${cpRow('Texto principal', `<textarea class="modal-input" id="cpPrimary" rows="4" ${dis}>${escapeHtml(s.creative.primaryText)}</textarea>`)}
+      <div class="fm-2col">
+        ${cpRow('Título', cpIn('cpHeadline', s.creative.headline, dis))}
+        ${cpRow('Descrição (opcional)', cpIn('cpDesc', s.creative.description, dis))}
+      </div>
+      ${dis ? '' : `<div class="cp-actions" style="margin-top:10px;"><button type="button" class="btn-cancel" onclick="cpEnableMulti()">Usar vários conjuntos e anúncios</button></div>`}`;
+  }
+  function cpMetaAdHtml(ad, i, j, dis, objective){
+    const c = ad.creative || {};
+    const linkRow = objective === 'mensagens' ? '' : `<div class="fm-2col">
+      ${cpRow('Link deste anúncio (opcional)', cpIn(`cpAdLink_${i}_${j}`, c.link || '', `placeholder="Em branco, usa o link da campanha" ${dis}`))}
+      ${cpRow('Botão deste anúncio (opcional)', `<select class="modal-input" id="cpAdCta_${i}_${j}" ${dis}><option value="" ${c.cta ? '' : 'selected'}>Usar o botão da campanha</option>${cpOpt(CP_CTA, c.cta || '')}</select>`)}
+    </div>`;
+    return `
+      <div class="cp-ad">
+        <div class="cp-card-head"><b>Anúncio ${j + 1}</b>
+          ${dis ? '' : `<button type="button" class="btn-danger-soft" onclick="cpRemoveAd(${i}, ${j})">Remover anúncio</button>`}</div>
+        ${cpRow('Nome do anúncio', cpIn(`cpAdName_${i}_${j}`, ad.name || '', `placeholder="Ex.: 04.11.2026 AD01" ${dis}`), 'A Meta recebe este nome, sem sufixo automático.')}
+        <div class="fm-row"><label class="modal-label">Imagem (JPG ou PNG, até 5 MB)</label>
+          ${dis ? '' : `<input type="file" accept="image/jpeg,image/png" id="cpFile_${i}_${j}" onchange="cpUpload(this, ${i}, ${j})">`}
+          <div class="fm-help cp-img-status" id="cpImgStatus_${i}_${j}">${c.assetId ? 'Imagem enviada.' : 'Nenhuma imagem ainda. Formato quadrado (1080x1080) funciona melhor.'}</div>
+          <img class="cp-img" data-asset="${escapeAttr(c.assetId || '')}" style="display:none;" alt="Prévia da imagem do anúncio"></div>
+        ${cpRow('Texto principal', `<textarea class="modal-input" id="cpAdPrimary_${i}_${j}" rows="4" ${dis}>${escapeHtml(c.primaryText || '')}</textarea>`)}
+        <div class="fm-2col">
+          ${cpRow('Título', cpIn(`cpAdHeadline_${i}_${j}`, c.headline || '', dis))}
+          ${cpRow('Descrição (opcional)', cpIn(`cpAdDesc_${i}_${j}`, c.description || '', dis))}
+        </div>
+        ${linkRow}
+      </div>`;
+  }
+  function cpMetaSetsHtml(s, dis){
+    const sets = s.adSets || [];
+    const nAds = sets.reduce((n, set) => n + ((set.ads || []).length), 0);
+    const cards = sets.map((set, i) => {
+      const custom = cpSetIsCustom(set);
+      const a = set.audience || {};
+      const p = set.placements || { mode:'auto', positions:[] };
+      const customFields = custom ? `
+        <div class="fm-2col">
+          ${cpRow('Países deste conjunto', cpIn(`cpSetCountries_${i}`, (a.countries || []).join(', '), dis))}
+          ${cpRow('Cidades deste conjunto', `<textarea class="modal-input" id="cpSetCities_${i}" rows="2" ${dis}>${escapeHtml(cpLines(a.cities))}</textarea>`, 'Em branco, o conjunto não restringe por cidade.')}
+        </div>
+        <div class="fm-2col">
+          <div class="fm-2col">
+            ${cpRow('Idade mín.', cpIn(`cpSetAgeMin_${i}`, a.ageMin ?? '', `type="number" min="18" max="65" ${dis}`))}
+            ${cpRow('Idade máx.', cpIn(`cpSetAgeMax_${i}`, a.ageMax ?? '', `type="number" min="18" max="65" ${dis}`))}
+          </div>
+          ${cpRow('Gênero', `<select class="modal-input" id="cpSetGender_${i}" ${dis}>${cpOpt({ all:'Todos', female:'Mulheres', male:'Homens' }, a.gender || 'all')}</select>`)}
+        </div>
+        <label class="fm-check"><input type="checkbox" id="cpSetAdvantage_${i}" ${a.advantage ? 'checked' : ''} ${dis}> Público Advantage+ só neste conjunto</label>
+        <div class="fm-row" style="margin-top:8px;"><label class="modal-label">Posicionamento deste conjunto</label>
+          <select class="modal-input" id="cpSetPlacementMode_${i}" onchange="cpRefresh()" ${dis}>${cpOpt({ auto:'Automáticos (recomendado pela Meta)', manual:'Escolher manualmente' }, p.mode || 'auto')}</select>
+          ${p.mode === 'manual' ? cpPosBoxes('cpSetPos', `data-set="${i}"`, p.positions, dis) : ''}
+        </div>` : '';
+      return `
+        <div class="cp-card">
+          <div class="cp-card-head"><b>Conjunto ${i + 1}</b>
+            ${dis ? '' : `<button type="button" class="btn-danger-soft" onclick="cpRemoveSet(${i})">Remover conjunto</button>`}</div>
+          ${cpRow('Nome do conjunto', cpIn(`cpSetName_${i}`, set.name || '', `placeholder="Ex.: 00 [Insta] [H/M] [25-50] [Interesse] [Cidades]" ${dis}`), 'A Meta recebe este nome, sem sufixo automático.')}
+          ${cpRow('Interesses deste conjunto', `<textarea class="modal-input" id="cpSetInterests_${i}" rows="3" placeholder="Um por linha. Em branco, usa os interesses padrão da campanha." ${dis}>${escapeHtml(cpLines(a.interests))}</textarea>`)}
+          <label class="fm-check" style="margin-top:6px;"><input type="checkbox" id="cpSetCustom_${i}" ${custom ? 'checked' : ''} onchange="cpRefresh()" ${dis}> Personalizar público e posicionamento só deste conjunto</label>
+          ${customFields}
+          ${(set.ads || []).map((ad, j) => cpMetaAdHtml(ad, i, j, dis, s.objective)).join('')}
+          ${dis ? '' : `<div class="cp-actions" style="margin-top:8px;"><button type="button" class="btn-cancel" onclick="cpAddAd(${i})">+ Anúncio neste conjunto</button></div>`}
+        </div>`;
+    }).join('');
+    return `
+      <div class="cp-section">Conjuntos e anúncios (${sets.length} conjunto${sets.length === 1 ? '' : 's'}, ${nAds} anúncio${nAds === 1 ? '' : 's'})</div>
+      <div class="fm-help">Todos nascem pausados. O público e o posicionamento de cima valem para cada conjunto, salvo onde você personalizar. Dá para ter pelo menos dois conjuntos com dois anúncios cada.</div>
+      ${cards}
+      ${dis ? '' : `<button type="button" class="btn-add" onclick="cpAddSet()">+ Conjunto</button>`}`;
+  }
+  function cpMetaHtml(s, dis){
+    const eu = (s.audience.countries || []).some(c => CP_EU.includes(c));
+    const multi = Array.isArray(s.adSets) && s.adSets.length > 0;
+    const linkBlock = s.objective === 'mensagens'
+      ? '<div class="fm-help">Botão do anúncio: "Enviar mensagem" no WhatsApp.</div>'
+      : `<div class="fm-2col">
+          ${cpRow('Link de destino', cpIn('cpLink', s.creative.link, `placeholder="https://" ${dis}`), multi ? 'Vale para os anúncios que não tiverem um link próprio.' : '')}
+          ${cpRow('Botão', `<select class="modal-input" id="cpCta" ${dis}>${cpOpt(CP_CTA, s.creative.cta || 'LEARN_MORE')}</select>`)}
+        </div>`;
+    return `
+      <div class="cp-section">Objetivo e orçamento</div>
+      <div class="fm-2col">
+        ${cpRow('Objetivo', `<select class="modal-input" id="cpObjective" onchange="cpRefresh()" ${dis}>${cpOpt(CP_OBJ, s.objective)}</select>`, s.objective === 'mensagens' ? 'Abre conversa no WhatsApp ligado à Página do cliente.' : '')}
+        ${['cadastros', 'vendas'].includes(s.objective) ? cpRow('ID do pixel da Meta', cpIn('cpPixel', s.pixelId, `placeholder="Ex.: 123456789012345" ${dis}`)) : cpRow('Categoria especial', `<select class="modal-input" id="cpSpecial" ${dis}>${cpOpt({ NONE:'Nenhuma', HOUSING:'Imóveis / moradia', EMPLOYMENT:'Emprego', FINANCIAL_PRODUCTS_SERVICES:'Crédito e serviços financeiros' }, s.specialAdCategory)}</select>`)}
+      </div>
+      <div class="fm-2col">
+        ${cpRow('Tipo de orçamento', `<select class="modal-input" id="cpBudgetType" onchange="cpRefresh()" ${dis}>${cpOpt({ daily:'Diário', lifetime:'Total (do período)' }, s.budgetType)}</select>`)}
+        ${cpRow(`Valor (${escapeHtml(CP.edit.currency)})`, cpIn('cpBudget', s.budget ?? '', `inputmode="decimal" placeholder="Ex.: 50,00" ${dis}`))}
+      </div>
+      <div class="fm-2col">
+        ${cpRow('Início', cpIn('cpStart', s.startDate, `type="date" ${dis}`))}
+        ${cpRow(`Término${s.budgetType === 'lifetime' ? '' : ' (opcional)'}`, cpIn('cpEnd', s.endDate, `type="date" ${dis}`))}
+      </div>
+      <div class="cp-section">Público padrão</div>
+      <div class="fm-help">${multi ? 'Vale para todos os conjuntos. Interesses de um conjunto substituem esta lista quando você preenche o conjunto.' : 'Com cidades, o anúncio fica só nelas.'}</div>
+      <div class="fm-2col">
+        ${cpRow('Países', cpIn('cpCountries', (s.audience.countries || []).join(', '), `placeholder="BR" onchange="cpRefresh()" ${dis}`), 'Códigos de 2 letras, separados por vírgula. Ex.: BR, PT')}
+        ${cpRow('Cidades (opcional)', `<textarea class="modal-input" id="cpCities" rows="3" placeholder="Uma por linha. Ex.: São Paulo" ${dis}>${escapeHtml(cpLines(s.audience.cities))}</textarea>`, 'Com cidades, o anúncio fica só nelas.')}
+      </div>
+      <div class="fm-2col">
+        <div class="fm-2col">
+          ${cpRow('Idade mín.', cpIn('cpAgeMin', s.audience.ageMin, `type="number" min="18" max="65" ${dis}`))}
+          ${cpRow('Idade máx.', cpIn('cpAgeMax', s.audience.ageMax, `type="number" min="18" max="65" ${dis}`), '65 = 65 ou mais')}
+        </div>
+        ${cpRow('Gênero', `<select class="modal-input" id="cpGender" ${dis}>${cpOpt({ all:'Todos', female:'Mulheres', male:'Homens' }, s.audience.gender)}</select>`)}
+      </div>
+      ${cpRow('Interesses padrão (opcional)', `<textarea class="modal-input" id="cpInterests" rows="2" placeholder="Um por linha. Ex.: Odontologia" ${dis}>${escapeHtml(cpLines(s.audience.interests))}</textarea>`, 'Buscamos cada termo na Meta na hora de publicar. O que não for encontrado fica de fora e aparece no aviso.')}
+      <label class="fm-check" style="margin-top:6px;"><input type="checkbox" id="cpAdvantage" ${s.audience.advantage ? 'checked' : ''} ${dis}> Público Advantage+ (a Meta pode ir além do público acima)</label>
+      ${eu ? `<div class="fm-2col" style="margin-top:8px;">
+        ${cpRow('Beneficiário (União Europeia)', cpIn('cpDsaB', s.dsa.beneficiary, dis), 'Quem se beneficia do anúncio. Exigência da Meta para a UE.')}
+        ${cpRow('Pagador (União Europeia)', cpIn('cpDsaP', s.dsa.payor, dis), 'Quem paga pelo anúncio.')}
+      </div>` : ''}
+      <div class="cp-section">Posicionamentos</div>
+      <select class="modal-input" id="cpPlacementMode" onchange="cpRefresh()" style="max-width:360px;" ${dis}>${cpOpt({ auto:'Automáticos (recomendado pela Meta)', manual:'Escolher manualmente' }, s.placements.mode)}</select>
+      ${s.placements.mode === 'manual' ? cpPosBoxes('cpPos', '', s.placements.positions, dis) : ''}
+      <div class="cp-section">Destino e criativo</div>
+      ${linkBlock}
+      <label class="fm-check"><input type="checkbox" id="cpOptOutCreative" ${s.creativeEnhancements === 'opt_out' ? 'checked' : ''} ${dis}> Não aplicar melhorias automáticas do criativo (Advantage+)</label>
+      <div class="fm-help">Quando marcado, cada anúncio é criado com as melhorias da Meta desligadas: enquadramento, texto, botão, brilho, sobreposição e outras.</div>
+      ${multi ? cpMetaSetsHtml(s, dis) : cpMetaLegacyAdHtml(s, dis)}`;
+  }
+
   function cpEditorHtml(){
     const d = CP.edit, s = d.spec, cur = d.currency;
     const locked = ['publishing', 'published'].includes(d.status);
     const dis = locked ? 'disabled' : '';
     let body = '';
     if (d.platform === 'meta') {
-      const eu = (s.audience.countries || []).some(c => CP_EU.includes(c));
-      body = `
-        <div class="cp-section">Objetivo e orçamento</div>
-        <div class="fm-2col">
-          ${cpRow('Objetivo', `<select class="modal-input" id="cpObjective" onchange="cpRefresh()" ${dis}>${cpOpt(CP_OBJ, s.objective)}</select>`, s.objective === 'mensagens' ? 'Abre conversa no WhatsApp ligado à Página do cliente.' : '')}
-          ${['cadastros', 'vendas'].includes(s.objective) ? cpRow('ID do pixel da Meta', cpIn('cpPixel', s.pixelId, `placeholder="Ex.: 123456789012345" ${dis}`)) : cpRow('Categoria especial', `<select class="modal-input" id="cpSpecial" ${dis}>${cpOpt({ NONE:'Nenhuma', HOUSING:'Imóveis / moradia', EMPLOYMENT:'Emprego', FINANCIAL_PRODUCTS_SERVICES:'Crédito e serviços financeiros' }, s.specialAdCategory)}</select>`)}
-        </div>
-        <div class="fm-2col">
-          ${cpRow('Tipo de orçamento', `<select class="modal-input" id="cpBudgetType" onchange="cpRefresh()" ${dis}>${cpOpt({ daily:'Diário', lifetime:'Total (do período)' }, s.budgetType)}</select>`)}
-          ${cpRow(`Valor (${escapeHtml(cur)})`, cpIn('cpBudget', s.budget ?? '', `inputmode="decimal" placeholder="Ex.: 50,00" ${dis}`))}
-        </div>
-        <div class="fm-2col">
-          ${cpRow('Início', cpIn('cpStart', s.startDate, `type="date" ${dis}`))}
-          ${cpRow(`Término${s.budgetType === 'lifetime' ? '' : ' (opcional)'}`, cpIn('cpEnd', s.endDate, `type="date" ${dis}`))}
-        </div>
-        <div class="cp-section">Público</div>
-        <div class="fm-2col">
-          ${cpRow('Países', cpIn('cpCountries', (s.audience.countries || []).join(', '), `placeholder="BR" onchange="cpRefresh()" ${dis}`), 'Códigos de 2 letras, separados por vírgula. Ex.: BR, PT')}
-          ${cpRow('Cidades (opcional)', `<textarea class="modal-input" id="cpCities" rows="2" placeholder="Uma por linha. Ex.: São Paulo" ${dis}>${escapeHtml(cpLines(s.audience.cities))}</textarea>`, 'Com cidades, o anúncio fica só nelas.')}
-        </div>
-        <div class="fm-2col">
-          <div class="fm-2col">
-            ${cpRow('Idade mín.', cpIn('cpAgeMin', s.audience.ageMin, `type="number" min="18" max="65" ${dis}`))}
-            ${cpRow('Idade máx.', cpIn('cpAgeMax', s.audience.ageMax, `type="number" min="18" max="65" ${dis}`), '65 = 65 ou mais')}
-          </div>
-          ${cpRow('Gênero', `<select class="modal-input" id="cpGender" ${dis}>${cpOpt({ all:'Todos', female:'Mulheres', male:'Homens' }, s.audience.gender)}</select>`)}
-        </div>
-        ${cpRow('Interesses (opcional)', `<textarea class="modal-input" id="cpInterests" rows="2" placeholder="Um por linha. Ex.: Odontologia" ${dis}>${escapeHtml(cpLines(s.audience.interests))}</textarea>`, 'Buscamos cada termo na Meta na hora de publicar. O que não for encontrado fica de fora e aparece no aviso.')}
-        <label class="fm-check" style="margin-top:6px;"><input type="checkbox" id="cpAdvantage" ${s.audience.advantage ? 'checked' : ''} ${dis}> Público Advantage+ (a Meta pode ir além do público acima)</label>
-        ${eu ? `<div class="fm-2col" style="margin-top:8px;">
-          ${cpRow('Beneficiário (União Europeia)', cpIn('cpDsaB', s.dsa.beneficiary, dis), 'Quem se beneficia do anúncio. Exigência da Meta para a UE.')}
-          ${cpRow('Pagador (União Europeia)', cpIn('cpDsaP', s.dsa.payor, dis), 'Quem paga pelo anúncio.')}
-        </div>` : ''}
-        <div class="cp-section">Posicionamentos</div>
-        <select class="modal-input" id="cpPlacementMode" onchange="cpRefresh()" style="max-width:360px;" ${dis}>${cpOpt({ auto:'Automáticos (recomendado pela Meta)', manual:'Escolher manualmente' }, s.placements.mode)}</select>
-        ${s.placements.mode === 'manual' ? `<div class="cp-pos">${Object.entries(CP_POS).map(([k, l]) => `<label class="fm-check"><input type="checkbox" class="cpPos" value="${k}" ${s.placements.positions.includes(k) ? 'checked' : ''} ${dis}> ${l}</label>`).join('')}</div>` : ''}
-        <div class="cp-section">Anúncio</div>
-        <div class="fm-row"><label class="modal-label">Imagem (JPG ou PNG, até 5 MB)</label>
-          ${locked ? '' : `<input type="file" accept="image/jpeg,image/png" id="cpFile" onchange="cpUpload(this)">`}
-          <div class="fm-help" id="cpImgStatus">${s.creative.assetId ? 'Imagem enviada.' : 'Nenhuma imagem ainda. Formato quadrado (1080x1080) funciona em todos os posicionamentos.'}</div>
-          <img class="cp-img" id="cpImg" style="display:none;" alt="Prévia da imagem do anúncio"></div>
-        ${cpRow('Texto principal', `<textarea class="modal-input" id="cpPrimary" rows="4" ${dis}>${escapeHtml(s.creative.primaryText)}</textarea>`)}
-        <div class="fm-2col">
-          ${cpRow('Título', cpIn('cpHeadline', s.creative.headline, dis))}
-          ${cpRow('Descrição (opcional)', cpIn('cpDesc', s.creative.description, dis))}
-        </div>
-        ${s.objective === 'mensagens' ? '<div class="fm-help">Botão do anúncio: "Enviar mensagem" no WhatsApp.</div>' : `<div class="fm-2col">
-          ${cpRow('Link de destino', cpIn('cpLink', s.creative.link, `placeholder="https://" ${dis}`))}
-          ${cpRow('Botão', `<select class="modal-input" id="cpCta" ${dis}>${cpOpt(CP_CTA, s.creative.cta)}</select>`)}
-        </div>`}`;
+      body = cpMetaHtml(s, dis);
     } else {
       const hl = s.headlines || [], ds = s.descriptions || [];
       const longH = hl.filter(h => h.length > 30).length, longD = ds.filter(x => x.length > 90).length;
@@ -8814,7 +8912,13 @@
     if (m) out += `<div class="cp-problems ${m.kind === 'ok' ? 'cp-ok' : m.kind === 'err' ? 'cp-err' : ''}">${escapeHtml(m.text)}${m.problems && m.problems.length ? `<ul>${m.problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : ''}</div>`;
     else if (d.id && ['draft', 'failed'].includes(d.status) && d.problems && d.problems.length) out += `<div class="cp-problems"><b>Falta para enviar para aprovação:</b><ul>${d.problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul></div>`;
     if (d.status === 'pending_approval') out += `<div class="cp-problems"><b>Aguardando sua aprovação.</b> Pedido por ${escapeHtml(d.approvalRequest?.by || '-')} em ${cpWhen(d.approvalRequest?.at)}${d.approvalRequest?.note ? `: "${escapeHtml(d.approvalRequest.note)}"` : ''}. Se editar, volta para rascunho.</div>`;
-    if (d.status === 'failed' && d.publish?.error) out += `<div class="cp-problems cp-err"><b>A publicação falhou:</b> ${escapeHtml(d.publish.error)}${Object.keys(d.publish.partialIds || {}).length ? `<br>Já criado na plataforma (pausado): ${escapeHtml(Object.entries(d.publish.partialIds).map(([k, v]) => `${k} ${v}`).join(', '))}. Confira no gerenciador antes de tentar de novo, para não duplicar.` : ''}</div>`;
+    if (d.status === 'failed' && d.publish?.error) {
+      const partialCreated = d.publish.partialCreated || [];
+      const partialTxt = partialCreated.length
+        ? partialCreated.map(c => `${c.name || c.type} ${c.id}`).join(', ')
+        : Object.entries(d.publish.partialIds || {}).map(([k, v]) => `${k} ${v}`).join(', ');
+      out += `<div class="cp-problems cp-err"><b>A publicação falhou:</b> ${escapeHtml(d.publish.error)}${partialTxt ? `<br>Já criado na plataforma (pausado): ${escapeHtml(partialTxt)}. Confira no gerenciador antes de tentar de novo, para não duplicar.` : ''}</div>`;
+    }
     return out;
   }
 
@@ -8835,7 +8939,10 @@
   function cpResultHtml(){
     const p = CP.edit.publish;
     if (!p || CP.edit.status !== 'published') return '';
-    const ids = Object.entries(p.ids || {}).map(([k, v]) => `${escapeHtml({ campaign:'Campanha', adset:'Conjunto', creative:'Criativo', ad:'Anúncio' }[k] || k)}: ${escapeHtml(v || '-')}`).join('<br>');
+    const typeLabel = { campaign:'Campanha', adset:'Conjunto', creative:'Criativo', ad:'Anúncio' };
+    const ids = (p.created && p.created.length)
+      ? p.created.map(c => `${typeLabel[c.type] || c.type}${c.name ? ' — ' + escapeHtml(c.name) : ''}: ${escapeHtml(c.id || '-')}`).join('<br>')
+      : Object.entries(p.ids || {}).map(([k, v]) => `${escapeHtml(typeLabel[String(k).split('_')[0]] || typeLabel[k] || k)}: ${escapeHtml(v || '-')}`).join('<br>');
     return `
       <div class="cp-section">Resultado da publicação</div>
       <div class="cp-problems ${p.mock ? '' : 'cp-ok'}">${p.mock ? '<b>Simulação.</b> Nada foi enviado para a plataforma. Os IDs abaixo são fictícios.' : `<b>Criada pausada</b> em ${cpWhen(p.at)} por ${escapeHtml(p.by)}. Para rodar, ative no gerenciador da plataforma.`}
@@ -8877,8 +8984,13 @@
       if (cpVal('cpDsaB') !== undefined) s.dsa = { beneficiary:cpVal('cpDsaB'), payor:cpVal('cpDsaP') };
       const prevPos = (s.placements && s.placements.positions) || [];
       s.placements = { mode:cpVal('cpPlacementMode'), positions:document.querySelector('.cpPos') ? [...document.querySelectorAll('.cpPos:checked')].map(x => x.value) : prevPos };
-      s.creative.primaryText = cpVal('cpPrimary') || ''; s.creative.headline = cpVal('cpHeadline') || ''; s.creative.description = cpVal('cpDesc') || '';
+      if (cpVal('cpPrimary') !== undefined) {
+        s.creative.primaryText = cpVal('cpPrimary') || ''; s.creative.headline = cpVal('cpHeadline') || ''; s.creative.description = cpVal('cpDesc') || '';
+      }
       if (cpVal('cpLink') !== undefined) { s.creative.link = cpVal('cpLink'); s.creative.cta = cpVal('cpCta'); }
+      const optOut = document.getElementById('cpOptOutCreative');
+      if (optOut) { if (optOut.checked) s.creativeEnhancements = 'opt_out'; else delete s.creativeEnhancements; }
+      if (Array.isArray(s.adSets) && s.adSets.length && document.getElementById('cpSetName_0')) cpCollectSets(s);
     } else {
       s.bidding = cpVal('cpBidding');
       if (cpVal('cpCpc') !== undefined) s.cpcBid = cpVal('cpCpc') || null;
@@ -8888,6 +9000,95 @@
       s.finalUrl = cpVal('cpFinalUrl') || ''; s.headlines = cpSplit(cpVal('cpHeadlines')); s.descriptions = cpSplit(cpVal('cpDescriptions'));
       s.path1 = cpVal('cpPath1') || ''; s.path2 = cpVal('cpPath2') || '';
     }
+  }
+  function cpCollectSets(s){
+    s.adSets.forEach((set, i) => {
+      set.name = (cpVal(`cpSetName_${i}`) || '').trim();
+      const interests = cpSplit(cpVal(`cpSetInterests_${i}`));
+      const customEl = document.getElementById(`cpSetCustom_${i}`);
+      if (customEl && customEl.checked) {
+        if (!document.getElementById(`cpSetCountries_${i}`)) {
+          set.audience = {
+            countries: (s.audience.countries || []).slice(), cities: (s.audience.cities || []).slice(),
+            ageMin: s.audience.ageMin, ageMax: s.audience.ageMax, gender: s.audience.gender, interests, advantage: !!s.audience.advantage,
+          };
+          set.placements = { mode: s.placements.mode, positions: (s.placements.positions || []).slice() };
+        } else {
+          const prev = (set.placements && set.placements.positions) || [];
+          const posSel = document.querySelector(`.cpSetPos[data-set="${i}"]`);
+          set.audience = {
+            countries: (cpVal(`cpSetCountries_${i}`) || '').split(/[,\s]+/).map(x => x.trim().toUpperCase()).filter(Boolean),
+            cities: cpSplit(cpVal(`cpSetCities_${i}`)),
+            ageMin: Number(cpVal(`cpSetAgeMin_${i}`)) || 18, ageMax: Number(cpVal(`cpSetAgeMax_${i}`)) || 65,
+            gender: cpVal(`cpSetGender_${i}`) || 'all', interests,
+            advantage: !!(document.getElementById(`cpSetAdvantage_${i}`) && document.getElementById(`cpSetAdvantage_${i}`).checked),
+          };
+          set.placements = {
+            mode: cpVal(`cpSetPlacementMode_${i}`) || 'auto',
+            positions: posSel ? [...document.querySelectorAll(`.cpSetPos[data-set="${i}"]:checked`)].map(x => x.value) : prev,
+          };
+        }
+      } else {
+        set.audience = { interests };
+        delete set.placements;
+      }
+      (set.ads || []).forEach((ad, j) => {
+        const prev = ad.creative || {};
+        ad.name = (cpVal(`cpAdName_${i}_${j}`) || '').trim();
+        ad.creative = {
+          assetId: prev.assetId || '',
+          primaryText: cpVal(`cpAdPrimary_${i}_${j}`) || '',
+          headline: cpVal(`cpAdHeadline_${i}_${j}`) || '',
+          description: cpVal(`cpAdDesc_${i}_${j}`) || '',
+        };
+        const link = cpVal(`cpAdLink_${i}_${j}`);
+        const cta = cpVal(`cpAdCta_${i}_${j}`);
+        if (link) ad.creative.link = link;
+        if (cta) ad.creative.cta = cta;
+      });
+    });
+  }
+  function cpEnableMulti(){
+    cpCollect();
+    const s = CP.edit.spec;
+    if (s.adSets && s.adSets.length) return;
+    s.adSets = [{
+      name: '',
+      audience: { interests: (s.audience.interests || []).slice() },
+      ads: [{ name: '', creative: {
+        assetId: s.creative.assetId || '', primaryText: s.creative.primaryText || '',
+        headline: s.creative.headline || '', description: s.creative.description || '',
+      } }],
+    }];
+    cpRefresh();
+  }
+  function cpAddSet(){
+    cpCollect();
+    const sets = CP.edit.spec.adSets;
+    if (sets.length >= CP_MAX_SETS) { alert(`Dá para criar até ${CP_MAX_SETS} conjuntos neste formulário.`); return; }
+    sets.push({ name:'', audience:{ interests:[] }, ads:[{ name:'', creative:{} }] });
+    cpRefresh();
+  }
+  function cpRemoveSet(i){
+    cpCollect();
+    const sets = CP.edit.spec.adSets;
+    if (sets.length <= 1) { alert('A campanha precisa de pelo menos um conjunto.'); return; }
+    sets.splice(i, 1);
+    cpRefresh();
+  }
+  function cpAddAd(i){
+    cpCollect();
+    const ads = CP.edit.spec.adSets[i].ads;
+    if (ads.length >= CP_MAX_ADS) { alert(`Dá para criar até ${CP_MAX_ADS} anúncios neste conjunto.`); return; }
+    ads.push({ name:'', creative:{} });
+    cpRefresh();
+  }
+  function cpRemoveAd(i, j){
+    cpCollect();
+    const ads = CP.edit.spec.adSets[i].ads;
+    if (ads.length <= 1) { alert('O conjunto precisa de pelo menos um anúncio.'); return; }
+    ads.splice(j, 1);
+    cpRefresh();
   }
   // Campos que mudam o formulário (objetivo, tipo de orçamento etc.): relê e redesenha.
   function cpRefresh(){ cpCollect(); const y = window.scrollY; document.getElementById('cpEditor').innerHTML = cpEditorHtml(); cpLoadImage(); window.scrollTo(0, y); }
@@ -8937,7 +9138,10 @@
     const d = CP.edit, s = d.spec, mock = CP.data.capabilities.mode === 'mock';
     const plat = d.platform === 'meta' ? 'Meta' : 'Google Ads';
     const budget = `${cpMoney(Number(s.budget), d.currency)} ${d.platform === 'meta' && s.budgetType === 'lifetime' ? 'no total' : 'por dia'}`;
-    const text = `${mock ? 'SIMULAÇÃO (modo de teste, nada é enviado)\n\n' : ''}Publicar na ${plat} para ${CP.data.client.name}:\n\n${d.name}\nOrçamento: ${budget}\nPeríodo: ${cpDate(s.startDate)}${s.endDate ? ' a ' + cpDate(s.endDate) : ', sem data de término'}\n\nA campanha é criada PAUSADA. Nada é gasto até alguém ativar no gerenciador.\n\nConfirmar?`;
+    const nSets = d.platform === 'meta' && s.adSets && s.adSets.length ? s.adSets.length : 0;
+    const nAds = nSets ? s.adSets.reduce((n, set) => n + ((set.ads || []).length), 0) : 0;
+    const structure = nSets ? `\n${nSets} conjunto(s) e ${nAds} anúncio(s), com os nomes deste rascunho.\n` : '';
+    const text = `${mock ? 'SIMULAÇÃO (modo de teste, nada é enviado)\n\n' : ''}Publicar na ${plat} para ${CP.data.client.name}:\n\n${d.name}\nOrçamento: ${budget}\nPeríodo: ${cpDate(s.startDate)}${s.endDate ? ' a ' + cpDate(s.endDate) : ', sem data de término'}${structure}\nA campanha, os conjuntos e os anúncios são criados PAUSADOS. Nada é gasto até alguém ativar no gerenciador.\n\nConfirmar?`;
     if (!confirm(text)) return;
     cpSetBusy(true);
     try {
@@ -8956,9 +9160,10 @@
     catch (err) { alert(err.message); }
   }
 
-  function cpUpload(input){
+  function cpUpload(input, si, ai){
     const f = input.files && input.files[0]; if (!f) return;
-    const st = document.getElementById('cpImgStatus');
+    const st = (typeof si === 'number' ? document.getElementById(`cpImgStatus_${si}_${ai}`) : null) || document.getElementById('cpImgStatus');
+    if (!st) return;
     if (!/^image\/(jpeg|png)$/.test(f.type)) { st.textContent = 'Use uma imagem JPG ou PNG.'; return; }
     if (f.size > 5 * 1024 * 1024) { st.textContent = 'Imagem acima de 5 MB.'; return; }
     st.textContent = 'Enviando imagem…';
@@ -8966,7 +9171,17 @@
     r.onload = async () => {
       try {
         const a = await cpApi('/assets', { method:'POST', body:JSON.stringify({ name:f.name, dataUrl:r.result }) });
-        CP.edit.spec.creative.assetId = a.id;
+        if (typeof si === 'number') {
+          const ad = CP.edit.spec.adSets[si].ads[ai];
+          ad.creative = ad.creative || {};
+          ad.creative.assetId = a.id;
+          const img = input.parentElement && input.parentElement.querySelector('img.cp-img');
+          if (img) img.dataset.asset = a.id;
+        } else {
+          CP.edit.spec.creative.assetId = a.id;
+          const img = document.getElementById('cpImg');
+          if (img) img.dataset.asset = a.id;
+        }
         st.textContent = `Imagem enviada (${Math.round(a.size / 1024)} KB). Salve o rascunho para guardar.`;
         cpLoadImage();
       } catch (err) { st.textContent = err.message; }
@@ -8975,19 +9190,22 @@
   }
   // A imagem precisa do login, então buscamos com o token e mostramos como blob.
   async function cpLoadImage(){
-    const id = CP.edit && CP.edit.platform === 'meta' && CP.edit.spec.creative.assetId;
-    const img = document.getElementById('cpImg');
-    if (!id || !img) return;
-    if (CP.imgFor !== id) {
+    if (!CP.edit || CP.edit.platform !== 'meta') return;
+    CP.imgs = CP.imgs || {};
+    const imgs = [...document.querySelectorAll('#cpEditor img.cp-img')];
+    const ids = [...new Set(imgs.map(img => img.dataset.asset).filter(Boolean))];
+    await Promise.all(ids.map(async (id) => {
+      if (CP.imgs[id]) return;
       try {
         const res = await fetch(cpUrl(`/assets/${encodeURIComponent(id)}`), { headers:authHeaders() });
         if (!res.ok) throw new Error();
-        if (CP.imgUrl) URL.revokeObjectURL(CP.imgUrl);
-        CP.imgUrl = URL.createObjectURL(await res.blob()); CP.imgFor = id;
-      } catch (e) { return; }
-    }
-    const el = document.getElementById('cpImg');
-    if (el) { el.src = CP.imgUrl; el.style.display = 'block'; }
+        CP.imgs[id] = URL.createObjectURL(await res.blob());
+      } catch (e) { /* sem prévia */ }
+    }));
+    imgs.forEach((img) => {
+      const url = img.dataset.asset && CP.imgs[img.dataset.asset];
+      if (url) { img.src = url; img.style.display = 'block'; }
+    });
   }
 
   /* ===================== Google Tag Manager (Integrações, só agência) =====================
