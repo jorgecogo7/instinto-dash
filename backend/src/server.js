@@ -38,6 +38,7 @@ const alertsRoutes = require('./routes/alerts');
 const campaignsRoutes = require('./routes/campaigns');
 const adStatusRoutes = require('./routes/adStatus');
 const gtmRoutes = require('./routes/gtm');
+const sheetsOauth = require('./routes/sheetsOauth');
 const gestorRoutes = require('./routes/gestor');
 const healthService = require('./services/healthService');
 const reportService = require('./services/reportService');
@@ -91,6 +92,8 @@ app.use('/api/public', publicRoutes);
 app.use('/api/media', mediaRoutes);
 // Volta do Google no "Autorizar Tag Manager" (sem login; protegido pelo state assinado e de uso único).
 app.use('/api/gtm-oauth', gtmRoutes.callbackRouter);
+// Volta do Google no "Conectar Google Sheets" (sem login; state assinado e de uso único).
+app.use('/api/sheets-oauth', sheetsOauth.callbackRouter);
 
 // Tudo abaixo daqui exige o dono estar logado (token de sessão válido).
 app.use('/api/accounts', requireAdminAuth, accountsRoutes);

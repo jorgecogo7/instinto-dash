@@ -63,7 +63,7 @@ router.get('/:kind(meta|google|instagram)', async (req, res) => {
 
 /* ---------- Formulários do cliente (só leitura) ---------- */
 function formForClient(f) {
-  const { tracking, integrations, ...rest } = f;
+  const { tracking, integrations, sheets, ...rest } = f;
   return { ...rest, tracking: { metaPixelId: tracking?.metaPixelId || '' } };
 }
 
