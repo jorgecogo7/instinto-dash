@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const config = require('../config');
+const { normalizeWhatsappDigits } = require('./formWhatsapp');
 
 /**
  * Regras dos formulários próprios:
@@ -116,8 +117,10 @@ function normalizeForm(input, existing = {}) {
       buttonText: str(e.buttonText, 40),
       buttonUrl: safeUrl(e.buttonUrl),
       redirectUrl: safeUrl(e.redirectUrl),
-      whatsapp: str(e.whatsapp, 20).replace(/\D/g, ''),
+      whatsapp: normalizeWhatsappDigits(str(e.whatsapp, 60)),
       whatsappText: str(e.whatsappText, 300),
+      // Só true quando o editor liga. Formulário antigo fica no botão manual.
+      whatsappRedirect: bool(e.whatsappRedirect),
     },
     endingDisqualified: {
       title: str(ed.title, 200) || 'Obrigado pelo interesse!',

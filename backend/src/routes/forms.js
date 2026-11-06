@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const formsStore = require('../data/formsStore');
 const accountsStore = require('../data/accountsStore');
 const formService = require('../services/formService');
+const formWhatsapp = require('../services/formWhatsapp');
 
 const router = express.Router();
 
@@ -49,6 +50,20 @@ router.get('/', async (req, res) => {
       .map((f) => ({ ...forEditor(f), stats: stats[f.id] || { views: 0, starts: 0, completes: 0, qualified: 0 } })));
   } catch (err) {
     console.error(err); res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/forms/whatsapp-source?clientId= — número que o redirecionamento usa.
+router.get('/whatsapp-source', async (req, res) => {
+  try {
+    const clientId = String(req.query.clientId || '').slice(0, 60);
+    if (!clientId) return res.json(await formWhatsapp.lookupClientWhatsapp(''));
+    const account = await accountsStore.getById(clientId);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    res.json(await formWhatsapp.lookupClientWhatsapp(clientId));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Não foi possível consultar o WhatsApp do cliente.' });
   }
 });
 
