@@ -65,6 +65,7 @@
   .btn.wa{ background:#22C55E; box-shadow:0 6px 18px rgba(34,197,94,.35); }
   .hint{ font-size:13px; color:var(--dim); }
   .hint b{ font-weight:600; }
+  .hint.wa-go{ flex-basis:100%; font-size:15px; font-weight:600; color:var(--text); }
   .err{ margin-top:14px; font-size:14px; color:#fff; background:#E5484D; display:inline-block; padding:7px 12px; border-radius:8px; }
   .nav{ position:fixed; right:18px; bottom:18px; display:flex; gap:2px; z-index:10; border-radius:10px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,.18); }
   .nav button{ width:44px; height:40px; border:none; background:var(--accent); color:#fff; font-size:18px; cursor:pointer; font-family:inherit; }
@@ -429,24 +430,53 @@
       });
   }
 
+  function leadName(){
+    var name = '';
+    (form.fields || []).forEach(function(f){
+      if (f.mapTo === 'name' && answers[f.id] && !name) name = String(answers[f.id]);
+    });
+    return name;
+  }
+  function fillWaText(template, name){
+    var full = String(name || '').replace(/\s+/g, ' ').trim();
+    var first = full.split(' ')[0] || '';
+    return String(template || '').replace(/\{nome\}/gi, first).replace(/[ \t]{2,}/g, ' ').replace(/\s+([!?,.:;])/g, '$1').trim();
+  }
+  // Lead desqualificado nunca cai no WhatsApp. O número efetivo vem do servidor
+  // (whatsappNumber); formulário antigo segue só com o número digitado.
+  function waHandoff(res, frm, name){
+    var qualifiedEnd = (frm && frm.ending) || {};
+    var disq = (frm && frm.endingDisqualified) || {};
+    if (res && res.disqualified) return { auto: false, link: '', redirect: disq.redirectUrl || '' };
+    var rawNumber = qualifiedEnd.whatsappNumber != null ? qualifiedEnd.whatsappNumber : qualifiedEnd.whatsapp;
+    var digits = String(rawNumber || '').replace(/\D/g, '');
+    var text = fillWaText(qualifiedEnd.whatsappText, name);
+    var link = digits ? ('https://wa.me/' + digits + (text ? '?text=' + encodeURIComponent(text) : '')) : '';
+    var auto = !!qualifiedEnd.whatsappRedirect && !!link;
+    return { auto: auto, link: link, redirect: auto ? '' : (qualifiedEnd.redirectUrl || '') };
+  }
+
   function renderEnd(res){
     keyHandler = null;
-    var e = res.disqualified ? form.endingDisqualified : form.ending;
-    var redirect = e.redirectUrl;
+    var e = res.disqualified ? (form.endingDisqualified || {}) : (form.ending || {});
+    var hand = waHandoff(res, form, leadName());
     var html = '<div class="end-icon">' + (res.disqualified ? '✓' : '🎉') + '</div>' +
       '<div class="w-title">' + esc(e.title) + '</div>' +
       (e.text ? '<div class="w-text">' + esc(e.text) + '</div>' : '');
     var acts = '';
-    if (!res.disqualified && form.ending.whatsapp) {
-      acts += '<a class="btn wa" href="https://wa.me/' + esc(form.ending.whatsapp) + (form.ending.whatsappText ? '?text=' + encodeURIComponent(form.ending.whatsappText) : '') + '" target="_blank" rel="noopener">Falar no WhatsApp</a>';
-    }
-    if (!res.disqualified && form.ending.buttonUrl) {
+    if (hand.auto) acts += '<span class="hint wa-go">Te levando pro WhatsApp…</span>';
+    if (hand.link) acts += '<a class="btn wa" href="' + esc(hand.link) + '" target="_blank" rel="noopener">Falar no WhatsApp</a>';
+    if (!res.disqualified && form.ending && form.ending.buttonUrl) {
       acts += '<a class="btn' + (acts ? ' ghost' : '') + '" href="' + esc(form.ending.buttonUrl) + '" target="_blank" rel="noopener">' + esc(form.ending.buttonText || 'Continuar') + '</a>';
     }
-    if (redirect) acts += '<span class="hint">Redirecionando…</span>';
+    if (!hand.auto && hand.redirect) acts += '<span class="hint">Redirecionando…</span>';
     if (acts) html += '<div class="actions">' + acts + '</div>';
     show(html);
-    if (redirect && !PREVIEW) setTimeout(function(){ location.href = redirect; }, 2200);
+    if (PREVIEW) return;
+    // O Lead do pixel já foi enviado em submit(), e a API de Conversões no POST.
+    // A espera curta deixa o navegador despachar o pixel antes de abrir o WhatsApp.
+    if (hand.auto) setTimeout(function(){ location.href = hand.link; }, 1200);
+    else if (hand.redirect) setTimeout(function(){ location.href = hand.redirect; }, 2200);
   }
 
   /* ---------------- Início ---------------- */

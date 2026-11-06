@@ -7,6 +7,7 @@ const leadsStore = require('../data/leadsStore');
 const instagramService = require('../services/instagramService');
 const formsStore = require('../data/formsStore');
 const formService = require('../services/formService');
+const formWhatsapp = require('../services/formWhatsapp');
 const crmService = require('../services/crmService');
 const { visibilityOf } = require('../lib/clientAccess');
 const kpiPreference = require('../lib/kpiPreference');
@@ -40,7 +41,9 @@ router.get('/forms/:slug', async (req, res) => {
   try {
     const form = await publishedForm(req.params.slug);
     if (!form) return res.status(404).json({ error: 'Este formulário não existe ou não está publicado.' });
-    res.json(formService.publicForm(form));
+    const pub = formService.publicForm(form);
+    pub.ending = await formWhatsapp.withResolvedWhatsapp(form, pub.ending);
+    res.json(pub);
   } catch (err) {
     console.error(err); res.status(500).json({ error: 'Não foi possível abrir o formulário agora.' });
   }

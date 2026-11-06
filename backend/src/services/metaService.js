@@ -606,6 +606,28 @@ async function getAccountReport(adAccountId, options = {}) {
  * Descobre o Instagram Business vinculado a uma Página do Facebook.
  * Melhor esforço: devolve null se não houver ou se a Meta recusar.
  */
+/**
+ * Número de WhatsApp escrito na Página do Facebook (campo whatsapp_number).
+ * Melhor esforço: null se a Página não tiver o campo ou o token não puder lê-lo.
+ */
+async function getPageWhatsappNumber(pageId) {
+  const id = String(pageId || '').trim();
+  if (!hasRealCredentials() || !id) return null;
+  const key = `meta:page-wa:${id}`;
+  const cached = cache.get(key);
+  if (cached !== null && cached !== undefined) return cached || null;
+  try {
+    const json = await graphGet(id, { fields: 'whatsapp_number' });
+    const value = typeof json.whatsapp_number === 'string' ? json.whatsapp_number : '';
+    cache.set(key, value, value ? 60 * 30 : 60 * 2);
+    return value || null;
+  } catch (e) {
+    console.warn('Meta: não consegui ler o WhatsApp da Página:', e.message);
+    cache.set(key, '', 60 * 2);
+    return null;
+  }
+}
+
 async function findInstagramForPage(pageId) {
   if (!hasRealCredentials() || !pageId) return null;
   try {
@@ -676,7 +698,7 @@ async function resolveInstagram({ pageId, igBusinessId } = {}) {
 
 module.exports = {
   resolveInstagram,
-  getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage,
+  getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage, getPageWhatsappNumber,
   hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll, friendlyError,
   pickResult, RESULT_LABELS, RESULT_ACTIONS, resultActionsFor, accountResultLabel,
 };

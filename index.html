@@ -1928,6 +1928,9 @@
   .fm-panel{ max-width:880px; }
   .fm-row{ margin-bottom:4px; }
   .fm-help{ font-size:11.5px; color:var(--text-dim); margin-top:5px; line-height:1.5; }
+  .fm-wa-note{ font-size:13px; margin:8px 0 12px; padding:10px 12px; border-radius:10px; background:var(--bg-panel-2); border:1px solid var(--line); line-height:1.45; }
+  .fm-wa-note.ok{ border-color:rgba(34,197,94,.45); }
+  .fm-wa-note.warn{ border-color:rgba(255,176,32,.5); }
   .fm-2col{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
   .fm-check{ display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
   .fm-check input{ accent-color:var(--flame); width:16px; height:16px; }
@@ -4209,6 +4212,8 @@
   let fmTab = 'general';
   let fmIsDirty = false;
   let fmResponses = null;
+  let fmClientWa = null;
+  let fmWaSeq = 0;
 
   const FM_TYPES = [
     ['short_text', 'Texto curto'], ['long_text', 'Texto longo'], ['email', 'E-mail'], ['phone', 'Telefone / WhatsApp'],
@@ -4234,7 +4239,7 @@
         ] },
       ],
       scoring: { enabled: false, minScore: 30 },
-      ending: { title: 'Prontinho! Recebemos suas respostas.', text: 'Em breve alguém da nossa equipe vai falar com você.', buttonText: '', buttonUrl: '', redirectUrl: '', whatsapp: '', whatsappText: '' },
+      ending: { title: 'Prontinho! Recebemos suas respostas.', text: 'Em breve alguém da nossa equipe vai falar com você.', buttonText: '', buttonUrl: '', redirectUrl: '', whatsapp: '', whatsappText: '', whatsappRedirect: false },
       endingDisqualified: { title: 'Obrigado pelo interesse!', text: 'No momento, nosso atendimento não é o ideal pro seu perfil. Mas fica de olho nas nossas redes!', redirectUrl: '' },
       tracking: { metaPixelId: '', capiToken: '', capiTestCode: '', ga4Id: '', gtmId: '', startEvent: 'IniciouFormulario', leadEvent: 'Lead', qualifiedEvent: 'LeadQualificado', disqualifiedEvent: 'LeadDesqualificado', stepEvents: false },
       integrations: { createCrmLead: true, webhookUrl: '' },
@@ -4424,7 +4429,10 @@
       fmCurrent = f;
       fmResponses = null;
       fmIsDirty = false;
+      fmClientWa = null;
+      fmWaSeq += 1;
       fmTab = CLIENT_MODE ? 'responses' : 'general';
+      if (f.clientId) fmLoadClientWa(f.clientId);
       document.getElementById('fmListMode').style.display = 'none';
       document.getElementById('fmEditMode').style.display = 'block';
       document.getElementById('fmName').value = f.name;
@@ -4497,6 +4505,10 @@
     fmCurrent.clientId = value || null;
     fmDirty();
     renderFmHead();
+    fmClientWa = null;
+    fmWaSeq += 1;
+    if (fmCurrent.clientId) fmLoadClientWa(fmCurrent.clientId);
+    else fmRefreshWaNote();
   }
   function fmSetPath(path, value){
     const keys = path.split('.');
@@ -4510,13 +4522,89 @@
     const type = opts.type || 'text';
     const ph = opts.placeholder ? ` placeholder="${escapeAttr(opts.placeholder)}"` : '';
     if (type === 'textarea') return `<textarea class="modal-input" rows="${opts.rows || 3}"${ph} oninput="fmSetPath('${path}', this.value)">${escapeHtml(v || '')}</textarea>`;
+    const after = opts.after ? `; ${opts.after}` : '';
     if (type === 'checkbox') return `<label class="fm-check"><input type="checkbox" ${v ? 'checked' : ''} onchange="fmSetPath('${path}', this.checked)${opts.rerender ? '; renderFmTab()' : ''}"> ${opts.label || ''}</label>`;
     if (type === 'number') return `<input class="modal-input" type="number"${ph} value="${escapeAttr(v ?? '')}" oninput="fmSetPath('${path}', this.value === '' ? 0 : Number(this.value))${opts.rerender ? '; fmRefreshScoring()' : ''}">`;
     if (type === 'color') return `<input class="fm-color" type="color" value="${escapeAttr(v || '#FF5A1E')}" oninput="fmSetPath('${path}', this.value)">`;
     if (type === 'select') return `<select class="modal-input" onchange="fmSetPath('${path}', this.value)${opts.rerender ? '; renderFmTab()' : ''}">${opts.options.map(([val, l]) => `<option value="${escapeAttr(val)}" ${String(v ?? '') === String(val) ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select>`;
-    return `<input class="modal-input" type="${type}"${ph} value="${escapeAttr(v ?? '')}" oninput="fmSetPath('${path}', this.value)">`;
+    return `<input class="modal-input" type="${type}"${ph} value="${escapeAttr(v ?? '')}" oninput="fmSetPath('${path}', this.value)${after}">`;
   }
   const fmRow = (label, control, help) => `<div class="fm-row"><label class="modal-label">${label}</label>${control}${help ? `<div class="fm-help">${help}</div>` : ''}</div>`;
+
+  // Mesma regra do backend (formWhatsapp.normalizeWhatsappDigits).
+  function fmNormalizeWa(raw){
+    let digits = String(raw == null ? '' : raw).replace(/\D/g, '').replace(/^0+/, '');
+    if (!digits) return '';
+    if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) return digits;
+    if (digits.length === 10 || digits.length === 11) return '55' + digits;
+    if (digits.length >= 8 && digits.length <= 15) return digits;
+    return '';
+  }
+  function fmFormatWa(digits){
+    const d = fmNormalizeWa(digits);
+    if (!d) return '';
+    if (d.startsWith('55') && d.length === 13) return `+55 ${d.slice(2, 4)} ${d.slice(4, 9)}-${d.slice(9)}`;
+    if (d.startsWith('55') && d.length === 12) return `+55 ${d.slice(2, 4)} ${d.slice(4, 8)}-${d.slice(8)}`;
+    return `+${d}`;
+  }
+  function fmWhatsappPreview(ending, clientId, clientWa){
+    const end = ending || {};
+    const raw = String(end.whatsapp || '').trim();
+    const manual = fmNormalizeWa(raw);
+    if (raw && !manual) return { tone: 'warn', text: 'O número digitado não está completo. Use DDD, com ou sem o 55.' };
+    if (manual) return { tone: 'ok', text: `Número digitado: ${fmFormatWa(manual)}. Ele substitui o WhatsApp do cliente.` };
+    if (!clientId) return { tone: 'warn', text: 'Este formulário não está ligado a um cliente. Digite o número ou escolha um cliente na aba Geral.' };
+    if (!clientWa || clientWa.loading) return { tone: '', text: 'Procurando o WhatsApp do cliente…' };
+    if (clientWa.error) return { tone: 'warn', text: 'Não consegui consultar o WhatsApp do cliente agora. Você ainda pode digitar o número.' };
+    if (clientWa.found && clientWa.display) {
+      const via = clientWa.source === 'page' ? ' (lido da Página do Facebook)' : '';
+      const use = end.whatsappRedirect
+        ? ''
+        : ' Ligue o redirecionamento para usar esse número automaticamente.';
+      return { tone: 'ok', text: `WhatsApp do cliente: ${clientWa.display}${via}.${use}` };
+    }
+    return { tone: 'warn', text: 'Nenhum WhatsApp encontrado para este cliente. Conecte o número em CRM → Conversas, ou digite um número aqui.' };
+  }
+  function fmEndingWaPlan(form){
+    const ending = (form && form.ending) || {};
+    const manual = fmNormalizeWa(ending.whatsapp);
+    const sameClient = fmClientWa && form && fmClientWa.clientId === form.clientId && fmClientWa.found;
+    const clientDigits = manual ? '' : fmNormalizeWa(sameClient ? fmClientWa.digits : '');
+    const digits = manual || (ending.whatsappRedirect ? clientDigits : '');
+    return { digits, redirect: !!(ending.whatsappRedirect && digits) };
+  }
+  function fmPreviewPayload(){
+    const form = JSON.parse(JSON.stringify(fmCurrent));
+    const plan = fmEndingWaPlan(form);
+    form.ending = form.ending || {};
+    form.ending.whatsappNumber = plan.digits;
+    form.ending.whatsappRedirect = plan.redirect;
+    return form;
+  }
+  function fmRefreshWaNote(){
+    const el = document.getElementById('fmWaNote');
+    if (!el || !fmCurrent) return;
+    const info = fmClientWa && fmClientWa.clientId === fmCurrent.clientId ? fmClientWa : (fmCurrent.clientId ? { loading: true } : null);
+    const p = fmWhatsappPreview(fmCurrent.ending, fmCurrent.clientId, info);
+    el.className = 'fm-wa-note' + (p.tone ? ' ' + p.tone : '');
+    el.textContent = p.text;
+  }
+  async function fmLoadClientWa(clientId){
+    if (!clientId) { fmClientWa = null; fmRefreshWaNote(); return; }
+    if (fmClientWa && fmClientWa.clientId === clientId) return;
+    const seq = ++fmWaSeq;
+    fmClientWa = { clientId, loading: true };
+    fmRefreshWaNote();
+    try {
+      const data = await fmApi(`/whatsapp-source?clientId=${encodeURIComponent(clientId)}`);
+      if (seq !== fmWaSeq || !fmCurrent || fmCurrent.clientId !== clientId) return;
+      fmClientWa = { clientId, loading: false, found: !!data.found, digits: data.digits || '', display: data.display || '', source: data.source || null };
+    } catch (e) {
+      if (seq !== fmWaSeq || !fmCurrent || fmCurrent.clientId !== clientId) return;
+      fmClientWa = { clientId, loading: false, found: false, digits: '', display: '', source: null, error: true };
+    }
+    fmRefreshWaNote();
+  }
 
   function renderFmTab(){
     const body = document.getElementById('fmTabBody');
@@ -4552,20 +4640,26 @@
     } else if (fmTab === 'scoring') {
       renderFmScoring();
     } else if (fmTab === 'endings') {
+      if (f.clientId && (!fmClientWa || fmClientWa.clientId !== f.clientId)) fmLoadClientWa(f.clientId);
+      const fmWaInfo = fmClientWa && fmClientWa.clientId === f.clientId ? fmClientWa : (f.clientId ? { loading: true } : null);
+      const fmWaPreview = fmWhatsappPreview(f.ending, f.clientId, fmWaInfo);
       body.innerHTML = `
         <div class="panel fm-panel">
           <div class="panel-head"><div><h3>Tela final: lead aprovado</h3><div class="panel-head-sub">O que aparece depois do envio (ou pra todo mundo, se não houver qualificação).</div></div></div>
           ${fmRow('Título', fmInput('ending.title'))}
           ${fmRow('Texto', fmInput('ending.text', { type:'textarea' }))}
+          ${fmInput('ending.whatsappRedirect', { type:'checkbox', label:'Redirecionar automaticamente para o WhatsApp depois do envio', rerender:true })}
+          <div class="fm-help">O lead abre a conversa no WhatsApp em seguida. Quem foi desqualificado não vai para o WhatsApp. O evento de Lead (pixel e API de Conversões) dispara antes de sair da página.</div>
+          <div class="fm-wa-note ${fmWaPreview.tone}" id="fmWaNote">${escapeHtml(fmWaPreview.text)}</div>
           <div class="fm-2col">
-            ${fmRow('Botão de WhatsApp (número com DDD)', fmInput('ending.whatsapp', { placeholder:'5511999999999' }), 'Mostra um botão "Falar no WhatsApp".')}
-            ${fmRow('Mensagem pronta do WhatsApp', fmInput('ending.whatsappText', { placeholder:'Oi! Acabei de responder o formulário.' }))}
+            ${fmRow('Número manual (opcional)', fmInput('ending.whatsapp', { placeholder:'5511999999999', after:'fmRefreshWaNote()' }), 'Deixe em branco para usar o WhatsApp do cliente. Se preencher, este número substitui o do cliente no botão e no redirecionamento.')}
+            ${fmRow('Mensagem pronta do WhatsApp', fmInput('ending.whatsappText', { placeholder:'Oi {nome}! Acabei de responder o formulário.' }), 'Use {nome} para o primeiro nome de quem respondeu.')}
           </div>
           <div class="fm-2col">
             ${fmRow('Botão extra: texto', fmInput('ending.buttonText', { placeholder:'Ver o site' }))}
             ${fmRow('Botão extra: link', fmInput('ending.buttonUrl', { placeholder:'https://…' }))}
           </div>
-          ${fmRow('Redirecionar automaticamente para', fmInput('ending.redirectUrl', { placeholder:'https://… (opcional)' }), 'Se preencher, o lead é levado pra esse link 2 segundos depois.')}
+          ${fmRow('Redirecionar automaticamente para', fmInput('ending.redirectUrl', { placeholder:'https://… (opcional)' }), 'Se preencher, o lead é levado pra esse link cerca de 2 segundos depois. Com o WhatsApp automático ligado, esse link não é usado.')}
         </div>
         <div class="panel fm-panel">
           <div class="panel-head"><div><h3>Tela final: lead desqualificado</h3><div class="panel-head-sub">Usada quando a pontuação fica abaixo do mínimo ou quando ele escolhe uma opção que desqualifica.</div></div></div>
@@ -4635,6 +4729,10 @@
     if (!f.fields.some(x => x.type !== 'statement')) w.push(['err', 'Adicione pelo menos uma pergunta.']);
     if (!f.fields.some(x => x.mapTo === 'phone' || x.mapTo === 'email' || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'O formulário não pede WhatsApp nem e-mail: o lead chega sem contato.']);
     if (usesDisq && !f.endingDisqualified.title) w.push(['err', 'Existe desqualificação, mas a tela final de desqualificado está sem título (aba Telas finais).']);
+    if (f.ending && f.ending.whatsappRedirect && !fmNormalizeWa(f.ending.whatsapp)) {
+      if (!f.clientId) w.push(['warn', 'O redirecionamento para o WhatsApp está ligado, mas o formulário não tem cliente nem número digitado.']);
+      else if (fmClientWa && !fmClientWa.loading && fmClientWa.clientId === f.clientId && !fmClientWa.found) w.push(['warn', 'O redirecionamento para o WhatsApp está ligado, mas nenhum WhatsApp foi encontrado para este cliente.']);
+    }
     if (!f.privacyUrl && f.fields.some(x => x.mapTo || x.type === 'phone' || x.type === 'email')) w.push(['warn', 'Coleta contato sem link de política de privacidade (LGPD): recomendado configurar na aba Geral.']);
     const ids = new Set(f.fields.map(x => x.id));
     f.fields.forEach((x, i) => (x.options || []).forEach(o => { if (o.goTo && !['next','end','end_disqualified'].includes(o.goTo) && !ids.has(o.goTo)) w.push(['err', `Pergunta ${i + 1}: a opção "${o.label}" leva pra uma pergunta que não existe mais.`]); }));
@@ -4858,7 +4956,7 @@
   window.addEventListener('message', (ev) => {
     if (ev.origin !== location.origin || !ev.data || ev.data.type !== 'instinto-form-preview-ready' || !fmCurrent) return;
     const frame = document.getElementById('fmPreviewFrame');
-    frame.contentWindow.postMessage({ type: 'instinto-form-preview', form: JSON.parse(JSON.stringify(fmCurrent)) }, location.origin);
+    frame.contentWindow.postMessage({ type: 'instinto-form-preview', form: fmPreviewPayload() }, location.origin);
   });
   window.addEventListener('beforeunload', (e) => { if (fmIsDirty) { e.preventDefault(); e.returnValue = ''; } });
 
