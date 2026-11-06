@@ -45,6 +45,17 @@ module.exports = {
     agencyEmail: process.env.GTM_AGENCY_EMAIL || '',
   },
 
+  // Planilha de respostas dos formulários (docs/GOOGLE_SHEETS.md).
+  // Token próprio: não reaproveita o do Tag Manager, para um reconsentimento
+  // de Planilhas não derrubar o GTM nem o Google Ads.
+  sheets: {
+    clientId: process.env.GOOGLE_SHEETS_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_SHEETS_CLIENT_SECRET || '',
+    refreshToken: process.env.GOOGLE_SHEETS_REFRESH_TOKEN || '',
+    redirectUri: process.env.SHEETS_OAUTH_REDIRECT_URI || 'https://api.instintodigital.com.br/api/sheets-oauth/callback',
+    agencyEmail: process.env.SHEETS_AGENCY_EMAIL || process.env.GTM_AGENCY_EMAIL || '',
+  },
+
   // WhatsApp Cloud API (oficial da Meta). Os valores ficam só nas variáveis
   // de ambiente do hPanel, nunca no código.
   whatsapp: {

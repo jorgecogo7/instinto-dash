@@ -145,6 +145,35 @@ function normalizeForm(input, existing = {}) {
       webhookUrl: safeUrl(it.webhookUrl),
     },
     privacyUrl: safeUrl(input.privacyUrl),
+    // A planilha não vem do editor: senão um salvamento comum apagaria o
+    // vínculo (ou alguém trocaria o id da planilha no pedido).
+    ...preservedSheets(existing),
+  };
+}
+
+function preservedSheets(existing) {
+  const s = existing && existing.sheets;
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return {};
+  const columns = (Array.isArray(s.columns) ? s.columns : []).slice(0, 80).map((c) => ({
+    key: str(c && c.key, 80),
+    header: str(c && c.header, 300),
+  })).filter((c) => c.key);
+  const shares = (Array.isArray(s.shares) ? s.shares : []).slice(0, 40).map((x) => ({
+    email: str(x && x.email, 200).toLowerCase(),
+    role: x && x.role === 'writer' ? 'writer' : 'reader',
+    sharedAt: str(x && x.sharedAt, 40),
+  })).filter((x) => x.email);
+  return {
+    sheets: {
+      enabled: s.enabled !== false,
+      spreadsheetId: str(s.spreadsheetId, 80),
+      url: safeUrl(s.url),
+      title: str(s.title, 200),
+      columns,
+      shares,
+      lastError: str(s.lastError || '', 300) || null,
+      createdAt: str(s.createdAt, 40),
+    },
   };
 }
 

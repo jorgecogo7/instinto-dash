@@ -8,6 +8,7 @@ const instagramService = require('../services/instagramService');
 const formsStore = require('../data/formsStore');
 const formService = require('../services/formService');
 const formWhatsapp = require('../services/formWhatsapp');
+const sheetsService = require('../services/sheetsService');
 const crmService = require('../services/crmService');
 const { visibilityOf } = require('../lib/clientAccess');
 const kpiPreference = require('../lib/kpiPreference');
@@ -132,6 +133,8 @@ router.post('/forms/:slug/submit', async (req, res) => {
         source: meta.utm_source, medium: meta.utm_medium, campaign: meta.utm_campaign, content: meta.utm_content, term: meta.utm_term,
       },
     });
+    // Planilha é depois da resposta do lead: se o Google falhar, o envio não falha.
+    try { sheetsService.scheduleAppend(form.id, response); } catch (e) { console.error('Google Sheets: não agendei a linha', e.message); }
 
     res.json({ ok: true, qualified: result.qualified, disqualified: result.disqualified, usesQualification: result.usesQualification });
   } catch (err) {

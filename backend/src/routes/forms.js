@@ -4,13 +4,29 @@ const formsStore = require('../data/formsStore');
 const accountsStore = require('../data/accountsStore');
 const formService = require('../services/formService');
 const formWhatsapp = require('../services/formWhatsapp');
+const sheetsService = require('../services/sheetsService');
+const sheetsOauth = require('./sheetsOauth');
 
 const router = express.Router();
 
 // O token da API de Conversões nunca volta pro navegador, nem pro painel:
 // o editor só fica sabendo se existe ("__keep__" = manter o que já está salvo).
 function forEditor(form) {
-  return { ...form, tracking: { ...form.tracking, capiToken: form.tracking?.capiToken ? '__keep__' : '' } };
+  return {
+    ...form,
+    tracking: { ...form.tracking, capiToken: form.tracking?.capiToken ? '__keep__' : '' },
+    sheets: sheetsService.publicSheets(form.sheets),
+  };
+}
+
+function sendSheetsError(res, err) {
+  const status = err.status || 500;
+  if (status >= 500) console.error('Google Sheets:', err.message);
+  res.status(status).json({
+    error: status >= 500 && !err.code ? 'Não consegui falar com o Google Sheets agora. Tente de novo.' : err.message,
+    ...(err.code ? { code: err.code } : {}),
+    ...(err.sheets ? { sheets: err.sheets } : {}),
+  });
 }
 
 async function uniqueSlug(base, ignoreId) {
@@ -67,6 +83,63 @@ router.get('/whatsapp-source', async (req, res) => {
   }
 });
 
+// GET /api/forms/sheets/status — sem segredo. ready:false é "ainda não conectou", não é falha.
+router.get('/sheets/status', async (req, res) => {
+  const out = { ...sheetsService.capabilities() };
+  if (req.query.check === '1' && out.ready && out.mode !== 'mock') {
+    try { out.scopes = await sheetsService.checkScopes(); } catch (e) { out.scopes = { ok: false, error: e.message }; }
+  }
+  res.json(out);
+});
+
+router.post('/sheets/oauth/start', (req, res) => {
+  try { res.json(sheetsOauth.start(req)); } catch (err) { sendSheetsError(res, err); }
+});
+
+router.post('/:id/sheets/ensure', async (req, res) => {
+  try {
+    if (!sheetsService.capabilities().ready) {
+      return res.status(409).json({ error: 'O Google Sheets ainda não está conectado. Use "Conectar Google Sheets" em Integrações.', code: 'not_configured' });
+    }
+    const out = await sheetsService.provision(req.params.id);
+    if (!out || !out.form) return res.status(404).json({ error: 'Formulário não encontrado.' });
+    const sheets = sheetsService.publicSheets(out.form.sheets);
+    if (!sheets || !sheets.url) {
+      return res.status(502).json({ error: (sheets && sheets.lastError) || 'Não consegui criar a planilha.', code: 'sheets_error', sheets });
+    }
+    res.json({ sheets });
+  } catch (err) { sendSheetsError(res, err); }
+});
+
+router.post('/:id/sheets/enabled', async (req, res) => {
+  try {
+    const enabled = !!(req.body && req.body.enabled === true);
+    const form = await sheetsService.setEnabled(req.params.id, enabled);
+    if (!form) return res.status(404).json({ error: 'Formulário não encontrado.' });
+    const sheets = sheetsService.publicSheets(form.sheets);
+    if (enabled && (!sheets || !sheets.url)) {
+      return res.status(502).json({ error: (sheets && sheets.lastError) || 'Não consegui criar a planilha.', code: 'sheets_error', sheets });
+    }
+    res.json({ sheets });
+  } catch (err) { sendSheetsError(res, err); }
+});
+
+router.post('/:id/sheets/share', async (req, res) => {
+  try {
+    const form = await sheetsService.share(req.params.id, req.body && req.body.email, req.body && req.body.role);
+    if (!form) return res.status(404).json({ error: 'Formulário não encontrado.' });
+    res.json({ sheets: sheetsService.publicSheets(form.sheets) });
+  } catch (err) { sendSheetsError(res, err); }
+});
+
+router.post('/:id/sheets/backfill', async (req, res) => {
+  try {
+    const out = await sheetsService.backfill(req.params.id);
+    if (!out) return res.status(404).json({ error: 'Formulário não encontrado.' });
+    res.json(out);
+  } catch (err) { sendSheetsError(res, err); }
+});
+
 router.get('/:id', async (req, res) => {
   const form = await formsStore.getById(req.params.id);
   if (!form) return res.status(404).json({ error: 'Formulário não encontrado.' });
@@ -82,7 +155,9 @@ router.post('/', async (req, res) => {
     await ensureClientExists(form.clientId);
     form.slug = await uniqueSlug(req.body.slug || form.name);
     await formsStore.add(form);
-    res.status(201).json(forEditor(form));
+    try { await sheetsService.provision(form.id); } catch (e) { console.error('Google Sheets: criação da planilha', e.message); }
+    const saved = await formsStore.getById(form.id);
+    res.status(201).json(forEditor(saved || form));
   } catch (err) {
     sendFormError(res, err);
   }
@@ -92,16 +167,22 @@ router.put('/:id', async (req, res) => {
   try {
     const existing = await formsStore.getById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Formulário não encontrado.' });
-    const form = formService.normalizeForm(req.body, existing);
-    if (form.clientId !== (existing.clientId || null)) await ensureClientExists(form.clientId);
-    form.slug = req.body.slug && formService.slugify(req.body.slug) !== existing.slug
-      ? await uniqueSlug(req.body.slug, existing.id)
-      : existing.slug;
-    // Publicar exige pelo menos uma pergunta.
-    if (form.status === 'published' && !form.fields.some((f) => f.type !== 'statement')) {
-      return res.status(400).json({ error: 'Adicione pelo menos uma pergunta antes de publicar.' });
-    }
-    await formsStore.save(form);
+    const form = await sheetsService.withFormLock(existing.id, async () => {
+      const fresh = await formsStore.getById(existing.id);
+      const next = formService.normalizeForm(req.body, fresh || existing);
+      if (next.clientId !== ((fresh || existing).clientId || null)) await ensureClientExists(next.clientId);
+      next.slug = req.body.slug && formService.slugify(req.body.slug) !== (fresh || existing).slug
+        ? await uniqueSlug(req.body.slug, next.id)
+        : (fresh || existing).slug;
+      if (next.status === 'published' && !next.fields.some((f) => f.type !== 'statement')) {
+        const err = new Error('Adicione pelo menos uma pergunta antes de publicar.');
+        err.status = 400;
+        throw err;
+      }
+      await formsStore.save(next);
+      return next;
+    });
+    sheetsService.scheduleEnsureHeaders(form.id);
     res.json(forEditor(form));
   } catch (err) {
     sendFormError(res, err);
@@ -116,7 +197,9 @@ router.post('/:id/duplicate', async (req, res) => {
     { id: crypto.randomBytes(8).toString('hex'), createdAt: now, tracking: existing.tracking });
   copy.slug = await uniqueSlug(existing.slug);
   await formsStore.add(copy);
-  res.status(201).json(forEditor(copy));
+  try { await sheetsService.provision(copy.id); } catch (e) { console.error('Google Sheets: criação da planilha', e.message); }
+  const saved = await formsStore.getById(copy.id);
+  res.status(201).json(forEditor(saved || copy));
 });
 
 router.delete('/:id', async (req, res) => {

@@ -1964,6 +1964,12 @@
   .fm-link-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .fm-link-row code{ flex:1; min-width:200px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg-panel-2); font-size:12.5px; word-break:break-all; }
   .fm-link-row a{ text-decoration:none; }
+  .sheets-setup p{ font-size:13.5px; line-height:1.55; margin:0 0 12px; }
+  .fm-sheets-share{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+  .fm-sheets-share .modal-input{ width:auto; flex:1; min-width:180px; }
+  .fm-sheets-share select.modal-input{ flex:0 0 150px; min-width:140px; }
+  .fm-sheets-people{ margin:8px 0 0; padding-left:18px; }
+  body.public-mode #sheetsCard, body.client-mode #sheetsCard, body.client-mode #sheetsAuthModal{ display:none !important; }
   .fm-pt{ display:inline-block; font-size:11.5px; padding:3px 8px; border-radius:7px; margin:2px 4px 2px 0; background:var(--bg-panel-2); border:1px solid var(--line); }
   .fm-pt.qualifies{ border-color:rgba(53,196,138,.5); color:var(--green); }
   .fm-pt.disqualifies{ border-color:rgba(232,81,79,.5); color:var(--red); }
@@ -3716,6 +3722,17 @@
         <div id="gtmBody"></div>
       </div>
 
+      <div class="integration-card cnav-admin" id="sheetsCard">
+        <div class="integration-head">
+          <div>
+            <div class="integration-title">Google Sheets (formulários)</div>
+            <div class="integration-sub">Cada formulário ganha uma planilha na conta Google da agência. Cada resposta entra como uma linha.</div>
+          </div>
+          <span class="integration-status" id="sheetsStatusBadge"></span>
+        </div>
+        <div id="sheetsBody"></div>
+      </div>
+
       <div class="rp-modal" id="gtmModal" onclick="if (event.target === this) gtmCloseModal()">
         <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="gtmModalTitle">
           <h3 id="gtmModalTitle"></h3>
@@ -3882,6 +3899,17 @@
 
   <!-- Relatório usado só para impressão/PDF — populado via JS antes de chamar window.print() -->
   <div id="printReport"></div>
+</div>
+
+<div class="rp-modal" id="sheetsAuthModal" onclick="if (event.target === this) sheetsAuthClose()">
+  <div class="rp-modal-box" role="dialog" aria-modal="true" aria-labelledby="sheetsAuthTitle">
+    <h3 id="sheetsAuthTitle">Conectar Google Sheets</h3>
+    <div class="rp-modal-sub" id="sheetsAuthBody"></div>
+    <div id="sheetsAuthExtra"></div>
+    <div class="rp-modal-actions">
+      <button type="button" class="btn-cancel" onclick="sheetsAuthClose()">Fechar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -4214,6 +4242,8 @@
   let fmResponses = null;
   let fmClientWa = null;
   let fmWaSeq = 0;
+  let fmSheetsStatus = null;
+  let fmSheetsNotice = '';
 
   const FM_TYPES = [
     ['short_text', 'Texto curto'], ['long_text', 'Texto longo'], ['email', 'E-mail'], ['phone', 'Telefone / WhatsApp'],
@@ -4251,8 +4281,12 @@
     const res = await fetch(`${API_BASE_URL}/api/${CLIENT_MODE ? 'client/forms' : 'forms'}${path}`, { ...opts, headers: { ...authHeaders(), 'Content-Type': 'application/json', ...(opts.headers || {}) } });
     if (res.status === 401) { logout(); throw new Error('Sessão expirada.'); }
     if (res.status === 204) return null;
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data.error || `HTTP ${res.status}`);
+      err.code = data.code || '';
+      throw err;
+    }
     return data;
   }
 
@@ -4429,6 +4463,7 @@
       fmCurrent = f;
       fmResponses = null;
       fmIsDirty = false;
+      fmSheetsNotice = '';
       fmClientWa = null;
       fmWaSeq += 1;
       fmTab = CLIENT_MODE ? 'responses' : 'general';
@@ -4606,6 +4641,176 @@
     fmRefreshWaNote();
   }
 
+  function sheetsAgencyEmail(){
+    const from = (fmSheetsStatus && fmSheetsStatus.agencyEmail) || (typeof sheetsCardStatus !== 'undefined' && sheetsCardStatus && sheetsCardStatus.agencyEmail);
+    return from || 'jorgelcogo@gmail.com';
+  }
+  function sheetsCardHtml(status){
+    if (!status) return '<div class="gtm-dim">Verificando a conexão com o Google Sheets…</div>';
+    if (status.loadError) return `<div class="fm-help">${escapeHtml(status.loadError)}</div><button type="button" class="btn-cancel" onclick="loadSheetsCard()">Tentar de novo</button>`;
+    if (status.mode === 'mock') return '<div class="cp-banner mock"><b>Modo de teste.</b> As planilhas são simuladas. Nada é criado na conta Google.</div>';
+    const scopesBad = status.scopes && status.scopes.ok === false;
+    if (!status.ready || scopesBad) {
+      const who = escapeHtml(status.agencyEmail || 'jorgelcogo@gmail.com');
+      const text = scopesBad
+        ? 'A conexão com o Google Sheets precisa ser refeita (faltam permissões de planilha).'
+        : `O Google Sheets ainda não está conectado. Conecte a conta da agência (${who}) para cada formulário ganhar uma planilha de respostas.`;
+      return `<div class="sheets-setup" id="sheetsSetup"><p>${text}</p><button type="button" class="btn-add" onclick="sheetsAuthorize()">Conectar Google Sheets</button><div class="fm-help">Depois de autorizar, cole o token em <b>GOOGLE_SHEETS_REFRESH_TOKEN</b> no hPanel e reinicie o app. O token do Tag Manager continua o mesmo.</div></div>`;
+    }
+    const scopeNote = status.scopes && status.scopes.ok ? ' Permissões conferidas.' : '';
+    return `<div class="cp-banner on">Conectado${scopeNote} Cada formulário cria a planilha na aba <b>Compartilhar</b>.</div><div class="gtm-row" style="margin-top:8px;"><button type="button" class="btn-cancel" onclick="loadSheetsCard(true)">Conferir permissões</button><button type="button" class="btn-cancel" onclick="sheetsAuthorize()">Conectar de novo</button></div>`;
+  }
+  function fmSheetsPanelHtml(status, sheets, notice){
+    const note = notice ? `<div class="fm-save-msg ok" id="fmSheetsMsg">${escapeHtml(notice)}</div>` : '<div class="fm-save-msg" id="fmSheetsMsg"></div>';
+    const head = `<div class="panel-head"><div><h3>Planilha de respostas</h3><div class="panel-head-sub">Uma linha por lead, na conta Google da agência, para acompanhar enquanto o CRM do cliente não está no ar.</div></div></div>`;
+    if (!status) return `<div class="panel fm-panel" id="fmSheetsPanel">${head}<div class="fm-help">Verificando a conexão com o Google Sheets…</div></div>`;
+    if (status.loadError) return `<div class="panel fm-panel" id="fmSheetsPanel">${head}<div class="fm-help">${escapeHtml(status.loadError)}</div><button type="button" class="btn-cancel" onclick="fmLoadSheetsStatus(true)">Tentar de novo</button></div>`;
+    if (!status.ready && status.mode !== 'mock') {
+      return `<div class="panel fm-panel" id="fmSheetsPanel">${head}<div class="sheets-setup" id="fmSheetsSetup"><p>O Google Sheets ainda não está conectado. As respostas continuam salvas aqui. Conecte a conta da agência para criar a planilha e mandar o link ao cliente.</p><button type="button" class="btn-add" onclick="sheetsAuthorize()">Conectar Google Sheets</button><div class="fm-help">O mesmo botão está em Clientes → Integrações. O token vai na variável <b>GOOGLE_SHEETS_REFRESH_TOKEN</b> do hPanel. Reinicie o app depois de colar.</div></div></div>`;
+    }
+    const s = sheets || {};
+    const mockNote = status.mode === 'mock' ? '<div class="cp-banner mock"><b>Modo de teste.</b> Esta planilha é simulada e não existe na conta Google.</div>' : '';
+    if (!s.url) {
+      const err = s.lastError ? `<div class="fm-warn warn">${escapeHtml(s.lastError)}</div>` : '';
+      return `<div class="panel fm-panel" id="fmSheetsPanel">${head}${mockNote}${err}<button type="button" class="btn-add" id="fmSheetsCreate" onclick="fmSheetsEnsure()">Criar planilha</button><div class="fm-help">O nome fica «Cliente — Nome do formulário (respostas)». Horário de Brasília. Excluir o formulário aqui não apaga a planilha.</div>${note}</div>`;
+    }
+    const people = (s.shares || []).map(sh => `<li>${escapeHtml(sh.email)} · ${sh.role === 'writer' ? 'pode editar' : 'pode ver'}</li>`).join('');
+    const syncHelp = s.enabled === false
+      ? 'A sincronização está pausada. As respostas novas ficam só neste sistema.'
+      : 'Cada envio entra como uma nova linha. Se o Google falhar, o lead é salvo mesmo assim e a linha entra na próxima tentativa.';
+    return `<div class="panel fm-panel" id="fmSheetsPanel">${head}${mockNote}
+      <div class="fm-link-row"><code id="fmSheetUrl">${escapeHtml(s.url)}</code><a class="btn-cancel" id="fmSheetOpen" href="${escapeAttr(s.url)}" target="_blank" rel="noopener">Abrir planilha</a><button type="button" class="btn-add" id="fmSheetCopy" onclick="fmCopy(document.getElementById('fmSheetUrl').textContent, this)">Copiar link</button></div>
+      <div class="fm-help" style="margin-top:8px;">${escapeHtml(s.title || '')} · horário de Brasília. Mande este link para o cliente. Excluir o formulário aqui não apaga a planilha.</div>
+      <label class="fm-check" style="margin-top:12px;"><input type="checkbox" id="fmSheetsEnabled" ${s.enabled === false ? '' : 'checked'} onchange="fmSheetsSetEnabled(this.checked)"> Enviar cada resposta nova para a planilha</label>
+      <div class="fm-help">${syncHelp}</div>
+      ${s.lastError ? `<div class="fm-warn warn">Última tentativa: ${escapeHtml(s.lastError)} A próxima resposta tenta de novo.</div>` : ''}
+      <div style="margin-top:14px;"><b>Compartilhar com o cliente</b></div>
+      <div class="fm-sheets-share"><input class="modal-input" id="fmSheetsEmail" type="email" placeholder="email do cliente" autocomplete="off"><select class="modal-input" id="fmSheetsRole"><option value="viewer">Pode ver</option><option value="editor">Pode editar</option></select><button type="button" class="btn-add" id="fmSheetsShare" onclick="fmSheetsShare()">Compartilhar</button></div>
+      ${people ? `<ul class="fm-sheets-people fm-help">${people}</ul>` : '<div class="fm-help">Ninguém além da conta da agência tem acesso ainda. O e-mail precisa ser uma conta Google.</div>'}
+      <div style="margin-top:12px;"><button type="button" class="btn-cancel" id="fmSheetsBackfill" onclick="fmSheetsBackfill()">Sincronizar respostas antigas</button></div>
+      <div class="fm-help">Envia o que ainda não está na planilha. Pergunta nova vira coluna nova; as colunas antigas não mudam de lugar.</div>
+      ${note}</div>`;
+  }
+  function fmSheetsPaint(){
+    const mount = document.getElementById('fmSheetsMount');
+    if (!mount || !fmCurrent) return;
+    mount.innerHTML = fmSheetsPanelHtml(fmSheetsStatus, fmCurrent.sheets, fmSheetsNotice);
+  }
+  async function fmLoadSheetsStatus(force){
+    if (force) fmSheetsStatus = null;
+    try { fmSheetsStatus = await fmApi('/sheets/status'); }
+    catch (e) { fmSheetsStatus = { ready: false, mode: 'real', loadError: e.message }; }
+    fmSheetsPaint();
+  }
+  async function fmSheetsEnsure(){
+    const btn = document.getElementById('fmSheetsCreate');
+    if (btn) { btn.disabled = true; btn.textContent = 'Criando…'; }
+    fmSheetsNotice = '';
+    try {
+      const data = await fmApi(`/${fmCurrent.id}/sheets/ensure`, { method:'POST', body:'{}' });
+      fmCurrent.sheets = data.sheets;
+      fmSheetsNotice = 'Planilha criada. Copie o link e mande para o cliente.';
+    } catch (e) {
+      if (e.code === 'not_configured') fmSheetsStatus = { ready: false, mode: 'real', missing: ['GOOGLE_SHEETS_REFRESH_TOKEN'] };
+      else fmSheetsNotice = '';
+      if (e.code !== 'not_configured') {
+        fmCurrent.sheets = fmCurrent.sheets || {};
+        fmCurrent.sheets.lastError = e.message;
+      }
+    }
+    fmSheetsPaint();
+  }
+  async function fmSheetsSetEnabled(on){
+    const box = document.getElementById('fmSheetsMsg');
+    if (box) { box.className = 'fm-save-msg'; box.textContent = 'Salvando…'; }
+    try {
+      const data = await fmApi(`/${fmCurrent.id}/sheets/enabled`, { method:'POST', body: JSON.stringify({ enabled: !!on }) });
+      fmCurrent.sheets = data.sheets;
+      fmSheetsNotice = on ? 'Sincronização ligada.' : 'Sincronização pausada. As respostas continuam neste sistema.';
+    } catch (e) {
+      if (e.code === 'not_configured') fmSheetsStatus = { ready: false, mode: 'real' };
+      fmSheetsNotice = e.code === 'not_configured' ? '' : e.message;
+    }
+    fmSheetsPaint();
+  }
+  async function fmSheetsShare(){
+    const email = (document.getElementById('fmSheetsEmail') || {}).value || '';
+    const role = (document.getElementById('fmSheetsRole') || {}).value || 'viewer';
+    const btn = document.getElementById('fmSheetsShare');
+    if (btn) { btn.disabled = true; btn.textContent = 'Compartilhando…'; }
+    try {
+      const data = await fmApi(`/${fmCurrent.id}/sheets/share`, { method:'POST', body: JSON.stringify({ email: email.trim(), role }) });
+      fmCurrent.sheets = data.sheets;
+      fmSheetsNotice = role === 'editor' ? 'Convite enviado: a pessoa pode editar.' : 'Convite enviado: a pessoa pode ver.';
+    } catch (e) {
+      fmSheetsNotice = '';
+      fmSheetsPaint();
+      const box = document.getElementById('fmSheetsMsg');
+      if (box) { box.className = 'fm-save-msg err'; box.textContent = e.message; }
+      return;
+    }
+    fmSheetsPaint();
+  }
+  async function fmSheetsBackfill(){
+    const btn = document.getElementById('fmSheetsBackfill');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sincronizando…'; }
+    try {
+      const data = await fmApi(`/${fmCurrent.id}/sheets/backfill`, { method:'POST', body:'{}' });
+      if (data.sheets) fmCurrent.sheets = data.sheets;
+      const fail = data.failed ? ` ${data.failed} não entraram.` : '';
+      fmSheetsNotice = `Enviadas ${data.sent} resposta(s). ${data.skipped} já estavam na planilha.${fail}`;
+    } catch (e) {
+      fmSheetsNotice = '';
+      fmSheetsPaint();
+      const box = document.getElementById('fmSheetsMsg');
+      if (box) { box.className = 'fm-save-msg err'; box.textContent = e.message; }
+      return;
+    }
+    fmSheetsPaint();
+  }
+  let sheetsCardStatus = null;
+  async function loadSheetsCard(check){
+    const body = document.getElementById('sheetsBody');
+    if (!body || CLIENT_MODE || PUBLIC_TOKEN) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/forms/sheets/status${check ? '?check=1' : ''}`, { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      sheetsCardStatus = data;
+    } catch (e) {
+      sheetsCardStatus = { ready: false, mode: 'real', loadError: e.message };
+    }
+    const badge = document.getElementById('sheetsStatusBadge');
+    const ok = sheetsCardStatus && !sheetsCardStatus.loadError && (sheetsCardStatus.mode === 'mock' || (sheetsCardStatus.ready && !(sheetsCardStatus.scopes && sheetsCardStatus.scopes.ok === false)));
+    if (badge) {
+      badge.textContent = !sheetsCardStatus || sheetsCardStatus.loadError ? '…' : ok ? (sheetsCardStatus.mode === 'mock' ? 'Teste' : 'Conectado') : 'Não conectado';
+      badge.className = 'integration-status ' + (ok ? 'status-ativo' : 'status-pausado');
+    }
+    body.innerHTML = sheetsCardHtml(sheetsCardStatus);
+  }
+  async function sheetsAuthorize(){
+    const modal = document.getElementById('sheetsAuthModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    document.getElementById('sheetsAuthBody').textContent = 'Gerando o link seguro…';
+    document.getElementById('sheetsAuthExtra').innerHTML = '';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/forms/sheets/oauth/start`, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body:'{}' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const who = escapeHtml((data && sheetsAgencyEmail()) || 'jorgelcogo@gmail.com');
+      document.getElementById('sheetsAuthBody').innerHTML = `${data.mock ? '<b>Modo de teste:</b> abre uma página de simulação, sem ir ao Google.<br><br>' : ''}Você vai para o Google em outra aba. Entre com a conta <b>${who}</b> e aceite o acesso a Planilhas e aos arquivos criados pelo sistema.<br><br>No final aparece um token <b>uma única vez</b>. Copie e cole no hPanel na variável <b>GOOGLE_SHEETS_REFRESH_TOKEN</b>, depois reinicie o app. Não troque o token do Tag Manager. O link vale 10 minutos.`;
+      document.getElementById('sheetsAuthExtra').innerHTML = `<a class="btn-add" href="${escapeAttr(data.url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;margin-top:12px;">Continuar no Google</a>`;
+    } catch (e) {
+      document.getElementById('sheetsAuthBody').textContent = e.message;
+    }
+  }
+  function sheetsAuthClose(){
+    const modal = document.getElementById('sheetsAuthModal');
+    if (modal) modal.classList.remove('open');
+  }
+
   function renderFmTab(){
     const body = document.getElementById('fmTabBody');
     const f = fmCurrent;
@@ -4716,7 +4921,9 @@
           <div class="panel-head"><h3>Pra onde vão as respostas</h3></div>
           ${fmInput('integrations.createCrmLead', { type:'checkbox', label:'Também criar um lead no funil da agência (<b>Captação & CRM</b>) a cada resposta, com pontuação e temperatura. Formulário de cliente sempre manda o lead para o CRM do cliente.' })}
           ${fmRow('Webhook (opcional)', fmInput('integrations.webhookUrl', { placeholder:'https://hooks.zapier.com/…' }), 'Manda cada resposta pra Zapier, Make, n8n ou o CRM do cliente (só https).')}
-        </div>`;
+        </div>
+        <div id="fmSheetsMount">${fmSheetsPanelHtml(fmSheetsStatus, f.sheets, fmSheetsNotice)}</div>`;
+      if (!CLIENT_MODE && !fmSheetsStatus) fmLoadSheetsStatus();
     } else if (fmTab === 'responses') {
       renderFmResponses();
     }
@@ -9618,7 +9825,7 @@
     if (tab === 'social' && !cdSocialLoaded) loadSocialPanel();
     if (tab === 'contract') renderClientContractPane();
     if (tab === 'history') renderClientHistoryPane();
-    if (tab === 'integrations' && !CLIENT_MODE && !PUBLIC_TOKEN) { loadGtm(); loadClientHealth(true); }
+    if (tab === 'integrations' && !CLIENT_MODE && !PUBLIC_TOKEN) { loadGtm(); loadSheetsCard(); loadClientHealth(true); }
   }
 
   function toggleRangeMenu(){

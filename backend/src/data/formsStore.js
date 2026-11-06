@@ -56,13 +56,24 @@ async function addResponse(formId, response) {
   return response;
 }
 
-async function getResponses(formId, limit = 2000) {
+async function getResponses(formId, limit = 2000, opts = {}) {
   await db.ensureFormsTables();
+  const cap = Math.min(Math.max(Number(limit) || 2000, 1), 10000);
+  const dir = opts && opts.order === 'asc' ? 'ASC' : 'DESC';
   const [rows] = await db.getPool().query(
-    'SELECT data FROM form_responses WHERE form_id = ? ORDER BY created_at DESC LIMIT ?',
-    [formId, limit],
+    `SELECT data FROM form_responses WHERE form_id = ? ORDER BY created_at ${dir} LIMIT ?`,
+    [formId, cap],
   );
   return rows.map((r) => parse(r.data));
+}
+
+async function updateResponse(formId, response) {
+  await db.ensureFormsTables();
+  const [result] = await db.getPool().query(
+    'UPDATE form_responses SET data = ? WHERE id = ? AND form_id = ?',
+    [JSON.stringify(response), response.id, formId],
+  );
+  return result.affectedRows > 0;
 }
 
 const STAT_COLUMNS = { view: 'views', start: 'starts', complete: 'completes', qualified: 'qualified' };
@@ -102,4 +113,4 @@ async function getDailyStats(formId, sinceDate) {
   return rows.map((r) => ({ date: r.day, views: Number(r.views), starts: Number(r.starts), completes: Number(r.completes), qualified: Number(r.qualified) }));
 }
 
-module.exports = { getAll, getById, getBySlug, add, save, remove, addResponse, getResponses, bumpStat, getStats, getDailyStats };
+module.exports = { getAll, getById, getBySlug, add, save, remove, addResponse, getResponses, updateResponse, bumpStat, getStats, getDailyStats };
