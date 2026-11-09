@@ -23,7 +23,7 @@ test('outros clientes continuam no automático', () => {
   assert.strictEqual(kpi.normalize('LEADS'), 'leads');
   assert.strictEqual(kpi.normalize('conversas'), null);
   assert.deepStrictEqual(kpi.reportOptions({ id: 'loja' }, { from: '2026-10-26', to: '2026-11-01' }), {
-    from: '2026-10-26', to: '2026-11-01', kpiPreference: 'auto',
+    from: '2026-10-26', to: '2026-11-01', kpiPreference: 'auto', activeCreativesOnly: false,
   });
 });
 

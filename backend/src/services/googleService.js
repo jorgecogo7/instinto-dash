@@ -1,4 +1,5 @@
 const config = require('../config');
+const activeCreatives = require('../lib/activeCreatives');
 const mockGoogle = require('../data/mockGoogle');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
@@ -168,7 +169,7 @@ function deriveMetrics(raw) {
   };
 }
 
-async function fetchRealReport(customerId, range) {
+async function fetchRealReport(customerId, range, opts = {}) {
   const accessToken = await getAccessToken();
   const prev = previousRange(range);
   const dateFilter = (r) => `segments.date BETWEEN '${r.from}' AND '${r.to}'`;
@@ -394,11 +395,12 @@ async function fetchRealReport(customerId, range) {
       LIMIT 60
     `, accessToken, 'termos de pesquisa').catch((e) => { console.warn(e.message); return null; }),
     // Força do anúncio (só existe pra anúncio responsivo de pesquisa).
+    // Já exige campanha, grupo e anúncio ENABLED. Com "só criativos ativos",
+    // também tira o reprovado (ele segue ENABLED, mas não veicula).
     runGAQL(customerId, `
       SELECT campaign.name, ad_group_ad.ad_strength
       FROM ad_group_ad
-      WHERE campaign.status = 'ENABLED' AND ad_group.status = 'ENABLED'
-        AND ad_group_ad.status = 'ENABLED' AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+      WHERE ${activeCreatives.googleAdStrengthWhere(opts.activeCreativesOnly === true)}
     `, accessToken, 'força do anúncio').catch((e) => { console.warn(e.message); return null; }),
   ]);
 
@@ -478,11 +480,14 @@ const REPORT_CACHE_TTL_SECONDS = 60 * 20;
 
 async function getAccountReport(customerId, options = {}) {
   const range = normalizeRange(options.from, options.to);
-  const cacheKey = `google:report:${customerId}:${range.from}:${range.to}`;
+  const onlyActive = options.activeCreativesOnly === true;
+  // Sem a opção, a chave continua a de antes (o cache quente da sincronização
+  // ainda serve). Com a opção, a força do anúncio exclui reprovado.
+  const cacheKey = `google:report:${customerId}:${range.from}:${range.to}${onlyActive ? ':activeAds' : ''}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  const result = hasRealCredentials() ? await fetchRealReport(customerId, range) : mockGoogle;
+  const result = hasRealCredentials() ? await fetchRealReport(customerId, range, { activeCreativesOnly: onlyActive }) : mockGoogle;
 
   cache.set(cacheKey, result, REPORT_CACHE_TTL_SECONDS);
   return result;

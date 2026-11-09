@@ -136,7 +136,7 @@ async function metaPerformance(account, range) {
 async function googlePerformance(account, range) {
   if (account.google?.status !== 'connected') return { connected: false, error: 'Google Ads não conectado para este cliente.' };
   try {
-    return { connected: true, report: await googleService.getAccountReport(account.google.customerId, range) };
+    return { connected: true, report: await googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account, range)) };
   } catch (e) {
     return { connected: true, error: e.message };
   }

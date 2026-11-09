@@ -184,7 +184,7 @@ router.get('/:token/:kind(meta|google|instagram)', async (req, res) => {
     }
     if (kind === 'google') {
       if (!wantedPlatforms(account).includes('google')) return res.status(409).json({ error: 'Google Ads não está ativo neste painel.' });
-      return res.json(await googleService.getAccountReport(account.google.customerId, range));
+      return res.json(await googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account, range)));
     }
     if (!visibilityOf(account).social) return res.status(403).json({ error: 'Esta seção não está liberada.' });
     let igUserId = instagramUnlinked(account) ? null : (account.instagramApi?.igUserId || account.meta?.igBusinessId || null);

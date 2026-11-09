@@ -266,7 +266,7 @@ async function generateFor(account, range, { sendMail = true, weekly = false } =
   const r = { from: range.from, to: range.to };
   const [meta, google] = await Promise.all([
     wantMeta ? metaService.getAccountReport(account.meta.adAccountId, kpiPreference.reportOptions(account, r)).catch((e) => ({ error: e.message })) : null,
-    wantGoogle ? googleService.getAccountReport(account.google.customerId, r).catch((e) => ({ error: e.message })) : null,
+    wantGoogle ? googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account, r)).catch((e) => ({ error: e.message })) : null,
   ]);
   const errors = [meta?.error && `Meta: ${meta.error}`, google?.error && `Google: ${google.error}`].filter(Boolean);
   const m = meta && !meta.error ? meta : null;

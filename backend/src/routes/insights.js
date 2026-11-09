@@ -27,7 +27,7 @@ router.get('/:clientId', async (req, res) => {
     const data =
       platform === 'meta'
         ? await metaService.getCampaignsWithAds(account.meta.adAccountId, undefined, null, kpiPreference.reportOptions(account))
-        : await googleService.getAccountReport(account.google.customerId);
+        : await googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account));
 
     const insights = await insightsService.generateInsights(platform, data);
     res.json(insights);
@@ -45,7 +45,7 @@ router.post('/:clientId/report-analysis', async (req, res) => {
   try {
     const [meta, google] = await Promise.all([
       account.meta?.status === 'connected' ? metaService.getAccountReport(account.meta.adAccountId, kpiPreference.reportOptions(account, range)).catch(() => null) : null,
-      account.google?.status === 'connected' ? googleService.getAccountReport(account.google.customerId, range).catch(() => null) : null,
+      account.google?.status === 'connected' ? googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account, range)).catch(() => null) : null,
     ]);
     if (!meta && !google) return res.status(400).json({ error: 'Sem dados de anúncios nesse período pra analisar.' });
     const analysis = await generateReportAnalysis({

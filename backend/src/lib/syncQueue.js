@@ -34,7 +34,7 @@ async function syncAllAccounts() {
 
     if (account.google.status === 'connected') {
       try {
-        entry.google = await googleService.getAccountReport(account.google.customerId);
+        entry.google = await googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account));
       } catch (err) {
         entry.errors.push(`google: ${err.message}`);
       }

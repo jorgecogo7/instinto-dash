@@ -1,6 +1,7 @@
 const config = require('../config');
 const extras = require('../lib/metaExtras');
 const kpiPreference = require('../lib/kpiPreference');
+const activeCreatives = require('../lib/activeCreatives');
 const mockMeta = require('../data/mockMeta');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
@@ -181,12 +182,23 @@ async function fetchCreativeThumbs(accountId, opts = {}) {
   const cached = opts.fresh ? null : cache.get(cacheKey);
   if (cached) return cached;
 
-  const statuses = JSON.stringify(['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'ARCHIVED']);
+  // Inclui em análise e com problema pra saber quem ainda pode veicular.
+  // DELETED fica de fora: volume alto, e anúncio sem status conhecido sai da
+  // lista quando a opção "só ativos" está ligada.
+  const statuses = JSON.stringify([
+    'ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'ARCHIVED',
+    'IN_PROCESS', 'PENDING_REVIEW', 'PREAPPROVED', 'WITH_ISSUES',
+    'DISAPPROVED', 'PENDING_BILLING_INFO',
+  ]);
   // Primeiro tenta o criativo completo: thumbnail_url sozinho costuma vir
   // pequeno ou preto em vídeo, criativo dinâmico e anúncio de publicação.
   // O primeiro conjunto inclui os campos da prévia (vídeo e cards). Se a Meta
   // recusar, cai no que já servia para a miniatura.
+  // Pais (campanha e conjunto) são extra: se a Meta recusar, o próximo
+  // conjunto ainda traz o effective_status do anúncio, que já reflete pausa
+  // de campanha ou de conjunto.
   const attempts = [
+    { fields: `effective_status,campaign{effective_status},adset{effective_status},creative.thumbnail_width(600).thumbnail_height(600){${CREATIVE_PLAYBACK_FIELDS}}`, playback: true },
     { fields: `effective_status,creative.thumbnail_width(600).thumbnail_height(600){${CREATIVE_PLAYBACK_FIELDS}}`, playback: true },
     { fields: `effective_status,creative.thumbnail_width(480).thumbnail_height(480){${CREATIVE_FIELDS}}`, playback: true },
     { fields: 'effective_status,creative.thumbnail_width(480).thumbnail_height(480){thumbnail_url,image_url}', playback: false },
@@ -220,7 +232,13 @@ async function fetchCreativeThumbs(accountId, opts = {}) {
     const picked = pickCreativeMedia(c, lookups || undefined);
     const url = (picked && picked.imageUrl) || c.image_url || c.thumbnail_url;
     if (a.id && url) map[a.id] = url;
-    if (a.id && a.effective_status) statusMap[a.id] = a.effective_status;
+    if (a.id && a.effective_status) {
+      statusMap[a.id] = {
+        status: a.effective_status,
+        campaignStatus: (a.campaign && (a.campaign.effective_status || a.campaign.status)) || null,
+        adsetStatus: (a.adset && (a.adset.effective_status || a.adset.status)) || null,
+      };
+    }
     const play = a.id && picked ? clientCreative(picked) : null;
     if (play) media[a.id] = play;
   });
@@ -232,9 +250,26 @@ async function fetchCreativeThumbs(accountId, opts = {}) {
   return map;
 }
 
+function statusInfo(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'string') return { status: raw, campaignStatus: null, adsetStatus: null };
+  return raw;
+}
+
 function attachThumbs(campaigns, thumbs) {
+  const statusMap = (thumbs && thumbs.__status) || {};
   campaigns.forEach((c) => c.adsets.forEach((s) => s.ads.forEach((a) => {
     if (thumbs[a.id]) a.thumbnailUrl = thumbs[a.id];
+    const info = statusInfo(statusMap[a.id]);
+    const adStatus = (info && info.status) || a.status || null;
+    if (adStatus) a.status = adStatus;
+    // listed serve à tela Meta Ads (campanha expandida e tabela de criativos).
+    // O investimento da campanha não usa esse campo.
+    a.listed = activeCreatives.metaListed({
+      status: adStatus,
+      campaignStatus: (info && info.campaignStatus) || c.status,
+      adsetStatus: (info && info.adsetStatus) || s.status || null,
+    });
   })));
   return campaigns;
 }
@@ -522,7 +557,10 @@ async function fetchRealReport(accountId, range, opts = {}) {
   const media = thumbs.__media || {};
   ads.forEach((a) => {
     if (thumbs[a.id]) a.thumbnailUrl = thumbs[a.id];
-    if (statusMap[a.id]) a.status = statusMap[a.id];
+    const info = statusInfo(statusMap[a.id]);
+    if (info && info.status) a.status = info.status;
+    if (info && info.campaignStatus) a.campaignStatus = info.campaignStatus;
+    if (info && info.adsetStatus) a.adsetStatus = info.adsetStatus;
     if (media[a.id]) a.creative = media[a.id];
   });
   ads.sort((x, y) => (y.results - x.results) || (y.spend - x.spend));
@@ -588,7 +626,7 @@ async function getAccountReport(adAccountId, options = {}) {
   const cacheKey = `meta:report:${accountId || 'mock'}:${range.from}:${range.to}:${preference}`;
   // fresh: o link do vídeo expira. "Buscar de novo" na aba Anúncios ignora o cache.
   const cached = options.fresh ? null : cache.get(cacheKey);
-  if (cached) return cached;
+  if (cached) return activeCreatives.presentMetaReport(cached, options.activeCreativesOnly === true);
 
   let result;
   if (!hasRealCredentials()) {
@@ -599,7 +637,9 @@ async function getAccountReport(adAccountId, options = {}) {
   }
   result.kpiPreference = preference;
   cache.set(cacheKey, result, 60 * 20);
-  return result;
+  // O cache guarda todos os anúncios. A lista que sai pro painel, pro link
+  // e pro PDF é que perde os que não veiculam — totais e campanhas ficam.
+  return activeCreatives.presentMetaReport(result, options.activeCreativesOnly === true);
 }
 
 /**
