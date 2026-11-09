@@ -4,6 +4,12 @@ const activeKeywords = require('../lib/activeKeywords');
 const mockGoogle = require('../data/mockGoogle');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
+const quota = require('../lib/googleQuota');
+
+// Uma busca pode voltar várias páginas. Cada página é uma operação da cota.
+// Três páginas cobrem dezenas de milhares de linhas; além disso a gente para
+// para não queimar a cota numa conta fora do comum.
+const MAX_SEARCH_PAGES = 3;
 
 const API_VERSION = 'v25'; // Google Ads API — atualizar quando o Google anunciar sunset desta versão
 
@@ -40,38 +46,75 @@ async function getAccessToken() {
   return json.access_token;
 }
 
-// Roda uma consulta GAQL (a linguagem de busca da Google Ads API) numa conta de cliente.
-// `label` só serve pra identificar, nas mensagens de erro, qual das várias consultas falhou.
-async function runGAQL(customerId, query, accessToken, label) {
-  const cleanId = customerId.replace(/-/g, '');
-  const cleanLoginId = config.google.loginCustomerId.replace(/-/g, '');
+function googleFailureText(json) {
+  // O corpo padrão só traz uma mensagem genérica ("Request contains an
+  // invalid argument"); o motivo específico vem em error.details, num
+  // formato aninhado (GoogleAdsFailure). Extraímos aqui pra facilitar o diagnóstico.
+  let detail = '';
+  try {
+    const failures = (json.error.details || [])
+      .flatMap((d) => d.errors || [])
+      .map((e) => `${e.errorCode ? JSON.stringify(e.errorCode) : ''} ${e.message || ''}`.trim());
+    if (failures.length) detail = ': ' + failures.join(' | ');
+  } catch (_) { /* ignore */ }
+  return `${json.error.message || ''}${detail}`;
+}
 
-  const res = await fetch(`https://googleads.googleapis.com/${API_VERSION}/customers/${cleanId}/googleAds:search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      'developer-token': config.google.developerToken,
-      'login-customer-id': cleanLoginId,
-    },
-    body: JSON.stringify({ query }),
-  });
-  const json = await res.json();
-  if (json.error) {
-    // O corpo padrão só traz uma mensagem genérica ("Request contains an
-    // invalid argument"); o motivo específico vem em error.details, num
-    // formato aninhado (GoogleAdsFailure). Extraímos aqui pra facilitar o diagnóstico.
-    let detail = '';
-    try {
-      const failures = (json.error.details || [])
-        .flatMap((d) => d.errors || [])
-        .map((e) => `${e.errorCode ? JSON.stringify(e.errorCode) : ''} ${e.message || ''}`.trim());
-      if (failures.length) detail = ': ' + failures.join(' | ');
-    } catch (_) { /* ignore */ }
-    const prefix = label ? `[${label}] ` : '';
-    throw new Error(`Google Ads API: ${prefix}${json.error.message}${detail}`);
+function isQuotaPayload(json) {
+  const text = googleFailureText(json);
+  if (/RESOURCE_EXHAUSTED/i.test(text)) return true;
+  try {
+    return (json.error.details || []).some((d) => (d.errors || []).some((e) => e.errorCode && e.errorCode.quotaError === 'RESOURCE_EXHAUSTED'));
+  } catch (_) {
+    return false;
   }
-  return json.results || [];
+}
+
+// Roda uma consulta GAQL numa conta de cliente. `label` identifica, na
+// mensagem de erro, qual consulta falhou. Consultas iguais em voo viram uma
+// só. Com a cota estourada, nem chega a sair daqui.
+async function runGAQL(customerId, query, accessToken, label) {
+  await quota.hydrate();
+  if (quota.isOpen()) throw new quota.GoogleQuotaError(quota.openUntil());
+  const cleanId = String(customerId || '').replace(/-/g, '');
+  return quota.dedupe(`gaql:${cleanId}:${query}`, () => searchPages(cleanId, query, accessToken, label));
+}
+
+async function searchPages(cleanId, query, accessToken, label) {
+  const cleanLoginId = String(config.google.loginCustomerId || '').replace(/-/g, '');
+  const all = [];
+  let pageToken = '';
+  for (let page = 0; page < MAX_SEARCH_PAGES; page++) {
+    if (page > 0 && quota.isOpen()) break;
+    const body = { query };
+    if (pageToken) body.pageToken = pageToken;
+    const res = await fetch(`https://googleads.googleapis.com/${API_VERSION}/customers/${cleanId}/googleAds:search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        'developer-token': config.google.developerToken,
+        'login-customer-id': cleanLoginId,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (json.error) {
+      const text = googleFailureText(json);
+      if (isQuotaPayload(json)) {
+        quota.trip(quota.parseRetryMs(text));
+        const err = new quota.GoogleQuotaError(quota.openUntil());
+        err.raw = text;
+        throw err;
+      }
+      const prefix = label ? `[${label}] ` : '';
+      throw new Error(`Google Ads API: ${prefix}${text}`);
+    }
+    all.push(...(json.results || []));
+    pageToken = json.nextPageToken || '';
+    if (!pageToken) break;
+  }
+  return all;
 }
 
 /* ---------- Datas: período pedido + período anterior equivalente ---------- */
@@ -170,79 +213,161 @@ function deriveMetrics(raw) {
   };
 }
 
+function blankRaw() {
+  return { spend: 0, clicks: 0, impressions: 0, conversions: 0, allConversions: 0, topImprWeighted: 0, conversionsValue: 0 };
+}
+
+function addRaw(acc, raw) {
+  acc.spend += raw.spend;
+  acc.clicks += raw.clicks;
+  acc.impressions += raw.impressions;
+  acc.conversions += raw.conversions;
+  acc.allConversions += raw.allConversions;
+  acc.topImprWeighted += raw.topImprWeighted;
+  acc.conversionsValue += raw.conversionsValue;
+  return acc;
+}
+
+function rawFromMetrics(metrics) {
+  const m = metrics || {};
+  const impressions = num(m.impressions);
+  return {
+    spend: num(m.costMicros) / 1_000_000,
+    clicks: num(m.clicks),
+    impressions,
+    conversions: num(m.conversions),
+    allConversions: num(m.allConversions),
+    topImprWeighted: num(m.absoluteTopImpressionPercentage) * 100 * impressions,
+    conversionsValue: num(m.conversionsValue),
+  };
+}
+
+function dateIn(date, range) {
+  return !!date && date >= range.from && date <= range.to;
+}
+
+// Uma consulta só de campanha, com segments.date, cobre o período pedido e o
+// anterior: lista de campanhas ativas, totais do período anterior e a série
+// diária. Antes eram três consultas. Campanha pausada entra no gráfico do
+// dia (como a consulta diária antiga, sem filtro de status) e fica de fora
+// da lista e do "vs período anterior" (aquelas duas filtravam ENABLED).
+function splitCampaignRows(rows, range, prev) {
+  const byCampaign = new Map();
+  const dailyMap = new Map();
+  const previousRaw = blankRaw();
+  for (const r of rows) {
+    const date = r.segments && r.segments.date;
+    const raw = rawFromMetrics(r.metrics);
+    const enabled = r.campaign && r.campaign.status === 'ENABLED';
+    if (dateIn(date, range)) {
+      const day = dailyMap.get(date) || blankRaw();
+      addRaw(day, raw);
+      dailyMap.set(date, day);
+      if (enabled) {
+        const id = String((r.campaign && (r.campaign.id || r.campaign.name)) || 'campaign');
+        const cur = byCampaign.get(id) || {
+          meta: { id: r.campaign.id, name: r.campaign.name, type: r.campaign.advertisingChannelType },
+          raw: blankRaw(),
+        };
+        addRaw(cur.raw, raw);
+        byCampaign.set(id, cur);
+      }
+    } else if (dateIn(date, prev) && enabled) {
+      addRaw(previousRaw, raw);
+    }
+  }
+  const campaigns = [...byCampaign.values()].map((c) => {
+    const spend = c.raw.spend;
+    const conv = c.raw.conversions;
+    const derived = deriveMetrics(c.raw);
+    return {
+      id: c.meta.id,
+      name: c.meta.name,
+      type: c.meta.type,
+      spend,
+      impressions: c.raw.impressions,
+      clicks: c.raw.clicks,
+      ctr: derived.ctr,
+      cpc: derived.cpc,
+      conv,
+      costPerConv: conv > 0 ? spend / conv : 0,
+      allConversions: c.raw.allConversions,
+      topImpressionShare: derived.topImpressionShare,
+      conversionsValue: c.raw.conversionsValue,
+      roas: derived.roas,
+    };
+  });
+  const dailySpend = [...dailyMap.entries()]
+    .map(([date, v]) => ({ date, ...deriveMetrics(v) }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { campaigns, dailySpend, previousRaw };
+}
+
+function quotaPartial(report) {
+  const err = new quota.GoogleQuotaError(quota.openUntil());
+  err.partialReport = report;
+  return err;
+}
+
 async function fetchRealReport(customerId, range, opts = {}) {
+  await quota.hydrate();
+  if (quota.isOpen()) throw new quota.GoogleQuotaError(quota.openUntil());
   const accessToken = await getAccessToken();
   const prev = previousRange(range);
   const dateFilter = (r) => `segments.date BETWEEN '${r.from}' AND '${r.to}'`;
 
-  const [campaignRows, prevCampaignRows, keywordRows, deviceRows, dailyRows, genderRows, ageRangeRows] = await Promise.all([
-    runGAQL(customerId, `
-      SELECT campaign.name, campaign.advertising_channel_type,
-             metrics.cost_micros, metrics.clicks, metrics.ctr, metrics.impressions,
-             metrics.average_cpc, metrics.conversions, metrics.all_conversions,
+  // Campanhas do período, período anterior e série diária numa consulta só.
+  const required = [
+    ['campanhas', `
+      SELECT campaign.id, campaign.name, campaign.advertising_channel_type, campaign.status,
+             segments.date,
+             metrics.cost_micros, metrics.clicks, metrics.impressions,
+             metrics.conversions, metrics.all_conversions,
              metrics.absolute_top_impression_percentage, metrics.conversions_value
       FROM campaign
-      WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED'
-    `, accessToken, 'campanhas'),
-
-    runGAQL(customerId, `
-      SELECT metrics.cost_micros, metrics.clicks, metrics.conversions, metrics.impressions,
-             metrics.all_conversions, metrics.absolute_top_impression_percentage, metrics.conversions_value
-      FROM campaign
-      WHERE ${dateFilter(prev)} AND campaign.status = 'ENABLED'
-    `, accessToken, 'campanhas (período anterior)'),
-
-    runGAQL(customerId, keywordGaql(range, opts.activeKeywordsOnly === true), accessToken, 'palavras-chave'),
-
-    runGAQL(customerId, `
+      WHERE segments.date BETWEEN '${prev.from}' AND '${range.to}'
+    `],
+    ['palavras-chave', keywordGaql(range, opts.activeKeywordsOnly === true)],
+    ['dispositivo', `
       SELECT segments.device, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM campaign
       WHERE ${dateFilter(range)}
-    `, accessToken, 'dispositivo'),
-
-    runGAQL(customerId, `
-      SELECT segments.date, metrics.cost_micros, metrics.clicks, metrics.impressions,
-             metrics.conversions, metrics.all_conversions, metrics.absolute_top_impression_percentage,
-             metrics.conversions_value
-      FROM campaign
-      WHERE ${dateFilter(range)}
-    `, accessToken, 'investimento diário'),
-
-    runGAQL(customerId, `
+    `],
+    ['gênero', `
       SELECT ad_group_criterion.gender.type,
              metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM gender_view
       WHERE ${dateFilter(range)}
-    `, accessToken, 'gênero'),
-
-    runGAQL(customerId, `
+    `],
+    ['faixa etária', `
       SELECT ad_group_criterion.age_range.type,
              metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM age_range_view
       WHERE ${dateFilter(range)}
-    `, accessToken, 'faixa etária'),
-  ]);
+    `],
+  ];
 
-  const campaigns = campaignRows.map((r) => {
-    const spend = num(r.metrics.costMicros) / 1_000_000;
-    const conv = num(r.metrics.conversions);
-    return {
-      id: r.campaign.id,
-      name: r.campaign.name,
-      type: r.campaign.advertisingChannelType,
-      spend,
-      impressions: num(r.metrics.impressions),
-      clicks: num(r.metrics.clicks),
-      ctr: num(r.metrics.ctr) * 100,
-      cpc: num(r.metrics.averageCpc) / 1_000_000,
-      conv,
-      costPerConv: conv > 0 ? spend / conv : 0,
-      allConversions: num(r.metrics.allConversions),
-      topImpressionShare: num(r.metrics.absoluteTopImpressionPercentage) * 100,
-      conversionsValue: num(r.metrics.conversionsValue),
-      roas: spend > 0 ? num(r.metrics.conversionsValue) / spend : 0,
-    };
-  });
+  const settled = await Promise.all(required.map(async ([label, query]) => {
+    try {
+      return { ok: true, rows: await runGAQL(customerId, query, accessToken, label) };
+    } catch (error) {
+      return { ok: false, error, label };
+    }
+  }));
+
+  const hard = settled.find((s) => !s.ok && !quota.isQuotaError(s.error));
+  if (hard) throw hard.error;
+  if (!settled[0].ok) throw settled[0].error;
+
+  const campaignRows = settled[0].rows;
+  const keywordRows = settled[1].ok ? settled[1].rows : [];
+  const deviceRows = settled[2].ok ? settled[2].rows : [];
+  const genderRows = settled[3].ok ? settled[3].rows : [];
+  const ageRangeRows = settled[4].ok ? settled[4].rows : [];
+  const quotaHit = settled.some((s) => !s.ok);
+
+  const split = splitCampaignRows(campaignRows, range, prev);
+  const campaigns = split.campaigns;
 
   const keywords = keywordRows.map((r) => {
     const spend = num(r.metrics.costMicros) / 1_000_000;
@@ -286,27 +411,10 @@ async function fetchRealReport(customerId, range, opts = {}) {
     .map((d) => ({ ...d, label: DEVICE_LABELS[d.device] || d.device }))
     .sort((a, b) => b.spend - a.spend);
 
-  // Agrega por dia (a API devolve uma linha por campanha x dia). Guardamos os
-  // mesmos campos brutos dos totais gerais pra poder derivar QUALQUER métrica
-  // (inclusive uma personalizada) dia a dia — é o que alimenta o gráfico
-  // quando o usuário clica pra plotar uma métrica além de investimento/cliques.
-  const dailyMap = new Map();
-  for (const r of dailyRows) {
-    const day = r.segments.date;
-    const impressions = num(r.metrics.impressions);
-    const entry = dailyMap.get(day) || { spend: 0, clicks: 0, impressions: 0, conversions: 0, allConversions: 0, topImprWeighted: 0, conversionsValue: 0 };
-    entry.spend += num(r.metrics.costMicros) / 1_000_000;
-    entry.clicks += num(r.metrics.clicks);
-    entry.impressions += impressions;
-    entry.conversions += num(r.metrics.conversions);
-    entry.allConversions += num(r.metrics.allConversions);
-    entry.topImprWeighted += num(r.metrics.absoluteTopImpressionPercentage) * 100 * impressions;
-    entry.conversionsValue += num(r.metrics.conversionsValue);
-    dailyMap.set(day, entry);
-  }
-  const dailySpend = [...dailyMap.entries()]
-    .map(([date, v]) => ({ date, ...deriveMetrics(v) }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  // Série diária sai da mesma consulta das campanhas (uma linha por campanha
+  // x dia, somada aqui). Os campos brutos são os mesmos dos totais, então
+  // qualquer métrica — inclusive uma personalizada — pode ir pro gráfico.
+  const dailySpend = split.dailySpend;
 
   // Agrega por gênero e faixa etária (Google Ads só libera esse detalhamento
   // no nível de ad group / conta via gender_view e age_range_view).
@@ -348,21 +456,7 @@ async function fetchRealReport(customerId, range, opts = {}) {
     { spend: 0, clicks: 0, conversions: 0, impressions: 0, allConversions: 0, topImprWeighted: 0, conversionsValue: 0 }
   ));
 
-  const previousTotals = deriveMetrics(prevCampaignRows.reduce(
-    (acc, r) => {
-      const impressions = num(r.metrics.impressions);
-      return {
-        spend: acc.spend + num(r.metrics.costMicros) / 1_000_000,
-        clicks: acc.clicks + num(r.metrics.clicks),
-        conversions: acc.conversions + num(r.metrics.conversions),
-        impressions: acc.impressions + impressions,
-        allConversions: acc.allConversions + num(r.metrics.allConversions),
-        topImprWeighted: acc.topImprWeighted + num(r.metrics.absoluteTopImpressionPercentage) * 100 * impressions,
-        conversionsValue: acc.conversionsValue + num(r.metrics.conversionsValue),
-      };
-    },
-    { spend: 0, clicks: 0, conversions: 0, impressions: 0, allConversions: 0, topImprWeighted: 0, conversionsValue: 0 }
-  ));
+  const previousTotals = deriveMetrics(split.previousRaw);
 
   const deltas = {
     spend: pctDelta(totals.spend, previousTotals.spend),
@@ -380,38 +474,59 @@ async function fetchRealReport(customerId, range, opts = {}) {
     roas: pctDelta(totals.roas, previousTotals.roas),
   };
 
-  // Extras "melhor esforço": se a API recusar, o relatório principal segue normal.
-  const [shareRows, termRows, strengthRows] = await Promise.all([
-    runGAQL(customerId, `
+  const core = {
+    range, previousRange: prev,
+    campaigns, keywords, deviceBreakdown, dailySpend, genderBreakdown, ageBreakdown,
+    totals, previousTotals, deltas,
+  };
+  // Cota estourou no meio: devolve o que já veio e não dispara o resto.
+  if (quotaHit || quota.isOpen()) throw quotaPartial(core);
+
+  // Extras "melhor esforço": se a API recusar por outro motivo, o relatório
+  // principal segue normal. Cota estourada não é engolida — senão a próxima
+  // tela manda de novo as mesmas consultas.
+  const optional = (label, query) => runGAQL(customerId, query, accessToken, label).catch((e) => {
+    if (quota.isQuotaError(e)) throw e;
+    console.warn(e.message);
+    return null;
+  });
+  let shareRows;
+  let termRows;
+  let strengthRows;
+  try {
+    [shareRows, termRows, strengthRows] = await Promise.all([
+      optional('parcela de impressões', `
       SELECT campaign.name, metrics.impressions, metrics.search_impression_share,
              metrics.search_budget_lost_impression_share, metrics.search_rank_lost_impression_share
       FROM campaign
       WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED' AND campaign.advertising_channel_type = 'SEARCH'
-    `, accessToken, 'parcela de impressões').catch((e) => { console.warn(e.message); return null; }),
-    opts.activeKeywordsOnly === true
-      ? Promise.resolve(null)
-      : runGAQL(customerId, `
+    `),
+      opts.activeKeywordsOnly === true
+        ? Promise.resolve(null)
+        : optional('termos de pesquisa', `
       SELECT search_term_view.search_term, campaign.name,
              metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM search_term_view
       WHERE ${dateFilter(range)}
       ORDER BY metrics.cost_micros DESC
       LIMIT 60
-    `, accessToken, 'termos de pesquisa').catch((e) => { console.warn(e.message); return null; }),
-    // Força do anúncio (só existe pra anúncio responsivo de pesquisa).
-    // Já exige campanha, grupo e anúncio ENABLED. Com "só criativos ativos",
-    // também tira o reprovado (ele segue ENABLED, mas não veicula).
-    runGAQL(customerId, `
+    `),
+      // Força do anúncio (só existe pra anúncio responsivo de pesquisa).
+      // Já exige campanha, grupo e anúncio ENABLED. Com "só criativos ativos",
+      // também tira o reprovado (ele segue ENABLED, mas não veicula).
+      optional('força do anúncio', `
       SELECT campaign.name, ad_group_ad.ad_strength
       FROM ad_group_ad
       WHERE ${activeCreatives.googleAdStrengthWhere(opts.activeCreativesOnly === true)}
-    `, accessToken, 'força do anúncio').catch((e) => { console.warn(e.message); return null; }),
-  ]);
+    `),
+    ]);
+  } catch (err) {
+    if (quota.isQuotaError(err)) throw quotaPartial(core);
+    throw err;
+  }
 
   return {
-    range, previousRange: prev,
-    campaigns, keywords, deviceBreakdown, dailySpend, genderBreakdown, ageBreakdown,
-    totals, previousTotals, deltas,
+    ...core,
     impressionShare: shareRows ? aggregateImpressionShare(shareRows.map((r) => ({
       name: r.campaign.name,
       impressions: num(r.metrics.impressions),
@@ -475,12 +590,13 @@ function aggregateImpressionShare(rows) {
  * diária para uma conta de cliente (customerId, formato XXX-XXX-XXXX)
  * vinculada à sua MCC, num período (from/to, formato YYYY-MM-DD). Sem
  * período informado, usa os últimos 30 dias completos até ontem (America/Sao_Paulo).
+ *
+ * O resultado fica em cache (memória e, se houver banco, MySQL): 45 min
+ * quando o período inclui hoje, 6 h quando já fechou. O link público
+ * recarrega a cada 20 min e a sincronização também, mas os dois leem o
+ * cache e não batem na API de novo. Com a cota estourada, devolve o
+ * último resultado guardado (até 36 h) com um aviso curto.
  */
-// 20 min: dado de performance de anúncio não precisa ser em tempo real pra
-// esse painel, e cada carregamento "frio" custa vários segundos (token +
-// 5 consultas à API do Google Ads). Combinado com a sincronização automática
-// em background (ver server.js), a maioria dos acessos já encontra o cache quente.
-const REPORT_CACHE_TTL_SECONDS = 60 * 20;
 
 // A consulta antiga (sem a opção) fica igual, inclusive o LIMIT 10 por cliques.
 // Com a opção, o LIMIT vale só entre as palavras que ainda estão ligadas.
@@ -504,23 +620,51 @@ function keywordGaql(range, onlyActive) {
     `;
 }
 
+function presentReport(report, activeKw, cachedAt) {
+  const base = cachedAt ? quota.withNotice(report, cachedAt) : report;
+  return activeKeywords.presentGoogleReport(base, activeKw);
+}
+
 async function getAccountReport(customerId, options = {}) {
   const range = normalizeRange(options.from, options.to);
   const onlyActive = options.activeCreativesOnly === true;
   const activeKw = options.activeKeywordsOnly === true;
-  // Sem nenhuma opção, a chave continua a de antes (o cache quente da
-  // sincronização ainda serve). Cada opção muda um pedaço da consulta.
+  // Sem nenhuma opção, a chave continua a de antes. Cada opção muda um
+  // pedaço da consulta, então não reaproveita o cache da outra.
   const cacheKey = `google:report:${customerId}:${range.from}:${range.to}${onlyActive ? ':activeAds' : ''}${activeKw ? ':activeKw' : ''}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return cached;
 
-  const raw = hasRealCredentials()
-    ? await fetchRealReport(customerId, range, { activeCreativesOnly: onlyActive, activeKeywordsOnly: activeKw })
-    : mockGoogle;
-  const result = activeKeywords.presentGoogleReport(raw, activeKw);
+  if (!hasRealCredentials()) return activeKeywords.presentGoogleReport(mockGoogle, activeKw);
 
-  cache.set(cacheKey, result, REPORT_CACHE_TTL_SECONDS);
-  return result;
+  return quota.dedupe(cacheKey, () => loadReport(cacheKey, customerId, range, onlyActive, activeKw));
+}
+
+async function loadReport(cacheKey, customerId, range, onlyActive, activeKw) {
+  await quota.hydrate();
+  const fresh = await quota.read(cacheKey, false);
+  if (fresh) return presentReport(fresh.value, activeKw);
+
+  if (quota.isOpen()) {
+    const stale = await quota.read(cacheKey, true);
+    if (stale) return presentReport(stale.value, activeKw, stale.cachedAt);
+    throw new quota.GoogleQuotaError(quota.openUntil());
+  }
+
+  try {
+    const raw = await fetchRealReport(customerId, range, { activeCreativesOnly: onlyActive, activeKeywordsOnly: activeKw });
+    const result = activeKeywords.presentGoogleReport(raw, activeKw);
+    await quota.remember(cacheKey, result, quota.reportTtlSeconds(range));
+    return result;
+  } catch (err) {
+    if (!quota.isQuotaError(err)) throw err;
+    const stale = await quota.read(cacheKey, true);
+    if (stale) return presentReport(stale.value, activeKw, stale.cachedAt);
+    if (err.partialReport) {
+      const partial = activeKeywords.presentGoogleReport(err.partialReport, activeKw);
+      const saved = await quota.remember(cacheKey, partial, quota.reportTtlSeconds(range), { staleOnly: true });
+      return presentReport(partial, activeKw, saved.cachedAt);
+    }
+    throw new quota.GoogleQuotaError(quota.openUntil() || err.retryAt);
+  }
 }
 
 /**

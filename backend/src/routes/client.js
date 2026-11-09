@@ -57,6 +57,9 @@ router.get('/:kind(meta|google|instagram)', async (req, res) => {
     return res.json(await googleService.getAccountReport(a.google.customerId, kpiPreference.reportOptions(a, range)));
   } catch (err) {
     console.error(err);
+    if (req.params.kind === 'google' && err && err.code === 'RESOURCE_EXHAUSTED') {
+      return res.status(502).json({ error: err.message });
+    }
     res.status(502).json({ error: 'Não foi possível carregar os dados agora. Tente de novo em instantes.' });
   }
 });

@@ -148,9 +148,9 @@ app.use((err, req, res, next) => {
 
 // Sincronização automática em segundo plano — sem isso, o cache só "esquenta"
 // se alguém chamar POST /api/sync manualmente. Assim, na maioria das vezes o
-// dashboard já abre com dado pronto, em vez de esperar a Google Ads API
-// responder na hora (token + 6 consultas, alguns segundos). Roda pouco depois
-// de o servidor subir e depois a cada 20 min (mesmo tempo do cache do relatório).
+// dashboard já abre com dado pronto. O Google fica em cache por horas (ver
+// googleService), então este ciclo de 20 min quase sempre só relê o cache
+// e não gasta a cota da API. Roda pouco depois de o servidor subir.
 const SYNC_INTERVAL_MS = 20 * 60 * 1000;
 function runBackgroundSync() {
   syncAllAccounts().catch((err) => console.error('Sincronização automática falhou:', err));

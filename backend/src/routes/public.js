@@ -199,6 +199,9 @@ router.get('/:token/:kind(meta|google|instagram)', async (req, res) => {
     return res.json({ ...report, igConfigured: Boolean(igUserId) });
   } catch (err) {
     console.error(err);
+    if (kind === 'google' && err && err.code === 'RESOURCE_EXHAUSTED') {
+      return res.status(502).json({ error: err.message });
+    }
     res.status(502).json({ error: 'Não foi possível carregar os dados agora. Tente de novo em instantes.' });
   }
 });
