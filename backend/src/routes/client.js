@@ -54,7 +54,7 @@ router.get('/:kind(meta|google|instagram)', async (req, res) => {
     }
     if (!platformsOf(a, vis).includes(req.params.kind)) return res.status(403).json({ error: 'Esta seção não está liberada para você.' });
     if (req.params.kind === 'meta') return res.json(await metaService.getAccountReport(a.meta.adAccountId, kpiPreference.reportOptions(a, { ...range, fresh: req.query.fresh === '1' })));
-    return res.json(await googleService.getAccountReport(a.google.customerId, range));
+    return res.json(await googleService.getAccountReport(a.google.customerId, kpiPreference.reportOptions(a, range)));
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: 'Não foi possível carregar os dados agora. Tente de novo em instantes.' });

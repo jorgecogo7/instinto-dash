@@ -2491,7 +2491,7 @@
       <!-- CRIATIVOS -->
       <div class="g-pane" id="m-criativos">
         <div class="panel">
-          <div class="panel-head"><h3>Criativos (anúncios)</h3><span class="panel-head-sub">Todos os anúncios, ordenados por investimento</span></div>
+          <div class="panel-head"><h3>Criativos (anúncios)</h3><span class="panel-head-sub" id="criativosSub">Todos os anúncios, ordenados por investimento</span></div>
           <table>
             <thead><tr><th></th><th>Anúncio</th><th>Campanha</th><th>Invest.</th><th>CTR</th><th>CPC</th><th>Conv.</th><th>Performance</th></tr></thead>
             <tbody id="criativosTable"></tbody>
@@ -2594,7 +2594,7 @@
 
       <div class="g-pane" id="g-criativos">
         <div class="panel">
-          <div class="panel-head"><h3>Criativos (anúncios responsivos)</h3><span class="panel-head-sub">Força do anúncio e desempenho por campanha</span></div>
+          <div class="panel-head"><h3>Criativos (anúncios responsivos)</h3><span class="panel-head-sub" id="googleCriativosSub">Força do anúncio e desempenho por campanha</span></div>
           <table>
             <thead><tr><th>Campanha</th><th>Força do anúncio</th><th>Cliques</th><th>CTR</th><th>Conv.</th></tr></thead>
             <tbody id="googleCriativosTable"></tbody>
@@ -3624,6 +3624,13 @@
             <option value="leads">Leads do formulário (Instant Form)</option>
           </select>
           <span class="cd-model-status" id="cdKpiStatus"></span>
+        </div>
+      </div>
+      <div class="panel cd-model-panel cnav-admin" id="cdActiveCreativesPanel">
+        <div class="panel-head"><div><h3>Mostrar apenas criativos ativos</h3><div class="panel-head-sub">Na aba Anúncios, no link do cliente e no PDF, esconde anúncio pausado, de campanha ou conjunto pausado, arquivado, excluído ou reprovado. Vale para Meta e Google. O investimento e os resultados do período não mudam. Em Campanhas → Gerenciar, os pausados continuam visíveis para religar.</div></div></div>
+        <div class="cd-model-row">
+          <label class="vis-row" style="margin:0;"><input type="checkbox" id="cdActiveCreatives" onchange="saveActiveCreatives(this.checked)"><span><b>Mostrar apenas criativos ativos</b></span></label>
+          <span class="cd-model-status" id="cdActiveCreativesStatus"></span>
         </div>
       </div>
       <div class="conn-table-wrap">
@@ -5669,7 +5676,7 @@
         const top = ads.slice(0, 6);
         pages.push(rpPage(`
           <h1 class="rp-h1">Melhores criativos</h1>
-          <p class="rp-lead">Os anúncios com mais ${escapeHtml(rl.toLowerCase())} no período</p>
+          <p class="rp-lead">${meta.activeCreativesOnly ? 'Os anúncios ativos com mais' : 'Os anúncios com mais'} ${escapeHtml(rl.toLowerCase())} no período</p>
           <div class="rp-creatives">${top.map((a, i) => `
             <div class="rp-cr">
               <div class="rp-cr-img">${a.thumbnailUrl ? `<img src="${rpImg(a.thumbnailUrl)}" crossorigin="anonymous" alt="">` : '<span>🖼</span>'}<b>#${i + 1}</b></div>
@@ -6888,6 +6895,7 @@
         conv: a.insights?.conversions || 0, perf: a.insights?.targetPerformancePct ?? null,
         n: { spend: a.insights?.spend || 0, ctr: a.insights?.ctr || 0, cpc: a.insights?.cpc || 0 },
         thumb: a.thumbnailUrl || '',
+        listed: a.listed !== false,
       }))),
     }));
   }
@@ -6904,26 +6912,39 @@
   }
 
   let metaViewCampaigns = [];
+  // Ligado na tela Meta Ads quando o cliente usa "apenas criativos ativos".
+  // var (não let): o primeiro desenho da tela roda antes do cadastro dos clientes.
+  var metaActiveCreativesOnly = false;
   function renderMetaView(metaCampaigns, real = false){
     const campaignListEl = document.getElementById('campaignList');
     campaignListEl.innerHTML = '';
+    const hidePaused = metaActiveCreativesOnly === true;
     if (real) {
       // Só o que rodou de verdade no período: campanhas e anúncios com gasto,
-      // do que mais investiu pro que menos.
+      // do que mais investiu pro que menos. O gasto da campanha não muda
+      // quando os criativos pausados saem da lista.
       metaCampaigns = metaCampaigns
         .map(c => ({ ...c, ads: c.ads.filter(a => a.n.spend > 0).sort((a,b) => b.n.spend - a.n.spend) }))
         .filter(c => c.n.spend > 0 || c.ads.length)
         .sort((a,b) => b.n.spend - a.n.spend);
       if (!metaCampaigns.length) campaignListEl.innerHTML = '<p class="footnote" style="border:none; padding:12px 4px;">Nenhuma campanha com investimento nesse período. Tente um período maior.</p>';
     }
-    metaViewCampaigns = metaCampaigns;
-    metaCampaigns.forEach((c,idx)=>{
+    const criativosSub = document.getElementById('criativosSub');
+    if (criativosSub) criativosSub.textContent = hidePaused
+      ? 'Só anúncios ativos agora, ordenados por investimento. O investimento da campanha inclui o período inteiro.'
+      : 'Todos os anúncios, ordenados por investimento';
+    // Lista que aparece (e vai pro PDF desta tela). Públicos usam todos os anúncios com gasto.
+    const displayCampaigns = hidePaused
+      ? metaCampaigns.map(c => ({ ...c, ads: c.ads.filter(a => a.listed !== false) }))
+      : metaCampaigns;
+    metaViewCampaigns = displayCampaigns;
+    displayCampaigns.forEach((c,idx)=>{
       const block = document.createElement('div');
       block.className = 'campaign-block' + (idx===0 ? ' open' : '');
       const statusColor = c.status==='on' ? 'var(--green)' : '#565C66';
       const statusText = c.status==='on' ? 'Ativa' : 'Pausada';
 
-      const adsHtml = c.ads.map(a => `
+      const adsHtml = c.ads.length ? c.ads.map(a => `
         <div class="ad-row">
           ${adThumbHtml(a)}
           <div>
@@ -6938,7 +6959,7 @@
             <div class="perf-badge" style="color:${perfColor(a.perf)}">${perfText(a.perf)}</div>
             <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${Math.min(a.perf||0,140)/140*100}%; background:${perfColor(a.perf)}"></div></div>
           </div>
-        </div>`).join('');
+        </div>`).join('') : (hidePaused ? '<p class="footnote" style="border:none; padding:10px 4px;">Nenhum anúncio ativo nesta campanha.</p>' : '');
 
       block.innerHTML = `
         <div class="campaign-header">
@@ -6946,7 +6967,7 @@
             <span class="campaign-status" style="background:${statusColor}"></span>
             <div>
               <div class="campaign-title-text">${escapeHtml(c.name)}</div>
-              <div class="campaign-obj">${escapeHtml(c.objective)} · ${statusText} · ${c.ads.length} anúncios</div>
+              <div class="campaign-obj">${escapeHtml(c.objective)} · ${statusText} · ${c.ads.length} ${hidePaused ? 'anúncios ativos' : 'anúncios'}</div>
             </div>
           </div>
           <div><span class="cell-value">${statusText}</span></div>
@@ -6996,6 +7017,8 @@
 
     const allAds = [];
     metaCampaigns.forEach(c => c.ads.forEach(a => { if (!real || a.n.spend > 0) allAds.push({ ...a, campaign: c.name }); }));
+    const creativeAds = [];
+    displayCampaigns.forEach(c => c.ads.forEach(a => { if (!real || a.n.spend > 0) creativeAds.push({ ...a, campaign: c.name }); }));
     if (!allAds.length) {
       ['metaHighlights','metaFunnel','publicosTable','criativosTable'].forEach(id => document.getElementById(id).innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados suficientes ainda.</p>');
       document.getElementById('metaEvoChart').innerHTML = '';
@@ -7006,17 +7029,18 @@
     const topCampaign = real
       ? [...metaCampaigns].sort((a,b) => b.n.spend - a.n.spend)[0]
       : [...metaCampaigns].sort((a,b) => parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,'')))[0];
-    const topAd = real
-      ? [...allAds].filter(a => a.n.cpc > 0).sort((a,b) => a.n.cpc - b.n.cpc)[0] || allAds[0]
-      : [...allAds].sort((a,b) => a.cpc.localeCompare(b.cpc))[0];
-    const bestCtrAd = real
-      ? [...allAds].sort((a,b) => b.n.ctr - a.n.ctr)[0]
-      : [...allAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0];
+    const topAd = creativeAds.length ? (real
+      ? [...creativeAds].filter(a => a.n.cpc > 0).sort((a,b) => a.n.cpc - b.n.cpc)[0] || creativeAds[0]
+      : [...creativeAds].sort((a,b) => a.cpc.localeCompare(b.cpc))[0]) : null;
+    const bestCtrAd = creativeAds.length ? (real
+      ? [...creativeAds].sort((a,b) => b.n.ctr - a.n.ctr)[0]
+      : [...creativeAds].sort((a,b) => parseFloat(b.ctr) - parseFloat(a.ctr))[0]) : null;
     const highlights = [
       { icon:'💰', title:`Investimento concentrado em "${escapeHtml(topCampaign.name)}"`, sub:`${topCampaign.spend} do total investido no período` },
-      { icon:'📈', title:`Anúncio com melhor CTR: "${escapeHtml(bestCtrAd.name)}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${escapeHtml(bestCtrAd.campaign)}` },
-      { icon:'⚡', title:`Menor custo por clique: "${escapeHtml(topAd.name)}"`, sub:`${topAd.cpc} por clique: vale testar escalar o orçamento aqui` },
     ];
+    if (bestCtrAd) highlights.push({ icon:'📈', title:`Anúncio com melhor CTR: "${escapeHtml(bestCtrAd.name)}"`, sub:`${bestCtrAd.ctr} de taxa de cliques, da campanha ${escapeHtml(bestCtrAd.campaign)}` });
+    if (topAd) highlights.push({ icon:'⚡', title:`Menor custo por clique: "${escapeHtml(topAd.name)}"`, sub:`${topAd.cpc} por clique: vale testar escalar o orçamento aqui` });
+    if (hidePaused && !creativeAds.length) highlights.push({ icon:'⏸', title:'Nenhum anúncio ativo com investimento nesse período', sub:'Pausados, de campanha pausada ou reprovados ficam de fora. O investimento acima continua o do período inteiro.' });
     document.getElementById('metaHighlights').innerHTML = highlights.map(h => `
       <div class="highlight-card">
         <div class="highlight-icon">${h.icon}</div>
@@ -7080,7 +7104,10 @@
     // --- Criativos ---
     const criativosEl = document.getElementById('criativosTable');
     criativosEl.innerHTML = '';
-    [...allAds].sort((a,b) => real ? b.n.spend - a.n.spend : parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,''))).forEach(a => {
+    if (hidePaused && !creativeAds.length) {
+      criativosEl.innerHTML = '<tr><td colspan="8" class="footnote" style="border:none;">Nenhum anúncio ativo com investimento nesse período.</td></tr>';
+    }
+    [...creativeAds].sort((a,b) => real ? b.n.spend - a.n.spend : parseFloat(b.spend.replace(/\D/g,'')) - parseFloat(a.spend.replace(/\D/g,''))).forEach(a => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${adThumbHtml(a)}</td>
@@ -7152,6 +7179,7 @@
     };
   }
 
+  var googleActiveCreativesOnly = false;
   // Desenha a tela inteira de Google Ads (campanhas, palavras-chave,
   // leilão, destaques, funil, evolução, criativos) a partir de um objeto
   // { campaigns, keywords, auction } no formato de tela.
@@ -7227,6 +7255,10 @@
       });
     }
 
+    const gCriativosSub = document.getElementById('googleCriativosSub');
+    if (gCriativosSub) gCriativosSub.textContent = googleActiveCreativesOnly
+      ? 'Força só de anúncios ativos: campanha, grupo e anúncio ligados. Reprovado fica de fora. O investimento do período não muda.'
+      : 'Força do anúncio e desempenho por campanha';
     if (!gCampaigns.length) {
       ['googleHighlights','googleFunnel','googleCriativosTable'].forEach(id => document.getElementById(id).innerHTML = '<p class="footnote" style="border:none; padding:0;">Sem dados suficientes ainda.</p>');
       document.getElementById('googleEvoChart').innerHTML = '';
@@ -7387,9 +7419,10 @@
     const subtitle = document.getElementById('metaViewSubtitle');
     banner.style.display = 'none';
 
-    if (!id) { subtitle.textContent = 'Campanhas, conjuntos de anúncios e anúncios · dados de demonstração'; renderMetaView(mockMetaCampaigns, false); return; }
+    if (!id) { metaActiveCreativesOnly = false; subtitle.textContent = 'Campanhas, conjuntos de anúncios e anúncios · dados de demonstração'; renderMetaView(mockMetaCampaigns, false); return; }
 
     const account = rawAccountsById[id];
+    metaActiveCreativesOnly = account.activeCreativesOnly === true;
     subtitle.textContent = `Campanhas, conjuntos de anúncios e anúncios · ${account.name}`;
     if (account.meta?.status !== 'connected') {
       banner.style.display = 'flex';
@@ -7417,9 +7450,10 @@
     const subtitle = document.getElementById('googleViewSubtitle');
     banner.style.display = 'none';
 
-    if (!id) { subtitle.textContent = 'Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração'; renderGoogleView(mockGoogleReport); return; }
+    if (!id) { googleActiveCreativesOnly = false; subtitle.textContent = 'Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração'; renderGoogleView(mockGoogleReport); return; }
 
     const account = rawAccountsById[id];
+    googleActiveCreativesOnly = account.activeCreativesOnly === true;
     subtitle.textContent = `Palavras-chave, leilão e campanhas de pesquisa · ${account.name}`;
     if (account.google?.status !== 'connected') {
       banner.style.display = 'flex';
@@ -8314,6 +8348,10 @@
     if (kpiSel) kpiSel.value = account.kpiPreference === 'leads' ? 'leads' : 'auto';
     const kpiStatus = document.getElementById('cdKpiStatus');
     if (kpiStatus) kpiStatus.textContent = '';
+    const activeCreativesBox = document.getElementById('cdActiveCreatives');
+    if (activeCreativesBox) activeCreativesBox.checked = account.activeCreativesOnly === true;
+    const activeCreativesStatus = document.getElementById('cdActiveCreativesStatus');
+    if (activeCreativesStatus) activeCreativesStatus.textContent = '';
     cdPlatformView = 'all';
     cdCurrentRange = navRangeOf(navStoredPeriod());
     igTypeFilter = 'all'; igPostSort = 'recent';
@@ -10417,12 +10455,12 @@
         <div class="table-scroll" id="mRegions"></div>
       </div>
       <div class="panel" data-vis="ads_creatives">
-        <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">Toque em um vídeo ou carrossel para assistir. Troque o critério para reordenar.</div></div></div>
+        <div class="panel-head"><div><h3>Melhores criativos</h3><div class="panel-head-sub">${r.activeCreativesOnly ? 'Só anúncios que estão veiculando agora. ' : ''}Toque em um vídeo ou carrossel para assistir. Troque o critério para reordenar.</div></div></div>
         <div class="chip-row"><span class="chip-row-label">Ordenar por</span><div class="chips" id="metaCreativeChips"></div></div>
         <div id="metaCreativeGrid"></div>
       </div>
       <div class="panel" data-vis="ads_creatives">
-        <div class="panel-head"><div><h3>Anúncios com investimento</h3><div class="panel-head-sub">${(r.ads || []).length} anúncios com gasto no período · toque no vídeo ou no carrossel para assistir · na imagem, passe o mouse para ampliar</div></div></div>
+        <div class="panel-head"><div><h3>${r.activeCreativesOnly ? 'Anúncios ativos' : 'Anúncios com investimento'}</h3><div class="panel-head-sub">${(r.ads || []).length} ${r.activeCreativesOnly ? 'anúncios ativos' : 'anúncios'} com gasto no período${r.activeCreativesOnly ? ' · pausados, de campanha ou conjunto pausado, arquivados e reprovados ficam de fora · o investimento do período não muda' : ''} · toque no vídeo ou no carrossel para assistir · na imagem, passe o mouse para ampliar</div></div></div>
         <div class="table-scroll" id="metaAdsTableWrap"></div>
       </div>
       <div class="panel" data-vis="ads_campaigns">
@@ -10624,7 +10662,7 @@
       }
     };
     const shown = metaShowAllCreatives ? ads : ads.slice(0, 8);
-    if (!ads.length) { grid.innerHTML = '<div class="footnote" style="border:none; padding:6px 0 0;">Nenhum anúncio entra nesse critério no período.</div>'; return; }
+    if (!ads.length) { grid.innerHTML = `<div class="footnote" style="border:none; padding:6px 0 0;">${r.activeCreativesOnly ? 'Nenhum anúncio ativo entra nesse critério no período.' : 'Nenhum anúncio entra nesse critério no período.'}</div>`; return; }
     grid.innerHTML = `<div class="creative-grid">${shown.map((a, i) => {
       const [bl, bv] = band(a);
       const on = !a.status || a.status === 'ACTIVE';
@@ -10995,6 +11033,30 @@
       status.textContent = value === 'leads'
         ? '✓ Salvo: o painel conta leads do formulário e não destaca conversas.'
         : '✓ Salvo: o painel volta a escolher o resultado automaticamente.';
+      loadClientDashboard();
+    } catch (err) {
+      status.textContent = `⚠ ${err.message}`;
+    }
+  }
+
+  async function saveActiveCreatives(on){
+    const status = document.getElementById('cdActiveCreativesStatus');
+    status.textContent = 'Salvando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ activeCreativesOnly: !!on }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      rawAccountsById[currentClientId] = data;
+      status.textContent = on
+        ? '✓ Salvo: Anúncios, o link do cliente e o PDF mostram só criativos ativos.'
+        : '✓ Salvo: criativos pausados voltam a aparecer nas listas.';
+      if (document.getElementById('metaClientSelect')?.value === currentClientId) {
+        metaActiveCreativesOnly = data.activeCreativesOnly === true;
+        onMetaClientChange();
+      }
       loadClientDashboard();
     } catch (err) {
       status.textContent = `⚠ ${err.message}`;

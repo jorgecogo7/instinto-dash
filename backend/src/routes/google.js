@@ -1,6 +1,7 @@
 const express = require('express');
 const accountsStore = require('../data/accountsStore');
 const googleService = require('../services/googleService');
+const kpiPreference = require('../lib/kpiPreference');
 
 const router = express.Router();
 
@@ -15,10 +16,10 @@ router.get('/:clientId/report', async (req, res) => {
   }
 
   try {
-    const report = await googleService.getAccountReport(account.google.customerId, {
+    const report = await googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account, {
       from: req.query.from,
       to: req.query.to,
-    });
+    }));
     res.json(report);
   } catch (err) {
     console.error(err); res.status(502).json({ error: err.message });

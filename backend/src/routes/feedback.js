@@ -20,7 +20,7 @@ router.get('/:clientId', async (req, res) => {
     const data =
       platform === 'meta'
         ? await metaService.getCampaignsWithAds(account.meta.adAccountId, undefined, null, kpiPreference.reportOptions(account))
-        : await googleService.getAccountReport(account.google.customerId);
+        : await googleService.getAccountReport(account.google.customerId, kpiPreference.reportOptions(account));
 
     const message = await insightsService.generateFeedbackMessage(platform, data);
     res.json({ message });
