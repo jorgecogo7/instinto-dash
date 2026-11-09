@@ -2573,7 +2573,7 @@
 
       <div class="g-pane" id="g-keywords">
         <div class="panel">
-          <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub">Ordenado por investimento</span></div>
+          <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub" id="keywordsSub">Ordenado por investimento</span></div>
           <table>
             <thead><tr><th>Palavra-chave</th><th>Correspond.</th><th>Quality Score</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC méd.</th><th>Conv.</th></tr></thead>
             <tbody id="keywordsTable"></tbody>
@@ -3427,7 +3427,7 @@
           </div>
 
           <div class="panel" data-vis="ads_campaigns">
-            <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub">As 10 palavras-chave configuradas na campanha, por relevância</span></div>
+            <div class="panel-head"><h3>Palavras-chave</h3><span class="panel-head-sub" id="cdKeywordsSub">As 10 palavras-chave configuradas na campanha, por relevância</span></div>
             <table>
               <thead><tr><th>Palavra-chave</th><th title="Como o Google casa a busca do usuário com essa palavra-chave: exata, frase ou ampla.">Correspondência</th><th title="Nota de 1 a 10 que o Google dá pra palavra-chave, com base na relevância do anúncio e da página de destino, e no CTR esperado. Quanto maior, mais barato tende a ser o CPC.">Q. Score</th><th>Impr.</th><th>Cliques</th><th title="% de cliques a cada 100 impressões.">CTR</th><th title="Custo médio pago por clique.">CPC</th><th>Conv.</th><th title="Quanto você pagou, em média, por cada conversão.">Custo/Conv.</th></tr></thead>
               <tbody id="cdKeywordsTable"></tbody>
@@ -3631,6 +3631,13 @@
         <div class="cd-model-row">
           <label class="vis-row" style="margin:0;"><input type="checkbox" id="cdActiveCreatives" onchange="saveActiveCreatives(this.checked)"><span><b>Mostrar apenas criativos ativos</b></span></label>
           <span class="cd-model-status" id="cdActiveCreativesStatus"></span>
+        </div>
+      </div>
+      <div class="panel cd-model-panel cnav-admin" id="cdActiveKeywordsPanel">
+        <div class="panel-head"><div><h3>Ocultar termos de pesquisa</h3><div class="panel-head-sub">No Google, a aba Anúncios, o link do cliente e o PDF deixam de mostrar termos de pesquisa e listam só palavras-chave ativas: a palavra, o grupo e a campanha ligados. Pausadas, removidas e negativas ficam de fora. O investimento do período não muda.</div></div></div>
+        <div class="cd-model-row">
+          <label class="vis-row" style="margin:0;"><input type="checkbox" id="cdActiveKeywords" onchange="saveActiveKeywords(this.checked)"><span><b>Ocultar termos de pesquisa / mostrar só palavras-chave ativas</b></span></label>
+          <span class="cd-model-status" id="cdActiveKeywordsStatus"></span>
         </div>
       </div>
       <div class="conn-table-wrap">
@@ -5736,8 +5743,9 @@
         const dev = google.deviceBreakdown || [];
         pages.push(rpPage(`
           <h1 class="rp-h1">Palavras-chave e dispositivos</h1>
-          <div class="rp-card"><div class="rp-card-t">Palavras-chave com mais cliques</div>
+          <div class="rp-card"><div class="rp-card-t">${google.activeKeywordsOnly ? 'Palavras-chave ativas com mais cliques' : 'Palavras-chave com mais cliques'}</div>
             ${rpTable(['Palavra-chave', 'Impressões', 'Cliques', 'CTR', 'Conv.', 'Custo/conv.'], google.keywords.slice().sort((a, b) => b.clicks - a.clicks).slice(0, 10).map(k => [escapeHtml(k.keyword), intFmt(k.impressions), intFmt(k.clicks), pct2(k.ctr), convFmt(k.conversions), k.conversions ? brl2(k.costPerConv) : '—']))}</div>
+            ${google.activeKeywordsOnly ? '<p class="rp-lead" style="margin-top:8px;">Só palavras-chave ativas: a palavra, o grupo e a campanha estão ligados. Termos de pesquisa não entram neste relatório.</p>' : ''}
           ${dev.length && sections.audience ? `<div class="rp-2col">
             <div class="rp-card"><div class="rp-card-t">Investimento por dispositivo</div>${rpBars(dev.map(d => ({ label:d.label, value:d.spend })), brl, '#F5A524')}</div>
             <div class="rp-card"><div class="rp-card-t">Conversões por dispositivo</div>${rpBars(dev.map(d => ({ label:d.label, value:d.conversions })), convFmt, RP.blue)}</div>
@@ -7180,6 +7188,7 @@
   }
 
   var googleActiveCreativesOnly = false;
+  var googleActiveKeywordsOnly = false;
   // Desenha a tela inteira de Google Ads (campanhas, palavras-chave,
   // leilão, destaques, funil, evolução, criativos) a partir de um objeto
   // { campaigns, keywords, auction } no formato de tela.
@@ -7197,8 +7206,15 @@
       gCampaignsEl.appendChild(tr);
     });
 
+    const kwSub = document.getElementById('keywordsSub');
+    if (kwSub) kwSub.textContent = googleActiveKeywordsOnly
+      ? 'Só palavras-chave ativas (palavra, grupo e campanha ligados). Termos de pesquisa não aparecem nesta conta.'
+      : 'Ordenado por investimento';
     const keywordsEl = document.getElementById('keywordsTable');
     keywordsEl.innerHTML = '';
+    if (googleActiveKeywordsOnly && !keywords.length) {
+      keywordsEl.innerHTML = '<tr><td colspan="8" class="footnote" style="border:none;">Nenhuma palavra-chave ativa com dados nesse período.</td></tr>';
+    }
     keywords.forEach(k=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${escapeHtml(k.kw)}</td><td><span class="match-tag">${escapeHtml(k.match)}</span></td><td>${qsBadge(k.qs)}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td>`;
@@ -7450,10 +7466,11 @@
     const subtitle = document.getElementById('googleViewSubtitle');
     banner.style.display = 'none';
 
-    if (!id) { googleActiveCreativesOnly = false; subtitle.textContent = 'Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração'; renderGoogleView(mockGoogleReport); return; }
+    if (!id) { googleActiveCreativesOnly = false; googleActiveKeywordsOnly = false; subtitle.textContent = 'Palavras-chave, leilão e campanhas de pesquisa · dados de demonstração'; renderGoogleView(mockGoogleReport); return; }
 
     const account = rawAccountsById[id];
     googleActiveCreativesOnly = account.activeCreativesOnly === true;
+    googleActiveKeywordsOnly = account.activeKeywordsOnly === true;
     subtitle.textContent = `Palavras-chave, leilão e campanhas de pesquisa · ${account.name}`;
     if (account.google?.status !== 'connected') {
       banner.style.display = 'flex';
@@ -7640,7 +7657,7 @@
     html += `<div class="pr-panel"><h3>Campanhas</h3>
       <table><thead><tr><th>Campanha</th><th>Tipo</th><th>Invest.</th><th>Cliques</th><th>CTR</th><th>CPC méd.</th><th>Conv.</th></tr></thead>
       <tbody>${gCampaigns.map(c => `<tr><td>${e(c.name)}</td><td>${e(c.type)}</td><td>${c.spend}</td><td>${c.clicks}</td><td>${c.ctr}</td><td>${c.cpc}</td><td>${c.conv}</td></tr>`).join('') || '<tr><td colspan="7">Sem campanhas no período.</td></tr>'}</tbody></table></div>`;
-    html += `<div class="pr-panel"><h3>Principais palavras-chave</h3>
+    html += `<div class="pr-panel"><h3>${googleActiveKeywordsOnly ? 'Palavras-chave ativas' : 'Principais palavras-chave'}</h3>
       <table><thead><tr><th>Palavra-chave</th><th>Correspond.</th><th>QS</th><th>Impr.</th><th>Cliques</th><th>CTR</th><th>CPC méd.</th><th>Conv.</th></tr></thead>
       <tbody>${keywords.map(k => `<tr><td>${e(k.kw)}</td><td>${e(k.match)}</td><td>${typeof k.qs === 'number' ? k.qs + '/10' : 'sem dado'}</td><td>${k.impr}</td><td>${k.clicks}</td><td>${k.ctr}</td><td>${k.cpc}</td><td>${k.conv}</td></tr>`).join('') || '<tr><td colspan="8">Sem palavras-chave no período.</td></tr>'}</tbody></table></div>`;
     if (auction.length) {
@@ -8352,6 +8369,10 @@
     if (activeCreativesBox) activeCreativesBox.checked = account.activeCreativesOnly === true;
     const activeCreativesStatus = document.getElementById('cdActiveCreativesStatus');
     if (activeCreativesStatus) activeCreativesStatus.textContent = '';
+    const activeKeywordsBox = document.getElementById('cdActiveKeywords');
+    if (activeKeywordsBox) activeKeywordsBox.checked = account.activeKeywordsOnly === true;
+    const activeKeywordsStatus = document.getElementById('cdActiveKeywordsStatus');
+    if (activeKeywordsStatus) activeKeywordsStatus.textContent = '';
     cdPlatformView = 'all';
     cdCurrentRange = navRangeOf(navStoredPeriod());
     igTypeFilter = 'all'; igPostSort = 'recent';
@@ -11063,6 +11084,30 @@
     }
   }
 
+  async function saveActiveKeywords(on){
+    const status = document.getElementById('cdActiveKeywordsStatus');
+    status.textContent = 'Salvando…';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/${currentClientId}`, {
+        method:'PATCH', headers:{ ...authHeaders(), 'Content-Type':'application/json' }, body: JSON.stringify({ activeKeywordsOnly: !!on }),
+      });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Não foi possível salvar.');
+      rawAccountsById[currentClientId] = data;
+      status.textContent = on
+        ? '✓ Salvo: o Google mostra só palavras-chave ativas e esconde os termos de pesquisa.'
+        : '✓ Salvo: termos de pesquisa e as demais palavras-chave voltam a aparecer.';
+      if (document.getElementById('googleClientSelect')?.value === currentClientId) {
+        googleActiveKeywordsOnly = data.activeKeywordsOnly === true;
+        onGoogleClientChange();
+      }
+      loadClientDashboard();
+    } catch (err) {
+      status.textContent = `⚠ ${err.message}`;
+    }
+  }
+
   async function saveDashboardModel(model){
     const status = document.getElementById('cdModelStatus');
     status.textContent = 'Salvando…';
@@ -11701,6 +11746,10 @@
       return `<span class="qs-pill ${cls}">${qs}/10</span>`;
     };
     const matchLabels = { EXACT:'Exata', PHRASE:'Frase', BROAD:'Ampla' };
+    const kwSub = document.getElementById('cdKeywordsSub');
+    if (kwSub) kwSub.textContent = data.activeKeywordsOnly
+      ? 'As 10 palavras-chave ativas com mais cliques. Pausadas, removidas e negativas ficam de fora. Termos de pesquisa não aparecem.'
+      : 'As 10 palavras-chave configuradas na campanha, por relevância';
     const kwEl = document.getElementById('cdKeywordsTable');
     kwEl.innerHTML = '';
     (data.keywords || []).forEach(k => {
@@ -11708,7 +11757,7 @@
       tr.innerHTML = `<td>${escapeHtml(k.keyword)}</td><td><span class="match-tag">${matchLabels[k.matchType] || k.matchType}</span></td><td>${qsBadgeLocal(k.qualityScore)}</td><td>${(k.impressions||0).toLocaleString('pt-BR')}</td><td>${(k.clicks||0).toLocaleString('pt-BR')}</td><td>${pct1(k.ctr)}</td><td>${brl(k.cpc)}</td><td>${convFmt(k.conversions)}</td><td>${brl(k.costPerConv)}</td>`;
       kwEl.appendChild(tr);
     });
-    if (!data.keywords?.length) kwEl.innerHTML = '<tr><td colspan="9" class="footnote" style="border:none;">Sem dados de palavras-chave nesse período.</td></tr>';
+    if (!data.keywords?.length) kwEl.innerHTML = `<tr><td colspan="9" class="footnote" style="border:none;">${data.activeKeywordsOnly ? 'Nenhuma palavra-chave ativa com dados nesse período.' : 'Sem dados de palavras-chave nesse período.'}</td></tr>`;
 
     // Dispositivos: rosca de custo, cliques e conversões.
     const dev = data.deviceBreakdown || [];

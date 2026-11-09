@@ -12,6 +12,7 @@ const integrationLink = require('../lib/integrationLink');
 const cache = require('../lib/cache');
 const kpiPreference = require('../lib/kpiPreference');
 const activeCreatives = require('../lib/activeCreatives');
+const activeKeywords = require('../lib/activeKeywords');
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ const EDITABLE_FIELDS = [
   'dashboardModel', 'clientVisibility', 'reportSchedule', 'goals',
   'kpiPreference',
   'activeCreativesOnly',
+  'activeKeywordsOnly',
 ];
 
 // Modelo do painel de anúncios do cliente: quais plataformas aparecem.
@@ -43,6 +45,7 @@ function presentAccount(a) {
   if (base.clientAuth) copy.clientAuth = { ...base.clientAuth };
   copy.kpiPreference = kpiPreference.effective(a);
   copy.activeCreativesOnly = activeCreatives.effective(a);
+  copy.activeKeywordsOnly = activeKeywords.effective(a);
   return copy;
 }
 
@@ -154,6 +157,11 @@ router.patch('/:id', async (req, res) => {
     const v = activeCreatives.normalize(changes.activeCreativesOnly);
     if (v === null) return res.status(400).json({ error: 'Valor inválido para "mostrar apenas criativos ativos". Use true ou false.' });
     changes.activeCreativesOnly = v;
+  }
+  if (changes.activeKeywordsOnly !== undefined) {
+    const v = activeKeywords.normalize(changes.activeKeywordsOnly);
+    if (v === null) return res.status(400).json({ error: 'Valor inválido para "ocultar termos de pesquisa". Use true ou false.' });
+    changes.activeKeywordsOnly = v;
   }
   if (Object.keys(changes).length === 0) {
     return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
