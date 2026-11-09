@@ -11,6 +11,7 @@
  * Gravar "auto" desliga esse padrão.
  */
 const activeCreatives = require('./activeCreatives');
+const activeKeywords = require('./activeKeywords');
 
 const VALUES = new Set(['auto', 'leads']);
 
@@ -29,10 +30,15 @@ function effective(account) {
 }
 
 // Junta a preferência nas opções do relatório sem apagar from/to/fresh.
-// activeCreativesOnly viaja junto: quem já pede o relatório do cliente
-// (painel, link, PDF) não precisa lembrar de um segundo helper.
+// As opções por cliente viajam junto: quem já pede o relatório (painel,
+// link, PDF) não precisa lembrar de um helper para cada uma.
 function reportOptions(account, extra = {}) {
-  return { ...extra, kpiPreference: effective(account), activeCreativesOnly: activeCreatives.effective(account) };
+  return {
+    ...extra,
+    kpiPreference: effective(account),
+    activeCreativesOnly: activeCreatives.effective(account),
+    activeKeywordsOnly: activeKeywords.effective(account),
+  };
 }
 
 module.exports = { normalize, effective, reportOptions, INSTANT_FORM_CLIENT_IDS };

@@ -1,5 +1,6 @@
 const config = require('../config');
 const activeCreatives = require('../lib/activeCreatives');
+const activeKeywords = require('../lib/activeKeywords');
 const mockGoogle = require('../data/mockGoogle');
 const cache = require('../lib/cache');
 const period = require('../lib/period');
@@ -191,16 +192,7 @@ async function fetchRealReport(customerId, range, opts = {}) {
       WHERE ${dateFilter(prev)} AND campaign.status = 'ENABLED'
     `, accessToken, 'campanhas (período anterior)'),
 
-    runGAQL(customerId, `
-      SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
-             ad_group_criterion.quality_info.quality_score,
-             metrics.impressions, metrics.clicks, metrics.ctr,
-             metrics.average_cpc, metrics.conversions, metrics.cost_micros
-      FROM keyword_view
-      WHERE ${dateFilter(range)}
-      ORDER BY metrics.clicks DESC
-      LIMIT 10
-    `, accessToken, 'palavras-chave'),
+    runGAQL(customerId, keywordGaql(range, opts.activeKeywordsOnly === true), accessToken, 'palavras-chave'),
 
     runGAQL(customerId, `
       SELECT segments.device, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
@@ -255,10 +247,11 @@ async function fetchRealReport(customerId, range, opts = {}) {
   const keywords = keywordRows.map((r) => {
     const spend = num(r.metrics.costMicros) / 1_000_000;
     const conversions = num(r.metrics.conversions);
-    return {
-      keyword: r.adGroupCriterion.keyword.text,
-      matchType: r.adGroupCriterion.keyword.matchType,
-      qualityScore: r.adGroupCriterion.qualityInfo?.qualityScore ?? null,
+    const criterion = r.adGroupCriterion || {};
+    const row = {
+      keyword: criterion.keyword.text,
+      matchType: criterion.keyword.matchType,
+      qualityScore: criterion.qualityInfo?.qualityScore ?? null,
       impressions: num(r.metrics.impressions),
       clicks: num(r.metrics.clicks),
       ctr: num(r.metrics.ctr) * 100,
@@ -267,6 +260,15 @@ async function fetchRealReport(customerId, range, opts = {}) {
       spend,
       costPerConv: conversions > 0 ? spend / conversions : 0,
     };
+    // Status só vem na consulta de palavras ativas. Sem ele, o filtro
+    // posterior não apaga a lista de quem não usa a opção.
+    if (criterion.status) {
+      row.criterionStatus = criterion.status;
+      row.negative = criterion.negative === true;
+      row.adGroupStatus = r.adGroup && r.adGroup.status;
+      row.campaignStatus = r.campaign && r.campaign.status;
+    }
+    return row;
   });
 
   // Agrega por dispositivo (a API devolve uma linha por campanha x dispositivo).
@@ -386,7 +388,9 @@ async function fetchRealReport(customerId, range, opts = {}) {
       FROM campaign
       WHERE ${dateFilter(range)} AND campaign.status = 'ENABLED' AND campaign.advertising_channel_type = 'SEARCH'
     `, accessToken, 'parcela de impressões').catch((e) => { console.warn(e.message); return null; }),
-    runGAQL(customerId, `
+    opts.activeKeywordsOnly === true
+      ? Promise.resolve(null)
+      : runGAQL(customerId, `
       SELECT search_term_view.search_term, campaign.name,
              metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM search_term_view
@@ -478,16 +482,42 @@ function aggregateImpressionShare(rows) {
 // em background (ver server.js), a maioria dos acessos já encontra o cache quente.
 const REPORT_CACHE_TTL_SECONDS = 60 * 20;
 
+// A consulta antiga (sem a opção) fica igual, inclusive o LIMIT 10 por cliques.
+// Com a opção, o LIMIT vale só entre as palavras que ainda estão ligadas.
+function keywordGaql(range, onlyActive) {
+  const period = `segments.date BETWEEN '${range.from}' AND '${range.to}'`;
+  const statusFields = onlyActive
+    ? `
+             ad_group_criterion.status, ad_group_criterion.negative,
+             ad_group.status, campaign.status,`
+    : '';
+  const statusWhere = onlyActive ? ` AND ${activeKeywords.keywordStatusWhere()}` : '';
+  return `
+      SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
+             ad_group_criterion.quality_info.quality_score,${statusFields}
+             metrics.impressions, metrics.clicks, metrics.ctr,
+             metrics.average_cpc, metrics.conversions, metrics.cost_micros
+      FROM keyword_view
+      WHERE ${period}${statusWhere}
+      ORDER BY metrics.clicks DESC
+      LIMIT 10
+    `;
+}
+
 async function getAccountReport(customerId, options = {}) {
   const range = normalizeRange(options.from, options.to);
   const onlyActive = options.activeCreativesOnly === true;
-  // Sem a opção, a chave continua a de antes (o cache quente da sincronização
-  // ainda serve). Com a opção, a força do anúncio exclui reprovado.
-  const cacheKey = `google:report:${customerId}:${range.from}:${range.to}${onlyActive ? ':activeAds' : ''}`;
+  const activeKw = options.activeKeywordsOnly === true;
+  // Sem nenhuma opção, a chave continua a de antes (o cache quente da
+  // sincronização ainda serve). Cada opção muda um pedaço da consulta.
+  const cacheKey = `google:report:${customerId}:${range.from}:${range.to}${onlyActive ? ':activeAds' : ''}${activeKw ? ':activeKw' : ''}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  const result = hasRealCredentials() ? await fetchRealReport(customerId, range, { activeCreativesOnly: onlyActive }) : mockGoogle;
+  const raw = hasRealCredentials()
+    ? await fetchRealReport(customerId, range, { activeCreativesOnly: onlyActive, activeKeywordsOnly: activeKw })
+    : mockGoogle;
+  const result = activeKeywords.presentGoogleReport(raw, activeKw);
 
   cache.set(cacheKey, result, REPORT_CACHE_TTL_SECONDS);
   return result;
