@@ -12,6 +12,7 @@
  *  - Depois de alterar, relê o status na plataforma e devolve o valor real.
  */
 const config = require('../config');
+const cache = require('../lib/cache');
 const metaService = require('./metaService');
 const googleService = require('./googleService');
 const publisher = require('./campaignPublisher');
@@ -209,8 +210,14 @@ async function metaSetStatus(account, level, id, status) {
 
 /* ===================== Google Ads ===================== */
 
+function googleTreeKey(cid) {
+  return `google:tree:${cid}`;
+}
+
 async function googleTree(account) {
   const cid = cleanCid(account.google.customerId);
+  const hit = cache.get(googleTreeKey(cid));
+  if (hit) return hit;
   const token = await googleService.getAccessToken();
   const AD_FIELDS = [
     'ad_group_ad.ad.id', 'ad_group_ad.ad.name', 'ad_group_ad.ad.type', 'ad_group_ad.status', 'ad_group_ad.policy_summary.approval_status',
@@ -254,6 +261,7 @@ async function googleTree(account) {
     servingStatus: r.campaign.servingStatus, children: byCampaign.get(String(r.campaign.id)) || [],
   }));
   tree.currency = cur[0]?.customer?.currencyCode || null;
+  cache.set(googleTreeKey(cid), tree, 10 * 60);
   return tree;
 }
 
@@ -316,6 +324,7 @@ async function googleSetStatus(account, level, id, status, parent) {
   } catch (err) {
     throw fail(err.message, 502);
   }
+  cache.del(googleTreeKey(cid));
   const after = await googleReadOne(cid, level, id, parent, token);
   return { before, after: after || before };
 }

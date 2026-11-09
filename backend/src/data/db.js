@@ -333,4 +333,22 @@ function ensureGestorTables() {
   return gestorTablesReady;
 }
 
-module.exports = { ensureGestorTables, getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable, ensureGtmLogTable };
+// Respostas da Google Ads API e o disjuntor de cota. Sobrevive a restart
+// e a deploy (o disco do app é refeito; o banco não).
+let googleCacheReady = null;
+function ensureGoogleCacheTable() {
+  if (!googleCacheReady) {
+    googleCacheReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS google_ads_cache (
+        cache_key VARCHAR(191) PRIMARY KEY,
+        payload JSON NOT NULL,
+        fresh_until BIGINT NOT NULL,
+        stale_until BIGINT NOT NULL,
+        cached_at BIGINT NOT NULL
+      )
+    `);
+  }
+  return googleCacheReady;
+}
+
+module.exports = { ensureGestorTables, getPool, ensureTable, ensureLeadsTable, ensureContractsTable, ensureFormsTables, ensureReportsTable, ensureHealthTable, ensureCrmTables, ensureCampaignTables, ensureAdStatusLogTable, ensureGtmLogTable, ensureGoogleCacheTable };

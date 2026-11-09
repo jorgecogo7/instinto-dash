@@ -12,6 +12,7 @@ const accountsStore = require('../data/accountsStore');
 const healthStore = require('../data/healthStore');
 const metaService = require('./metaService');
 const googleService = require('./googleService');
+const googleQuota = require('../lib/googleQuota');
 const kpiPreference = require('../lib/kpiPreference');
 
 const COVER_DAYS = 7;        // saldo deve cobrir pelo menos 7 dias
@@ -110,7 +111,7 @@ function integrationAlerts(account, errors = [], realMeta = false) {
   }
   if (google.customerId && google.status !== 'connected') {
     out.push(alert('google', 'integration', 'warning', 'Google Ads desconectado', `A conta ${google.customerId} está cadastrada, mas não está conectada (status: ${google.status || 'sem status'}). Abra Conexões do cliente e reconecte.`));
-  } else if (googleErr) {
+  } else if (googleErr && googleErr.code !== 'RESOURCE_EXHAUSTED') {
     out.push(alert('google', 'integration', 'warning', 'Não consegui ler a conta do Google Ads', `A verificação falhou: ${googleErr.message}. Pode ser acesso removido ou credencial vencida.`));
   }
   if (ig.status === 'error') {
@@ -260,20 +261,50 @@ function deliveryAlerts(platform, account, streak, activeCampaigns, others) {
 }
 
 /* ---------- Google ---------- */
+// 6 h: o job roda de hora em hora, mas estas 4 consultas não precisam ser
+// tão seguidas — e com a cota estourada a gente não finge que a conta ficou
+// sem gasto (isso geraria alerta falso).
+const GOOGLE_HEALTH_TTL_SECONDS = 6 * 60 * 60;
+
 async function checkGoogle(account) {
   const cid = String(account.google.customerId || '').replace(/-/g, '');
   if (!cid) return { alerts: [] };
+  const key = `google:health:${cid}`;
+  await googleQuota.hydrate();
+  const fresh = await googleQuota.read(key, false);
+  if (fresh) return fresh.value;
+  if (googleQuota.isOpen()) {
+    const stale = await googleQuota.read(key, true);
+    if (stale) return stale.value;
+    throw new googleQuota.GoogleQuotaError(googleQuota.openUntil());
+  }
+  try {
+    const out = await checkGoogleLive(account, cid);
+    await googleQuota.remember(key, out, GOOGLE_HEALTH_TTL_SECONDS);
+    return out;
+  } catch (err) {
+    if (!googleQuota.isQuotaError(err)) throw err;
+    const stale = await googleQuota.read(key, true);
+    if (stale) return stale.value;
+    throw err;
+  }
+}
+
+async function checkGoogleLive(account, cid) {
   const token = await googleService.getAccessToken();
-  const q = (query, label) => googleService.runGAQL(cid, query, token, label);
+  const q = (query, label, fallback) => googleService.runGAQL(cid, query, token, label).catch((e) => {
+    if (googleQuota.isQuotaError(e)) throw e;
+    return fallback;
+  });
   const [cust, days, camps, bad] = await Promise.all([
-    q('SELECT customer.status, customer.descriptive_name FROM customer', 'status').catch(() => []),
-    q('SELECT segments.date, metrics.cost_micros, metrics.conversions FROM customer WHERE segments.date DURING LAST_14_DAYS', 'gasto diário').catch(() => []),
-    q("SELECT campaign.id FROM campaign WHERE campaign.status = 'ENABLED' AND campaign.serving_status != 'ENDED'", 'campanhas').catch(() => null),
+    q('SELECT customer.status, customer.descriptive_name FROM customer', 'status', []),
+    q('SELECT segments.date, metrics.cost_micros, metrics.conversions FROM customer WHERE segments.date DURING LAST_14_DAYS', 'gasto diário', []),
+    q("SELECT campaign.id FROM campaign WHERE campaign.status = 'ENABLED' AND campaign.serving_status != 'ENDED'", 'campanhas', null),
     q(`SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, campaign.name, ad_group_ad.policy_summary.approval_status
        FROM ad_group_ad
        WHERE ad_group_ad.policy_summary.approval_status = 'DISAPPROVED'
          AND ad_group_ad.status = 'ENABLED' AND ad_group.status = 'ENABLED' AND campaign.status = 'ENABLED'
-       LIMIT 50`, 'reprovados').catch(() => []),
+       LIMIT 50`, 'reprovados', []),
   ]);
   const out = { alerts: [], info: {} };
   const status = cust[0]?.customer?.status;
@@ -344,7 +375,7 @@ async function checkAccount(account, idx = 0, previous = null) {
     }
     if (account.google?.status === 'connected' && account.google.customerId && realGoogle) {
       try { const r = await checkGoogle(account); record.alerts.push(...r.alerts); record.google = r.info; }
-      catch (e) { record.errors.push({ platform: 'google', message: e.message }); }
+      catch (e) { record.errors.push({ platform: 'google', message: e.message, code: e.code || null }); }
     }
   }
   // Integração desconectada / com erro: vira alerta (e sai da lista de "não consegui conferir").
