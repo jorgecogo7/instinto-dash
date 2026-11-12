@@ -1,5 +1,9 @@
 const crypto = require('crypto');
 const crmStore = require('../data/crmStore');
+const accountsStore = require('../data/accountsStore');
+const attribution = require('../lib/attribution');
+const adCatalog = require('./adCatalog');
+const period = require('../lib/period');
 
 // Funil padrão de todo cliente novo. O cliente/agência pode renomear,
 // reordenar, criar e remover etapas depois, e criar outros funis.
@@ -13,7 +17,7 @@ const DEFAULT_STAGES = [
 ];
 const DEFAULT_FUNNEL_ID = 'principal';
 const COLORS = ['gray', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'purple', 'pink'];
-const SOURCES = ['form', 'manual', 'campaign', 'whatsapp', 'import'];
+const SOURCES = ['form', 'manual', 'campaign', 'whatsapp', 'import', 'instant_form'];
 const KINDS = ['open', 'won', 'lost'];
 const TAG_MEANINGS = ['common', 'qualified', 'disqualified'];
 const DEFAULT_TAGS = [
@@ -265,22 +269,46 @@ function pushHistory(deal, entry) {
   deal.history = [...(deal.history || []), { id: uid(5), at: nowIso(), ...entry }].slice(-MAX_HISTORY);
 }
 
+async function catalogOf(clientId) {
+  try {
+    const account = await accountsStore.getById(clientId);
+    return adCatalog.catalogFor(account);
+  } catch (e) {
+    return adCatalog.catalogFor(null);
+  }
+}
+
+async function prepareTouch(clientId, touch) {
+  if (!touch) return null;
+  try {
+    const account = await accountsStore.getById(clientId);
+    return await adCatalog.enrichTouch(account, touch);
+  } catch (e) {
+    console.warn('CRM: atribuição sem enriquecimento:', e.message);
+    return touch;
+  }
+}
+
 async function getBoard(clientId) {
-  const [pipeline, deals, settings, convs] = await Promise.all([
+  const [pipeline, deals, settings, convs, contacts, catalog] = await Promise.all([
     getPipeline(clientId), crmStore.listDeals(clientId), getSettings(clientId), crmStore.listConversations(clientId),
+    crmStore.listContacts(clientId), catalogOf(clientId),
   ]);
   const convByContact = new Map(convs.map((c) => [c.contactId, c]));
+  const contactById = new Map(contacts.map((c) => [c.id, c]));
   deals.forEach((d) => {
     normalizeDeal(pipeline, d);
     const c = d.contactId && convByContact.get(d.contactId);
     if (c) { d.conversationId = c.id; d.unread = c.unread || 0; }
+    const person = d.contactId && contactById.get(d.contactId);
+    d.origin = attribution.present((person && person.attribution) || d.attribution, catalog);
   });
   // "pipeline.stages" mantido para compatibilidade: são as etapas do primeiro funil.
   return { pipeline: { ...pipeline, stages: pipeline.funnels[0].stages }, deals, tags: settings.tags };
 }
 
 // Acha (pelo telefone ou e-mail) ou cria o contato de um negócio.
-async function upsertContactFor(clientId, { name, phone, email, company, tags, source }) {
+async function upsertContactFor(clientId, { name, phone, email, company, tags, source, attribution: touch }) {
   if (!phone && !email) return null;
   let contact = phone ? await crmStore.findContactByPhone(clientId, phone) : null;
   if (!contact && email) contact = (await crmStore.listContacts(clientId)).find((c) => c.email && c.email === email) || null;
@@ -289,6 +317,7 @@ async function upsertContactFor(clientId, { name, phone, email, company, tags, s
     if (!contact.phone && phone) { contact.phone = phone; changed = true; }
     if (!contact.email && email) { contact.email = email; changed = true; }
     if ((!contact.name || contact.name === contact.phone) && name) { contact.name = name; changed = true; }
+    if (touch && attribution.applyTouch(contact, touch)) changed = true;
     if (changed) { contact.updatedAt = nowIso(); await crmStore.saveContact(clientId, contact); }
     return contact;
   }
@@ -296,7 +325,9 @@ async function upsertContactFor(clientId, { name, phone, email, company, tags, s
   contact = {
     id: uid(), clientId, name: name || phone || email, phone: phone || null, email: email || null,
     company: company || null, tags: tags || [], notes: null, source: source || 'manual', createdAt: ts, updatedAt: ts,
+    attribution: null,
   };
+  if (touch) attribution.applyTouch(contact, touch);
   await crmStore.addContact(clientId, contact);
   return contact;
 }
@@ -467,26 +498,75 @@ async function addFromForm(clientId, { form, contact, readable, meta }) {
   const pipeline = await getPipeline(clientId);
   const funnel = pipeline.funnels[0];
   const ts = nowIso();
-  const campaign = meta && meta.utm_campaign ? str(meta.utm_campaign, 120) : null;
+  let touch = attribution.touchFromUtm(meta, { channel: 'form', at: ts });
+  touch = await prepareTouch(clientId, touch);
+  const campaign = touch.campaignName || (meta && meta.utm_campaign ? str(meta.utm_campaign, 120) : null);
   const deal = {
     id: uid(), clientId, funnelId: funnel.id, contactId: null,
     name: str(contact.name, 120) || 'Sem nome',
     phone: str(contact.phone, 40) || null,
     email: str(contact.email, 160).toLowerCase() || null,
     company: str(contact.company, 120) || null,
-    source: 'form', sourceDetail: str(form.name, 160) || form.slug, campaign,
+    source: 'form', sourceDetail: str(form.name, 160) || form.slug, campaign, attribution: null,
     formId: form.id,
     formAnswers: (readable || []).slice(0, 40).map((x) => ({ question: str(x.question, 200), answer: str(x.answer, 1000) })),
     value: null, owner: null, tags: [], notes: null,
     stageId: funnel.stages[0].id, stageChangedAt: ts, createdAt: ts, updatedAt: ts, history: [],
   };
   try {
-    const c = await upsertContactFor(clientId, { ...deal, source: 'form' });
+    const c = await upsertContactFor(clientId, { ...deal, source: 'form', attribution: touch });
     deal.contactId = c ? c.id : null;
+    deal.attribution = c && c.attribution ? c.attribution : { first: touch, last: null };
   } catch (e) { console.warn('CRM: contato do formulário não foi criado:', e.message); }
+  if (!deal.attribution) deal.attribution = { first: touch, last: null };
+  const bits = [touch.campaignName && `campanha ${touch.campaignName}`, touch.adName && `anúncio ${touch.adName}`].filter(Boolean);
   pushHistory(deal, {
     type: 'created', by: { role: 'system', name: 'Formulário' }, to: deal.stageId,
-    text: `Chegou pelo formulário "${deal.sourceDetail}"${campaign ? ` (campanha ${campaign})` : ''}`,
+    text: `Chegou pelo formulário "${deal.sourceDetail}"${bits.length ? ` (${bits.join(', ')})` : ''}`,
+  });
+  await crmStore.addDeal(clientId, deal);
+  return deal;
+}
+
+// Lead de formulário instantâneo da Meta (Instant Form). O id do lead evita
+// duplicar quando a Meta reenvia o webhook.
+async function addFromInstantForm(clientId, lead) {
+  const leadId = str(lead && lead.id, 80);
+  if (leadId) {
+    const existing = (await crmStore.listDeals(clientId)).find((d) => d.metaLeadId === leadId);
+    if (existing) return existing;
+  }
+  const person = attribution.contactFromInstantLead(lead || {});
+  const pipeline = await getPipeline(clientId);
+  const funnel = pipeline.funnels[0];
+  let touch = attribution.touchFromInstantLead(lead);
+  const ts = (touch && touch.at) || nowIso();
+  if (touch) touch.at = ts;
+  touch = await prepareTouch(clientId, touch);
+  const deal = {
+    id: uid(), clientId, funnelId: funnel.id, contactId: null,
+    metaLeadId: leadId || null,
+    name: str(person.name, 120) || 'Lead do formulário instantâneo',
+    phone: str(person.phone, 40) || null,
+    email: str(person.email, 160).toLowerCase() || null,
+    company: str(person.company, 120) || null,
+    source: 'instant_form', sourceDetail: 'Formulário instantâneo (Meta)',
+    campaign: touch && touch.campaignName, attribution: null,
+    value: null, owner: null, tags: [], notes: null,
+    stageId: funnel.stages[0].id, stageChangedAt: ts, createdAt: ts, updatedAt: ts, history: [],
+  };
+  try {
+    const c = await upsertContactFor(clientId, { ...deal, source: 'instant_form', attribution: touch });
+    deal.contactId = c ? c.id : null;
+    deal.attribution = c && c.attribution ? c.attribution : (touch ? { first: touch, last: null } : null);
+  } catch (e) {
+    console.warn('CRM: contato do formulário instantâneo não foi criado:', e.message);
+    deal.attribution = touch ? { first: touch, last: null } : null;
+  }
+  const where = touch ? [touch.campaignName, touch.adName].filter(Boolean).join(' · ') : '';
+  pushHistory(deal, {
+    type: 'created', by: { role: 'system', name: 'Formulário instantâneo' }, to: deal.stageId,
+    text: `Chegou por um formulário instantâneo da Meta${where ? ` (${where})` : ''}`,
   });
   await crmStore.addDeal(clientId, deal);
   return deal;
@@ -519,7 +599,7 @@ async function backfillContacts(clientId, deals) {
 }
 
 async function listContacts(clientId) {
-  const [pipeline, deals] = await Promise.all([getPipeline(clientId), crmStore.listDeals(clientId)]);
+  const [pipeline, deals, catalog] = await Promise.all([getPipeline(clientId), crmStore.listDeals(clientId), catalogOf(clientId)]);
   await backfillContacts(clientId, deals);
   const [contacts, convs] = await Promise.all([crmStore.listContacts(clientId), crmStore.listConversations(clientId)]);
   const convByContact = new Map(convs.map((c) => [c.contactId, c]));
@@ -547,6 +627,7 @@ async function listContacts(clientId) {
       dealsCount: ds.length,
       conversationId: conv ? conv.id : null,
       lastConversationAt: conv ? conv.lastAt : null,
+      origin: attribution.present(c.attribution, catalog),
     };
   });
 }
@@ -692,18 +773,46 @@ async function report(clientId, q) {
     if (kindOf(d.stageId) === 'won') bySource[k].won += 1;
   });
   const strip = ({ leadList, ...rest }) => rest;
+  let adReport;
+  try {
+    const [account, contacts] = await Promise.all([
+      accountsStore.getById(clientId),
+      crmStore.listContacts(clientId),
+    ]);
+    const catalog = adCatalog.catalogFor(account);
+    const byContact = new Map(contacts.map((c) => [c.id, c]));
+    const decorated = deals.map((d) => {
+      const person = d.contactId && byContact.get(d.contactId);
+      return { ...d, _origin: attribution.present((person && person.attribution) || d.attribution, catalog) };
+    });
+    const end = new Date(to.getTime() - 1);
+    const spend = await adCatalog.spendFor(account, { from: period.todaySP(from), to: period.todaySP(end) });
+    adReport = attribution.buildAdReport({
+      deals: decorated, stages, from, to, spendRows: spend.rows, notice: spend.notice,
+    });
+  } catch (e) {
+    console.warn('CRM: relatório por anúncio incompleto:', e.message);
+    adReport = attribution.buildAdReport({
+      deals, stages, from, to, spendRows: [], notice: 'Não foi possível ler o investimento dos anúncios agora.',
+    });
+  }
   return {
     funnel: { id: funnel.id, name: funnel.name },
     period: { from: from.toISOString(), to: to.toISOString(), prevFrom: prevFrom.toISOString() },
     current: strip(cur), previous: strip(prev), steps, now, qualification: qual,
     bySource: Object.values(bySource).sort((a, b) => b.leads - a.leads),
     owners: [...new Set(allDeals.map((d) => d.owner).filter(Boolean))].sort(),
+    adReport,
   };
 }
 
 module.exports = {
   DEFAULT_STAGES, COLORS, CrmError, uid, nowIso, str,
-  getPipeline, funnelOf, getBoard, createDeal, updateDeal, addComment, removeDeal, saveStages, createFunnel, deleteFunnel, addFromForm,
+  getPipeline, funnelOf, getBoard, createDeal, updateDeal, addComment, removeDeal, saveStages, createFunnel, deleteFunnel, addFromForm, addFromInstantForm, prepareTouch,
+  originsFor: async (clientId, values) => {
+    const catalog = await catalogOf(clientId);
+    return (values || []).map((v) => attribution.present(v, catalog));
+  },
   getSettings, whatsappView, saveWhatsappConfig, listTags, createTag, updateTag, deleteTag, ensureTags,
   listContacts, createContact, updateContact, deleteContact, importContacts, upsertContactFor, pushHistory,
   report,

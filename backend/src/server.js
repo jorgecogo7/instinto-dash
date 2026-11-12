@@ -59,11 +59,15 @@ app.use((req, res, next) => {
   next();
 });
 // rawBody: o webhook do WhatsApp confere a assinatura em cima dos bytes originais.
-app.use(express.json({ limit: '100kb', verify: (req, res, buf) => { if (req.originalUrl.startsWith('/api/whatsapp/')) req.rawBody = buf; } }));
+app.use(express.json({ limit: '100kb', verify: (req, res, buf) => {
+  const url = req.originalUrl || '';
+  if (url.startsWith('/api/whatsapp/') || url.startsWith('/api/meta/webhook')) req.rawBody = buf;
+} }));
 
 app.use(securityHeaders);
-// Webhook do WhatsApp antes do limite por IP: a Meta manda rajadas de eventos.
+// Webhooks da Meta antes do limite por IP: ela manda rajadas e tenta de novo se não receber 200.
 app.use('/api/whatsapp', require('./routes/whatsapp'));
+app.use('/api/meta/webhook', require('./routes/metaWebhook'));
 
 // CORS vem ANTES do limite de requisições: se o limite responder 429 sem esses
 // cabeçalhos, o navegador esconde a resposta e o painel só vê "Failed to fetch".

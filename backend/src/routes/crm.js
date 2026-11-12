@@ -2,6 +2,7 @@ const express = require('express');
 const crm = require('../services/crmService');
 const wa = require('../services/whatsappService');
 const accountsStore = require('../data/accountsStore');
+const attribution = require('../lib/attribution');
 const { visibilityOf } = require('../lib/clientAccess');
 
 /**
@@ -115,9 +116,27 @@ function buildRouter(resolve, { admin }) {
     router.post('/whatsapp/simulate', wrap(async (req, res) => {
       if (!wa.isMock()) return res.status(404).json({ error: 'Disponível só em modo de teste.' });
       const b = req.body || {};
-      const r = await wa.receiveInbound(cid(req), { from: b.from, profileName: b.name, text: b.text || 'Olá!', type: 'text', waId: null });
+      let referral = null;
+      if (b.referral && typeof b.referral === 'object') referral = b.referral;
+      else if (b.referral === true) referral = attribution.MOCK_CTWA_REFERRAL;
+      const r = await wa.receiveInbound(cid(req), { from: b.from, profileName: b.name, text: b.text || 'Olá!', type: 'text', waId: null, referral });
       if (!r) return res.status(400).json({ error: 'Informe o telefone.' });
       res.status(201).json({ conversationId: r.conversation.id, contactId: r.contact.id, dealId: r.deal.id });
+    }));
+    router.post('/instant-form/simulate', wrap(async (req, res) => {
+      if (!wa.isMock()) return res.status(404).json({ error: 'Disponível só em modo de teste.' });
+      const n = String(Date.now()).slice(-8);
+      const deal = await crm.addFromInstantForm(cid(req), {
+        id: `lead_mock_${n}`,
+        ad_id: 'ad_mock_1',
+        created_time: new Date().toISOString(),
+        field_data: [
+          { name: 'full_name', values: ['Lead Instant Form'] },
+          { name: 'phone_number', values: [`55119${n}`] },
+          { name: 'email', values: [`instant${n}@example.com`] },
+        ],
+      });
+      res.status(201).json({ dealId: deal.id, contactId: deal.contactId });
     }));
   }
 

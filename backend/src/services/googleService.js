@@ -620,7 +620,8 @@ function keywordGaql(range, onlyActive) {
     `;
 }
 
-function presentReport(report, activeKw, cachedAt) {
+function presentReport(report, activeKw, cachedAt, customerId) {
+  try { require('./adCatalog').rememberGoogleCatalog(customerId, report); } catch (e) { /* o CRM segue sem o catálogo */ }
   const base = cachedAt ? quota.withNotice(report, cachedAt) : report;
   return activeKeywords.presentGoogleReport(base, activeKw);
 }
@@ -633,7 +634,10 @@ async function getAccountReport(customerId, options = {}) {
   // pedaço da consulta, então não reaproveita o cache da outra.
   const cacheKey = `google:report:${customerId}:${range.from}:${range.to}${onlyActive ? ':activeAds' : ''}${activeKw ? ':activeKw' : ''}`;
 
-  if (!hasRealCredentials()) return activeKeywords.presentGoogleReport(mockGoogle, activeKw);
+  if (!hasRealCredentials()) {
+    try { require('./adCatalog').rememberGoogleCatalog(customerId || 'mock', mockGoogle); } catch (e) { /* o CRM segue sem o catálogo */ }
+    return activeKeywords.presentGoogleReport(mockGoogle, activeKw);
+  }
 
   return quota.dedupe(cacheKey, () => loadReport(cacheKey, customerId, range, onlyActive, activeKw));
 }
@@ -641,11 +645,11 @@ async function getAccountReport(customerId, options = {}) {
 async function loadReport(cacheKey, customerId, range, onlyActive, activeKw) {
   await quota.hydrate();
   const fresh = await quota.read(cacheKey, false);
-  if (fresh) return presentReport(fresh.value, activeKw);
+  if (fresh) return presentReport(fresh.value, activeKw, null, customerId);
 
   if (quota.isOpen()) {
     const stale = await quota.read(cacheKey, true);
-    if (stale) return presentReport(stale.value, activeKw, stale.cachedAt);
+    if (stale) return presentReport(stale.value, activeKw, stale.cachedAt, customerId);
     throw new quota.GoogleQuotaError(quota.openUntil());
   }
 
@@ -653,15 +657,16 @@ async function loadReport(cacheKey, customerId, range, onlyActive, activeKw) {
     const raw = await fetchRealReport(customerId, range, { activeCreativesOnly: onlyActive, activeKeywordsOnly: activeKw });
     const result = activeKeywords.presentGoogleReport(raw, activeKw);
     await quota.remember(cacheKey, result, quota.reportTtlSeconds(range));
+    try { require('./adCatalog').rememberGoogleCatalog(customerId, result); } catch (e) { /* o CRM segue sem o catálogo */ }
     return result;
   } catch (err) {
     if (!quota.isQuotaError(err)) throw err;
     const stale = await quota.read(cacheKey, true);
-    if (stale) return presentReport(stale.value, activeKw, stale.cachedAt);
+    if (stale) return presentReport(stale.value, activeKw, stale.cachedAt, customerId);
     if (err.partialReport) {
       const partial = activeKeywords.presentGoogleReport(err.partialReport, activeKw);
       const saved = await quota.remember(cacheKey, partial, quota.reportTtlSeconds(range), { staleOnly: true });
-      return presentReport(partial, activeKw, saved.cachedAt);
+      return presentReport(partial, activeKw, saved.cachedAt, customerId);
     }
     throw new quota.GoogleQuotaError(quota.openUntil() || err.retryAt);
   }
