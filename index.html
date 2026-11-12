@@ -1511,6 +1511,23 @@
   .cc-board .crm-card{ padding:9px 11px; }
   .cc-card-line{ display:flex; justify-content:space-between; gap:8px; align-items:center; font-size:11.5px; color:var(--text-dim); margin-top:3px; }
   .cc-card-line .cc-value{ color:var(--green); }
+  .cc-origin-line{ margin-top:4px; min-width:0; }
+  .cc-origin{ display:inline-flex; align-items:center; gap:5px; max-width:100%; font-size:10.5px; font-weight:650; color:var(--text); }
+  .cc-origin span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cc-origin.unk, .cc-origin.org{ color:var(--text-dim); font-weight:600; }
+  .cc-plat{ width:14px; height:14px; flex-shrink:0; display:block; }
+  .cc-origin-box{ display:flex; gap:12px; align-items:flex-start; padding:10px 12px; margin:0 0 14px; border:1px solid var(--line); border-radius:12px; background:var(--bg-panel-2); }
+  .cc-origin-box img, .cc-origin-ph{ width:72px; height:72px; border-radius:10px; object-fit:cover; flex-shrink:0; background:var(--bg-panel-3); }
+  .cc-origin-ph{ display:flex; align-items:center; justify-content:center; }
+  .cc-origin-h{ display:flex; align-items:center; gap:6px; font-weight:700; font-size:13px; margin-bottom:4px; }
+  .cc-origin-box .row{ font-size:12px; line-height:1.45; }
+  .cc-origin-box .k{ display:inline-block; min-width:78px; color:var(--text-dim); }
+  .cc-origin-last{ margin-top:6px; font-size:11.5px; color:var(--text-dim); }
+  .cc-adfilter{ max-width:210px; }
+  .cc-ad-cell{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .cc-ad-cell img{ width:36px; height:36px; border-radius:7px; object-fit:cover; flex-shrink:0; background:var(--bg-panel-3); }
+  .cc-ad-cell .nm{ font-weight:650; }
+  .cc-ad-cell .sub{ color:var(--text-dim); font-size:11px; }
   .cc-unread{ background:var(--flame); color:#fff; font-size:10px; font-weight:700; border-radius:20px; padding:1px 6px; }
   .cc-tag{ display:inline-flex; align-items:center; gap:4px; }
   .cc-tag.c{ background:color-mix(in srgb, var(--cc-c) 16%, transparent); color:var(--cc-c); border-color:color-mix(in srgb, var(--cc-c) 35%, transparent); font-weight:600; }
@@ -3054,11 +3071,14 @@
           <select class="modal-input" id="ccFilterSource" onchange="ccRender()">
             <option value="">Todas as origens</option>
             <option value="form">Formulário</option>
+            <option value="instant_form">Formulário instantâneo</option>
             <option value="campaign">Campanha</option>
             <option value="whatsapp">WhatsApp</option>
             <option value="manual">Manual</option>
             <option value="import">Importação</option>
           </select>
+          <select class="modal-input cc-adfilter" id="ccFilterCampaign" onchange="ccRender()"><option value="">Todas as campanhas</option></select>
+          <select class="modal-input cc-adfilter" id="ccFilterAd" onchange="ccRender()"><option value="">Todos os anúncios</option></select>
         </div>
         <div class="crm-board cc-board" id="ccBoard"></div>
         <div class="cc-list" id="ccList" style="display:none;"></div>
@@ -3097,6 +3117,8 @@
         <div class="cc-toolbar">
           <input class="modal-input cc-search" id="ccContSearch" type="search" placeholder="Buscar por nome, telefone, e-mail ou etiqueta" oninput="ccRenderContacts()">
           <select class="modal-input" id="ccContTag" onchange="ccRenderContacts()"><option value="">Todas as etiquetas</option></select>
+          <select class="modal-input cc-adfilter" id="ccContCampaign" onchange="ccRenderContacts()"><option value="">Todas as campanhas</option></select>
+          <select class="modal-input cc-adfilter" id="ccContAd" onchange="ccRenderContacts()"><option value="">Todos os anúncios</option></select>
           <div class="cc-btns">
             <button type="button" class="btn-cancel" onclick="ccExportCsv()">⬇ Baixar CSV</button>
             <button type="button" class="btn-cancel" onclick="document.getElementById('ccImportFile').click()">⬆ Importar</button>
@@ -3107,7 +3129,7 @@
         <div class="cc-count" id="ccContCount"></div>
         <div class="cc-table-wrap">
           <table class="cc-table" id="ccContTable">
-            <thead><tr><th>Nome</th><th>Etiquetas</th><th>Última conversa</th><th>Telefone</th><th>Negócio / etapa</th><th class="cc-th-act">Ações</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Origem</th><th>Etiquetas</th><th>Última conversa</th><th>Telefone</th><th>Negócio / etapa</th><th class="cc-th-act">Ações</th></tr></thead>
             <tbody id="ccContBody"></tbody>
           </table>
         </div>
@@ -3144,6 +3166,7 @@
           <select class="modal-input" id="ccRepSource" onchange="ccLoadReport()">
             <option value="">Todas as origens</option>
             <option value="form">Formulário</option>
+            <option value="instant_form">Formulário instantâneo</option>
             <option value="campaign">Campanha</option>
             <option value="whatsapp">WhatsApp</option>
             <option value="manual">Manual</option>
@@ -3163,6 +3186,7 @@
         </div>
         <div id="ccDealError" class="modal-error" style="display:none;"></div>
         <div class="cc-quick" id="ccDealQuick"></div>
+        <div id="ccDealOrigin"></div>
         <form id="ccDealForm" onsubmit="ccSaveDeal(event)">
           <label class="modal-label">Nome *</label>
           <input class="modal-input" id="ccdName" required maxlength="120" placeholder="Nome do contato ou do negócio">
@@ -3180,7 +3204,7 @@
           </div>
           <div class="modal-row">
             <div><label class="modal-label">Origem</label>
-              <select class="modal-input" id="ccdSource"><option value="manual">Manual</option><option value="form">Formulário</option><option value="campaign">Campanha</option><option value="whatsapp">WhatsApp</option><option value="import">Importação</option></select></div>
+              <select class="modal-input" id="ccdSource"><option value="manual">Manual</option><option value="form">Formulário</option><option value="instant_form">Formulário instantâneo</option><option value="campaign">Campanha</option><option value="whatsapp">WhatsApp</option><option value="import">Importação</option></select></div>
             <div><label class="modal-label">Detalhe da origem</label><input class="modal-input" id="ccdSourceDetail" maxlength="160" placeholder="Ex: nome da campanha"></div>
           </div>
           <datalist id="ccOwnerList"></datalist>
@@ -3242,6 +3266,7 @@
           <button type="button" class="modal-close" onclick="ccCloseModal('ccContactModal')">✕</button>
         </div>
         <div id="ccContactError" class="modal-error" style="display:none;"></div>
+        <div id="ccContactOrigin"></div>
         <form onsubmit="ccSaveContact(event)">
           <label class="modal-label">Nome *</label>
           <input class="modal-input" id="cctName" maxlength="120" required placeholder="Nome do contato">
@@ -13209,7 +13234,7 @@
   const CC_FUNNEL_KEY = 'instintoDashCrmFunnel';
   const CC_COLOR_VAR = { gray:'var(--text-dim)', red:'var(--red)', orange:'var(--flame)', amber:'var(--amber)', green:'var(--green)', teal:'var(--teal)', blue:'var(--blue)', purple:'var(--purple)', pink:'var(--pink)' };
   const CC_COLOR_NAME = { gray:'Cinza', red:'Vermelho', orange:'Laranja', amber:'Âmbar', green:'Verde', teal:'Turquesa', blue:'Azul', purple:'Roxo', pink:'Rosa' };
-  const CC_SOURCES = { form:'📝 Formulário', campaign:'📣 Campanha', whatsapp:'💬 WhatsApp', manual:'✍️ Manual', import:'⬆ Importação' };
+  const CC_SOURCES = { form:'📝 Formulário', instant_form:'📋 Formulário instantâneo', campaign:'📣 Campanha', whatsapp:'💬 WhatsApp', manual:'✍️ Manual', import:'⬆ Importação' };
   const CC_PANES = { 'crm':'funil', 'crm-conversas':'conversas', 'crm-contatos':'contatos', 'crm-etiquetas':'etiquetas', 'crm-relatorios':'relatorios' };
   const CC_SUB = {
     funil: 'Seus negócios em um só lugar, do primeiro contato até a venda.',
@@ -13293,6 +13318,57 @@
   const ccAllStages = () => ccState.funnels.flatMap(f => f.stages.map(s => ({ ...s, funnelId: f.id, funnelName: f.name })));
   const ccStage = id => ccAllStages().find(s => s.id === id);
   const ccStageChip = s => s ? `<span class="cc-stage-chip" style="--cc-c:${ccC(s.color)}">${escapeHtml(s.name)}</span>` : '';
+  function ccSafeImg(url){
+    if (typeof url !== 'string') return '';
+    if (/^https:\/\//i.test(url)) return url;
+    if (/^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);/i.test(url)) return url;
+    return '';
+  }
+  function ccPlatformIcon(platform){
+    if (platform === 'google') return '<svg class="cc-plat" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="#4285F4"/><path fill="#fff" d="M8 4.2h3.6v1.5H9.4v1.2h2v1.4h-2V12H8z"/></svg>';
+    if (platform === 'meta') return '<svg class="cc-plat" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="#0668E1"/><path fill="#fff" d="M3.2 8.2c.7-1.6 1.6-2.6 2.6-2.6.7 0 1.1.5 1.6 1.3.4.7.7 1.5.9 1.5s.5-.8.9-1.5c.5-.8.9-1.3 1.6-1.3 1 0 1.9 1 2.6 2.6l-1.3.6c-.5-1.1-1-1.8-1.4-1.8-.4 0-.7.5-1.1 1.2-.5.9-1 1.8-1.4 1.8s-.9-.9-1.4-1.8c-.4-.7-.7-1.2-1.1-1.2-.4 0-.9.7-1.4 1.8l-1.1-.6z"/></svg>';
+    return '';
+  }
+  function ccOriginInline(o){
+    if (!o || o.kind === 'unknown') return '<span class="cc-origin unk">Origem desconhecida</span>';
+    if (o.kind === 'organic') return '<span class="cc-origin org">Orgânico</span>';
+    const name = o.adName || o.campaignName || o.platformLabel || 'Anúncio';
+    return `<span class="cc-origin ad">${ccPlatformIcon(o.platform)}<span>${escapeHtml(name)}</span></span>`;
+  }
+  function ccOriginBlock(o){
+    if (!o || o.kind === 'unknown') return '<div class="cc-origin-box"><div><div class="cc-origin-h">Origem</div><div class="row">Origem desconhecida</div></div></div>';
+    if (o.kind === 'organic') {
+      const extra = o.campaignName ? `<div class="row"><span class="k">Campanha</span>${escapeHtml(o.campaignName)}</div>` : '';
+      return `<div class="cc-origin-box"><div><div class="cc-origin-h">Origem</div><div class="row">Orgânico${o.channelLabel ? ` · ${escapeHtml(o.channelLabel)}` : ''}</div>${extra}</div></div>`;
+    }
+    const img = ccSafeImg(o.thumbnailUrl);
+    const when = o.at ? new Date(o.at).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }) : '';
+    const last = o.last ? `<div class="cc-origin-last">Último anúncio: ${escapeHtml(o.last.adName || o.last.campaignName || 'anúncio')}${o.last.at ? ` · ${escapeHtml(new Date(o.last.at).toLocaleDateString('pt-BR'))}` : ''}</div>` : '';
+    return `<div class="cc-origin-box">
+      ${img ? `<img src="${escapeAttr(img)}" alt="">` : `<div class="cc-origin-ph">${ccPlatformIcon(o.platform)}</div>`}
+      <div style="min-width:0;">
+        <div class="cc-origin-h">${ccPlatformIcon(o.platform)} ${escapeHtml(o.platformLabel || 'Anúncio')}${o.channelLabel ? ` · ${escapeHtml(o.channelLabel)}` : ''}</div>
+        <div class="row"><span class="k">Campanha</span>${escapeHtml(o.campaignName || '—')}</div>
+        <div class="row"><span class="k">Conjunto</span>${escapeHtml(o.adsetName || '—')}</div>
+        <div class="row"><span class="k">Anúncio</span>${escapeHtml(o.adName || '—')}</div>
+        <div class="row"><span class="k">Data</span>${when ? escapeHtml(when) : '—'}</div>
+        ${last}
+      </div>
+    </div>`;
+  }
+  function ccFillOriginFilters(prefix, list){
+    const camps = new Map();
+    const ads = new Map();
+    (list || []).forEach(item => {
+      const o = item && item.origin;
+      if (!o) return;
+      if (o.campaignKey) camps.set(o.campaignKey, o.kind === 'organic' ? 'Orgânico' : `${o.platform === 'google' ? 'Google' : 'Meta'} · ${o.campaignName || 'Campanha sem nome'}`);
+      if (o.kind === 'ad' && o.adKey) ads.set(o.adKey, `${o.platform === 'google' ? 'Google' : 'Meta'} · ${o.adName || 'Anúncio sem nome'}`);
+    });
+    const sort = entries => [...entries].sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR'));
+    ccFillSelect(prefix + 'Campaign', sort(camps), 'Todas as campanhas');
+    ccFillSelect(prefix + 'Ad', sort(ads), 'Todos os anúncios');
+  }
 
   /* Navegação entre as 5 páginas */
   function ccShowView(tab){
@@ -13338,7 +13414,7 @@
   function ccTopActions(){
     const el = document.getElementById('ccTopActions');
     let h = '';
-    if (ccPane === 'funil') h = `<button type="button" class="btn-cancel" onclick="ccOpenStages()">⚙ Editar funil</button><button type="button" class="btn-add" onclick="ccOpenDeal(null)">+ Novo negócio</button>`;
+    if (ccPane === 'funil') h = `${!CLIENT_MODE && ccState.mock ? '<button type="button" class="btn-cancel" onclick="ccSimulateInstant()">🧪 Simular Instant Form</button>' : ''}<button type="button" class="btn-cancel" onclick="ccOpenStages()">⚙ Editar funil</button><button type="button" class="btn-add" onclick="ccOpenDeal(null)">+ Novo negócio</button>`;
     else if (ccPane === 'conversas' && !CLIENT_MODE) h = `${ccState.mock ? '<button type="button" class="btn-cancel" onclick="ccSimulate()">🧪 Simular mensagem</button>' : ''}<button type="button" class="btn-cancel" onclick="ccOpenWa()">⚙ WhatsApp</button>`;
     el.innerHTML = h;
     el.style.display = h ? '' : 'none';
@@ -13371,7 +13447,7 @@
     document.querySelectorAll('[data-unread]').forEach(el => { el.textContent = n > 99 ? '99+' : String(n); el.style.display = n ? '' : 'none'; });
   }
   function ccResetFilters(){
-    ['ccSearch','ccFilterSource','ccFilterOwner','ccFilterTag','ccFrom','ccTo','ccContSearch','ccContTag','ccConvSearch','ccConvStage'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['ccSearch','ccFilterSource','ccFilterOwner','ccFilterTag','ccFilterCampaign','ccFilterAd','ccFrom','ccTo','ccContSearch','ccContTag','ccContCampaign','ccContAd','ccConvSearch','ccConvStage'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('ccConvStatus').value = 'open';
     document.getElementById('ccConvUnread').checked = false;
     ccPeriod = '';
@@ -13442,6 +13518,8 @@
     const src = document.getElementById('ccFilterSource').value;
     const owner = document.getElementById('ccFilterOwner').value;
     const tag = document.getElementById('ccFilterTag').value;
+    const camp = document.getElementById('ccFilterCampaign').value;
+    const ad = document.getElementById('ccFilterAd').value;
     const range = ccPeriodRange();
     const qDigits = q.replace(/\D/g, '');
     return ccState.deals.filter(d => {
@@ -13449,9 +13527,12 @@
       if (src && d.source !== src) return false;
       if (owner === '__none' ? d.owner : (owner && (d.owner || '') !== owner)) return false;
       if (tag && !(d.tags || []).some(t => ccLower(t) === ccLower(tag))) return false;
+      if (camp && (d.origin && d.origin.campaignKey) !== camp) return false;
+      if (ad && (d.origin && d.origin.adKey) !== ad) return false;
       if (range) { const t = new Date(d.createdAt).getTime(); if (t < range[0] || t > range[1]) return false; }
       if (!q) return true;
-      const hay = [d.name, d.email, d.company, d.phone, d.owner, d.sourceDetail, d.campaign, d.notes, ...(d.tags || [])].join(' ').toLowerCase();
+      const o = d.origin || {};
+      const hay = [d.name, d.email, d.company, d.phone, d.owner, d.sourceDetail, d.campaign, o.campaignName, o.adsetName, o.adName, d.notes, ...(d.tags || [])].join(' ').toLowerCase();
       return hay.includes(q) || (qDigits.length >= 3 && String(d.phone || '').replace(/\D/g, '').includes(qDigits));
     });
   }
@@ -13466,6 +13547,7 @@
     ccFillSelect('ccFilterOwner', [...owners.map(o => [o, o]), ['__none', 'Sem responsável']], 'Todos os responsáveis');
     const tagNames = [...new Set([...ccState.tags.map(t => t.name), ...ccState.deals.flatMap(d => d.tags || [])])].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     ccFillSelect('ccFilterTag', tagNames.map(t => [t, t]), 'Todas as etiquetas');
+    ccFillOriginFilters('ccFilter', ccState.deals.filter(d => !d.funnelId || d.funnelId === ccState.funnelId));
     document.getElementById('ccOwnerList').innerHTML = [...new Set([ccState.me, ...owners].filter(Boolean))].map(o => `<option value="${escapeAttr(o)}">`).join('');
 
     const shown = ccFiltered();
@@ -13502,6 +13584,7 @@
           <div class="crm-card" draggable="true" data-id="${escapeAttr(d.id)}" onclick="ccOpenDeal('${escapeAttr(d.id)}')">
             <div class="cc-card-top"><div class="crm-card-name">${escapeHtml(d.name)}</div>${d.unread ? `<span class="cc-unread" title="Mensagens não lidas">${d.unread}</span>` : ''}</div>
             <div class="cc-card-line"><span>${d.phone ? `📞 ${escapeHtml(d.phone)}` : escapeHtml(d.email || d.company || '')}</span>${d.value != null ? `<span class="cc-value">${escapeHtml(ccMoney(d.value))}</span>` : ''}</div>
+            <div class="cc-origin-line">${ccOriginInline(d.origin)}</div>
             ${ccTagsHtml(d.tags)}
             <div class="crm-card-foot">${convHtml(d) || '<span></span>'}<span class="crm-card-source">${d.owner ? `<span class="cc-owner">👤 ${escapeHtml(d.owner)}</span> ` : ''}${escapeHtml(ccAgo(d.createdAt))}</span></div>
           </div>`).join('') : '<div class="crm-empty-col">Nenhum negócio aqui</div>'}</div>`;
@@ -13527,6 +13610,7 @@
           <div style="min-width:0;">
             <div class="cc-row-name">${escapeHtml(d.name)}${d.unread ? ` <span class="cc-unread">${d.unread}</span>` : ''}</div>
             <div class="cc-row-sub">${d.phone ? `<span>📞 ${escapeHtml(d.phone)}</span>` : ''}<span>${CC_SOURCES[d.source] || CC_SOURCES.manual} · ${escapeHtml(ccAgo(d.createdAt))}</span>${d.owner ? `<span class="cc-owner">👤 ${escapeHtml(d.owner)}</span>` : ''}${convHtml(d)}</div>
+            <div class="cc-origin-line">${ccOriginInline(d.origin)}</div>
             ${ccTagsHtml(d.tags)}
           </div>
           <div class="cc-row-right">
@@ -13634,6 +13718,7 @@
       d.phone ? `<a href="tel:${escapeAttr(String(d.phone).replace(/[^\d+]/g, ''))}">📞 Ligar</a>` : '',
       d.email ? `<a href="mailto:${escapeAttr(d.email)}">✉️ E-mail</a>` : '',
     ].join('') : '';
+    document.getElementById('ccDealOrigin').innerHTML = d ? ccOriginBlock(d.origin) : '';
     document.getElementById('ccDealExtra').style.display = d ? 'block' : 'none';
     if (d) {
       const answers = d.formAnswers || [];
@@ -13798,9 +13883,13 @@
   function ccContactsFiltered(){
     const q = document.getElementById('ccContSearch').value.trim().toLowerCase();
     const tag = document.getElementById('ccContTag').value;
+    const camp = document.getElementById('ccContCampaign').value;
+    const ad = document.getElementById('ccContAd').value;
     const qd = q.replace(/\D/g, '');
     return ccContacts.filter(c => {
       if (tag && !(c.tags || []).some(t => ccLower(t) === ccLower(tag))) return false;
+      if (camp && (c.origin && c.origin.campaignKey) !== camp) return false;
+      if (ad && (c.origin && c.origin.adKey) !== ad) return false;
       if (!q) return true;
       const hay = [c.name, c.email, c.company, c.phone, ...(c.tags || [])].join(' ').toLowerCase();
       return hay.includes(q) || (qd.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(qd));
@@ -13809,16 +13898,18 @@
   function ccRenderContacts(){
     const tagNames = [...new Set([...ccState.tags.map(t => t.name), ...ccContacts.flatMap(c => c.tags || [])])].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     ccFillSelect('ccContTag', tagNames.map(t => [t, t]), 'Todas as etiquetas');
+    ccFillOriginFilters('ccCont', ccContacts);
     const rows = ccContactsFiltered();
     document.getElementById('ccContCount').textContent = ccContactsLoaded ? `${rows.length} de ${ccContacts.length} contato(s)` : '';
     const body = document.getElementById('ccContBody');
-    if (!ccContactsLoaded) { body.innerHTML = '<tr><td colspan="6" class="cc-dim">Carregando…</td></tr>'; return; }
-    if (!rows.length) { body.innerHTML = `<tr><td colspan="6" class="cc-dim" style="text-align:center; padding:28px;">${ccContacts.length ? 'Nenhum contato com esses filtros.' : 'Nenhum contato ainda. Eles aparecem quando chega um lead ou uma mensagem, ou você pode importar uma planilha.'}</td></tr>`; return; }
+    if (!ccContactsLoaded) { body.innerHTML = '<tr><td colspan="7" class="cc-dim">Carregando…</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = `<tr><td colspan="7" class="cc-dim" style="text-align:center; padding:28px;">${ccContacts.length ? 'Nenhum contato com esses filtros.' : 'Nenhum contato ainda. Eles aparecem quando chega um lead ou uma mensagem, ou você pode importar uma planilha.'}</td></tr>`; return; }
     body.innerHTML = rows.map(c => {
       const id = escapeAttr(c.id);
       const st = c.deal && c.deal.stage;
       return `<tr>
         <td class="cc-td-name"><div class="cc-cname"><span class="cc-av">${escapeHtml(ccInitials(c.name))}</span><div style="min-width:0;"><div>${escapeHtml(c.name || 'Sem nome')}</div><div class="cc-dim">${escapeHtml(c.email || c.company || '')}</div></div></div></td>
+        <td data-l="Origem">${ccOriginInline(c.origin)}</td>
         <td class="cc-td-empty" data-l="Etiquetas">${(c.tags || []).map(ccTagChip).join(' ')}</td>
         <td data-l="Última conversa">${c.lastConversationAt ? `<a href="#" class="cc-wa" onclick="event.preventDefault(); ccGoConv('${escapeAttr(c.conversationId)}')">${escapeHtml(ccAgo(c.lastConversationAt))}</a>` : '<span class="cc-dim">Nenhuma</span>'}</td>
         <td data-l="Telefone">${c.phone ? escapeHtml(c.phone) : '<span class="cc-dim">–</span>'}</td>
@@ -13838,6 +13929,7 @@
     document.getElementById('ccContactTitle').textContent = c ? 'Editar contato' : 'Novo contato';
     const set = (k, v) => { document.getElementById(k).value = v == null ? '' : v; };
     set('cctName', c?.name); set('cctPhone', c?.phone); set('cctEmail', c?.email); set('cctCompany', c?.company); set('cctNotes', c?.notes);
+    document.getElementById('ccContactOrigin').innerHTML = c ? ccOriginBlock(c.origin) : '';
     ccTagPicker('cctTags', c?.tags || []);
     ccOpenModal('ccContactModal');
     if (!c) setTimeout(() => document.getElementById('cctName').focus(), 300);
@@ -13875,9 +13967,11 @@
   function ccExportCsv(){
     const rows = ccContactsFiltered();
     if (!rows.length) { alert('Nenhum contato para baixar.'); return; }
-    const head = ['Nome', 'Telefone', 'E-mail', 'Empresa', 'Etiquetas', 'Funil', 'Etapa', 'Valor', 'Última conversa', 'Criado em'];
+    const head = ['Nome', 'Telefone', 'E-mail', 'Empresa', 'Etiquetas', 'Plataforma', 'Campanha', 'Conjunto', 'Anúncio', 'Funil', 'Etapa', 'Valor', 'Última conversa', 'Criado em'];
     const lines = rows.map(c => [
       c.name, c.phone, c.email, c.company, (c.tags || []).join(' | '),
+      c.origin?.kind === 'unknown' ? 'Origem desconhecida' : (c.origin?.platformLabel || ''),
+      c.origin?.campaignName || '', c.origin?.adsetName || '', c.origin?.kind === 'ad' ? (c.origin?.adName || '') : (c.origin?.kind === 'organic' ? 'Orgânico' : ''),
       c.deal?.stage?.funnelName || '', c.deal?.stage?.name || '',
       c.deal?.value != null ? String(c.deal.value).replace('.', ',') : '',
       c.lastConversationAt ? new Date(c.lastConversationAt).toLocaleString('pt-BR') : '',
@@ -14118,6 +14212,31 @@
     const q = r.qualification, qt = q.qualified + q.disqualified + q.none;
     const qp = v => qt ? Math.round(v / qt * 100) : 0;
     const src = r.bySource.length ? `<table class="cc-table" style="font-size:12.5px;"><thead><tr><th>Origem</th><th>Leads</th><th>Ganhos</th></tr></thead><tbody>${r.bySource.map(s => `<tr><td>${CC_SOURCES[s.source] || escapeHtml(s.source)}</td><td data-l="Leads">${s.leads}</td><td data-l="Ganhos">${s.won}</td></tr>`).join('')}</tbody></table>` : '<div class="cc-dim">Nenhum lead no período.</div>';
+    const adMoney = v => v == null ? '—' : (ccMoney(v) || 'R$ 0');
+    const adTable = (rows, mode) => {
+      if (!rows || !rows.length) return '<div class="cc-dim">Nenhum lead nem investimento no período.</div>';
+      const stageHeads = (rows[0].stages || []).map(s => `<th>${escapeHtml(s.name)}</th>`).join('');
+      const body = rows.map(row => {
+        const img = mode === 'ad' ? ccSafeImg(row.thumbnailUrl) : '';
+        const title = mode === 'ad' ? (row.adName || '—') : (row.campaignName || '—');
+        const stages = (row.stages || []).map(s => `<td data-l="${escapeAttr(s.name)}">${s.count}</td>`).join('');
+        return `<tr>
+          <td class="cc-td-name"><div class="cc-ad-cell">${img ? `<img src="${escapeAttr(img)}" alt="">` : (ccPlatformIcon(row.platform) || '')}<div style="min-width:0;"><div class="nm">${escapeHtml(title)}</div>${row.kind === 'ad' && row.platformLabel ? `<div class="sub">${escapeHtml(row.platformLabel)}</div>` : ''}</div></div></td>
+          ${mode === 'ad' ? `<td data-l="Campanha">${escapeHtml(row.campaignName || '—')}</td><td data-l="Conjunto">${escapeHtml(row.adsetName || '—')}</td>` : `<td data-l="Plataforma">${escapeHtml(row.platformLabel || '—')}</td>`}
+          <td data-l="Leads">${row.leads}</td>${stages}
+          <td data-l="Ganhos">${row.won}</td>
+          <td data-l="Receita">${adMoney(row.revenue)}</td>
+          <td data-l="Investimento">${adMoney(row.spend)}</td>
+          <td data-l="Custo/lead">${adMoney(row.costPerLead)}</td>
+          <td data-l="Custo/venda">${adMoney(row.costPerSale)}</td>
+        </tr>`;
+      }).join('');
+      return `<div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>${mode === 'ad' ? 'Anúncio' : 'Campanha'}</th>${mode === 'ad' ? '<th>Campanha</th><th>Conjunto</th>' : '<th>Plataforma</th>'}<th>Leads</th>${stageHeads}<th>Ganhos</th><th>Receita</th><th>Investimento</th><th>Custo/lead</th><th>Custo/venda</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    };
+    const adsRep = r.adReport;
+    const adBlock = adsRep ? `
+      <div class="panel" style="margin-top:14px;"><h3 class="cc-rep-h">Funil por anúncio</h3><p class="cc-rep-sub">Leads criados no período e vendas ganhas nele, ao lado do investimento do anúncio no mesmo intervalo. Custo por lead = investimento ÷ leads. Custo por venda = investimento ÷ ganhos. Quem não veio de anúncio aparece como Orgânico ou Origem desconhecida.</p>${adsRep.notice ? `<p class="cc-rep-sub">${escapeHtml(adsRep.notice)}</p>` : ''}${adTable(adsRep.ads, 'ad')}</div>
+      <div class="panel" style="margin-top:14px;"><h3 class="cc-rep-h">Funil por campanha</h3><p class="cc-rep-sub">Os mesmos leads, somados por campanha. No Google o investimento é o da campanha.</p>${adTable(adsRep.campaigns, 'campaign')}</div>` : '';
     const per = `${new Date(r.period.from).toLocaleDateString('pt-BR')} a ${new Date(new Date(r.period.to).getTime() - 1).toLocaleDateString('pt-BR')}`;
     document.getElementById('ccReport').innerHTML = `
       <div class="cc-rep-kpis">
@@ -14140,7 +14259,8 @@
           <div class="cc-stack"><div style="width:${qp(q.qualified)}%; background:var(--green)"></div><div style="width:${qp(q.disqualified)}%; background:var(--red)"></div></div>
         </div>
         <div class="panel"><h3 class="cc-rep-h">Leads por origem</h3><p class="cc-rep-sub">De onde vieram os leads do período.</p><div class="cc-table-wrap" style="border:none;">${src}</div></div>
-      </div>`;
+      </div>
+      ${adBlock}`;
   }
 
   /* ---- Conversas (WhatsApp) ---- */
@@ -14279,7 +14399,7 @@
     document.getElementById('ccChatHead').innerHTML = `
       <button type="button" class="btn-cancel cc-back" onclick="ccCloseChat()" aria-label="Voltar">←</button>
       <span class="cc-av">${escapeHtml(ccInitials(ct.name))}</span>
-      <div class="cc-chat-who"><b>${escapeHtml(ct.name || ct.phone || 'Sem nome')}</b><span>${escapeHtml(ct.phone || '')} ${ccStageChip(st)}</span></div>
+      <div class="cc-chat-who"><b>${escapeHtml(ct.name || ct.phone || 'Sem nome')}</b><span>${escapeHtml(ct.phone || '')} ${ccStageChip(st)}</span>${ct.origin ? `<div class="cc-origin-line">${ccOriginInline(ct.origin)}</div>` : ''}</div>
       <div class="cc-chat-actions">
         <select class="modal-input" onchange="ccAssign(this.value)" aria-label="Responsável">
           <option value="">Sem responsável</option>
@@ -14383,13 +14503,20 @@
   function ccDisconnectWa(){
     if (confirm('Desconectar o WhatsApp deste cliente? As conversas continuam salvas, mas novas mensagens deixam de chegar.')) ccSaveWa(null, true);
   }
+  async function ccSimulateInstant(){
+    try {
+      await ccApi('/instant-form/simulate', { method: 'POST', body: '{}' });
+      await ccLoad();
+    } catch (e) { ccError(e.message); }
+  }
   async function ccSimulate(){
     const from = (prompt('Teste: telefone de quem manda (com DDD, ex: 5511999990099)', '5511999990099') || '').trim();
     if (!from) return;
     const text = (prompt('Mensagem de teste', 'Olá! Vi o anúncio e quero saber mais.') || '').trim();
     if (!text) return;
+    const fromAd = confirm('Essa mensagem de teste veio de um anúncio de WhatsApp?\n\nOK = sim, com o anúncio de exemplo.\nCancelar = mensagem comum, sem anúncio.');
     try {
-      const r = await ccApi('/whatsapp/simulate', { method: 'POST', body: JSON.stringify({ from, name: 'Contato de teste', text }) });
+      const r = await ccApi('/whatsapp/simulate', { method: 'POST', body: JSON.stringify({ from, name: 'Contato de teste', text, referral: fromAd }) });
       ccConv.pendingOpen = r.conversationId;
       await ccLoad();
       await ccLoadConvs();

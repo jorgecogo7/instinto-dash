@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const config = require('../config');
 const crmStore = require('../data/crmStore');
 const crm = require('./crmService');
+const attribution = require('../lib/attribution');
 
 /**
  * WhatsApp do CRM, pela API oficial da Meta (WhatsApp Cloud API).
@@ -78,22 +79,29 @@ async function dealForContact(clientId, contactId) {
 
 // Mensagem recebida (do webhook ou simulada). Cria contato, conversa e,
 // se o contato ainda não tem negócio, um lead na primeira etapa.
-async function receiveInbound(clientId, { from, profileName, text, type, waId, at }) {
+async function receiveInbound(clientId, { from, profileName, text, type, waId, at, referral }) {
   const phone = str(from, 40).replace(/\D/g, '');
   if (!phone) return null;
   let contact = await crmStore.findContactByPhone(clientId, phone);
   const ts = at || nowIso();
+  const created = !contact;
+  let dirty = false;
   if (!contact) {
     contact = {
       id: uid(), clientId, name: str(profileName, 120) || `+${phone}`, phone: `+${phone}`, email: null, company: null,
-      tags: [], notes: null, source: 'whatsapp', createdAt: ts, updatedAt: ts,
+      tags: [], notes: null, source: 'whatsapp', createdAt: ts, updatedAt: ts, attribution: null,
     };
-    await crmStore.addContact(clientId, contact);
   } else if (profileName && (!contact.name || contact.name === contact.phone || contact.name === `+${phone}`)) {
     contact.name = str(profileName, 120);
     contact.updatedAt = nowIso();
-    await crmStore.saveContact(clientId, contact);
+    dirty = true;
   }
+  let touch = attribution.parseWhatsappReferral(referral, ts);
+  if (touch) touch = await crm.prepareTouch(clientId, touch);
+  else if (!contact.attribution || !contact.attribution.first) touch = attribution.organicTouch('whatsapp', ts);
+  if (touch && attribution.applyTouch(contact, touch)) dirty = true;
+  if (created) await crmStore.addContact(clientId, contact);
+  else if (dirty) await crmStore.saveContact(clientId, contact);
 
   let conv = await crmStore.getConversationByContact(clientId, contact.id);
   if (!conv) conv = { id: uid(), contactId: contact.id, assignee: null, unread: 0, status: 'open', createdAt: ts };
@@ -111,12 +119,33 @@ async function receiveInbound(clientId, { from, profileName, text, type, waId, a
       id: uid(), clientId, funnelId: funnel.id, contactId: contact.id,
       name: contact.name, phone: contact.phone, email: null, company: null,
       source: 'whatsapp', sourceDetail: 'WhatsApp', value: null, owner: null, tags: [], notes: null,
+      attribution: contact.attribution || null,
       stageId: funnel.stages[0].id, stageChangedAt: ts, createdAt: ts, updatedAt: ts, history: [],
     };
-    crm.pushHistory(deal, { type: 'created', by: { role: 'system', name: 'WhatsApp' }, to: deal.stageId, text: 'Chegou pelo WhatsApp' });
+    const adName = contact.attribution && contact.attribution.first && (contact.attribution.first.adName || contact.attribution.first.headline);
+    crm.pushHistory(deal, {
+      type: 'created', by: { role: 'system', name: 'WhatsApp' }, to: deal.stageId,
+      text: adName ? `Chegou pelo WhatsApp, anúncio "${adName}"` : 'Chegou pelo WhatsApp',
+    });
     await crmStore.addDeal(clientId, deal);
   }
   return { contact, conversation: conv, message: msg, deal };
+}
+
+// Uma mensagem do webhook, pronta para o CRM. Reação não vira mensagem.
+// O referral (Click-to-WhatsApp) segue junto para a origem do contato.
+function inboundFromMessage(m, profileName) {
+  const text = textOf(m);
+  if (text === null || !m) return null;
+  return {
+    from: m.from,
+    profileName: profileName || null,
+    text,
+    type: m.type,
+    waId: m.id,
+    at: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
+    referral: m.referral || null,
+  };
 }
 
 // Corpo do webhook da Meta: entry[].changes[].value com metadata.phone_number_id,
@@ -132,10 +161,9 @@ async function handleWebhook(body) {
       if (!clientId) { result.ignored += 1; continue; }
       const names = new Map((v.contacts || []).map((c) => [c.wa_id, c.profile && c.profile.name]));
       for (const m of v.messages || []) {
-        const text = textOf(m);
-        if (text === null) continue;
-        const at = m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : nowIso();
-        const r = await receiveInbound(clientId, { from: m.from, profileName: names.get(m.from), text, type: m.type, waId: m.id, at });
+        const item = inboundFromMessage(m, names.get(m.from));
+        if (!item) continue;
+        const r = await receiveInbound(clientId, { ...item, at: item.at || nowIso() });
         if (r && !r.duplicate) result.messages += 1;
       }
       for (const s of v.statuses || []) {
@@ -156,16 +184,22 @@ async function listConversations(clientId) {
   const stageById = new Map(board.pipeline.funnels.flatMap((f) => f.stages.map((s) => [s.id, s])));
   const dealByContact = new Map();
   board.deals.forEach((d) => { if (d.contactId && !dealByContact.has(d.contactId)) dealByContact.set(d.contactId, d); });
-  return convs.map((c) => {
+  const rows = convs.map((c) => {
     const ct = byId.get(c.contactId) || {};
     const d = dealByContact.get(c.contactId);
     const s = d && stageById.get(d.stageId);
     return {
       ...c,
-      contact: { id: ct.id, name: ct.name || ct.phone || 'Sem nome', phone: ct.phone || null, tags: ct.tags || [] },
+      contact: { id: ct.id, name: ct.name || ct.phone || 'Sem nome', phone: ct.phone || null, tags: ct.tags || [], attribution: ct.attribution || null },
       deal: d ? { id: d.id, stageId: d.stageId, stageName: s ? s.name : null, stageColor: s ? s.color : null, funnelId: d.funnelId } : null,
     };
   });
+  const origins = await crm.originsFor(clientId, rows.map((c) => c.contact.attribution));
+  rows.forEach((c, i) => {
+    c.contact.origin = origins[i];
+    delete c.contact.attribution;
+  });
+  return rows;
 }
 
 async function getConversation(clientId, id, { markRead } = {}) {
@@ -176,6 +210,7 @@ async function getConversation(clientId, id, { markRead } = {}) {
     crmStore.listMessages(clientId, id), crmStore.getContact(clientId, conv.contactId), dealForContact(clientId, conv.contactId),
   ]);
   const windowOpen = !!conv.lastInboundAt && Date.now() - new Date(conv.lastInboundAt).getTime() < WINDOW_MS;
+  if (contact) contact.origin = (await crm.originsFor(clientId, [contact.attribution]))[0];
   return { conversation: conv, messages, contact, deal: deal ? { id: deal.id, stageId: deal.stageId, funnelId: deal.funnelId || null, value: deal.value, name: deal.name } : null, windowOpen };
 }
 
@@ -252,6 +287,6 @@ async function openForContact(clientId, contactId) {
 }
 
 module.exports = {
-  verifyChallenge, signatureOk, handleWebhook, receiveInbound,
+  verifyChallenge, signatureOk, handleWebhook, receiveInbound, inboundFromMessage,
   listConversations, getConversation, updateConversation, sendMessage, openForContact, isMock,
 };

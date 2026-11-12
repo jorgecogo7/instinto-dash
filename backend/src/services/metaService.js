@@ -626,7 +626,11 @@ async function getAccountReport(adAccountId, options = {}) {
   const cacheKey = `meta:report:${accountId || 'mock'}:${range.from}:${range.to}:${preference}`;
   // fresh: o link do vídeo expira. "Buscar de novo" na aba Anúncios ignora o cache.
   const cached = options.fresh ? null : cache.get(cacheKey);
-  if (cached) return activeCreatives.presentMetaReport(cached, options.activeCreativesOnly === true);
+  if (cached) {
+    // Catálogo leve para a origem do CRM. Não é uma consulta nova.
+    try { require('./adCatalog').rememberMetaCatalog(accountId, cached); } catch (e) { /* o CRM segue sem o catálogo */ }
+    return activeCreatives.presentMetaReport(cached, options.activeCreativesOnly === true);
+  }
 
   let result;
   if (!hasRealCredentials()) {
@@ -637,6 +641,7 @@ async function getAccountReport(adAccountId, options = {}) {
   }
   result.kpiPreference = preference;
   cache.set(cacheKey, result, 60 * 20);
+  try { require('./adCatalog').rememberMetaCatalog(accountId, result); } catch (e) { /* o CRM segue sem o catálogo */ }
   // O cache guarda todos os anúncios. A lista que sai pro painel, pro link
   // e pro PDF é que perde os que não veiculam — totais e campanhas ficam.
   return activeCreatives.presentMetaReport(result, options.activeCreativesOnly === true);
