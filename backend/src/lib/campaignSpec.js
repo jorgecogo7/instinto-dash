@@ -54,15 +54,33 @@ function todaySP() {
 /* ===================== Meta ===================== */
 
 function sanitizeCountries(list) {
-  return strList(list, 10, 2).map((x) => x.toUpperCase()).filter((x) => /^[A-Z]{2}$/.test(x));
+  return strList(list, 50, 2).map((x) => x.toUpperCase()).filter((x) => /^[A-Z]{2}$/.test(x));
+}
+
+// Grupos de país da Meta (continente, UE, etc.). Independente da lista ISO.
+const COUNTRY_GROUPS = new Set([
+  'europe', 'eu', 'eea', 'africa', 'asia', 'caribbean', 'central_america',
+  'north_america', 'oceania', 'south_america', 'gcc', 'asean',
+]);
+function sanitizeCountryGroups(list) {
+  return strList(list, 10, 40).map((x) => x.toLowerCase().replace(/[\s-]+/g, '_')).filter((x) => COUNTRY_GROUPS.has(x));
+}
+
+function audienceNeedsDsa(audience) {
+  if (!audience) return false;
+  const groups = audience.countryGroups || [];
+  if (groups.some((g) => g === 'europe' || g === 'eu' || g === 'eea')) return true;
+  return (audience.countries || []).some((c) => EU.includes(c));
 }
 
 // Público completo (nível da campanha). Com partial=true, só entram as chaves
 // que o conjunto mandou: o resto herda o público da campanha na hora de publicar.
 function sanitizeAudience(a = {}, partial = false) {
   const countries = sanitizeCountries(a.countries);
+  const countryGroups = sanitizeCountryGroups(a.countryGroups);
   const full = {
-    countries: countries.length ? countries : ['BR'],
+    countries: countries.length || countryGroups.length ? countries : ['BR'],
+    countryGroups,
     cities: strList(a.cities, 20, 80),
     ageMin: intIn(a.ageMin, 18, 65) ?? 18,
     ageMax: intIn(a.ageMax, 18, 65) ?? 65,
@@ -73,6 +91,10 @@ function sanitizeAudience(a = {}, partial = false) {
   if (!partial) return full;
   const patch = {};
   if (a.countries !== undefined) patch.countries = full.countries;
+  if (a.countryGroups !== undefined) {
+    patch.countryGroups = full.countryGroups;
+    if (a.countries === undefined) patch.countries = full.countries; // [] quando só há grupo
+  }
   if (a.cities !== undefined) patch.cities = full.cities;
   if (a.ageMin !== undefined && a.ageMin !== '') patch.ageMin = full.ageMin;
   if (a.ageMax !== undefined && a.ageMax !== '') patch.ageMax = full.ageMax;
@@ -146,6 +168,8 @@ function sanitizeAdSet(input) {
     name: str(input.name, 400),
     ads: adsIn.slice(0, MAX_ADS_PER_SET).map(sanitizeAd).filter(Boolean),
   };
+  const setBudget = money(input.budget);
+  if (setBudget) set.budget = setBudget;
   if (input.audience && typeof input.audience === 'object') set.audience = sanitizeAudience(input.audience, true);
   if (input.placements && typeof input.placements === 'object') set.placements = sanitizePlacements(input.placements);
   return set;
@@ -165,7 +189,9 @@ function sanitizeMeta(input = {}) {
     placements: sanitizePlacements(input.placements || {}),
     creative: sanitizeCreative(input.creative || {}),
     dsa: { beneficiary: str(d.beneficiary, 100), payor: str(d.payor, 100) },
+    urlTags: str(String(input.urlTags ?? '').replace(/^\?/, ''), 2000),
   };
+  if (input.budgetMode === 'abo') out.budgetMode = 'abo';
   const enh = readEnhancements(input);
   if (enh) out.creativeEnhancements = enh;
   // Sem adSets (ou lista vazia): o formato antigo, de um conjunto e um anúncio, segue valendo.
@@ -179,10 +205,20 @@ function usesAdSets(spec) {
   return !!(spec && Array.isArray(spec.adSets) && spec.adSets.length);
 }
 
+// ABO: orçamento em cada conjunto, sem orçamento na campanha.
+// Vale se budgetMode for "abo" ou se todos os conjuntos tiverem verba própria.
+function isAbo(spec) {
+  if (!spec) return false;
+  if (spec.budgetMode === 'abo') return true;
+  if (!usesAdSets(spec) || !(spec.adSets || []).length) return false;
+  return spec.adSets.every((s) => s && s.budget > 0);
+}
+
 function mergeAudience(base, patch) {
   if (!patch || typeof patch !== 'object') return { ...base };
   const out = { ...base };
-  if (patch.countries && patch.countries.length) out.countries = patch.countries;
+  if (patch.countries !== undefined) out.countries = patch.countries;
+  if (patch.countryGroups !== undefined) out.countryGroups = patch.countryGroups;
   if (patch.cities) out.cities = patch.cities;
   if (patch.ageMin != null) out.ageMin = patch.ageMin;
   if (patch.ageMax != null) out.ageMax = patch.ageMax;
@@ -240,6 +276,7 @@ function expandMetaPlan(spec, campaignName = '') {
     legacy: false,
     adSets: spec.adSets.map((set) => ({
       name: set.name,
+      budget: set.budget || null,
       audience: mergeAudience(baseAudience, set.audience),
       placements: mergePlacements(basePlacements, set.placements),
       ads: (set.ads || []).map((ad) => ({
@@ -284,7 +321,12 @@ function describeMissingAssets(spec, campaignName, missingIds) {
 
 function validateMeta(spec, { account } = {}) {
   const e = [];
-  if (!spec.budget) e.push('Informe o orçamento.');
+  const abo = isAbo(spec);
+  if (!abo && !spec.budget) e.push('Informe o orçamento.');
+  if (abo) {
+    const missing = (spec.adSets || []).filter((s) => !s.budget);
+    if (missing.length) e.push('No orçamento por conjunto (ABO), informe a verba de cada conjunto.');
+  }
   if (!spec.startDate) e.push('Informe a data de início.');
   else if (spec.startDate < todaySP()) e.push('A data de início já passou.');
   if (spec.budgetType === 'lifetime' && !spec.endDate) e.push('Orçamento total precisa de data de término.');
@@ -298,7 +340,7 @@ function validateMeta(spec, { account } = {}) {
     if (!spec.creative.assetId) e.push('Envie a imagem do anúncio.');
     if (!spec.creative.primaryText) e.push('Escreva o texto principal do anúncio.');
     if (!spec.creative.headline) e.push('Escreva o título do anúncio.');
-    if (spec.audience.countries.some((c) => EU.includes(c)) && (!spec.dsa.beneficiary || !spec.dsa.payor)) {
+    if (audienceNeedsDsa(spec.audience) && (!spec.dsa.beneficiary || !spec.dsa.payor)) {
       e.push('Anúncio para a União Europeia: informe beneficiário e pagador (exigência da Meta).');
     }
   } else {
@@ -313,7 +355,7 @@ function validateMeta(spec, { account } = {}) {
       else seenSets.add(set.name);
       if (set.audience.ageMin > set.audience.ageMax) e.push(`No ${setLabel}, a idade mínima é maior que a máxima.`);
       if (set.placements.mode === 'manual' && !set.placements.positions.length) e.push(`No ${setLabel}, escolha pelo menos um posicionamento.`);
-      if (set.audience.countries.some((c) => EU.includes(c))) needsDsa = true;
+      if (audienceNeedsDsa(set.audience)) needsDsa = true;
       if (!set.ads.length) e.push(`O ${setLabel} precisa de pelo menos um anúncio.`);
       set.ads.forEach((ad, j) => {
         const adLabel = ad.name ? `anúncio "${ad.name}"` : `anúncio ${j + 1} do ${setLabel}`;
@@ -397,7 +439,7 @@ function validate(platform, spec, ctx) { return platform === 'google' ? validate
 
 module.exports = {
   sanitize, validate, sanitizeMeta, sanitizeGoogle, validateMeta, validateGoogle, todaySP,
-  usesAdSets, expandMetaPlan, collectAssetIds, describeMissingAssets,
+  usesAdSets, isAbo, audienceNeedsDsa, expandMetaPlan, collectAssetIds, describeMissingAssets,
   META_OBJECTIVES, META_CTAS, META_POSITIONS, SPECIAL_CATEGORIES, GOOGLE_COUNTRIES, LANGUAGES, EU,
   MAX_AD_SETS, MAX_ADS_PER_SET,
 };

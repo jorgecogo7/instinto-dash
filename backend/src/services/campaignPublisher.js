@@ -119,6 +119,23 @@ function imageHashOf(response) {
  * Tudo que tem status sai PAUSED. Rascunho sem adSets continua com um conjunto
  * chamado "<campanha> | Conjunto" e um anúncio "<campanha> | Anúncio".
  */
+
+// CBO: verba (e lance) na campanha. ABO: verba nos conjuntos, nada de orçamento aqui.
+function campaignParams(s, draft, obj, name, budgetKey) {
+  const params = {
+    name,
+    objective: obj.objective,
+    status: 'PAUSED',
+    buying_type: 'AUCTION',
+    special_ad_categories: s.specialAdCategory === 'NONE' ? [] : [s.specialAdCategory],
+  };
+  if (!spec.isAbo(s)) {
+    params[budgetKey] = minorUnits(s.budget, draft.currency);
+    params.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+  }
+  return params;
+}
+
 function buildMetaRequests(draft, account, ctx) {
   const s = draft.spec;
   const m = account.meta || {};
@@ -158,15 +175,7 @@ function buildMetaRequests(draft, account, ctx) {
     label: 'Campanha',
     method: 'POST',
     path: `${act}/campaigns`,
-    params: {
-      name,
-      objective: obj.objective,
-      status: 'PAUSED',
-      buying_type: 'AUCTION',
-      special_ad_categories: s.specialAdCategory === 'NONE' ? [] : [s.specialAdCategory],
-      [budgetKey]: minorUnits(s.budget, draft.currency),
-      bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-    },
+    params: campaignParams(s, draft, obj, name, budgetKey),
     pick: (r) => r.id,
     sets: 'campaign_id',
     record: { key: 'campaign', type: 'campaign', name },
@@ -188,9 +197,15 @@ function buildMetaRequests(draft, account, ctx) {
     if (s.objective === 'mensagens') adset.promoted_object = { page_id: m.pageId };
     if (s.startDate > today) adset.start_time = `${s.startDate}T00:00:00${ctx.tz}`;
     if (s.endDate) adset.end_time = `${s.endDate}T23:59:00${ctx.tz}`;
-    if (set.audience.countries.some((c) => spec.EU.includes(c))) {
+    if (spec.audienceNeedsDsa(set.audience)) {
       adset.dsa_beneficiary = s.dsa.beneficiary;
       adset.dsa_payor = s.dsa.payor;
+    }
+    if (spec.isAbo(s)) {
+      const setBudget = set.budget || s.budget;
+      if (!setBudget) throw publishError('No orçamento por conjunto (ABO), informe a verba de cada conjunto.');
+      adset[budgetKey] = minorUnits(setBudget, draft.currency);
+      adset.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
     }
     requests.push({
       key: single ? 'adset' : `adset_${si + 1}`,
@@ -208,7 +223,7 @@ function buildMetaRequests(draft, account, ctx) {
       const hashToken = single ? 'image_hash' : `imghash_${imgIdx}`;
       const creativeToken = single ? 'creative_id' : `creative_${si}_${ai}`;
       const adToken = single ? 'ad_id' : `ad_${si}_${ai}`;
-      const storySpec = storyFor(m, s.objective, ad.creative, `{${hashToken}}`);
+      const storySpec = storyFor(m, s.objective, ad.creative, `{${hashToken}}`, s.urlTags);
       const creativeParams = {
         name: (plan.legacy ? `${name} | Criativo` : `${ad.name} | Criativo`).slice(0, 255),
         object_story_spec: storySpec,
@@ -248,20 +263,30 @@ function buildMetaRequests(draft, account, ctx) {
   return requests;
 }
 
+
+function geoLocationsFor(a, cityKeys) {
+  if (a.cities && a.cities.length) {
+    return {
+      cities: a.cities.map((city) => {
+        const key = cityKeys[city];
+        if (!key) throw publishError(`A Meta não encontrou a cidade "${city}". Confira o nome no rascunho.`);
+        return { key };
+      }),
+    };
+  }
+  const geo = {};
+  if (a.countries && a.countries.length) geo.countries = a.countries;
+  if (a.countryGroups && a.countryGroups.length) geo.country_groups = a.countryGroups;
+  if (!geo.countries && !geo.country_groups) geo.countries = ['BR'];
+  return geo;
+}
+
 function targetingFor(set, ctx) {
   const a = set.audience;
   const cityKeys = ctx.cityKeys || {};
   const interestMap = ctx.interests || {};
   const targeting = {
-    geo_locations: a.cities.length
-      ? {
-        cities: a.cities.map((city) => {
-          const key = cityKeys[city];
-          if (!key) throw publishError(`A Meta não encontrou a cidade "${city}". Confira o nome no rascunho.`);
-          return { key };
-        }),
-      }
-      : { countries: a.countries },
+    geo_locations: geoLocationsFor(a, cityKeys),
     age_min: a.ageMin,
     age_max: a.ageMax,
     targeting_automation: { advantage_audience: a.advantage ? 1 : 0 },
@@ -287,13 +312,15 @@ function targetingFor(set, ctx) {
   return targeting;
 }
 
-function storyFor(meta, objective, creative, hashToken) {
+function storyFor(meta, objective, creative, hashToken, urlTags) {
   const linkData = {
     image_hash: hashToken,
     message: creative.primaryText,
     name: creative.headline,
   };
   if (creative.description) linkData.description = creative.description;
+  const tags = String(urlTags || '').replace(/^\?/, '');
+  if (tags) linkData.url_tags = tags;
   if (objective === 'mensagens') {
     linkData.link = 'https://api.whatsapp.com/send';
     linkData.call_to_action = { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } };

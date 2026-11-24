@@ -37,10 +37,13 @@ Everything is scoped by `client_id`: a draft or asset from another client gives 
 ### Meta `spec`
 `objective` (mensagens, trafego, cadastros, vendas, alcance), `pixelId` (cadastros/vendas),
 `specialAdCategory`, `budgetType` (daily | lifetime), `budget` (in the client's currency),
-`startDate`, `endDate` (yyyy-mm-dd, São Paulo time), `audience { countries[], cities[], ageMin,
+`startDate`, `endDate` (yyyy-mm-dd, São Paulo time), `audience { countries[], countryGroups[], cities[], ageMin,
 ageMax, gender, interests[], advantage }`, `placements { mode: auto|manual, positions[] }`,
-`creative { assetId, primaryText, headline, description, cta, link }`, `dsa { beneficiary, payor }`
-(required if an EU country is targeted).
+`creative { assetId, primaryText, headline, description, cta, link }`, `urlTags` (UTM string without a
+leading `?`; stored on `link_data.url_tags`), `dsa { beneficiary, payor }`
+(required if an EU country or a `countryGroups` value of europe/eu/eea is targeted).
+`budgetMode: "abo"` (or a positive `budget` on every ad set) puts the daily/lifetime budget on
+each ad set and omits it from the campaign. The default remains CBO: `budget` on the campaign.
 
 Optional, for several ad sets and ads in one campaign:
 
@@ -48,7 +51,7 @@ Optional, for several ad sets and ads in one campaign:
   on every ad (`degrees_of_freedom_spec.creative_features_spec`, one `enroll_status: OPT_OUT`
   per feature). Omit it, or send `"default"`, to leave the API default. Aliases accepted on
   input: `advantageCreative: false`, `optOutAdvantageCreative: true`.
-- `adSets[]`: each item is `{ name, audience?, placements?, ads[] }`.
+- `adSets[]`: each item is `{ name, budget?, audience?, placements?, ads[] }`. `budget` is required in ABO.
   - `name` is sent to Meta as the ad set name (required, unique in the campaign).
   - `audience` and `placements` are optional overrides. Missing fields inherit the campaign
     `audience` / `placements`. An empty `interests` list inherits the campaign interests;
@@ -62,7 +65,7 @@ ad named `<campaign> | Anúncio`. With `adSets`, those suffixes are not added: t
 the draft are the names Meta receives. The campaign name is always the draft `name`.
 
 Publishing creates, all **PAUSED** (never ACTIVE): one image upload per distinct asset,
-then the campaign (CBO), then each ad set, then each ad's creative and ad.
+then the campaign (CBO, or ABO with no campaign budget), then each ad set, then each ad's creative and ad.
 Instagram-only delivery is `placements.mode: "manual"` with only `instagram_*` positions.
 Cities and interests are looked up by name on Meta; what isn't found shows up as a warning.
 On a partial failure, what was already created stays paused. IDs are in `publish.ids` and

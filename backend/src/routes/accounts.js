@@ -23,6 +23,7 @@ const EDITABLE_FIELDS = [
   'kpiPreference',
   'activeCreativesOnly',
   'activeKeywordsOnly',
+  'agency',
 ];
 
 // Modelo do painel de anúncios do cliente: quais plataformas aparecem.
@@ -38,6 +39,12 @@ function stripSecrets(a) {
 
 // O painel vê a preferência que vale de fato (campo salvo ou o padrão dos
 // clientes de Instant Form). Não grava nada: "auto" explícito continua auto.
+const AGENCIES = new Set(['instinto', 'trafegar-media']);
+function sanitizeAgency(value) {
+  const v = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return AGENCIES.has(v) ? v : null;
+}
+
 function presentAccount(a) {
   if (!a) return a;
   const base = stripSecrets(a);
@@ -46,6 +53,8 @@ function presentAccount(a) {
   copy.kpiPreference = kpiPreference.effective(a);
   copy.activeCreativesOnly = activeCreatives.effective(a);
   copy.activeKeywordsOnly = activeKeywords.effective(a);
+  // Sem campo salvo, o cliente é da Instinto Digital.
+  copy.agency = a.agency === 'trafegar-media' ? 'trafegar-media' : 'instinto';
   return copy;
 }
 
@@ -123,6 +132,7 @@ router.post('/', async (req, res) => {
       site: sanitizeString(req.body.site, 200),
       instagram: sanitizeString(req.body.instagram, 60),
       drive: sanitizeString(req.body.drive, 300),
+      agency: sanitizeAgency(req.body.agency) || 'instinto',
       // Token aleatório usado no link de compartilhamento (visualização do
       // cliente, sem login nenhum). 24 bytes ~= impossível de adivinhar.
       shareToken: crypto.randomBytes(24).toString('base64url'),
@@ -162,6 +172,11 @@ router.patch('/:id', async (req, res) => {
     const v = activeKeywords.normalize(changes.activeKeywordsOnly);
     if (v === null) return res.status(400).json({ error: 'Valor inválido para "ocultar termos de pesquisa". Use true ou false.' });
     changes.activeKeywordsOnly = v;
+  }
+  if (changes.agency !== undefined) {
+    const v = sanitizeAgency(changes.agency);
+    if (!v) return res.status(400).json({ error: 'Agência inválida. Use "instinto" ou "trafegar-media".' });
+    changes.agency = v;
   }
   if (Object.keys(changes).length === 0) {
     return res.status(400).json({ error: 'Nenhum campo válido para atualizar.' });
