@@ -407,3 +407,125 @@ test('o formulário desenha dois conjuntos e quatro anúncios, e o rascunho anti
   assert.match(htmlLegacy, /Usar vários conjuntos e anúncios/);
   assert.doesNotMatch(htmlLegacy, /id="cpSetName_0"/);
 });
+
+
+test('ABO coloca a verba em cada conjunto e tira o orçamento da campanha', async () => {
+  const cleaned = spec.sanitizeMeta({
+    objective: 'trafego',
+    budgetMode: 'abo',
+    startDate: spec.todaySP(),
+    creativeEnhancements: 'opt_out',
+    urlTags: 'utm_source=meta&utm_campaign=teste',
+    dsa: { beneficiary: 'Mintply', payor: 'Mintply' },
+    audience: { countries: ['US'], ageMin: 18, ageMax: 65, advantage: false },
+    placements: { mode: 'manual', positions: ['facebook_feed', 'facebook_stories', 'facebook_reels'] },
+    creative: { cta: 'SIGN_UP', link: 'https://mintply.com/?launchTier=200000' },
+    adSets: [
+      {
+        name: 'Conjunto Europa',
+        budget: 200,
+        audience: { countries: ['US', 'QA'], countryGroups: ['europe'] },
+        ads: [{
+          name: 'Anúncio 7',
+          creative: {
+            assetId: 'asset-7',
+            primaryText: 'Mintply offers a trading challenge with an evaluated account.',
+            headline: '100K evaluated account challenge',
+            description: 'Review the rules and register. Terms apply.',
+          },
+        }],
+      },
+      {
+        name: 'Conjunto Asia',
+        budget: 200,
+        audience: { countries: ['ID', 'HK', 'SA'] },
+        ads: [{
+          name: 'Anúncio 9',
+          creative: {
+            assetId: 'asset-9',
+            primaryText: 'Mintply offers a trading challenge with an evaluated account.',
+            headline: '50K evaluated account challenge',
+            description: 'Review the rules and register. Terms apply.',
+          },
+        }],
+      },
+    ],
+  });
+  assert.strictEqual(spec.isAbo(cleaned), true);
+  assert.strictEqual(cleaned.budgetMode, 'abo');
+  assert.strictEqual(cleaned.urlTags, 'utm_source=meta&utm_campaign=teste');
+  assert.strictEqual(cleaned.adSets[0].budget, 200);
+  assert.deepStrictEqual(cleaned.adSets[0].audience.countryGroups, ['europe']);
+  assert.deepStrictEqual(cleaned.adSets[0].audience.countries, ['US', 'QA']);
+  assert.ok(spec.audienceNeedsDsa(cleaned.adSets[0].audience));
+  assert.deepStrictEqual(spec.validateMeta(cleaned, { account }), []);
+
+  const draft = { id: 'abo1', platform: 'meta', name: '[ID] [CADASTRO] [MINTPLY]', spec: cleaned, currency: 'BRL' };
+  const result = await publisher.publish(draft, account, { images: imagesFor(['asset-7', 'asset-9']) });
+  const campaign = result.requests.find((r) => r.label === 'Campanha').params;
+  assert.strictEqual(campaign.daily_budget, undefined);
+  assert.strictEqual(campaign.lifetime_budget, undefined);
+  assert.strictEqual(campaign.bid_strategy, undefined);
+  assert.strictEqual(campaign.status, 'PAUSED');
+
+  const adsets = result.requests.filter((r) => String(r.label).startsWith('Conjunto:'));
+  assert.strictEqual(adsets.length, 2);
+  assert.strictEqual(adsets[0].params.daily_budget, 20000);
+  assert.strictEqual(adsets[1].params.daily_budget, 20000);
+  assert.strictEqual(adsets[0].params.bid_strategy, 'LOWEST_COST_WITHOUT_CAP');
+  assert.strictEqual(adsets[0].params.dsa_beneficiary, 'Mintply');
+  assert.strictEqual(adsets[0].params.dsa_payor, 'Mintply');
+  assert.deepStrictEqual(adsets[0].params.targeting.geo_locations.country_groups, ['europe']);
+  assert.deepStrictEqual(adsets[0].params.targeting.geo_locations.countries, ['US', 'QA']);
+  assert.strictEqual(adsets[0].params.targeting.targeting_automation.advantage_audience, 0);
+  assert.deepStrictEqual(adsets[0].params.targeting.publisher_platforms, ['facebook']);
+  assert.ok(!adsets[0].params.targeting.instagram_positions);
+  assert.strictEqual(adsets[1].params.dsa_beneficiary, undefined);
+
+  const creatives = result.requests.filter((r) => String(r.label).startsWith('Criativo'));
+  assert.ok(creatives.length);
+  for (const c of creatives) {
+    assert.strictEqual(c.params.object_story_spec.link_data.url_tags, 'utm_source=meta&utm_campaign=teste');
+    assert.ok(c.params.degrees_of_freedom_spec);
+  }
+  for (const r of result.requests) {
+    if (r.params && Object.prototype.hasOwnProperty.call(r.params, 'status')) assert.strictEqual(r.params.status, 'PAUSED');
+  }
+});
+
+test('conjunto só com grupo da Europa não herda o Brasil e exige DSA', () => {
+  const cleaned = spec.sanitizeMeta({
+    objective: 'trafego',
+    budgetMode: 'abo',
+    startDate: spec.todaySP(),
+    dsa: { beneficiary: 'Mintply', payor: 'Mintply' },
+    audience: { countries: ['BR'], advantage: false },
+    placements: { mode: 'manual', positions: ['facebook_feed'] },
+    creative: { cta: 'LEARN_MORE', link: 'https://mintply.com/' },
+    adSets: [{
+      name: 'Europa',
+      budget: 100,
+      audience: { countryGroups: ['europe'] },
+      ads: [{ name: 'Ad', creative: { assetId: 'x', primaryText: 'Hi', headline: 'Title' } }],
+    }],
+  });
+  const plan = spec.expandMetaPlan(cleaned, 'Campanha');
+  assert.deepStrictEqual(plan.adSets[0].audience.countryGroups, ['europe']);
+  assert.deepStrictEqual(plan.adSets[0].audience.countries, []);
+  assert.ok(spec.audienceNeedsDsa(plan.adSets[0].audience));
+  assert.deepStrictEqual(spec.validateMeta(cleaned), []);
+});
+
+test('CBO legado continua com daily_budget na campanha quando os conjuntos não têm verba', async () => {
+  const cleaned = spec.sanitizeMeta(leadsSpec());
+  assert.strictEqual(spec.isAbo(cleaned), false);
+  const draft = { id: 'cbo1', platform: 'meta', name: 'Leads CBO', spec: cleaned, currency: 'BRL' };
+  const ids = spec.collectAssetIds(cleaned, draft.name);
+  const result = await publisher.publish(draft, account, { images: imagesFor(ids) });
+  const campaign = result.requests.find((r) => r.label === 'Campanha').params;
+  assert.strictEqual(campaign.daily_budget, 5000);
+  const adsets = result.requests.filter((r) => String(r.label).startsWith('Conjunto:'));
+  for (const s of adsets) {
+    assert.strictEqual(s.params.daily_budget, undefined);
+  }
+});

@@ -2508,10 +2508,18 @@
 
     <section class="nav-group" data-group="agencia-clientes" style="--g:var(--green)">
       <button type="button" class="nav-group-btn" onclick="sbToggleGroup('agencia-clientes')" aria-expanded="false">
-        <span class="nav-dot"></span><span class="nav-group-label">Clientes</span><span class="nav-group-count">0</span>
+        <span class="nav-dot"></span><span class="nav-group-label">Instinto Digital</span><span class="nav-group-count">0</span>
         <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
       <div class="client-list" id="clientList"></div>
+    </section>
+
+    <section class="nav-group" data-group="agencia-trafegar" style="--g:var(--amber)">
+      <button type="button" class="nav-group-btn" onclick="sbToggleGroup('agencia-trafegar')" aria-expanded="false">
+        <span class="nav-dot"></span><span class="nav-group-label">Trafegar Media</span><span class="nav-group-count">0</span>
+        <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="client-list" id="clientListTrafegar"></div>
     </section>
     </div>
     </div>
@@ -2880,6 +2888,11 @@
         </div>
       </div>
 
+      <div class="g-tabs agency-tabs" id="clientsAgencyTabs" role="tablist">
+        <button type="button" class="g-tab active" data-agency="instinto" onclick="setClientsAgency('instinto')">Instinto Digital</button>
+        <button type="button" class="g-tab" data-agency="trafegar-media" onclick="setClientsAgency('trafegar-media')">Trafegar Media</button>
+      </div>
+
       <div id="backendOfflineBanner" class="offline-banner" style="display:none;">
         ⚠ Não consegui falar com o backend em <code id="backendUrlLabel"></code>. Confira se ele está rodando (<code>npm start</code> na pasta do backend) e recarregue a página.
       </div>
@@ -2942,7 +2955,7 @@
       </div>
       <div class="inactive-list" id="inactiveClientsList" style="display:none;"></div>
 
-      <div class="footnote">Esta tabela é só de organização interna da equipe: não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo somam sempre todos os clientes; a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>): sobrevive a reiniciar o servidor.</div>
+      <div class="footnote">Esta tabela é só de organização interna da equipe: não aparece para os clientes nem entra nos relatórios em PDF. Os cards no topo e a lista somam só a aba selecionada (Instinto Digital ou Trafegar Media); a linha "Total" da tabela reflete a busca ativa, se houver. "+ Novo cliente" já salva de verdade no backend (arquivo <code>accounts.json</code>): sobrevive a reiniciar o servidor.</div>
     </section>
 
     <!-- ================= CAPTAÇÃO & CRM ================= -->
@@ -4046,6 +4059,12 @@
           <label class="modal-label">Nome do cliente *</label>
           <input class="modal-input" id="acName" required placeholder="Ex: Ótica Visão Clara">
 
+          <label class="modal-label">Agência</label>
+          <select class="modal-input" id="acAgency">
+            <option value="instinto">Instinto Digital</option>
+            <option value="trafegar-media">Trafegar Media</option>
+          </select>
+
           <label class="modal-label">Nicho</label>
           <input class="modal-input" id="acNiche" placeholder="Ex: Saúde · Ótica">
 
@@ -4100,6 +4119,12 @@
 
           <label class="modal-label">Nome do cliente *</label>
           <input class="modal-input" id="ecName" required placeholder="Ex: Ótica Visão Clara">
+
+          <label class="modal-label">Agência</label>
+          <select class="modal-input" id="ecAgency">
+            <option value="instinto">Instinto Digital</option>
+            <option value="trafegar-media">Trafegar Media</option>
+          </select>
 
           <label class="modal-label">Nicho</label>
           <input class="modal-input" id="ecNiche" placeholder="Ex: Saúde · Ótica">
@@ -4335,25 +4360,34 @@
   const statusLabel = s => s==='on' ? 'Conectado' : s==='pending' ? 'Aguardando aprovação' : 'Não conectado';
   const badge = s => `<span style="font-size:11px; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); color:${dotColor(s)}; border:1px solid ${dotColor(s)}33;">${statusLabel(s)}</span>`;
 
+  function sidebarClientRow(c, active){
+    const row = document.createElement('div');
+    row.className = 'client-item' + (active ? ' active' : '');
+    row.onclick = () => openClientDetail(c.id);
+    row.innerHTML = `
+      <div class="client-item-name">
+        <div class="client-avatar">${escapeHtml(initials(c.name))}</div>
+        <span>${escapeHtml(c.name)}</span>
+      </div>
+      <div class="client-dots">
+        <span style="background:${dotColor(c.meta)}" title="Meta ${statusLabel(c.meta)}"></span>
+        <span style="background:${dotColor(c.google)}" title="Google ${statusLabel(c.google)}"></span>
+        <span style="background:${dotColor(c.ig)}" title="Instagram ${statusLabel(c.ig)}"></span>
+      </div>`;
+    row.dataset.tip = c.name;
+    return row;
+  }
   function renderSidebarAndConnections(clients){
+    const instinto = clients.filter(c => clientAgency(c) === 'instinto');
+    const trafegar = clients.filter(c => clientAgency(c) === 'trafegar-media');
     const listEl = document.getElementById('clientList');
+    const listTr = document.getElementById('clientListTrafegar');
     listEl.innerHTML = '';
-    clients.forEach((c,i)=>{
-      const row = document.createElement('div');
-      row.className = 'client-item' + (i===0 ? ' active' : ''); row.onclick = () => openClientDetail(c.id);
-      row.innerHTML = `
-        <div class="client-item-name">
-          <div class="client-avatar">${escapeHtml(initials(c.name))}</div>
-          <span>${escapeHtml(c.name)}</span>
-        </div>
-        <div class="client-dots">
-          <span style="background:${dotColor(c.meta)}" title="Meta ${statusLabel(c.meta)}"></span>
-          <span style="background:${dotColor(c.google)}" title="Google ${statusLabel(c.google)}"></span>
-          <span style="background:${dotColor(c.ig)}" title="Instagram ${statusLabel(c.ig)}"></span>
-        </div>`;
-      row.dataset.tip = c.name;
-      listEl.appendChild(row);
-    });
+    instinto.forEach((c,i) => listEl.appendChild(sidebarClientRow(c, i===0 && !trafegar.length ? true : false)));
+    if (listTr) {
+      listTr.innerHTML = '';
+      trafegar.forEach((c,i) => listTr.appendChild(sidebarClientRow(c, false)));
+    }
     if (typeof sbSyncGroupCounts === 'function') sbSyncGroupCounts();
 
     ['clientTable','clientTable2'].forEach(id=>{
@@ -6901,7 +6935,7 @@
   let ovSeq = 0;
 
   function ovActiveAccounts(){
-    return Object.values(rawAccountsById).filter(a => a.status !== 'inativo')
+    return Object.values(rawAccountsById).filter(a => a.status !== 'inativo' && clientAgency(a) === 'instinto')
       .sort((a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR'));
   }
   // Seleção guardada só neste navegador (null = todos os clientes).
@@ -7850,11 +7884,15 @@
   /* ---------- Seletores de cliente real (Meta Ads / Google Ads) ---------- */
   function populateClientSelectors(){
     const accounts = Object.values(rawAccountsById).filter(a => a.status !== 'inativo');
+    const instinto = accounts.filter(a => clientAgency(a) === 'instinto');
+    const trafegar = accounts.filter(a => clientAgency(a) === 'trafegar-media');
+    const opt = a => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.name)}</option>`;
     ['metaClientSelect','googleClientSelect'].forEach(selId => {
       const sel = document.getElementById(selId);
       const current = sel.value;
-      sel.innerHTML = `<option value="">📁 Todos os clientes (exemplo)</option>` +
-        accounts.map(a => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.name)}</option>`).join('');
+      sel.innerHTML = `<option value="">📁 Todos os clientes da Instinto (exemplo)</option>` +
+        (instinto.length ? `<optgroup label="Instinto Digital">${instinto.map(opt).join('')}</optgroup>` : '') +
+        (trafegar.length ? `<optgroup label="Trafegar Media">${trafegar.map(opt).join('')}</optgroup>` : '');
       if (accounts.some(a => a.id === current)) sel.value = current;
     });
   }
@@ -8220,8 +8258,9 @@
 
   function renderClientsMgmt(){
     const query = (document.getElementById('clientSearch')?.value || '').trim().toLowerCase();
-    const activeClients = clientsMgmt.filter(c => c.status !== 'inativo');
-    const inactiveClients = clientsMgmt.filter(c => c.status === 'inativo');
+    const agencyClients = clientsMgmt.filter(c => clientAgency(c) === CLIENTS_AGENCY);
+    const activeClients = agencyClients.filter(c => c.status !== 'inativo');
+    const inactiveClients = agencyClients.filter(c => c.status === 'inativo');
     const filtered = activeClients.filter(c =>
       c.name.toLowerCase().includes(query) || c.niche.toLowerCase().includes(query)
     );
@@ -8347,6 +8386,20 @@
   const formatDateBR = iso => { if(!iso) return '—'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
   let rawAccountsById = {};
 
+  const AGENCY_KEY = 'instintoDashAgencyTab';
+  let CLIENTS_AGENCY = 'instinto';
+  try { if (localStorage.getItem(AGENCY_KEY) === 'trafegar-media') CLIENTS_AGENCY = 'trafegar-media'; } catch (e) {}
+  function clientAgency(a){
+    if (!a) return 'instinto';
+    const v = a.agency || (rawAccountsById[a.id] && rawAccountsById[a.id].agency);
+    return v === 'trafegar-media' ? 'trafegar-media' : 'instinto';
+  }
+  function setClientsAgency(agency){
+    CLIENTS_AGENCY = agency === 'trafegar-media' ? 'trafegar-media' : 'instinto';
+    try { localStorage.setItem(AGENCY_KEY, CLIENTS_AGENCY); } catch (e) {}
+    document.querySelectorAll('#clientsAgencyTabs .g-tab').forEach(t => t.classList.toggle('active', t.dataset.agency === CLIENTS_AGENCY));
+    renderClientsMgmt();
+  }
   function toMgmtShape(a){
     const platforms = [];
     if (a.meta?.status === 'connected') platforms.push('meta');
@@ -8358,10 +8411,11 @@
       site: a.site, ig: a.instagram, drive: !!a.drive,
       status: a.status || 'onboarding', owner: a.owner || 'JC',
       payment: a.payment || 'cartao', pixBalance: a.pixBalance ?? null,
+      agency: clientAgency(a),
     };
   }
   function toConnShape(a){
-    return { id: a.id, name: a.name, meta: apiStatusToUi(a.meta?.status), google: apiStatusToUi(a.google?.status), ig: apiStatusToUi(a.instagramApi?.status) };
+    return { id: a.id, name: a.name, meta: apiStatusToUi(a.meta?.status), google: apiStatusToUi(a.google?.status), ig: apiStatusToUi(a.instagramApi?.status), agency: clientAgency(a) };
   }
 
   async function loadClientsFromBackend(){
@@ -8374,6 +8428,7 @@
       rawAccountsById = Object.fromEntries(data.map(a => [a.id, a]));
       clientsMgmt = data.map(toMgmtShape);
       renderSidebarAndConnections(data.filter(a => a.status !== 'inativo').map(toConnShape));
+      document.querySelectorAll('#clientsAgencyTabs .g-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.agency === CLIENTS_AGENCY));
       populateClientSelectors();
       if (banner) banner.style.display = 'none';
       renderOvClientMenu();
@@ -8871,6 +8926,7 @@
     document.getElementById('ecSite').value = account.site || '';
     document.getElementById('ecInstagram').value = account.instagram || '';
     document.getElementById('ecDrive').value = account.drive || '';
+    if (document.getElementById('ecAgency')) document.getElementById('ecAgency').value = clientAgency(account);
     toggleEditPixField();
     document.getElementById('editClientError').style.display = 'none';
 
@@ -8907,6 +8963,7 @@
       site: document.getElementById('ecSite').value.trim() || null,
       instagram: document.getElementById('ecInstagram').value.trim() || null,
       drive: document.getElementById('ecDrive').value.trim() || null,
+      agency: document.getElementById('ecAgency') ? document.getElementById('ecAgency').value : 'instinto',
     };
 
     try {
@@ -13177,6 +13234,7 @@
     requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')));
     document.getElementById('addClientError').style.display = 'none';
     document.getElementById('addClientForm').reset();
+    if (document.getElementById('acAgency')) document.getElementById('acAgency').value = CLIENTS_AGENCY;
     togglePixField();
   }
   function closeAddClientModal(){
@@ -13204,6 +13262,7 @@
       drive: document.getElementById('acDrive').value.trim() || null,
       payment: document.getElementById('acPayment').value,
       pixBalance: document.getElementById('acPixBalance').value,
+      agency: document.getElementById('acAgency') ? document.getElementById('acAgency').value : 'instinto',
     };
     if (!payload.name) {
       errEl.textContent = 'O nome do cliente é obrigatório.';
