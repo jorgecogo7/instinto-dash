@@ -466,6 +466,7 @@ test('ABO coloca a verba em cada conjunto e tira o orçamento da campanha', asyn
   assert.strictEqual(campaign.daily_budget, undefined);
   assert.strictEqual(campaign.lifetime_budget, undefined);
   assert.strictEqual(campaign.bid_strategy, undefined);
+  assert.strictEqual(campaign.is_adset_budget_sharing_enabled, false);
   assert.strictEqual(campaign.status, 'PAUSED');
 
   const adsets = result.requests.filter((r) => String(r.label).startsWith('Conjunto:'));
@@ -524,6 +525,7 @@ test('CBO legado continua com daily_budget na campanha quando os conjuntos não 
   const result = await publisher.publish(draft, account, { images: imagesFor(ids) });
   const campaign = result.requests.find((r) => r.label === 'Campanha').params;
   assert.strictEqual(campaign.daily_budget, 5000);
+  assert.strictEqual(campaign.is_adset_budget_sharing_enabled, undefined);
   const adsets = result.requests.filter((r) => String(r.label).startsWith('Conjunto:'));
   for (const s of adsets) {
     assert.strictEqual(s.params.daily_budget, undefined);

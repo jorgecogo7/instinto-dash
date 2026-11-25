@@ -132,6 +132,10 @@ function campaignParams(s, draft, obj, name, budgetKey) {
   if (!spec.isAbo(s)) {
     params[budgetKey] = minorUnits(s.budget, draft.currency);
     params.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+  } else {
+    // Sem orçamento na campanha a Meta exige este campo. False = ABO puro,
+    // sem os conjuntos compartilharem 20% da verba (Advantage+ campaign budget).
+    params.is_adset_budget_sharing_enabled = false;
   }
   return params;
 }
