@@ -93,6 +93,7 @@ function listItem(d) {
 
 async function loadMetaAssets(account, draft) {
   if (draft.platform !== 'meta') return { images: null, problems: [] };
+  if (spec.isStructureOnly(draft.spec)) return { images: {}, problems: [] };
   const ids = spec.collectAssetIds(draft.spec, draft.name);
   const images = {};
   const missing = [];

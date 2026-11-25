@@ -741,10 +741,62 @@ async function resolveInstagram({ pageId, igBusinessId } = {}) {
   }
 }
 
+
+// Páginas que o usuário do sistema enxerga nesta conta de anúncios e no
+// Business Manager dela. Não lista páginas de outras BMs do mesmo token.
+async function listPagesForAdAccount(adAccountId) {
+  const act = normalizeAdAccountId(adAccountId);
+  if (!act) {
+    const err = new Error('Informe a conta de anúncios.');
+    err.status = 400;
+    throw err;
+  }
+  if (!hasRealCredentials()) {
+    const err = new Error('O token do usuário do sistema da Meta não está configurado.');
+    err.status = 409;
+    throw err;
+  }
+  const info = await graphGet(act, { fields: 'id,name,business{id,name}' });
+  const business = info.business && info.business.id
+    ? { id: String(info.business.id), name: info.business.name || null }
+    : null;
+  const byId = new Map();
+  const errors = [];
+  const add = (items, source) => {
+    for (const p of items || []) {
+      if (!p || !p.id) continue;
+      const id = String(p.id);
+      const cur = byId.get(id) || { id, name: p.name || '', sources: [] };
+      if (p.name && !cur.name) cur.name = p.name;
+      if (!cur.sources.includes(source)) cur.sources.push(source);
+      byId.set(id, cur);
+    }
+  };
+  const collect = async (path, source) => {
+    try {
+      add(await graphGetAll(path, { fields: 'id,name', limit: 100 }, 10), source);
+    } catch (e) {
+      errors.push({ source, error: e.message || String(e) });
+    }
+  };
+  await collect(`${act}/promote_pages`, 'promote_pages');
+  if (business) {
+    await collect(`${business.id}/owned_pages`, 'owned_pages');
+    await collect(`${business.id}/client_pages`, 'client_pages');
+  }
+  const pages = [...byId.values()].sort((a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR'));
+  return {
+    adAccount: { id: String(info.id || act), name: info.name || null },
+    business,
+    pages,
+    errors,
+  };
+}
+
 module.exports = {
   resolveInstagram,
   getCampaignsWithAds, getAccountReport, verifyAdAccount, findInstagramForPage, getPageWhatsappNumber,
-  hasRealCredentials, normalizeAdAccountId, mapMetaResponse, graphGet, graphGetAll, friendlyError,
+  hasRealCredentials, normalizeAdAccountId, mapMetaResponse, listPagesForAdAccount, graphGet, graphGetAll, friendlyError,
   pickResult, RESULT_LABELS, RESULT_ACTIONS, resultActionsFor, accountResultLabel,
 };
 

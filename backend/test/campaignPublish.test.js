@@ -466,6 +466,7 @@ test('ABO coloca a verba em cada conjunto e tira o orçamento da campanha', asyn
   assert.strictEqual(campaign.daily_budget, undefined);
   assert.strictEqual(campaign.lifetime_budget, undefined);
   assert.strictEqual(campaign.bid_strategy, undefined);
+  assert.strictEqual(campaign.is_adset_budget_sharing_enabled, false);
   assert.strictEqual(campaign.status, 'PAUSED');
 
   const adsets = result.requests.filter((r) => String(r.label).startsWith('Conjunto:'));
@@ -524,8 +525,61 @@ test('CBO legado continua com daily_budget na campanha quando os conjuntos não 
   const result = await publisher.publish(draft, account, { images: imagesFor(ids) });
   const campaign = result.requests.find((r) => r.label === 'Campanha').params;
   assert.strictEqual(campaign.daily_budget, 5000);
+  assert.strictEqual(campaign.is_adset_budget_sharing_enabled, undefined);
   const adsets = result.requests.filter((r) => String(r.label).startsWith('Conjunto:'));
   for (const s of adsets) {
     assert.strictEqual(s.params.daily_budget, undefined);
+  }
+});
+
+
+test('structureOnly publica só campanha e conjuntos pausados, sem imagem nem anúncio', async () => {
+  const cleaned = spec.sanitizeMeta({
+    objective: 'trafego',
+    budgetMode: 'abo',
+    structureOnly: true,
+    startDate: spec.todaySP(),
+    creativeEnhancements: 'opt_out',
+    urlTags: 'utm_source=meta',
+    dsa: { beneficiary: 'Mintply', payor: 'Mintply' },
+    audience: { countries: ['US'], advantage: false },
+    placements: { mode: 'manual', positions: ['facebook_feed'] },
+    creative: { cta: 'SIGN_UP', link: 'https://mintply.com/?launchTier=200000' },
+    adSets: [
+      {
+        name: 'Conjunto Europa',
+        budget: 200,
+        audience: { countries: ['US', 'QA'], countryGroups: ['europe'] },
+        ads: [{
+          name: 'Anúncio 7',
+          creative: {
+            assetId: 'asset-7',
+            primaryText: 'Texto.',
+            headline: 'Título',
+            description: 'Desc.',
+          },
+        }],
+      },
+      {
+        name: 'Conjunto Asia',
+        budget: 200,
+        audience: { countries: ['ID', 'HK', 'SA'] },
+        ads: [],
+      },
+    ],
+  });
+  assert.strictEqual(cleaned.structureOnly, true);
+  assert.deepStrictEqual(spec.validateMeta(cleaned, { account: { meta: { adAccountId: 'act_123' } } }), []);
+
+  const draft = { id: 'so1', platform: 'meta', name: '[ID] [CADASTRO] [MINTPLY]', spec: cleaned, currency: 'BRL' };
+  const result = await publisher.publish(draft, { meta: { adAccountId: 'act_123' } }, { images: {} });
+  const labels = result.requests.map((r) => r.label);
+  assert.deepStrictEqual(labels, ['Campanha', 'Conjunto: Conjunto Europa', 'Conjunto: Conjunto Asia']);
+  const campaign = result.requests[0].params;
+  assert.strictEqual(campaign.status, 'PAUSED');
+  assert.strictEqual(campaign.daily_budget, undefined);
+  assert.strictEqual(campaign.is_adset_budget_sharing_enabled, false);
+  for (const r of result.requests) {
+    if (r.params && Object.prototype.hasOwnProperty.call(r.params, 'status')) assert.strictEqual(r.params.status, 'PAUSED');
   }
 });

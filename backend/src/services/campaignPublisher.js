@@ -132,6 +132,10 @@ function campaignParams(s, draft, obj, name, budgetKey) {
   if (!spec.isAbo(s)) {
     params[budgetKey] = minorUnits(s.budget, draft.currency);
     params.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
+  } else {
+    // Sem orçamento na campanha a Meta exige este campo. False = ABO puro,
+    // sem os conjuntos compartilharem 20% da verba (Advantage+ campaign budget).
+    params.is_adset_budget_sharing_enabled = false;
   }
   return params;
 }
@@ -145,12 +149,15 @@ function buildMetaRequests(draft, account, ctx) {
   const budgetKey = s.budgetType === 'lifetime' ? 'lifetime_budget' : 'daily_budget';
   const today = spec.todaySP();
   const plan = spec.expandMetaPlan(s, name);
-  const single = plan.adSets.length === 1 && plan.adSets[0].ads.length === 1;
+  const structureOnly = spec.isStructureOnly(s);
+  const single = !structureOnly && plan.adSets.length === 1 && plan.adSets[0].ads.length === 1;
   const assetIds = [];
-  for (const set of plan.adSets) {
-    for (const ad of set.ads) {
-      const id = ad.creative.assetId;
-      if (id && !assetIds.includes(id)) assetIds.push(id);
+  if (!structureOnly) {
+    for (const set of plan.adSets) {
+      for (const ad of set.ads) {
+        const id = ad.creative && ad.creative.assetId;
+        if (id && !assetIds.includes(id)) assetIds.push(id);
+      }
     }
   }
   const assetIndex = new Map(assetIds.map((id, i) => [id, i]));
@@ -218,7 +225,7 @@ function buildMetaRequests(draft, account, ctx) {
       record: { key: single ? 'adset' : `adset_${si + 1}`, type: 'adset', name: set.name },
     });
 
-    set.ads.forEach((ad, ai) => {
+    if (!structureOnly) set.ads.forEach((ad, ai) => {
       const imgIdx = assetIndex.has(ad.creative.assetId) ? assetIndex.get(ad.creative.assetId) : 0;
       const hashToken = single ? 'image_hash' : `imghash_${imgIdx}`;
       const creativeToken = single ? 'creative_id' : `creative_${si}_${ai}`;
@@ -638,6 +645,9 @@ async function publish(draft, account, { image, images } = {}) {
   if (!r.ok) throw publishError(`Publicação real desligada. Falta configurar: ${r.missing.join(', ')}.`, { status: 409 });
   const live = r.mode === 'real';
   if (draft.platform === 'meta') {
+    if (spec.isStructureOnly(draft.spec)) {
+      return publishMeta(draft, account, {}, live);
+    }
     const ids = spec.collectAssetIds(draft.spec, draft.name);
     const map = { ...(images || {}) };
     if (image && ids.length === 1 && !map[ids[0]]) map[ids[0]] = image;
