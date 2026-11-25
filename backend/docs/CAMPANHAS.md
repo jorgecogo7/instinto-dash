@@ -44,6 +44,8 @@ leading `?`; stored on `link_data.url_tags`), `dsa { beneficiary, payor }`
 (required if an EU country or a `countryGroups` value of europe/eu/eea is targeted).
 `budgetMode: "abo"` (or a positive `budget` on every ad set) puts the daily/lifetime budget on
 each ad set and omits it from the campaign. The default remains CBO: `budget` on the campaign.
+`structureOnly: true` creates only the campaign and ad sets (all PAUSED), without images, creatives or ads.
+Use it when the Page is not yet available. ABO also sends `is_adset_budget_sharing_enabled: false`.
 
 Optional, for several ad sets and ads in one campaign:
 

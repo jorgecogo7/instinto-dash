@@ -192,6 +192,8 @@ function sanitizeMeta(input = {}) {
     urlTags: str(String(input.urlTags ?? '').replace(/^\?/, ''), 2000),
   };
   if (input.budgetMode === 'abo') out.budgetMode = 'abo';
+  // Só campanha e conjuntos, sem criativo/anúncio (ex.: página ainda não atribuída).
+  if (input.structureOnly === true) out.structureOnly = true;
   const enh = readEnhancements(input);
   if (enh) out.creativeEnhancements = enh;
   // Sem adSets (ou lista vazia): o formato antigo, de um conjunto e um anúncio, segue valendo.
@@ -212,6 +214,10 @@ function isAbo(spec) {
   if (spec.budgetMode === 'abo') return true;
   if (!usesAdSets(spec) || !(spec.adSets || []).length) return false;
   return spec.adSets.every((s) => s && s.budget > 0);
+}
+
+function isStructureOnly(spec) {
+  return !!(spec && spec.structureOnly === true);
 }
 
 function mergeAudience(base, patch) {
@@ -356,7 +362,7 @@ function validateMeta(spec, { account } = {}) {
       if (set.audience.ageMin > set.audience.ageMax) e.push(`No ${setLabel}, a idade mínima é maior que a máxima.`);
       if (set.placements.mode === 'manual' && !set.placements.positions.length) e.push(`No ${setLabel}, escolha pelo menos um posicionamento.`);
       if (audienceNeedsDsa(set.audience)) needsDsa = true;
-      if (!set.ads.length) e.push(`O ${setLabel} precisa de pelo menos um anúncio.`);
+      if (!set.ads.length && !isStructureOnly(spec)) e.push(`O ${setLabel} precisa de pelo menos um anúncio.`);
       set.ads.forEach((ad, j) => {
         const adLabel = ad.name ? `anúncio "${ad.name}"` : `anúncio ${j + 1} do ${setLabel}`;
         if (!ad.name) e.push(`Dê um nome para o ${adLabel}.`);
@@ -375,7 +381,8 @@ function validateMeta(spec, { account } = {}) {
   if (account) {
     const m = account.meta || {};
     if (!m.adAccountId) e.push('Este cliente não tem conta de anúncios da Meta cadastrada (aba Integrações).');
-    if (!m.pageId) e.push('Este cliente não tem a Página do Facebook cadastrada (aba Integrações).');
+    // structureOnly cria só campanha e conjuntos, sem Página no criativo.
+    if (!m.pageId && !isStructureOnly(spec)) e.push('Este cliente não tem a Página do Facebook cadastrada (aba Integrações).');
   }
   return e;
 }
@@ -439,7 +446,7 @@ function validate(platform, spec, ctx) { return platform === 'google' ? validate
 
 module.exports = {
   sanitize, validate, sanitizeMeta, sanitizeGoogle, validateMeta, validateGoogle, todaySP,
-  usesAdSets, isAbo, audienceNeedsDsa, expandMetaPlan, collectAssetIds, describeMissingAssets,
+  usesAdSets, isAbo, isStructureOnly, audienceNeedsDsa, expandMetaPlan, collectAssetIds, describeMissingAssets,
   META_OBJECTIVES, META_CTAS, META_POSITIONS, SPECIAL_CATEGORIES, GOOGLE_COUNTRIES, LANGUAGES, EU,
   MAX_AD_SETS, MAX_ADS_PER_SET,
 };

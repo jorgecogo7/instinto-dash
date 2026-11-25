@@ -236,6 +236,23 @@ router.post('/:id/connect-google', async (req, res) => {
   }
 });
 
+
+// GET /api/accounts/:id/meta/pages — páginas que o usuário do sistema vê
+// nesta conta de anúncios e no Business Manager dela (nome e ID).
+router.get('/:id/meta/pages', async (req, res) => {
+  try {
+    const account = (await accountsStore.getAll()).find((a) => a.id === req.params.id);
+    if (!account) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    const adAccountId = (account.meta || {}).adAccountId;
+    if (!adAccountId) return res.status(400).json({ error: 'Este cliente não tem conta de anúncios da Meta cadastrada.' });
+    res.json(await metaService.listPagesForAdAccount(adAccountId));
+  } catch (err) {
+    console.error(err);
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message });
+  }
+});
+
 // POST /api/accounts/:id/meta-connection — salva os IDs do Meta (Ad
 // Account, Página, Instagram Business). Com o token do usuário do sistema
 // configurado, TESTA de verdade contra a Graph API e só marca como
